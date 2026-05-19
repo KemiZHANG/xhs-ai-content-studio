@@ -1,0 +1,66 @@
+import { NextResponse } from "next/server";
+import { getJobRunner } from "@/lib/jobs/runner";
+import { readSettings } from "@/lib/storage/settings";
+import type { OneClickInput, PublishMode } from "@/lib/workflows/one-click";
+
+export const runtime = "nodejs";
+
+export async function GET() {
+  const jobs = await getJobRunner().listJobs();
+  return NextResponse.json({ jobs });
+}
+
+export async function POST(request: Request) {
+  try {
+    const settings = await readSettings();
+    const body = (await request.json()) as Partial<OneClickInput>;
+    const input: OneClickInput = {
+      topic: String(body.topic ?? "").trim(),
+      contentType: String(body.contentType ?? "图文"),
+      timeRange: String(body.timeRange ?? "一周内"),
+      sampleCount: Number(body.sampleCount ?? 8),
+      visibility: body.visibility ?? settings.defaultVisibility,
+      autoPublish: Boolean(body.autoPublish ?? settings.defaultAutoPublish),
+      publishMode: normalizePublishMode(body.publishMode, body.autoPublish, settings.defaultAutoPublish),
+      workflowGoal: body.workflowGoal === "research" ? "research" : "draft",
+      analyzeImages: Boolean(body.analyzeImages ?? false),
+      generateImages: Boolean(body.generateImages ?? false),
+      scheduleAt: body.scheduleAt ? String(body.scheduleAt) : undefined,
+      requirements: body.requirements ? String(body.requirements) : undefined,
+      imageSource:
+        body.imageSource === "product" || body.imageSource === "asset" || body.imageSource === "ai"
+          ? body.imageSource
+          : "ai",
+      assetIds: Array.isArray(body.assetIds) ? body.assetIds.map(String) : [],
+      productName: body.productName ? String(body.productName) : undefined,
+      sellingPoints: body.sellingPoints ? String(body.sellingPoints) : undefined,
+      scene: body.scene ? String(body.scene) : undefined,
+      style: body.style ? String(body.style) : undefined,
+      extraImagePrompt: body.extraImagePrompt ? String(body.extraImagePrompt) : undefined
+    };
+
+    if (!input.topic) {
+      return NextResponse.json({ error: "请输入主题" }, { status: 400 });
+    }
+
+    const job = await getJobRunner().enqueueWorkflow(input);
+    return NextResponse.json({ job });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "创建任务失败" },
+      { status: 500 }
+    );
+  }
+}
+
+function normalizePublishMode(
+  value: unknown,
+  autoPublish: unknown,
+  defaultAutoPublish: boolean
+): PublishMode {
+  if (value === "draft" || value === "material" || value === "publish" || value === "schedule") {
+    return value;
+  }
+
+  return Boolean(autoPublish ?? defaultAutoPublish) ? "publish" : "draft";
+}

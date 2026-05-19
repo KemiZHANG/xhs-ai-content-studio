@@ -1,0 +1,13 @@
+node_modules
+.next
+out
+dist
+coverage
+.env
+.env.local
+data
+generated-assets
+tools/**/*.zip
+tools/**/cookies.json
+*.log
+*.tsbuildinfo
