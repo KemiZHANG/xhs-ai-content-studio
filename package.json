@@ -1,6 +1,7 @@
 {
   "name": "xhs-ai-content-studio",
   "version": "0.1.0",
+  "description": "Local AI Agent workspace for Xiaohongshu research, rewriting, image generation, and publishing assembly.",
   "private": true,
   "type": "module",
   "scripts": {

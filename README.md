@@ -2,9 +2,19 @@
 
 ## 中文说明
 
-XHS AI Content Studio 是一个本地运行的小红书内容中台。它把小红书 MCP、AI 文本模型、AI 图片模型和网页 UI 组合在一起，用来完成从选题研究、爆款证据分析、文案生成、图片生成到发布装配的完整流程。
+XHS AI Content Studio 是一个面向小红书内容运营的本地 AI Agent 工作台。它把小红书 MCP、AI 文本模型、AI 图片模型和专业化 Web UI 组合在一起，让 Agent 能够围绕一个主题自动完成真实笔记搜索、爆款证据分析、标题/正文/标签规律提炼、原创重写、配图生成和发布前装配。
 
 > 适用场景：小红书运营、品牌种草、产品内容创作、探店内容分析、爆款笔记拆解、图文笔记生成与发布前整理。
+
+### AI Agent 能力
+
+- **工具调用**：通过 Xiaohongshu MCP 调用搜索、详情、登录状态检测和发布能力。
+- **证据驱动**：先抓取真实笔记和互动数据，再进行分析，不让模型凭空生成。
+- **爆款分析**：提炼高互动样本的标题结构、正文组织、标签规律、评论需求和图片风格。
+- **原创重写**：基于分析结论生成新的标题、正文和标签，避免复制原帖内容。
+- **多模态创作**：支持上传产品图或参考图，并调用图片模型生成新的小红书配图。
+- **工作流编排**：支持研究、文案创作、图片创作、发布装配、定时发布和历史追踪。
+- **本地优先**：API Key、cookie、草稿、素材和运行记录都保存在使用者自己的电脑上。
 
 ### 项目能做什么
 
@@ -183,9 +193,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1
 
 ## English Guide
 
-XHS AI Content Studio is a local Xiaohongshu content operations workspace. It combines a Xiaohongshu MCP service, AI text models, AI image models, and a web UI to support topic research, viral post analysis, copy generation, image generation, final assembly, and publishing.
+XHS AI Content Studio is a local AI Agent workspace for Xiaohongshu content operations. It combines a Xiaohongshu MCP service, AI text models, AI image models, and a professional web UI so the agent can search real posts, analyze high-performing evidence, extract title/body/tag patterns, rewrite original copy, generate images, and assemble posts before publishing.
 
 > Use cases: Xiaohongshu operations, brand seeding, product content creation, post research, viral note analysis, image-text note generation, and publishing preparation.
+
+### AI Agent Capabilities
+
+- **Tool use**: Calls Xiaohongshu MCP tools for search, post details, login checks, and publishing.
+- **Evidence-driven workflow**: Collects real posts and engagement data before generating content.
+- **Viral post analysis**: Extracts title patterns, body structure, tag direction, comment signals, and image style from high-performing samples.
+- **Original rewriting**: Generates new titles, body copy, and tags from insights instead of copying source posts.
+- **Multimodal creation**: Supports product/reference image uploads and AI-generated Xiaohongshu-style visuals.
+- **Workflow orchestration**: Supports research, copy creation, image creation, publishing assembly, scheduled publishing, and history tracking.
+- **Local-first privacy**: API keys, cookies, drafts, assets, and run history stay on the user's own machine.
 
 ### What This Project Does
 
