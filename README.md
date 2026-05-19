@@ -51,7 +51,7 @@ XHS Studio 是一个本地运行的小红书内容中台。它把小红书 MCP�
 - 一个文本模型 API Key
 - 一个图片模型 API Key
 
-默认模型配置偏向 Gemini / OpenAI-compatible 接口，但也可以在网页“模型设置”里修改 Base URL 和模型名称。
+默认模型配置提供 Gemini 和 OpenAI 预设。普通用户只需要选择服务商并填写自己的 API Key；只有使用第三方兼容接口时才需要展开高级设置，手动填写 Base URL 和模型名称。
 
 ### 快速开始
 
@@ -99,14 +99,12 @@ http://localhost:3000
 
 打开网页后进入“模型设置”，填写：
 
-- 文本模型 Base URL
-- 文本模型名称
+- 文本模型服务商：Gemini / OpenAI / 自定义
 - 文本模型 API Key
-- 图片模型 Base URL
-- 图片模型名称
+- 图片模型服务商：Gemini / OpenAI / 自定义
 - 图片模型 API Key
 
-保存后，左下角会显示模型是否已配置。
+如果选择 Gemini 或 OpenAI，Base URL 和模型名称会自动填好。只有选择“自定义”时，才需要在高级设置里填写自己的 Base URL 和模型名称。保存后，左下角会显示模型是否已配置。
 
 ### 推荐使用流程
 
@@ -234,7 +232,7 @@ XHS Studio is a local Xiaohongshu content operations workspace. It combines a Xi
 - A text model API key
 - An image model API key
 
-The default model settings are designed for Gemini / OpenAI-compatible APIs, but you can change the Base URL and model names in the web “Model Settings” page.
+The default model settings provide Gemini and OpenAI presets. Most users only need to choose a provider and enter their own API key. Base URL and model names are only needed when using a custom OpenAI-compatible provider.
 
 ### Quick Start
 
@@ -282,14 +280,12 @@ Complete login in the popup window, then return to the web app and refresh the s
 
 Open “Model Settings” in the web app and fill in:
 
-- Text model Base URL
-- Text model name
+- Text model provider: Gemini / OpenAI / Custom
 - Text model API key
-- Image model Base URL
-- Image model name
+- Image model provider: Gemini / OpenAI / Custom
 - Image model API key
 
-After saving, the sidebar will show whether the models are configured.
+If you choose Gemini or OpenAI, Base URL and model names are filled automatically. Only choose “Custom” when you need to enter your own Base URL and model names. After saving, the sidebar will show whether the models are configured.
 
 ### Recommended Workflow
 

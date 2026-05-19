@@ -485,6 +485,43 @@ textarea {
   min-height: 40px;
 }
 
+.settingsGroup {
+  background: rgba(255, 250, 244, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.settingsGroup h3 {
+  margin-bottom: 4px;
+}
+
+.settingsGroup p {
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+.advancedSettings {
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px dashed rgba(13, 127, 114, 0.24);
+  border-radius: 12px;
+  padding: 11px 12px;
+}
+
+.advancedSettings summary {
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.advancedSettings .formRow {
+  margin-top: 12px;
+}
+
 .insetFields {
   background: #fff7ee;
   border: 1px solid var(--line);

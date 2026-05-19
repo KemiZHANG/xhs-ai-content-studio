@@ -22,6 +22,14 @@ import {
 } from "lucide-react";
 import { ClipboardEvent, DragEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { buildCopyCreativeBrief, buildDraftPromptFromBrief, buildImageCreativeBrief } from "@/lib/workflows/creative-briefs";
+import {
+  applyImageProviderPreset,
+  applyTextProviderPreset,
+  inferImageProviderPreset,
+  inferTextProviderPreset,
+  modelProviderPresets,
+  type ModelProviderPreset
+} from "@/lib/models/presets";
 import { parseTagsText } from "@/lib/publishing/assembly";
 
 type Section = "dashboard" | "workflow" | "jobs" | "assets" | "imageStudio" | "chat" | "publish" | "history" | "settings";
@@ -218,11 +226,11 @@ const navItems: Array<{ id: Section; label: string; icon: typeof ClipboardList }
 
 const defaultSettings: RedactedSettings = {
   mcpUrl: "http://localhost:18060/mcp",
-  textBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-  textModel: "gemini-3-flash-preview",
+  textBaseUrl: modelProviderPresets.gemini.text.textBaseUrl,
+  textModel: modelProviderPresets.gemini.text.textModel,
   textApiKey: "missing",
-  imageBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-  imageModel: "gemini-2.5-flash-image",
+  imageBaseUrl: modelProviderPresets.gemini.image.imageBaseUrl,
+  imageModel: modelProviderPresets.gemini.image.imageModel,
   imageApiKey: "missing",
   defaultVisibility: "仅自己可见",
   defaultAutoPublish: false
@@ -2147,12 +2155,15 @@ function SettingsPanel({
   onChange: (next: SettingsDraft) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
+  const textProvider = inferTextProviderPreset(draft);
+  const imageProvider = inferImageProviderPreset(draft);
+
   return (
     <section className="panel settingsPanel">
       <div className="panelHeader">
         <div>
           <h2>连接配置</h2>
-          <p>API Key 只保存在本机 `data/settings.json`，网页不会回显完整密钥。</p>
+          <p>普通用户只需要选择服务商并填写 API Key。Base URL 和模型名称会自动设置，并且只保存在本机。</p>
         </div>
       </div>
 
@@ -2162,58 +2173,97 @@ function SettingsPanel({
           <input value={draft.mcpUrl} onChange={(event) => onChange({ ...draft, mcpUrl: event.target.value })} />
         </label>
 
-        <div className="formRow">
+        <section className="settingsGroup">
+          <div>
+            <h3>文本模型</h3>
+            <p>用于 AI 对话、研究总结、文案生成和图片理解。大多数人选 Gemini 后只填 API Key 就可以。</p>
+          </div>
           <label>
-            <span>文本 Base URL</span>
-            <input value={draft.textBaseUrl} onChange={(event) => onChange({ ...draft, textBaseUrl: event.target.value })} />
+            <span>文本模型服务商</span>
+            <select
+              value={textProvider}
+              onChange={(event) =>
+                onChange(applyTextProviderPreset(draft, event.target.value as ModelProviderPreset))
+              }
+            >
+              <option value="gemini">Gemini（推荐，只填 API Key）</option>
+              <option value="openai">OpenAI（只填 API Key）</option>
+              <option value="custom">自定义 OpenAI-compatible 接口</option>
+            </select>
+            <small className="fieldHint">{providerDescription(textProvider)}</small>
           </label>
-          <label>
-            <span>文本模型</span>
-            <input value={draft.textModel} onChange={(event) => onChange({ ...draft, textModel: event.target.value })} />
-          </label>
-        </div>
 
-        <label>
-          <span>文本 API Key：{settings.textApiKey === "configured" ? "已配置" : "未配置"}</span>
-          <input
-            autoComplete="off"
-            placeholder="留空表示不修改"
-            type="password"
-            value={draft.textApiKey}
-            onChange={(event) => onChange({ ...draft, textApiKey: event.target.value })}
-          />
-        </label>
-
-        <div className="formRow">
           <label>
-            <span>图片 Base URL</span>
-            <input value={draft.imageBaseUrl} onChange={(event) => onChange({ ...draft, imageBaseUrl: event.target.value })} />
-          </label>
-          <label>
-            <span>图片模型</span>
+            <span>文本 API Key：{settings.textApiKey === "configured" ? "已配置" : "未配置"}</span>
             <input
-              list="image-model-presets"
-              value={draft.imageModel}
-              onChange={(event) => onChange({ ...draft, imageModel: event.target.value })}
+              autoComplete="off"
+              placeholder="填入你自己的 API Key；留空表示不修改已保存的 Key"
+              type="password"
+              value={draft.textApiKey}
+              onChange={(event) => onChange({ ...draft, textApiKey: event.target.value })}
             />
-            <datalist id="image-model-presets">
-              <option label="Nano Banana / Gemini 2.5 Flash Image" value="gemini-2.5-flash-image" />
-            </datalist>
           </label>
-        </div>
 
-        <p className="fieldHint">当前推荐图片模型：Nano Banana，也就是 Gemini 2.5 Flash Image。</p>
+          <details className="advancedSettings" open={textProvider === "custom"}>
+            <summary>高级设置：文本 Base URL 和模型名称</summary>
+            <div className="formRow">
+              <label>
+                <span>文本 Base URL</span>
+                <input value={draft.textBaseUrl} onChange={(event) => onChange({ ...draft, textBaseUrl: event.target.value })} />
+              </label>
+              <label>
+                <span>文本模型</span>
+                <input value={draft.textModel} onChange={(event) => onChange({ ...draft, textModel: event.target.value })} />
+              </label>
+            </div>
+          </details>
+        </section>
 
-        <label>
-          <span>图片 API Key：{settings.imageApiKey === "configured" ? "已配置" : "未配置"}</span>
-          <input
-            autoComplete="off"
-            placeholder="留空表示不修改"
-            type="password"
-            value={draft.imageApiKey}
-            onChange={(event) => onChange({ ...draft, imageApiKey: event.target.value })}
-          />
-        </label>
+        <section className="settingsGroup">
+          <div>
+            <h3>图片模型</h3>
+            <p>用于生成原创配图和产品场景图。基于产品图生成新图时，Gemini 路径支持更完整的参考图输入。</p>
+          </div>
+          <label>
+            <span>图片模型服务商</span>
+            <select
+              value={imageProvider}
+              onChange={(event) =>
+                onChange(applyImageProviderPreset(draft, event.target.value as ModelProviderPreset))
+              }
+            >
+              <option value="gemini">Gemini / Nano Banana（推荐，只填 API Key）</option>
+              <option value="openai">OpenAI（只填 API Key）</option>
+              <option value="custom">自定义 OpenAI-compatible 接口</option>
+            </select>
+            <small className="fieldHint">{providerDescription(imageProvider)}</small>
+          </label>
+
+          <label>
+            <span>图片 API Key：{settings.imageApiKey === "configured" ? "已配置" : "未配置"}</span>
+            <input
+              autoComplete="off"
+              placeholder="填入你自己的 API Key；留空表示不修改已保存的 Key"
+              type="password"
+              value={draft.imageApiKey}
+              onChange={(event) => onChange({ ...draft, imageApiKey: event.target.value })}
+            />
+          </label>
+
+          <details className="advancedSettings" open={imageProvider === "custom"}>
+            <summary>高级设置：图片 Base URL 和模型名称</summary>
+            <div className="formRow">
+              <label>
+                <span>图片 Base URL</span>
+                <input value={draft.imageBaseUrl} onChange={(event) => onChange({ ...draft, imageBaseUrl: event.target.value })} />
+              </label>
+              <label>
+                <span>图片模型</span>
+                <input value={draft.imageModel} onChange={(event) => onChange({ ...draft, imageModel: event.target.value })} />
+              </label>
+            </div>
+          </details>
+        </section>
 
         <div className="formRow">
           <label>
@@ -2249,6 +2299,13 @@ function SettingsPanel({
       </form>
     </section>
   );
+}
+
+function providerDescription(provider: ModelProviderPreset): string {
+  if (provider === "custom") {
+    return "用于硅基流动、OpenRouter、自建网关等兼容 OpenAI 格式的服务，需要自己填写 Base URL 和模型名称。";
+  }
+  return modelProviderPresets[provider].description;
 }
 
 function WorkflowResultView({

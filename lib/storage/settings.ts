@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { modelProviderPresets } from "@/lib/models/presets";
 
 export type PublishVisibility = "公开可见" | "仅自己可见" | "仅互关好友可见";
 
@@ -22,11 +23,11 @@ export type RedactedSettings = Omit<AppSettings, "textApiKey" | "imageApiKey"> &
 
 export const defaultSettings: AppSettings = {
   mcpUrl: "http://localhost:18060/mcp",
-  textBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-  textModel: "gemini-3-flash-preview",
+  textBaseUrl: modelProviderPresets.gemini.text.textBaseUrl,
+  textModel: modelProviderPresets.gemini.text.textModel,
   textApiKey: "",
-  imageBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-  imageModel: "gemini-2.5-flash-image",
+  imageBaseUrl: modelProviderPresets.gemini.image.imageBaseUrl,
+  imageModel: modelProviderPresets.gemini.image.imageModel,
   imageApiKey: "",
   defaultVisibility: "仅自己可见",
   defaultAutoPublish: false
