@@ -71,7 +71,7 @@ async function cacheOneEvidenceImage(sourceUrl: string): Promise<string | null> 
     const response = await fetch(sourceUrl, {
       signal: controller.signal,
       headers: {
-        "User-Agent": "Mozilla/5.0 XHS Studio Evidence Image Cache"
+        "User-Agent": "Mozilla/5.0 XHS AI Content Studio Evidence Image Cache"
       }
     });
     if (!response.ok) {

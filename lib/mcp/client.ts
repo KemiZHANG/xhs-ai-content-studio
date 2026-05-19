@@ -56,7 +56,7 @@ export class McpHttpClient {
           protocolVersion: "2024-11-05",
           capabilities: {},
           clientInfo: {
-            name: "xhs-content-studio",
+            name: "xhs-ai-content-studio",
             version: "0.1.0"
           }
         },

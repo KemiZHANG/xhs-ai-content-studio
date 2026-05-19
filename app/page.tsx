@@ -722,7 +722,7 @@ export default function Home() {
             <Sparkles size={20} />
           </div>
           <div>
-            <div className="brandTitle">XHS Studio</div>
+            <div className="brandTitle">XHS AI Studio</div>
             <div className="brandSubtitle">本地内容中台</div>
           </div>
         </div>

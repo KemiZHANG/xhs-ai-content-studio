@@ -1,8 +1,8 @@
-# XHS Studio 小红书内容中台
+# XHS AI Content Studio 小红书 AI 内容中台
 
 ## 中文说明
 
-XHS Studio 是一个本地运行的小红书内容中台。它把小红书 MCP、AI 文本模型、AI 图片模型和网页 UI 组合在一起，用来完成从选题研究、爆款证据分析、文案生成、图片生成到发布装配的完整流程。
+XHS AI Content Studio 是一个本地运行的小红书内容中台。它把小红书 MCP、AI 文本模型、AI 图片模型和网页 UI 组合在一起，用来完成从选题研究、爆款证据分析、文案生成、图片生成到发布装配的完整流程。
 
 > 适用场景：小红书运营、品牌种草、产品内容创作、探店内容分析、爆款笔记拆解、图文笔记生成与发布前整理。
 
@@ -58,8 +58,8 @@ XHS Studio 是一个本地运行的小红书内容中台。它把小红书 MCP�
 #### 1. 克隆项目
 
 ```powershell
-git clone https://github.com/KemiZHANG/xhs.git
-cd xhs
+git clone https://github.com/KemiZHANG/xhs-ai-content-studio.git
+cd xhs-ai-content-studio
 ```
 
 #### 2. 安装依赖
@@ -183,7 +183,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1
 
 ## English Guide
 
-XHS Studio is a local Xiaohongshu content operations workspace. It combines a Xiaohongshu MCP service, AI text models, AI image models, and a web UI to support topic research, viral post analysis, copy generation, image generation, final assembly, and publishing.
+XHS AI Content Studio is a local Xiaohongshu content operations workspace. It combines a Xiaohongshu MCP service, AI text models, AI image models, and a web UI to support topic research, viral post analysis, copy generation, image generation, final assembly, and publishing.
 
 > Use cases: Xiaohongshu operations, brand seeding, product content creation, post research, viral note analysis, image-text note generation, and publishing preparation.
 
@@ -239,8 +239,8 @@ The default model settings provide Gemini and OpenAI presets. Most users only ne
 #### 1. Clone The Repository
 
 ```powershell
-git clone https://github.com/KemiZHANG/xhs.git
-cd xhs
+git clone https://github.com/KemiZHANG/xhs-ai-content-studio.git
+cd xhs-ai-content-studio
 ```
 
 #### 2. Install Dependencies

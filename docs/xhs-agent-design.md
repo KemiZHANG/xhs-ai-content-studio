@@ -1,8 +1,8 @@
-# XHS Studio Agent 设计说明
+# XHS AI Content Studio Agent 设计说明
 
 ## 目标
 
-XHS Studio 的核心不是“让模型凭空写一篇小红书”，而是做一个有证据链的内容运营 Agent：
+XHS AI Content Studio 的核心不是“让模型凭空写一篇小红书”，而是做一个有证据链的内容运营 Agent：
 
 1. 根据用户在 AI 对话或一键发帖中输入的主题，先搜索真实小红书笔记。
 2. 提取标题、作者、点赞、收藏、评论、分享、图片、详情和评论片段。
