@@ -1,334 +1,67 @@
 "use client";
 
 import {
-  Bot,
-  CheckCircle2,
   ClipboardList,
   Database,
   FileCheck2,
-  History,
-  ImagePlus,
   MessageSquareText,
-  Play,
   RefreshCw,
   Rocket,
-  Save,
-  Search,
   Settings,
   ShieldCheck,
-  Sparkles,
-  Upload,
-  X
+  Sparkles
 } from "lucide-react";
-import { ClipboardEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { buildCopyCreativeBrief, buildDraftPromptFromBrief, buildImageCreativeBrief } from "@/lib/workflows/creative-briefs";
-import {
-  applyImageProviderPreset,
-  applyTextProviderPreset,
-  inferImageProviderPreset,
-  inferTextProviderPreset,
-  modelProviderPresets,
-  type ModelProviderPreset
-} from "@/lib/models/presets";
+import { modelProviderPresets } from "@/lib/models/presets";
 import { parseTagsText } from "@/lib/publishing/assembly";
 import {
-  AccountStatusCard,
   AssetsPanel,
-  ChatPanel,
   Dashboard,
   HistoryPanel,
-  ImageStudioPanel,
   JobsPanel,
   PublishAuditPanel,
-  PublishAssemblyPanel,
-  SettingsPanel,
-  StatusPill,
   WorkflowPanel,
-  WorkflowRibbon,
+  WorkflowRibbon
+} from "@/app/components/xhs-panels";
+import { AccountStatusCard } from "@/app/components/account-status-card";
+import { ChatPanel } from "@/app/components/chat-workbench";
+import { StatusPill } from "@/app/components/status-badges";
+import { SettingsPanel } from "@/app/components/settings-panel";
+import { PublishAssemblyPanel } from "@/app/components/publish-assembly-panel";
+import { ImageStudioPanel } from "@/app/components/image-studio-panel";
+import {
   buildClientEvidenceContext,
   normalizeLocalDatetimeForApi,
   subtitleForSection,
   titleForSection,
   uniqueIds
-} from "@/app/components/xhs-panels";
+} from "@/app/components/xhs-display-utils";
+import { clientApi, clientFormDataApi } from "@/app/client/api";
+import { useJobStream } from "@/app/hooks/use-job-stream";
+import { useSettingsHealth } from "@/app/hooks/use-settings-health";
 
-export type Section = "dashboard" | "workflow" | "jobs" | "assets" | "imageStudio" | "chat" | "publish" | "audit" | "history" | "settings";
-export type ImageStudioMode = "ai" | "card";
-export type CardTheme = "sketch" | "default" | "professional" | "retro" | "terminal" | "botanical" | "neo-brutalism" | "playful-geometric";
-export type CardPaginationMode = "separator" | "auto-split" | "auto-fit" | "dynamic";
-
-export type RedactedSettings = {
-  mcpUrl: string;
-  textBaseUrl: string;
-  textModel: string;
-  textApiKey: "configured" | "missing";
-  imageBaseUrl: string;
-  imageModel: string;
-  imageApiKey: "configured" | "missing";
-  actionToken: string;
-  defaultVisibility: "公开可见" | "仅自己可见" | "仅互关好友可见";
-  defaultAutoPublish: boolean;
-  agentPublishPolicy: "draft_only" | "review_required" | "auto_publish_allowed";
-  dailyTextCallLimit: number;
-  dailyImageCallLimit: number;
-  maxResearchSamples: number;
-  activeAccountId: string;
-  accounts: XhsAccountProfile[];
-};
-
-export type XhsAccountProfile = {
-  id: string;
-  displayName: string;
-  mcpUrl: string;
-  status: "unknown" | "logged_in" | "logged_out";
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type SettingsDraft = Omit<RedactedSettings, "textApiKey" | "imageApiKey" | "actionToken"> & {
-  textApiKey: string;
-  imageApiKey: string;
-};
-
-export type Health = {
-  ok: boolean;
-  reachable: boolean;
-  loggedIn: boolean;
-  message: string;
-  mcpUrl?: string;
-  activeAccount?: XhsAccountProfile & { loginName?: string };
-};
-
-export type WorkflowStep = {
-  id: string;
-  label: string;
-  status: "done" | "skipped" | "failed";
-  detail: string;
-};
-
-export type WorkflowResult = {
-  status: string;
-  steps: WorkflowStep[];
-  samples: WorkflowSample[];
-  evidence?: SampleEvidence[];
-  researchSummary?: ResearchSummary | null;
-  report: string;
-  imageStyleReport?: string;
-  draft: null | {
-    title: string;
-    content: string;
-    tags: string[];
-    structure: string[];
-    imagePrompt: string;
-  };
-  images: Array<{ path?: string; url?: string }>;
-  publishResult: unknown;
-};
-
-export type ResearchSummary = {
-  contentStrengths: string[];
-  imageStrengths: string[];
-  learningsForContent: string[];
-  learningsForImages: string[];
-  nextQuestions: string[];
-};
-
-export type SampleEvidence = {
-  id: string;
-  title: string;
-  author: string;
-  likes: number;
-  collects: number;
-  comments: number;
-  shares: number;
-  score: number;
-  url: string;
-  imageUrls: string[];
-  cachedImageUrls?: string[];
-  detailText: string;
-  commentSnippets: string[];
-  reasonHighlights: string[];
-};
-
-export type WorkflowSample = {
-  id: string;
-  title: string;
-  score: number;
-  likes?: number;
-  collects?: number;
-  comments?: number;
-  shares?: number;
-  xsecToken?: string;
-  author?: string;
-  url?: string;
-  raw?: unknown;
-};
-
-export type WorkflowRun = {
-  id: string;
-  createdAt: string;
-  input: {
-    topic: string;
-    contentType: string;
-    timeRange: string;
-    sampleCount: number;
-    visibility: string;
-    autoPublish: boolean;
-    workflowGoal?: "research" | "draft";
-    publishMode?: "draft" | "material" | "publish" | "schedule";
-    analyzeImages?: boolean;
-    generateImages?: boolean;
-    scheduleAt?: string;
-    requirements?: string;
-  };
-  result: WorkflowResult;
-};
-
-export type JobRecord = {
-  id: string;
-  type: string;
-  title: string;
-  status: "queued" | "running" | "completed" | "failed";
-  progress: number;
-  createdAt: string;
-  updatedAt: string;
-  input: unknown;
-  steps: WorkflowStep[];
-  publish?: {
-    title?: string;
-    content?: string;
-    tags?: string[];
-    images?: string[];
-    visibility?: string;
-    scheduleAt?: string;
-    status?: string;
-    result?: unknown;
-    error?: string;
-  };
-  result?: WorkflowResult;
-  error?: string;
-};
-
-export type AssetRecord = {
-  id: string;
-  kind: "upload" | "generated";
-  name: string;
-  originalName: string;
-  mimeType: string;
-  size: number;
-  createdAt: string;
-  prompt?: string;
-  sourceAssetIds?: string[];
-};
-
-export type ChatMessage = {
-  id?: string;
-  role: "user" | "assistant";
-  content: string;
-  createdAt?: string;
-  workflowResult?: WorkflowResult;
-};
-
-export type ChatConversation = {
-  id: string;
-  title: string;
-  createdAt: string;
-  updatedAt: string;
-  messages: ChatMessage[];
-};
-
-export type DraftRecord = {
-  id: string;
-  updatedAt: string;
-  draft: NonNullable<WorkflowResult["draft"]>;
-  images: Array<{ path?: string; url?: string }>;
-  visibility: RedactedSettings["defaultVisibility"];
-};
-
-export type WorkspacePublishPlan = {
-  id?: string;
-  status?: string;
-  title?: string;
-  content?: string;
-  tags?: string[];
-  images?: string[];
-  visibility?: string;
-  scheduleAt?: string;
-  requestedAt?: string;
-  requestedBy?: string;
-};
-
-export type WorkspaceState = {
-  topic?: string;
-  researchRunId?: string;
-  evidenceSummary?: ResearchSummary | unknown;
-  selectedSamples: SampleEvidence[] | unknown[];
-  currentDraftId?: string;
-  currentDraft?: DraftRecord | null;
-  selectedImageIds: string[];
-  productImageIds: string[];
-  publishPlan?: WorkspacePublishPlan | null;
-  lastUserIntent?: string;
-  recentJobIds: string[];
-  recentRunIds: string[];
-  recentConversationIds: string[];
-};
-
-export type CreatorMemoryProfile = {
-  liked: Array<{ text: string }>;
-  disliked: Array<{ text: string }>;
-  tone: Array<{ text: string }>;
-  tags: Array<{ name: string }>;
-  products: Array<{ description: string }>;
-};
-
-export type PublishDraftState = {
-  title: string;
-  content: string;
-  tagsText: string;
-  imagePrompt: string;
-};
-
-export type PublishPayload = {
-  title: string;
-  content: string;
-  tags: string[];
-  assetIds: string[];
-  visibility: RedactedSettings["defaultVisibility"];
-  scheduleAt?: string;
-  imagePrompt: string;
-};
-
-export type PendingPublishConfirmation = {
-  payload: PublishPayload;
-  publishIntentId: string;
-  mode: "now" | "schedule";
-  createdAt: string;
-  accountId: string;
-  accountDisplayName: string;
-  mcpUrl: string;
-  loginName?: string;
-};
-
-export type PublishAuditRecord = {
-  id: string;
-  createdAt: string;
-  event: string;
-  status: string;
-  requestedBy: string;
-  title: string;
-  contentHash: string;
-  tags: string[];
-  imageCount: number;
-  visibility: string;
-  scheduleAt?: string;
-  accountId?: string;
-  mcpUrl?: string;
-  publishIntentId?: string;
-  idempotencyKeySuffix?: string;
-  reasons: string[];
-  resultSummary?: string;
-};
+import type {
+  AssetRecord,
+  CardPaginationMode,
+  CardTheme,
+  ChatConversation,
+  ChatMessage,
+  CreatorMemoryProfile,
+  DraftRecord,
+  Health,
+  ImageStudioMode,
+  JobRecord,
+  PendingPublishConfirmation,
+  PublishAuditRecord,
+  PublishDraftState,
+  PublishPayload,
+  RedactedSettings,
+  Section,
+  WorkflowResult,
+  WorkflowRun,
+  WorkspaceState
+} from "@/app/types";
 
 const navItems: Array<{ id: Section; label: string; icon: typeof ClipboardList }> = [
   { id: "chat", label: "AI 工作台", icon: MessageSquareText },
@@ -368,22 +101,8 @@ const defaultSettings: RedactedSettings = {
   ]
 };
 
-let clientActionToken = "";
-
-function toSettingsDraft(settings: RedactedSettings): SettingsDraft {
-  const { actionToken: _actionToken, textApiKey: _textApiKey, imageApiKey: _imageApiKey, ...draft } = settings;
-  return {
-    ...draft,
-    textApiKey: "",
-    imageApiKey: ""
-  };
-}
-
 export default function Home() {
   const [section, setSection] = useState<Section>("chat");
-  const [settings, setSettings] = useState<RedactedSettings>(defaultSettings);
-  const [settingsDraft, setSettingsDraft] = useState<SettingsDraft>(toSettingsDraft(defaultSettings));
-  const [health, setHealth] = useState<Health | null>(null);
   const [runs, setRuns] = useState<WorkflowRun[]>([]);
   const [jobs, setJobs] = useState<JobRecord[]>([]);
   const [publishAudits, setPublishAudits] = useState<PublishAuditRecord[]>([]);
@@ -454,13 +173,32 @@ export default function Home() {
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string>("");
+  const {
+    settings,
+    setSettings,
+    settingsDraft,
+    setSettingsDraft,
+    health,
+    settingsBusy,
+    modelReady,
+    imageReady,
+    loadSettings,
+    checkHealth,
+    saveSettings,
+    switchActiveAccount
+  } = useSettingsHealth(defaultSettings, {
+    onNotice: setNotice,
+    onBeforeAccountSwitch: () => {
+      setPendingPublish(null);
+      setPublishStatus("账号已切换，请重新生成发布确认单。");
+    },
+    onAfterAccountSwitch: () => loadCreatorMemory()
+  });
+  const activeBusy = settingsBusy ?? busy;
 
   useEffect(() => {
     void loadInitial();
   }, []);
-
-  const modelReady = settings.textApiKey === "configured";
-  const imageReady = settings.imageApiKey === "configured";
 
   const latestRun = useMemo(() => runs[0], [runs]);
   const activeJob = useMemo(
@@ -486,105 +224,14 @@ export default function Home() {
     ]);
   }
 
-  useEffect(() => {
-    if (!hasRunningJobs) return;
-
-    let fallbackTimer: number | null = null;
-    const events = new EventSource("/api/jobs/stream");
-
-    events.addEventListener("jobs", (event) => {
-      try {
-        const payload = JSON.parse((event as MessageEvent).data) as {
-          jobs: JobRecord[];
-          workspace?: WorkspaceState;
-        };
-        void applyJobsSnapshot(payload.jobs, payload.workspace);
-      } catch {
-        void loadJobs();
-      }
-    });
-
-    events.onerror = () => {
-      events.close();
-      fallbackTimer = window.setInterval(() => {
-        void loadJobs();
-      }, 2500);
-    };
-
-    return () => {
-      events.close();
-      if (fallbackTimer) {
-        window.clearInterval(fallbackTimer);
-      }
-    };
-  }, [hasRunningJobs, autoReturnJobId, autoReturnTarget]);
-
-  async function loadSettings() {
-    const data = (await api("/api/settings")) as RedactedSettings;
-    clientActionToken = data.actionToken;
-    setSettings(data);
-    setSettingsDraft(toSettingsDraft(data));
-  }
-
-  async function checkHealth() {
-    setBusy("health");
-    try {
-      const data = (await api("/api/health/mcp")) as Health;
-      setHealth(data);
-      if (data.activeAccount) {
-        setSettings((current) => ({
-          ...current,
-          mcpUrl: data.mcpUrl ?? current.mcpUrl,
-          accounts: current.accounts.map((account) =>
-            account.id === data.activeAccount?.id
-              ? {
-                  ...account,
-                  status: data.loggedIn ? "logged_in" : "logged_out",
-                  updatedAt: new Date().toISOString()
-                }
-              : account
-          )
-        }));
-      }
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function switchActiveAccount(accountId: string) {
-    const nextAccount = settings.accounts.find((account) => account.id === accountId);
-    if (!nextAccount || nextAccount.id === settings.activeAccountId) {
-      return;
-    }
-
-    setBusy("account-switch");
-    setNotice("");
-    setPendingPublish(null);
-    setPublishStatus("账号已切换，请重新生成发布确认单。");
-    try {
-      const data = (await api("/api/settings", {
-        method: "POST",
-        body: JSON.stringify({
-          ...settings,
-          activeAccountId: nextAccount.id,
-          mcpUrl: nextAccount.mcpUrl,
-          accounts: settings.accounts
-        })
-      })) as RedactedSettings;
-      clientActionToken = data.actionToken;
-      setSettings(data);
-      setSettingsDraft(toSettingsDraft(data));
-      setHealth(null);
-      setNotice(`已切换到 ${nextAccount.displayName}，正在重新检测登录状态。`);
-      await checkHealth();
-      await loadCreatorMemory();
-    } finally {
-      setBusy(null);
-    }
-  }
+  useJobStream({
+    enabled: hasRunningJobs,
+    onSnapshot: applyJobsSnapshot,
+    onFallbackPoll: loadJobs
+  });
 
   async function loadHistory() {
-    const data = (await api("/api/history")) as { runs: WorkflowRun[] };
+    const data = await clientApi<{ runs: WorkflowRun[] }>("/api/history");
     setRuns(data.runs);
     const latestResearch = data.runs.find((run) => run.result.status === "research_ready" || run.result.researchSummary);
     if (latestResearch?.result) {
@@ -593,12 +240,12 @@ export default function Home() {
   }
 
   async function loadJobs() {
-    const data = (await api("/api/jobs")) as { jobs: JobRecord[] };
+    const data = (await clientApi("/api/jobs")) as { jobs: JobRecord[] };
     await applyJobsSnapshot(data.jobs);
   }
 
   async function loadPublishAudit() {
-    const data = (await api("/api/publish/audit")) as { audit: PublishAuditRecord[] };
+    const data = (await clientApi("/api/publish/audit")) as { audit: PublishAuditRecord[] };
     setPublishAudits(data.audit);
   }
 
@@ -638,19 +285,19 @@ export default function Home() {
   }
 
   async function loadAssets() {
-    const data = (await api("/api/assets")) as { assets: AssetRecord[] };
+    const data = (await clientApi("/api/assets")) as { assets: AssetRecord[] };
     setAssets(data.assets);
   }
 
   async function loadCurrentDraft() {
-    const data = (await api("/api/drafts/current")) as { currentDraft: DraftRecord | null };
+    const data = (await clientApi("/api/drafts/current")) as { currentDraft: DraftRecord | null };
     if (data.currentDraft) {
       applyCurrentDraft(data.currentDraft);
     }
   }
 
   async function loadWorkspace() {
-    const data = (await api("/api/agent/workspace")) as { workspace: WorkspaceState };
+    const data = (await clientApi("/api/agent/workspace")) as { workspace: WorkspaceState };
     setWorkspace(data.workspace);
     if (data.workspace.currentDraft) {
       applyCurrentDraft(data.workspace.currentDraft);
@@ -659,12 +306,12 @@ export default function Home() {
   }
 
   async function loadCreatorMemory() {
-    const data = (await api("/api/agent/memory")) as { memory: CreatorMemoryProfile };
+    const data = (await clientApi("/api/agent/memory")) as { memory: CreatorMemoryProfile };
     setCreatorMemory(data.memory);
   }
 
   async function patchWorkspace(patch: Partial<WorkspaceState>) {
-    const data = (await api("/api/agent/workspace", {
+    const data = (await clientApi("/api/agent/workspace", {
       method: "PATCH",
       body: JSON.stringify(patch)
     })) as { workspace: WorkspaceState };
@@ -702,29 +349,11 @@ export default function Home() {
   }
 
   async function loadChatHistory() {
-    const data = (await api("/api/chat/history")) as { conversations: ChatConversation[] };
+    const data = (await clientApi("/api/chat/history")) as { conversations: ChatConversation[] };
     setChatConversations(data.conversations);
     if (!activeConversationId && data.conversations[0]) {
       setActiveConversationId(data.conversations[0].id);
       setMessages(data.conversations[0].messages);
-    }
-  }
-
-  async function saveSettings(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setBusy("settings");
-    setNotice("");
-    try {
-      const data = (await api("/api/settings", {
-        method: "POST",
-        body: JSON.stringify(settingsDraft)
-      })) as RedactedSettings;
-      clientActionToken = data.actionToken;
-      setSettings(data);
-      setSettingsDraft(toSettingsDraft(data));
-      setNotice("设置已保存");
-    } finally {
-      setBusy(null);
     }
   }
 
@@ -744,7 +373,7 @@ export default function Home() {
         assetIds: [] as string[],
         visibility: settings.defaultVisibility
       };
-      const data = (await api("/api/jobs", {
+      const data = (await clientApi("/api/jobs", {
         method: "POST",
         body: JSON.stringify(researchInput)
       })) as { job: JobRecord };
@@ -781,15 +410,7 @@ export default function Home() {
       for (const file of imageFiles) {
         const form = new FormData();
         form.set("file", file);
-        const headers = new Headers();
-        if (clientActionToken) {
-          headers.set("X-XHS-Action-Token", clientActionToken);
-        }
-        const data = (await fetch("/api/assets", { method: "POST", body: form, headers }).then(async (response) => {
-          const payload = await response.json();
-          if (!response.ok) throw new Error(payload.error ?? "上传失败");
-          return payload;
-        })) as { asset: AssetRecord };
+        const data = await clientFormDataApi<{ asset: AssetRecord }>("/api/assets", form);
         uploadedIds.push(data.asset.id);
       }
       await loadAssets();
@@ -840,7 +461,7 @@ export default function Home() {
 
     setBusy("asset-generate");
     try {
-      const data = (await api("/api/assets/generate", {
+      const data = (await clientApi("/api/assets/generate", {
         method: "POST",
         body: JSON.stringify({
           assetIds,
@@ -876,7 +497,7 @@ export default function Home() {
 
     setBusy("card-generate");
     try {
-      const data = (await api("/api/assets/cards", {
+      const data = (await clientApi("/api/assets/cards", {
         method: "POST",
         body: JSON.stringify({
           title,
@@ -903,7 +524,7 @@ export default function Home() {
   }
 
   async function deleteAsset(id: string) {
-    await api(`/api/assets/${id}`, { method: "DELETE" });
+    await clientApi(`/api/assets/${id}`, { method: "DELETE" });
     await loadAssets();
   }
 
@@ -935,7 +556,7 @@ export default function Home() {
     setBusy("chat");
 
     try {
-      const data = (await api("/api/chat", {
+      const data = (await clientApi("/api/chat", {
         method: "POST",
         body: JSON.stringify({ message: content, conversationId: activeConversationId, assetIds })
       })) as {
@@ -1046,7 +667,7 @@ export default function Home() {
         scheduleAt: normalizeLocalDatetimeForApi(scheduleAt),
         imagePrompt: publishDraft.imagePrompt
       };
-      let data = (await api("/api/publish", {
+      let data = (await clientApi("/api/publish", {
         method: "POST",
         body: JSON.stringify(publishPayload)
       })) as {
@@ -1093,7 +714,7 @@ export default function Home() {
     setBusy("publish");
     setPublishStatus("");
     try {
-      const data = (await api("/api/publish", {
+      const data = (await clientApi("/api/publish", {
         method: "POST",
         body: JSON.stringify({
           ...pendingPublish.payload,
@@ -1173,7 +794,7 @@ export default function Home() {
         <AccountStatusCard
           settings={settings}
           health={health}
-          busy={busy === "health" || busy === "account-switch"}
+          busy={settingsBusy === "health" || settingsBusy === "account-switch"}
           onRefresh={() => void checkHealth()}
           onManage={() => setSection("settings")}
           onSwitch={(accountId) => void switchActiveAccount(accountId)}
@@ -1209,7 +830,7 @@ export default function Home() {
             </div>
             {notice ? <span className="notice">{notice}</span> : null}
             <button className="iconButton" onClick={() => void checkHealth()} type="button" title="刷新 MCP 状态" aria-label="刷新 MCP 状态">
-              <RefreshCw size={18} className={busy === "health" ? "spin" : ""} />
+              <RefreshCw size={18} className={settingsBusy === "health" ? "spin" : ""} />
             </button>
           </div>
         </header>
@@ -1241,7 +862,7 @@ export default function Home() {
             modelReady={modelReady}
             imageReady={imageReady}
             latestRun={latestRun}
-            busy={busy}
+            busy={activeBusy}
             onRefresh={() => void checkHealth()}
           />
         ) : null}
@@ -1422,7 +1043,7 @@ export default function Home() {
           <SettingsPanel
             settings={settings}
             draft={settingsDraft}
-            busy={busy === "settings"}
+            busy={settingsBusy === "settings"}
             onChange={setSettingsDraft}
             onSubmit={(event) => void saveSettings(event)}
           />
@@ -1430,53 +1051,4 @@ export default function Home() {
       </section>
     </main>
   );
-}
-
-async function api(path: string, init?: RequestInit, options: { retriedActionToken?: boolean } = {}): Promise<unknown> {
-  const headers = new Headers(init?.headers);
-  if (!(init?.body instanceof FormData) && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
-  }
-  if (clientActionToken && !headers.has("X-XHS-Action-Token")) {
-    headers.set("X-XHS-Action-Token", clientActionToken);
-  }
-
-  const response = await fetch(path, {
-    ...init,
-    headers
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (
-    response.status === 403 &&
-    !options.retriedActionToken &&
-    typeof data.error === "string" &&
-    data.error.includes("令牌") &&
-    (await refreshActionToken())
-  ) {
-    return api(path, init, { retriedActionToken: true });
-  }
-  if (!response.ok) {
-    throw new Error(data.error ?? "请求失败");
-  }
-
-  return data;
-}
-
-async function refreshActionToken(): Promise<boolean> {
-  const response = await fetch("/api/settings", {
-    headers: {
-      Accept: "application/json"
-    }
-  });
-  if (!response.ok) {
-    return false;
-  }
-
-  const data = (await response.json()) as Partial<RedactedSettings>;
-  if (!data.actionToken) {
-    return false;
-  }
-  clientActionToken = data.actionToken;
-  return true;
 }

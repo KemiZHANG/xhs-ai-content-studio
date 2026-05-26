@@ -1376,9 +1376,11 @@ textarea {
 }
 
 .chatLayout {
+  align-items: stretch;
   display: grid;
   gap: 14px;
   grid-template-columns: 210px minmax(0, 1fr) 340px;
+  min-height: min(780px, calc(100dvh - 132px));
 }
 
 .chatHistoryPanel {
@@ -1388,7 +1390,9 @@ textarea {
   box-shadow: var(--shadow-soft);
   display: grid;
   gap: 12px;
-  align-self: start;
+  align-self: stretch;
+  max-height: calc(100dvh - 132px);
+  min-height: 0;
   padding: 16px;
   position: sticky;
   top: 18px;
@@ -1430,15 +1434,24 @@ textarea {
 .chatPanel {
   display: flex;
   flex-direction: column;
-  height: clamp(620px, calc(100dvh - 246px), 760px);
+  height: min(780px, calc(100dvh - 132px));
   min-height: 0;
+  position: sticky;
+  top: 18px;
+}
+
+.chatPanel > .panelHeader,
+.currentDraftStrip,
+.composerDock {
+  flex: 0 0 auto;
 }
 
 .workspaceCanvas {
-  align-self: start;
+  align-self: stretch;
   display: grid;
   gap: 10px;
-  max-height: calc(100vh - 96px);
+  max-height: calc(100dvh - 132px);
+  min-height: 0;
   overflow: auto;
   position: sticky;
   top: 18px;
@@ -1908,6 +1921,7 @@ textarea {
   border-radius: 10px;
   box-shadow: 0 -10px 34px rgba(12, 32, 27, 0.08);
   display: grid;
+  flex: 0 0 auto;
   gap: 10px;
   margin-top: 12px;
   padding: 10px;
@@ -2640,6 +2654,7 @@ textarea {
   .chatPanel {
     height: calc(100dvh - 24px);
     min-height: 560px;
+    position: static;
   }
 
   .composerMeta {
