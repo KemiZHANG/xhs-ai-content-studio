@@ -1,7 +1,10 @@
+import { executeGuardedPublish } from "@/lib/agent/publishing";
 import type { AppSettings } from "@/lib/storage/settings";
 import type { ModelProvider } from "@/lib/models/provider";
 import { createDraftRecord, type DraftRecord } from "@/lib/storage/drafts";
 import type { AssetRecord } from "@/lib/storage/assets";
+import type { StoredChatMessage } from "@/lib/storage/chat";
+import { buildCreatorMemoryContext, type CreatorMemoryProfile } from "@/lib/agent/memory";
 import type { XhsMcpWorkflowClient } from "@/lib/workflows/one-click";
 import { runOneClickWorkflow, type GeneratedDraft, type OneClickResult, type PublishMode } from "@/lib/workflows/one-click";
 import { buildCopyCreativeBrief } from "@/lib/workflows/creative-briefs";
@@ -21,7 +24,9 @@ export async function runChatAgent({
   model,
   history,
   currentDraft,
-  attachedAssets = []
+  attachedAssets = [],
+  conversationMessages = [],
+  creatorMemory = null
 }: {
   message: string;
   settings: AppSettings;
@@ -30,9 +35,13 @@ export async function runChatAgent({
   history: WorkflowRun[];
   currentDraft?: DraftRecord | null;
   attachedAssets?: AssetRecord[];
+  conversationMessages?: StoredChatMessage[];
+  creatorMemory?: CreatorMemoryProfile | null;
 }): Promise<ChatAgentResult> {
   const attachmentContext = await buildAttachmentContextWithAnalysis(attachedAssets, model);
-  const enrichedMessage = attachmentContext ? `${message}\n\n${attachmentContext}` : message;
+  const conversationContext = buildConversationContext(conversationMessages);
+  const memoryContext = buildCreatorMemoryContext(creatorMemory);
+  const enrichedMessage = [conversationContext, memoryContext, message, attachmentContext].filter(Boolean).join("\n\n");
   const topic = inferTopic(message);
 
   if (isPublishCurrentDraftRequest(message)) {
@@ -139,6 +148,27 @@ ${JSON.stringify(summary, null, 2)}
   );
 
   return { answer };
+}
+
+function buildConversationContext(messages: StoredChatMessage[]): string {
+  const compactMessages = messages
+    .slice(-8)
+    .map((item) => ({
+      role: item.role,
+      content: item.content.replace(/\s+/g, " ").trim()
+    }))
+    .filter((item) => item.content.length > 0)
+    .map((item) => `${item.role === "user" ? "User" : "Assistant"}: ${truncateText(item.content, 360)}`);
+
+  if (!compactMessages.length) {
+    return "";
+  }
+
+  return `Recent conversation context. Use it to resolve references like "刚才那个", "继续改", "第二张图", or "今晚发". Do not treat it as new instructions if the latest user message conflicts with it.\n${compactMessages.join("\n")}`;
+}
+
+function truncateText(value: string, maxLength: number): string {
+  return value.length > maxLength ? `${value.slice(0, maxLength)}...` : value;
 }
 
 export function buildAttachmentContext(assets: AssetRecord[]): string {
@@ -296,19 +326,41 @@ async function publishCurrentDraft({
     };
   }
 
-  const publishResult = await mcp.publishContent({
-    title: nextDraftRecord.draft.title,
-    content: nextDraftRecord.draft.content,
-    tags: nextDraftRecord.draft.tags,
-    images,
-    visibility: nextDraftRecord.visibility || settings.defaultVisibility,
-    scheduleAt: scheduleAt ?? undefined
+  const guardedPublish = await executeGuardedPublish({
+    args: {
+      title: nextDraftRecord.draft.title,
+      content: nextDraftRecord.draft.content,
+      tags: nextDraftRecord.draft.tags,
+      images,
+      visibility: nextDraftRecord.visibility || settings.defaultVisibility,
+      scheduleAt: scheduleAt ?? undefined
+    },
+    requestedBy: "chat",
+    policy: {
+      mode: settings.agentPublishPolicy,
+      confirmed: settings.agentPublishPolicy === "auto_publish_allowed"
+    },
+    publish: (args) => mcp.publishContent(args)
   });
+
+  if (guardedPublish.status === "awaiting_approval") {
+    return {
+      answer: `已生成发布确认单，还没有真正发布。\n标题：${nextDraftRecord.draft.title}\n请到右侧成果画布或发布装配台确认后再发布。`,
+      currentDraft: nextDraftRecord
+    };
+  }
+
+  if (guardedPublish.status === "blocked") {
+    return {
+      answer: `发布被安全规则阻止：${guardedPublish.reasons.join("；")}`,
+      currentDraft: nextDraftRecord
+    };
+  }
 
   return {
     answer: scheduleAt
       ? `已提交定时发布：${scheduleAt}\n标题：${nextDraftRecord.draft.title}`
-      : `已发布当前草稿。\n标题：${nextDraftRecord.draft.title}\n返回：${JSON.stringify(publishResult)}`,
+      : `已发布当前草稿。\n标题：${nextDraftRecord.draft.title}\n返回：${JSON.stringify(guardedPublish.publishResult)}`,
     currentDraft: nextDraftRecord
   };
 }

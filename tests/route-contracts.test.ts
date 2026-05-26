@@ -1,0 +1,626 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import path from "node:path";
+import { defaultSettings } from "@/lib/storage/settings";
+
+const jsonRequest = (body: unknown) =>
+  new Request("http://localhost/test", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+describe("API route contracts", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    vi.doMock("@/lib/security/action-token", () => ({
+      attachActionToken: vi.fn(async (payload: object) => ({ ...payload, actionToken: "test-action-token" })),
+      requireLocalActionToken: vi.fn(async () => null)
+    }));
+    vi.doMock("@/lib/storage/publish-audit", () => ({
+      appendPublishAudit: vi.fn(async (input: object) => ({ id: "audit-1", createdAt: "", ...input })),
+      listPublishAudit: vi.fn(async () => [])
+    }));
+  });
+
+  it("returns a stable one-click validation error shape", async () => {
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings,
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/workflows/one-click", () => ({
+      runOneClickWorkflow: vi.fn()
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({})
+    }));
+    vi.doMock("@/lib/models/provider", () => ({
+      createModelProvider: () => ({})
+    }));
+    vi.doMock("@/lib/storage/history", () => ({
+      appendHistory: vi.fn()
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(),
+      writeCurrentDraft: vi.fn()
+    }));
+
+    const { POST } = await import("@/app/api/workflows/one-click/route");
+    const response = await POST(jsonRequest({ topic: "   " }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload).toEqual({ error: expect.any(String) });
+  });
+
+  it("normalizes one-click research input and forces it to stay non-publishing", async () => {
+    const workflowResult = {
+      status: "research_ready",
+      steps: [],
+      samples: [],
+      evidence: [],
+      researchSummary: null,
+      report: "",
+      imageStyleReport: "",
+      draft: null,
+      images: [],
+      publishResult: { skipped: true }
+    };
+    const runOneClickWorkflow = vi.fn(async () => workflowResult);
+    const appendHistory = vi.fn(async (input, result) => ({
+      id: "run-1",
+      createdAt: "2026-05-21T00:00:00.000Z",
+      input,
+      result
+    }));
+    const writeCurrentDraft = vi.fn();
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => ({
+        ...defaultSettings,
+        defaultAutoPublish: false,
+        defaultVisibility: "private"
+      }),
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/workflows/one-click", () => ({
+      runOneClickWorkflow
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({ service: "mcp" })
+    }));
+    vi.doMock("@/lib/models/provider", () => ({
+      createModelProvider: () => ({ service: "model" })
+    }));
+    vi.doMock("@/lib/storage/history", () => ({
+      appendHistory
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(),
+      writeCurrentDraft
+    }));
+
+    const { POST } = await import("@/app/api/workflows/one-click/route");
+    const response = await POST(
+      jsonRequest({
+        topic: "coffee",
+        workflowGoal: "research",
+        publishMode: "schedule",
+        autoPublish: true,
+        generateImages: true,
+        scheduleAt: "2026-05-21T20:00:00+08:00",
+        sampleCount: "4",
+        imageSource: "product",
+        assetIds: [1, "asset-2"],
+        productName: "beans",
+        sellingPoints: "fresh",
+        scene: "desk",
+        style: "realistic",
+        extraImagePrompt: "warm light"
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toEqual({ run: expect.objectContaining({ id: "run-1" }), result: workflowResult });
+    expect(runOneClickWorkflow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.objectContaining({
+          topic: "coffee",
+          workflowGoal: "research",
+          publishMode: "draft",
+          autoPublish: false,
+          generateImages: false,
+          scheduleAt: undefined,
+          sampleCount: 4,
+          imageSource: "ai",
+          assetIds: [],
+          productName: "beans",
+          sellingPoints: "fresh",
+          scene: "desk",
+          style: "realistic",
+          extraImagePrompt: "warm light"
+        })
+      })
+    );
+    expect(appendHistory).toHaveBeenCalledWith(expect.objectContaining({ topic: "coffee" }), workflowResult);
+    expect(writeCurrentDraft).not.toHaveBeenCalled();
+  });
+
+  it("redacts local absolute paths from the assets list route", async () => {
+    vi.doMock("@/lib/storage/assets", () => ({
+      toPublicAssetRecord: (asset: { id: string; kind: string; name: string; originalName: string; mimeType: string; size: number; createdAt: string; sourceAssetIds?: string[] }) => ({
+        id: asset.id,
+        kind: asset.kind,
+        name: asset.name,
+        originalName: asset.originalName,
+        mimeType: asset.mimeType,
+        size: asset.size,
+        createdAt: asset.createdAt,
+        sourceAssetIds: asset.sourceAssetIds,
+        url: `/api/assets/file/${asset.id}`
+      }),
+      listAssets: vi.fn(async () => [
+        {
+          id: "asset-1",
+          kind: "upload",
+          name: "cover",
+          originalName: "cover.png",
+          absolutePath: "C:\\Users\\someone\\secret\\cover.png",
+          mimeType: "image/png",
+          size: 10,
+          createdAt: "2026-05-21T00:00:00.000Z",
+          prompt: "hidden internal prompt"
+        }
+      ]),
+      createAssetRecord: vi.fn(),
+      saveAsset: vi.fn(),
+      uploadDir: vi.fn()
+    }));
+
+    const { GET } = await import("@/app/api/assets/route");
+    const response = await GET();
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.assets[0]).toEqual(
+      expect.objectContaining({
+        id: "asset-1",
+        url: "/api/assets/file/asset-1"
+      })
+    );
+    expect(JSON.stringify(payload)).not.toContain("absolutePath");
+    expect(JSON.stringify(payload)).not.toContain("C:\\Users");
+  });
+
+  it("returns a stable chat validation error shape", async () => {
+    const { POST } = await import("@/app/api/chat/route");
+    const response = await POST(jsonRequest({ message: "   " }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload).toEqual({ error: expect.any(String) });
+  });
+
+  it("returns answer and conversation from the direct chat route branch", async () => {
+    const conversation = { id: "chat-1", title: "hello", createdAt: "", updatedAt: "", messages: [] };
+    const runAgentTurn = vi.fn(async () => ({ answer: "agent answer" }));
+    const appendChatTurn = vi.fn(async () => conversation);
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings,
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/storage/history", () => ({
+      listHistory: async () => []
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      readCurrentDraft: async () => null,
+      writeCurrentDraft: vi.fn(),
+      createDraftRecord: vi.fn()
+    }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: vi.fn()
+    }));
+    vi.doMock("@/lib/chat/router", () => ({
+      classifyChatRequest: () => ({ kind: "direct" })
+    }));
+    vi.doMock("@/lib/agent/memory", () => ({
+      readCreatorMemoryProfile: vi.fn(async () => null),
+      updateCreatorMemoryFromTurn: vi.fn(async () => null)
+    }));
+    vi.doMock("@/lib/agent/orchestrator", () => ({
+      runAgentTurn
+    }));
+    vi.doMock("@/lib/storage/chat", () => ({
+      appendChatTurn,
+      getChatConversation: vi.fn(async () => ({
+        ...conversation,
+        messages: [{ id: "msg-1", role: "user", content: "previous context", createdAt: "" }]
+      }))
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({})
+    }));
+    vi.doMock("@/lib/models/provider", () => ({
+      createModelProvider: () => ({})
+    }));
+    vi.doMock("@/lib/workflows/one-click", () => ({
+      runOneClickWorkflow: vi.fn()
+    }));
+
+    const { POST } = await import("@/app/api/chat/route");
+    const response = await POST(jsonRequest({ message: "hello", conversationId: "chat-1" }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toEqual({ answer: "agent answer", conversation });
+    expect(runAgentTurn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "hello",
+        conversationId: "chat-1",
+        conversationMessages: [expect.objectContaining({ content: "previous context" })]
+      })
+    );
+    expect(appendChatTurn).toHaveBeenCalledWith(
+      expect.objectContaining({ conversationId: "chat-1", userContent: "hello", assistantContent: "agent answer" })
+    );
+  });
+
+  it("queues long chat workflow requests as background jobs", async () => {
+    const conversation = { id: "chat-1", title: "coffee", createdAt: "", updatedAt: "", messages: [] };
+    const enqueueWorkflow = vi.fn(async () => ({
+      id: "job-1",
+      type: "workflow",
+      title: "research coffee",
+      status: "queued",
+      progress: 10,
+      createdAt: "",
+      updatedAt: "",
+      input: {},
+      steps: []
+    }));
+    const appendChatTurn = vi.fn(async () => conversation);
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings,
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/storage/history", () => ({
+      listHistory: async () => []
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      readCurrentDraft: async () => null,
+      writeCurrentDraft: vi.fn(),
+      createDraftRecord: vi.fn()
+    }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: vi.fn()
+    }));
+    vi.doMock("@/lib/chat/router", () => ({
+      classifyChatRequest: () => ({
+        kind: "queue-workflow",
+        topic: "coffee",
+        contentType: "探店",
+        timeRange: "一周内",
+        sampleCount: 4,
+        workflowGoal: "research",
+        publishMode: "draft",
+        analyzeImages: true,
+        generateImages: false
+      })
+    }));
+    vi.doMock("@/lib/agent/memory", () => ({
+      readCreatorMemoryProfile: vi.fn(async () => null),
+      updateCreatorMemoryFromTurn: vi.fn(async () => null)
+    }));
+    vi.doMock("@/lib/jobs/runner", () => ({
+      getJobRunner: () => ({ enqueueWorkflow })
+    }));
+    vi.doMock("@/lib/agent/orchestrator", () => ({
+      runAgentTurn: vi.fn()
+    }));
+    vi.doMock("@/lib/storage/chat", () => ({
+      appendChatTurn,
+      getChatConversation: vi.fn(async () => conversation)
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({})
+    }));
+    vi.doMock("@/lib/models/provider", () => ({
+      createModelProvider: () => ({})
+    }));
+    vi.doMock("@/lib/workflows/one-click", () => ({
+      runOneClickWorkflow: vi.fn()
+    }));
+
+    const { POST } = await import("@/app/api/chat/route");
+    const response = await POST(jsonRequest({ message: "research coffee", conversationId: "chat-1" }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toEqual({
+      answer: expect.stringContaining("job-1"),
+      job: expect.objectContaining({ id: "job-1" }),
+      jobId: "job-1",
+      conversation
+    });
+    expect(enqueueWorkflow).toHaveBeenCalledWith(expect.objectContaining({ topic: "coffee" }));
+  });
+
+  it("returns published status and currentDraft from the publish route", async () => {
+    const asset = {
+      id: "asset-1",
+      kind: "upload",
+      name: "image",
+      originalName: "image.png",
+      absolutePath: path.join(process.cwd(), "generated-assets", "uploads", "image.png"),
+      mimeType: "image/png",
+      size: 10,
+      createdAt: "2026-05-21T00:00:00.000Z"
+    };
+    const publishContent = vi.fn(async () => ({ ok: true }));
+    const currentDraft = { id: "draft-1" };
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings,
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: async () => asset
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({ publishContent })
+    }));
+    vi.doMock("@/lib/agent/publishing", () => ({
+      getPublishIntent: vi.fn(),
+      publishIntentMatchesArgs: vi.fn(() => false),
+      executeGuardedPublish: vi.fn(async ({ args, publish }) => ({
+        status: "published",
+        reasons: [],
+        publishIntent: { status: "published" },
+        publishResult: await publish(args)
+      }))
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(() => currentDraft),
+      writeCurrentDraft: vi.fn(async (draft) => draft)
+    }));
+
+    const { POST } = await import("@/app/api/publish/route");
+    const response = await POST(
+      jsonRequest({
+        title: "title",
+        content: "content",
+        tags: ["tag"],
+        assetIds: ["asset-1"],
+        confirmed: true
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toEqual({ status: "published", publishResult: { ok: true }, currentDraft });
+    expect(publishContent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "title",
+        content: "content",
+        tags: ["tag"],
+        images: [path.join(process.cwd(), "generated-assets", "uploads", "image.png")]
+      })
+    );
+  });
+
+  it("returns a dry-run publish preview without calling MCP or writing a draft", async () => {
+    const asset = {
+      id: "asset-1",
+      kind: "upload",
+      name: "image",
+      originalName: "image.png",
+      absolutePath: path.join(process.cwd(), "generated-assets", "uploads", "image.png"),
+      mimeType: "image/png",
+      size: 10,
+      createdAt: "2026-05-21T00:00:00.000Z"
+    };
+    const publishContent = vi.fn(async () => ({ ok: true }));
+    const executeGuardedPublish = vi.fn();
+    const writeCurrentDraft = vi.fn();
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings,
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: async () => asset
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({ publishContent })
+    }));
+    vi.doMock("@/lib/agent/publishing", async () => {
+      const actual = await vi.importActual<typeof import("@/lib/agent/publishing")>("@/lib/agent/publishing");
+      return {
+        ...actual,
+        executeGuardedPublish
+      };
+    });
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(),
+      writeCurrentDraft
+    }));
+
+    const { POST } = await import("@/app/api/publish/route");
+    const response = await POST(
+      jsonRequest({
+        title: "title",
+        content: "content",
+        tags: ["tag"],
+        assetIds: ["asset-1"],
+        dryRun: true
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toEqual(
+      expect.objectContaining({
+        status: "preview",
+        dryRun: true,
+        publishIntent: expect.objectContaining({ status: "draft", accountId: defaultSettings.activeAccountId }),
+        preview: expect.objectContaining({
+          risk: "external_write",
+          requiresConfirmation: true,
+          accountId: defaultSettings.activeAccountId,
+          mcpUrl: defaultSettings.mcpUrl
+        })
+      })
+    );
+    expect(executeGuardedPublish).not.toHaveBeenCalled();
+    expect(publishContent).not.toHaveBeenCalled();
+    expect(writeCurrentDraft).not.toHaveBeenCalled();
+  });
+
+  it("creates a server confirmation intent before review-required publish execution", async () => {
+    const asset = {
+      id: "asset-1",
+      kind: "upload",
+      name: "image",
+      originalName: "image.png",
+      absolutePath: "C:\\xhs\\generated-assets\\uploads\\image.png",
+      mimeType: "image/png",
+      size: 10,
+      createdAt: "2026-05-21T00:00:00.000Z"
+    };
+    const publishContent = vi.fn(async () => ({ ok: true }));
+    const executeGuardedPublish = vi.fn(async ({ policy }) => ({
+      status: policy.confirmed ? "published" : "awaiting_approval",
+      reasons: policy.confirmed ? [] : ["review required before external publishing"],
+      publishIntent: { id: "publish-1", status: policy.confirmed ? "published" : "awaiting_approval" },
+      publishResult: policy.confirmed ? { ok: true } : undefined
+    }));
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings,
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: async () => asset
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({ publishContent })
+    }));
+    vi.doMock("@/lib/agent/publishing", () => ({
+      getPublishIntent: vi.fn(),
+      publishIntentMatchesArgs: vi.fn(() => false),
+      executeGuardedPublish
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(),
+      writeCurrentDraft: vi.fn()
+    }));
+
+    const { POST } = await import("@/app/api/publish/route");
+    const response = await POST(
+      jsonRequest({
+        title: "title",
+        content: "content",
+        tags: ["tag"],
+        assetIds: ["asset-1"],
+        confirmed: true
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(202);
+    expect(payload).toEqual(
+      expect.objectContaining({
+        requiresConfirmation: true,
+        publishIntent: expect.objectContaining({ id: "publish-1" })
+      })
+    );
+    expect(executeGuardedPublish).toHaveBeenCalledWith(expect.objectContaining({ policy: expect.objectContaining({ confirmed: false }) }));
+    expect(publishContent).not.toHaveBeenCalled();
+  });
+
+  it("blocks publish route calls when the publish policy is draft-only", async () => {
+    const asset = {
+      id: "asset-1",
+      kind: "upload",
+      name: "image",
+      originalName: "image.png",
+      absolutePath: "C:\\xhs\\generated-assets\\uploads\\image.png",
+      mimeType: "image/png",
+      size: 10,
+      createdAt: "2026-05-21T00:00:00.000Z"
+    };
+    const publishContent = vi.fn(async () => ({ ok: true }));
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings,
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: async () => asset
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({ publishContent })
+    }));
+    vi.doMock("@/lib/agent/publishing", () => ({
+      getPublishIntent: vi.fn(),
+      publishIntentMatchesArgs: vi.fn(() => false),
+      executeGuardedPublish: vi.fn(async () => ({
+        status: "blocked",
+        reasons: ["draft only mode blocks external publishing"],
+        publishIntent: { status: "blocked" }
+      }))
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(),
+      writeCurrentDraft: vi.fn()
+    }));
+
+    const { POST } = await import("@/app/api/publish/route");
+    const response = await POST(
+      jsonRequest({
+        title: "title",
+        content: "content",
+        tags: ["tag"],
+        assetIds: ["asset-1"],
+        publishPolicy: "draft_only"
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload).toEqual(
+      expect.objectContaining({
+        error: expect.stringContaining("draft"),
+        requiresConfirmation: false
+      })
+    );
+    expect(publishContent).not.toHaveBeenCalled();
+  });
+
+  it("blocks asset file reads outside workspace asset folders", async () => {
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: async () => ({
+        id: "asset-1",
+        kind: "upload",
+        name: "settings",
+        originalName: "settings.json",
+        absolutePath: "C:\\outside\\settings.json",
+        mimeType: "application/json",
+        size: 10,
+        createdAt: "2026-05-21T00:00:00.000Z"
+      })
+    }));
+
+    const { GET } = await import("@/app/api/assets/file/[id]/route");
+    const response = await GET(new Request("http://localhost/assets"), {
+      params: Promise.resolve({ id: "asset-1" })
+    });
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload).toEqual({ error: expect.any(String) });
+  });
+});

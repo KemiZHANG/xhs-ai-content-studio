@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { buildImageStudioPrompt } from "@/lib/images/studio";
 import { createModelProvider } from "@/lib/models/provider";
-import { createAssetRecord, getAsset, saveAsset } from "@/lib/storage/assets";
+import { requireLocalActionToken } from "@/lib/security/action-token";
+import { createAssetRecord, getAsset, saveAsset, toPublicAssetRecord } from "@/lib/storage/assets";
 import { readSettings } from "@/lib/storage/settings";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    const authError = await requireLocalActionToken(request);
+    if (authError) return authError;
+
     const body = (await request.json()) as {
       assetIds?: string[];
       productName?: string;
@@ -54,7 +58,7 @@ export async function POST(request: Request) {
       })
     );
 
-    return NextResponse.json({ asset: generated, prompt });
+    return NextResponse.json({ asset: toPublicAssetRecord(generated), prompt });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "生成图片失败" },

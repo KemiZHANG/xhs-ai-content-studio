@@ -1,17 +1,21 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
-import { createAssetRecord, listAssets, saveAsset, uploadDir } from "@/lib/storage/assets";
+import { requireLocalActionToken } from "@/lib/security/action-token";
+import { createAssetRecord, listAssets, saveAsset, toPublicAssetRecord, uploadDir } from "@/lib/storage/assets";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   const assets = await listAssets();
-  return NextResponse.json({ assets });
+  return NextResponse.json({ assets: assets.map(toPublicAssetRecord) });
 }
 
 export async function POST(request: Request) {
   try {
+    const authError = await requireLocalActionToken(request);
+    if (authError) return authError;
+
     const form = await request.formData();
     const file = form.get("file");
 
@@ -40,7 +44,7 @@ export async function POST(request: Request) {
       })
     );
 
-    return NextResponse.json({ asset });
+    return NextResponse.json({ asset: toPublicAssetRecord(asset) });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "上传失败" },

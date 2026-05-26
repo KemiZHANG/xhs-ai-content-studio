@@ -1,5 +1,7 @@
+import { readWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
 import { createModelProvider } from "@/lib/models/provider";
 import { createXhsMcpClient } from "@/lib/mcp/xhs";
+import { upsertGeneratedAssetPaths } from "@/lib/storage/assets";
 import { createDraftRecord, writeCurrentDraft } from "@/lib/storage/drafts";
 import { appendHistory } from "@/lib/storage/history";
 import {
@@ -133,8 +135,12 @@ async function runWorkflowJob(jobId: string, input: OneClickInput): Promise<void
     }
 
     const run = await appendHistory(input, result);
+    const registeredImages = await upsertGeneratedAssetPaths(result.images, {
+      prompt: result.draft?.imagePrompt,
+      sourceAssetIds: input.assetIds
+    });
     if (result.draft) {
-      await writeCurrentDraft(
+      const currentDraft = await writeCurrentDraft(
         createDraftRecord({
           draft: result.draft,
           images: result.images,
@@ -143,6 +149,39 @@ async function runWorkflowJob(jobId: string, input: OneClickInput): Promise<void
           runId: run.id
         })
       );
+      if (!currentDraft) {
+        throw new Error("Failed to persist workflow draft");
+      }
+      const workspace = await readWorkspaceState();
+      await updateWorkspaceState({
+        topic: input.topic,
+        researchRunId: run.id,
+        evidenceSummary: result.researchSummary,
+        selectedSamples: result.evidence,
+        currentDraftId: currentDraft.id,
+        currentDraft,
+        selectedImageIds: registeredImages.length
+          ? registeredImages.map((asset) => asset.id)
+          : input.imageSource === "asset" && input.assetIds?.length
+            ? input.assetIds
+            : undefined,
+        productImageIds:
+          input.imageSource === "product" && input.assetIds?.length
+            ? [...new Set([...workspace.productImageIds, ...input.assetIds])]
+            : undefined,
+        recentJobIds: [jobId, ...workspace.recentJobIds.filter((id) => id !== jobId)].slice(0, 20),
+        recentRunIds: [run.id, ...workspace.recentRunIds.filter((id) => id !== run.id)].slice(0, 20)
+      });
+    } else {
+      const workspace = await readWorkspaceState();
+      await updateWorkspaceState({
+        topic: input.topic,
+        researchRunId: run.id,
+        evidenceSummary: result.researchSummary,
+        selectedSamples: result.evidence,
+        recentJobIds: [jobId, ...workspace.recentJobIds.filter((id) => id !== jobId)].slice(0, 20),
+        recentRunIds: [run.id, ...workspace.recentRunIds.filter((id) => id !== run.id)].slice(0, 20)
+      });
     }
 
     await persist(completeJob(job, result));

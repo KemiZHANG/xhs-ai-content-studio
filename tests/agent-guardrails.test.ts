@@ -1,0 +1,97 @@
+import path from "node:path";
+import { describe, expect, it } from "vitest";
+import {
+  authorizePublishIntent,
+  createPublishIntent,
+  isSafePublishImagePath,
+  validatePublishIntent
+} from "@/lib/agent/guardrails";
+import { defaultSettings } from "@/lib/storage/settings";
+
+const baseIntent = () =>
+  createPublishIntent({
+    title: "A useful title",
+    content: "Body content",
+    tags: ["tag"],
+    images: [path.join(process.cwd(), "generated-assets", "generated", "image.png")],
+    visibility: defaultSettings.defaultVisibility,
+    requestedBy: "chat"
+  });
+
+describe("agent publish guardrails", () => {
+  it("blocks direct publishing in draft-only mode", () => {
+    const decision = authorizePublishIntent(baseIntent(), { mode: "draft_only" });
+
+    expect(decision.allowed).toBe(false);
+    expect(decision.status).toBe("blocked");
+    expect(decision.reasons.join(" ")).toContain("draft");
+  });
+
+  it("requires approval in review-required mode", () => {
+    const decision = authorizePublishIntent(baseIntent(), { mode: "review_required" });
+
+    expect(decision.allowed).toBe(false);
+    expect(decision.status).toBe("awaiting_approval");
+  });
+
+  it("allows publish-ready content in auto-publish mode", () => {
+    const decision = authorizePublishIntent(baseIntent(), { mode: "auto_publish_allowed" });
+
+    expect(decision.allowed).toBe(true);
+    expect(decision.status).toBe("approved");
+  });
+
+  it("rejects scheduled publishing without a future schedule time", () => {
+    const intent = createPublishIntent({
+      ...baseIntent(),
+      mode: "scheduled",
+      scheduleAt: "2020-01-01T00:00:00+08:00"
+    });
+
+    const errors = validatePublishIntent(intent, { now: new Date("2026-05-21T00:00:00+08:00") });
+
+    expect(errors.some((error) => error.includes("future"))).toBe(true);
+  });
+
+  it("rejects scheduled publishing without a timezone", () => {
+    const intent = createPublishIntent({
+      ...baseIntent(),
+      mode: "scheduled",
+      scheduleAt: "2026-05-21T12:00:00"
+    });
+
+    const errors = validatePublishIntent(intent, { now: new Date("2026-05-21T00:00:00+08:00") });
+
+    expect(errors.some((error) => error.includes("timezone"))).toBe(true);
+  });
+
+  it("rejects publish intents without images or tags", () => {
+    const intent = createPublishIntent({
+      title: "A useful title",
+      content: "Body content",
+      tags: [],
+      images: [],
+      visibility: defaultSettings.defaultVisibility,
+      requestedBy: "chat"
+    });
+
+    expect(validatePublishIntent(intent)).toEqual(
+      expect.arrayContaining([expect.stringContaining("tag"), expect.stringContaining("image")])
+    );
+  });
+
+  it("rejects unsafe publish image paths", () => {
+    expect(isSafePublishImagePath(path.join(process.cwd(), "generated-assets", "generated", "image.png"))).toBe(true);
+    expect(isSafePublishImagePath(path.join(process.cwd(), "generated-assets", "uploads", "image.png"))).toBe(true);
+    expect(isSafePublishImagePath(path.join(process.cwd(), "generated-assets", "generated", "..", "..", "secret.png"))).toBe(false);
+    expect(isSafePublishImagePath(path.join(process.cwd(), "not-generated-assets", "generated", "image.png"))).toBe(false);
+    expect(isSafePublishImagePath("https://example.com/image.png")).toBe(false);
+  });
+
+  it("denies invalid publish policy values", () => {
+    const decision = authorizePublishIntent(baseIntent(), { mode: "not-real" as never });
+
+    expect(decision.allowed).toBe(false);
+    expect(decision.status).toBe("blocked");
+  });
+});

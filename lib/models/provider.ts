@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { consumeModelUsage } from "@/lib/storage/model-usage";
 import type { AppSettings } from "@/lib/storage/settings";
 
 export type ChatMessage = {
@@ -52,6 +53,7 @@ export function createModelProvider(settings: AppSettings): ModelProvider {
       if (!settings.textApiKey.trim()) {
         throw new Error("Text model API key is not configured");
       }
+      await consumeModelUsage("text", settings.dailyTextCallLimit);
 
       const response = await fetch(`${trimSlash(settings.textBaseUrl)}/chat/completions`, {
         method: "POST",
@@ -93,6 +95,7 @@ export function createModelProvider(settings: AppSettings): ModelProvider {
       if (!settings.textApiKey.trim()) {
         throw new Error("Text model API key is not configured");
       }
+      await consumeModelUsage("text", settings.dailyTextCallLimit);
 
       if (!imageUrls.length) {
         return "";
@@ -148,6 +151,7 @@ export function createModelProvider(settings: AppSettings): ModelProvider {
       if (!settings.textApiKey.trim()) {
         throw new Error("Text model API key is not configured");
       }
+      await consumeModelUsage("text", settings.dailyTextCallLimit);
 
       if (!imagePaths.length) {
         return "";
@@ -210,6 +214,7 @@ export function createModelProvider(settings: AppSettings): ModelProvider {
       if (!settings.imageApiKey.trim()) {
         return null;
       }
+      await consumeModelUsage("image", settings.dailyImageCallLimit);
 
       const response = await fetch(`${trimSlash(settings.imageBaseUrl)}/images/generations`, {
         method: "POST",
@@ -244,7 +249,7 @@ export function createModelProvider(settings: AppSettings): ModelProvider {
       }
 
       if (image.b64_json) {
-        const dir = path.join(process.cwd(), "generated-assets");
+        const dir = path.join(process.cwd(), "generated-assets", "generated");
         await mkdir(dir, { recursive: true });
         const filePath = path.join(dir, `xhs-image-${Date.now()}.png`);
         await writeFile(filePath, Buffer.from(image.b64_json, "base64"));
@@ -266,6 +271,7 @@ export function createModelProvider(settings: AppSettings): ModelProvider {
       if (!settings.imageBaseUrl.includes("generativelanguage.googleapis.com")) {
         return this.generateImage(`${prompt}\n\nReference images were provided in the local app, but this provider path only supports text-to-image.`);
       }
+      await consumeModelUsage("image", settings.dailyImageCallLimit);
 
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${settings.imageModel}:generateContent?key=${settings.imageApiKey}`;
       const inlineParts = await Promise.all(

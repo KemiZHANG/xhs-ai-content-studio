@@ -1,11 +1,11 @@
-import { McpHttpClient, type McpCallResult } from "@/lib/mcp/client";
+import { McpHttpClient, type McpCallResult, type McpTool } from "@/lib/mcp/client";
 import type { AppSettings } from "@/lib/storage/settings";
 import type { RankedFeed } from "@/lib/workflows/ranking";
 import type { XhsMcpWorkflowClient } from "@/lib/workflows/one-click";
 
 export function createXhsMcpClient(settings: AppSettings): XhsMcpWorkflowClient & {
   checkLoginStatus(): Promise<McpCallResult>;
-  listTools(): Promise<unknown>;
+  listTools(): Promise<McpTool[]>;
 } {
   const client = new McpHttpClient(settings.mcpUrl);
 

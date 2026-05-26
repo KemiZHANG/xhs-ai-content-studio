@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildSampleEvidence, collectImageUrls, runOneClickWorkflow } from "@/lib/workflows/one-click";
 import { defaultSettings } from "@/lib/storage/settings";
@@ -511,6 +513,7 @@ describe("runOneClickWorkflow", () => {
 
   it("passes schedule time when schedule mode publishes", async () => {
     let publishArgs: unknown = null;
+    const imagePath = path.join(process.cwd(), "generated-assets", "generated", `bedroom-${randomUUID()}.png`);
 
     const result = await runOneClickWorkflow({
       input: {
@@ -523,12 +526,13 @@ describe("runOneClickWorkflow", () => {
         publishMode: "schedule",
         analyzeImages: false,
         generateImages: true,
-        scheduleAt: "2026-05-19T20:00:00+08:00"
+        scheduleAt: "2099-05-19T20:00:00+08:00"
       },
       settings: {
         ...defaultSettings,
         textApiKey: "text-key",
-        imageApiKey: "image-key"
+        imageApiKey: "image-key",
+        agentPublishPolicy: "auto_publish_allowed"
       },
       mcp: {
         searchFeeds: async () => [
@@ -553,14 +557,14 @@ describe("runOneClickWorkflow", () => {
             }
           }),
         analyzeImageStyle: async () => "",
-        generateImageFromReference: async () => ({ path: "C:\\tmp\\bedroom.png" }),
-        generateImage: async () => ({ path: "C:\\tmp\\bedroom.png" })
+        generateImageFromReference: async () => ({ path: imagePath }),
+        generateImage: async () => ({ path: imagePath })
       }
     });
 
     expect(result.status).toBe("scheduled");
     expect(publishArgs).toMatchObject({
-      scheduleAt: "2026-05-19T20:00:00+08:00"
+      scheduleAt: "2099-05-19T20:00:00+08:00"
     });
   });
 });

@@ -11,3 +11,6 @@ tools/**/*.zip
 tools/**/cookies.json
 *.log
 *.tsbuildinfo
+.gstack/
+.codex-work/
+resume_outputs/

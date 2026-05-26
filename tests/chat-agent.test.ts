@@ -1,7 +1,26 @@
-import { describe, expect, it } from "vitest";
+import { randomUUID } from "node:crypto";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { buildAttachmentContext, runChatAgent } from "@/lib/chat/agent";
 import { defaultSettings } from "@/lib/storage/settings";
 import type { DraftRecord } from "@/lib/storage/drafts";
+
+let originalCwd: string;
+let tempDir: string;
+
+beforeEach(async () => {
+  originalCwd = process.cwd();
+  tempDir = await mkdtemp(path.join(os.tmpdir(), "xhs-chat-agent-"));
+  process.chdir(tempDir);
+  await mkdir("data", { recursive: true });
+});
+
+afterEach(async () => {
+  process.chdir(originalCwd);
+  await rm(tempDir, { recursive: true, force: true });
+});
 
 describe("runChatAgent", () => {
   it("summarizes attached product assets for the chat prompt", () => {
@@ -27,6 +46,7 @@ describe("runChatAgent", () => {
     let searchCalls = 0;
     let prompt = "";
 
+    const generatedPath = path.join(process.cwd(), "generated-assets", "generated", `chat-image-${randomUUID()}.png`);
     const result = await runChatAgent({
       message: "请基于已展示证据生成一篇原创笔记，不要重新搜索。我的需求：宣传一家适合办公的广州咖啡馆",
       settings: {
@@ -154,6 +174,7 @@ describe("runChatAgent", () => {
 
   it("generates a missing image before publishing the current draft", async () => {
     let publishCalls = 0;
+    const generatedPath = path.join(process.cwd(), "generated-assets", "generated", "chat-image.png");
     const currentDraft: DraftRecord = {
       id: "draft-1",
       updatedAt: "2026-05-18T10:00:00.000Z",
@@ -165,7 +186,7 @@ describe("runChatAgent", () => {
         imagePrompt: "通勤包真实生活场景图"
       },
       images: [],
-      visibility: "仅自己可见"
+      visibility: defaultSettings.defaultVisibility
     };
 
     const result = await runChatAgent({
@@ -173,7 +194,8 @@ describe("runChatAgent", () => {
       settings: {
         ...defaultSettings,
         textApiKey: "text-key",
-        imageApiKey: "image-key"
+        imageApiKey: "image-key",
+        agentPublishPolicy: "auto_publish_allowed"
       },
       history: [],
       currentDraft,
@@ -182,20 +204,85 @@ describe("runChatAgent", () => {
         getFeedDetail: async () => null,
         publishContent: async (args) => {
           publishCalls += 1;
-          expect(args.images).toEqual(["C:\\tmp\\chat-image.png"]);
+          expect(args.images).toEqual([generatedPath]);
           return { ok: true };
         }
       },
       model: {
         generateStructuredText: async () => "不需要改文案",
         analyzeImageStyle: async () => "",
-        generateImageFromReference: async () => ({ path: "C:\\tmp\\chat-image.png" }),
-        generateImage: async () => ({ path: "C:\\tmp\\chat-image.png" })
+        generateImageFromReference: async () => ({ path: generatedPath }),
+        generateImage: async () => ({ path: generatedPath })
       }
     });
 
-    expect(publishCalls).toBe(1);
     expect(result.answer).toContain("已发布当前草稿");
-    expect(result.currentDraft?.images).toEqual([{ path: "C:\\tmp\\chat-image.png" }]);
+    expect(publishCalls).toBe(1);
+    expect(result.currentDraft?.images).toEqual([{ path: generatedPath }]);
+  });
+
+  it("includes recent conversation context when revising the current draft", async () => {
+    let prompt = "";
+    const currentDraft: DraftRecord = {
+      id: "draft-context",
+      updatedAt: "2026-05-18T10:00:00.000Z",
+      draft: {
+        title: "通勤包推荐",
+        content: "原始正文",
+        tags: ["通勤包"],
+        structure: ["痛点", "清单", "互动"],
+        imagePrompt: "通勤包真实生活场景图"
+      },
+      images: [],
+      visibility: defaultSettings.defaultVisibility
+    };
+
+    await runChatAgent({
+      message: "优化标题，更生活化",
+      settings: {
+        ...defaultSettings,
+        textApiKey: "text-key"
+      },
+      history: [],
+      currentDraft,
+      conversationMessages: [
+        {
+          id: "msg-1",
+          role: "user",
+          content: "目标人群是通勤女生，语气要像真实分享，不要像广告。",
+          createdAt: "2026-05-18T09:00:00.000Z"
+        },
+        {
+          id: "msg-2",
+          role: "assistant",
+          content: "好的，我会按真实分享风格处理。",
+          createdAt: "2026-05-18T09:00:01.000Z"
+        }
+      ],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async (input) => {
+          prompt = input;
+          return JSON.stringify({
+            title: "通勤女生真的会背的包",
+            content: "更新后的原创正文",
+            tags: ["通勤包"],
+            structure: ["真实痛点", "体验", "互动"],
+            imagePrompt: "通勤包真实生活场景图"
+          });
+        },
+        analyzeImageStyle: async () => "",
+        generateImageFromReference: async () => null,
+        generateImage: async () => null
+      }
+    });
+
+    expect(prompt).toContain("Recent conversation context");
+    expect(prompt).toContain("目标人群是通勤女生");
+    expect(prompt).toContain("优化标题，更生活化");
   });
 });

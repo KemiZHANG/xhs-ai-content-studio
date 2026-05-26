@@ -1,67 +1,37 @@
-# XHS AI Content Studio 小红书 AI 内容中台
+# XHS AI Content Studio
 
 ## 中文说明
 
-XHS AI Content Studio 是一个面向小红书内容运营的本地 AI Agent 工作台。它把小红书 MCP、AI 文本模型、AI 图片模型和专业化 Web UI 组合在一起，让 Agent 能够围绕一个主题自动完成真实笔记搜索、爆款证据分析、标题/正文/标签规律提炼、原创重写、配图生成和发布前装配。
+XHS AI Content Studio 是一个本地优先的小红书 AI Agent 内容工作台。它把小红书 MCP、文本模型、图片模型、图文卡片生成、发布装配和安全审计放在同一个网页里，帮助创作者和运营人员完成从选题研究到发布前确认的完整流程。
 
-> 适用场景：小红书运营、品牌种草、产品内容创作、探店内容分析、爆款笔记拆解、图文笔记生成与发布前整理。
+适合场景：
 
-### AI Agent 能力
+- 小红书选题研究和爆款笔记拆解
+- 标题、正文、标签、图片风格分析
+- 基于证据生成原创笔记，而不是复制拼接
+- 产品图场景化、生图、图文卡片生成
+- 多步骤 AI 对话创作
+- 发布前装配、定时发布和审计留痕
 
-- **工具调用**：通过 Xiaohongshu MCP 调用搜索、详情、登录状态检测和发布能力。
-- **证据驱动**：先抓取真实笔记和互动数据，再进行分析，不让模型凭空生成。
-- **爆款分析**：提炼高互动样本的标题结构、正文组织、标签规律、评论需求和图片风格。
-- **原创重写**：基于分析结论生成新的标题、正文和标签，避免复制原帖内容。
-- **多模态创作**：支持上传产品图或参考图，并调用图片模型生成新的小红书配图。
-- **工作流编排**：支持研究、文案创作、图片创作、发布装配、定时发布和历史追踪。
-- **本地优先**：API Key、cookie、草稿、素材和运行记录都保存在使用者自己的电脑上。
+### 核心能力
 
-### 项目能做什么
-
-1. **连接小红书 MCP**
-   - 通过本地 MCP 服务连接小红书登录态。
-   - 支持检查登录状态。
-   - 支持调用搜索、详情、发布等 MCP 能力。
-
-2. **搜索与研究真实笔记**
-   - 输入主题、内容类型、时间范围、样本数量。
-   - 搜索相关小红书笔记。
-   - 展示标题、作者、点赞、收藏、评论、链接、正文片段、评论片段和图片证据。
-   - 输出标题规律、正文结构、标签方向、图片风格和创作前需要补充的信息。
-
-3. **AI 文案创作**
-   - 根据研究结论生成原创小红书标题、正文、标签和结构。
-   - 文案创作只携带精简后的创作简报，不会把原帖全文和图片证据直接塞给模型。
-   - 支持在网页 AI 对话里继续修改草稿。
-
-4. **图片创作台**
-   - 支持上传、拖入、粘贴产品图或参考图。
-   - 可以基于产品图生成新的小红书场景图。
-   - 也可以不上传图片，直接根据主题和图片风格简报生成原创配图。
-
-5. **产品素材 / 参考图管理**
-   - 管理上传的产品图、参考图和 AI 生成图。
-   - 图片创作台生成的新图会自动进入素材库。
-
-6. **发布装配台**
-   - 最终发布前统一确认标题、正文、标签、图片、可见范围和发布时间。
-   - 支持立即发布和定时发布。
-   - 建议第一次真实测试使用“仅自己可见”。
-
-7. **任务进度与历史记录**
-   - 长任务会在后台执行。
-   - 可以查看任务进度、历史研究记录和 AI 对话历史。
+- **AI Agent 主工作台**：在同一个对话里搜索笔记、分析证据、生成草稿、生成图片、准备发布。
+- **真实证据研究**：通过 Xiaohongshu MCP 搜索和读取真实笔记，再提炼标题、正文、标签和图片规律。
+- **原创重写**：基于研究总结生成新的标题、正文和标签，避免直接复制原帖。
+- **图片创作台**：支持 AI 生图、产品图场景化和本地图文卡片渲染。
+- **成果画布**：右侧实时展示当前研究、草稿、图片、发布计划和任务进度。
+- **发布装配台**：在发布前统一检查标题、正文、标签、图片、可见范围和定时时间。
+- **发布安全**：默认需要确认，记录发布审计日志，正文只保存哈希，不保存全文。
+- **本地隐私**：API Key、cookie、草稿、素材、历史记录默认都保存在使用者自己的电脑上，不提交到 Git。
 
 ### 环境要求
 
 - Windows 10/11
 - Node.js 20 或更高版本
 - npm
-- 一个可用的小红书账号
-- 一个文本模型 API Key
-- 一个图片模型 API Key
-
-默认模型配置提供 Gemini 和 OpenAI 预设。普通用户只需要选择服务商并填写自己的 API Key；只有使用第三方兼容接口时才需要展开高级设置，手动填写 Base URL 和模型名称。
+- 一个可登录的小红书账号
+- 一个文本模型 API Key，例如 Gemini、OpenAI 或兼容 OpenAI API 的服务
+- 一个图片模型 API Key，例如 Gemini 2.5 Flash Image / Nano Banana、OpenAI 或兼容接口
 
 ### 快速开始
 
@@ -78,68 +48,106 @@ cd xhs-ai-content-studio
 npm install
 ```
 
-#### 3. 启动项目
+#### 3. 启动网页和小红书 MCP
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1
 ```
 
-这个脚本会做两件事：
-
-- 启动本地小红书 MCP 服务：`http://localhost:18060/mcp`
-- 启动网页应用：`http://localhost:3000`
-
-浏览器打开：
+启动后打开：
 
 ```text
 http://localhost:3000
 ```
 
+`start-xhs.ps1` 会同时启动：
+
+- 小红书 MCP：`http://localhost:18060/mcp`
+- Web 工作台：`http://localhost:3000`
+
 #### 4. 登录小红书
 
-如果网页左下角显示“小红书未登录”或“待检测登录”，运行：
+如果网页左侧账号卡显示未登录或 MCP 未连接，先确认 MCP 已启动，然后运行：
 
 ```powershell
 .\login-xhs.ps1
 ```
 
-根据弹出的登录窗口完成小红书登录。登录完成后回到网页刷新状态。
+在弹出的登录窗口完成小红书登录后，回到网页点击左侧账号卡里的“检测”。
 
-#### 5. 配置 AI 模型
+### 配置 AI 模型
 
-打开网页后进入“模型设置”，填写：
+进入网页左侧的“模型设置”，填写：
 
 - 文本模型服务商：Gemini / OpenAI / 自定义
 - 文本模型 API Key
 - 图片模型服务商：Gemini / OpenAI / 自定义
 - 图片模型 API Key
 
-如果选择 Gemini 或 OpenAI，Base URL 和模型名称会自动填好。只有选择“自定义”时，才需要在高级设置里填写自己的 Base URL 和模型名称。保存后，左下角会显示模型是否已配置。
+普通用户通常只需要选择 Gemini 或 OpenAI 并填写 API Key。Base URL 和模型名称会自动填好。只有使用第三方兼容接口时，才需要展开高级设置手动填写 Base URL 和模型名称。
+
+API Key 会保存在本地 `data/settings.json`，该目录已经被 `.gitignore` 忽略，不会提交到 GitHub。
 
 ### 推荐使用流程
 
 1. 打开 `http://localhost:3000`。
-2. 进入“模型设置”，配置文本模型和图片模型。
-3. 进入“一键发帖 / 主题研究台”。
-4. 输入主题，例如：
-   - 广州咖啡馆
-   - 通勤包
-   - 新品护肤礼盒
-   - 露营装备
-5. 选择时间范围和样本数量。
-6. 点击“开始证据研究”。
-7. 研究完成后查看真实笔记证据、爆款样本表和研究总结。
-8. 点击“进入文案创作窗口”，补充产品、卖点、目标人群，再发送给 AI。
-9. 点击“进入图片创作台”，上传产品图或直接生成配图。
-10. 进入“发布装配台”，确认标题、正文、标签和图片。
-11. 选择“立即发布”或“定时发布”。
+2. 在左侧账号卡确认小红书 MCP 和登录状态。
+3. 进入“模型设置”，配置文本模型和图片模型。
+4. 回到“AI 工作台”，直接输入需求，例如：
+
+```text
+帮我找最近一周广州咖啡馆高收藏笔记，分析标题和图片风格，再给我生成一篇适合探店账号的图文笔记。
+```
+
+5. Agent 会根据需求搜索、分析、生成草稿，并把结果同步到右侧成果画布。
+6. 如果需要图片，可以进入“图片创作台”生成 AI 图片或图文卡片。
+7. 最后进入“发布装配台”，检查标题、正文、标签、图片和可见范围。
+8. 首次真实发布建议选择“仅自己可见”。
+
+### 多账号说明
+
+当前版本支持在网页里保存多个“小红书账号档案”，每个账号档案对应一个 MCP 地址。你可以在左侧账号卡快速切换当前激活账号，也可以在“模型设置”里新增或编辑账号档案。
+
+需要注意：
+
+- 一个 MCP 服务通常只对应一个小红书登录态。
+- 如果要同时管理多个小红书账号，建议为每个账号启动独立 MCP 实例，并使用不同端口，例如 `18060`、`18061`、`18062`。
+- 然后在网页“模型设置”里分别添加这些 MCP 地址，再通过左侧账号卡切换。
+- 当前发布、搜索、AI 记忆和审计都会使用“当前激活账号”。
+
+### 发布安全策略
+
+项目默认使用 `review_required` 发布策略：
+
+- 研究、草稿、图片生成可以直接执行。
+- 真实发布前会生成发布确认单。
+- 发布记录会写入审计日志。
+- 审计日志只保存标题、标签、图片数量、可见范围、账号、MCP 地址、状态和正文哈希，不保存正文全文。
+
+你可以在“模型设置”里调整发布策略：
+
+- `draft_only`：只允许研究、草稿和图片，不允许发布。
+- `review_required`：默认安全模式，发布前必须确认。
+- `auto_publish_allowed`：允许更自动化的发布，但仍会经过后端安全检查。
 
 ### 常用命令
 
-开发启动：
+启动开发服务：
 
 ```powershell
 npm run dev
+```
+
+启动 MCP 和网页：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1
+```
+
+登录小红书：
+
+```powershell
+.\login-xhs.ps1
 ```
 
 运行测试：
@@ -160,88 +168,59 @@ npm run typecheck
 npm run build
 ```
 
-一键启动 MCP 和网页：
+### 本地数据
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1
-```
+这些文件和目录会在本地生成，并且默认不会提交：
 
-登录小红书：
-
-```powershell
-.\login-xhs.ps1
-```
-
-### 本地数据说明
-
-项目会在本地生成这些目录或文件：
-
-- `data/`：设置、任务、历史记录、草稿、聊天记录。
-- `generated-assets/`：上传图片、生成图片、缓存图片。
-- `*.log`：运行日志。
+- `data/`：设置、任务、草稿、聊天记录、审计日志、模型调用统计。
+- `generated-assets/`：上传图片、生成图片、图文卡片。
 - `tools/**/cookies.json`：小红书登录态。
+- `.next/`：Next.js 构建缓存。
+- `*.log`：运行日志。
 
-这些文件默认不会提交到 Git。
+不要把 API Key、cookie、登录态、私有素材或生成结果提交到公开仓库。
 
-### 安全提醒
+### 项目结构
 
-- 不要把自己的 API Key、cookie、登录态文件提交到 GitHub。
-- 发布是真实外部动作，第一次测试建议选择“仅自己可见”。
-- 如果要公开仓库，请先确认没有提交任何个人数据、登录状态或生成素材。
+```text
+app/                  Next.js 页面和 API 路由
+app/components/       前端面板组件
+lib/agent/            Agent 调度、工具注册、状态、发布保护
+lib/workflows/        小红书研究和内容生成流程
+lib/images/           图片生成相关逻辑
+lib/cards/            本地图文卡片渲染
+lib/mcp/              MCP HTTP 客户端
+lib/storage/          本地 JSON 存储
+tests/                Vitest 测试
+tools/xiaohongshu-mcp 小红书 MCP 可执行文件
+```
 
 ---
 
 ## English Guide
 
-XHS AI Content Studio is a local AI Agent workspace for Xiaohongshu content operations. It combines a Xiaohongshu MCP service, AI text models, AI image models, and a professional web UI so the agent can search real posts, analyze high-performing evidence, extract title/body/tag patterns, rewrite original copy, generate images, and assemble posts before publishing.
+XHS AI Content Studio is a local-first AI Agent workspace for Xiaohongshu content operations. It combines Xiaohongshu MCP, text models, image models, card rendering, publishing assembly, and safety auditing in one web app.
 
-> Use cases: Xiaohongshu operations, brand seeding, product content creation, post research, viral note analysis, image-text note generation, and publishing preparation.
+It is designed for:
 
-### AI Agent Capabilities
+- Xiaohongshu topic research
+- High-performing post analysis
+- Title, body, tag, and image-style extraction
+- Original rewriting based on evidence
+- Product-scene image generation
+- Image-text card creation
+- Publishing assembly, scheduling, and audit trails
 
-- **Tool use**: Calls Xiaohongshu MCP tools for search, post details, login checks, and publishing.
-- **Evidence-driven workflow**: Collects real posts and engagement data before generating content.
-- **Viral post analysis**: Extracts title patterns, body structure, tag direction, comment signals, and image style from high-performing samples.
-- **Original rewriting**: Generates new titles, body copy, and tags from insights instead of copying source posts.
-- **Multimodal creation**: Supports product/reference image uploads and AI-generated Xiaohongshu-style visuals.
-- **Workflow orchestration**: Supports research, copy creation, image creation, publishing assembly, scheduled publishing, and history tracking.
-- **Local-first privacy**: API keys, cookies, drafts, assets, and run history stay on the user's own machine.
+### Core Features
 
-### What This Project Does
-
-1. **Connect To Xiaohongshu MCP**
-   - Connects to a local Xiaohongshu MCP service.
-   - Checks whether the Xiaohongshu account is logged in.
-   - Uses MCP tools for search, post detail fetching, and publishing.
-
-2. **Search And Research Real Posts**
-   - Enter a topic, content type, time range, and sample count.
-   - Search related Xiaohongshu posts.
-   - Display titles, authors, likes, saves, comments, links, body snippets, comment snippets, and image evidence.
-   - Generate insights about title patterns, body structure, tag direction, image style, and missing information before creation.
-
-3. **AI Copy Creation**
-   - Generate original Xiaohongshu titles, body copy, tags, and structure from research insights.
-   - The copy workspace only receives a compact creative brief. It does not pass full original post bodies or image evidence into the text model.
-   - Supports continuing draft edits inside the web AI chat.
-
-4. **Image Studio**
-   - Upload, drag, or paste product/reference images.
-   - Generate Xiaohongshu-style product scene images from product photos.
-   - Or generate original images directly from topic and image-style briefs without source images.
-
-5. **Product Assets / Reference Images**
-   - Manage uploaded product images, reference images, and generated images.
-   - Images generated in Image Studio are saved into the asset library.
-
-6. **Publishing Assembly Desk**
-   - Final confirmation page for title, body, tags, images, visibility, and scheduled time.
-   - Supports immediate publishing and scheduled publishing.
-   - “Private only” is recommended for the first real publishing test.
-
-7. **Job Progress And History**
-   - Long-running workflows run in the background.
-   - Review job progress, research history, and AI chat history.
+- **AI Agent Workbench**: Search posts, analyze evidence, generate drafts, create images, and prepare publishing in one conversation.
+- **Evidence-Based Research**: Uses Xiaohongshu MCP to collect real posts before generating content.
+- **Original Copywriting**: Generates new titles, body copy, and tags from extracted patterns instead of copying source posts.
+- **Image Studio**: Supports AI image generation, product-image scene generation, and local image-text card rendering.
+- **Workspace Canvas**: Shows current research, draft, selected images, publishing plan, and job progress in real time.
+- **Publishing Assembly**: Checks title, body, tags, images, visibility, and schedule before publishing.
+- **Safety Guardrails**: Publishing requires review by default and writes audit records without storing full draft content.
+- **Local Privacy**: API keys, cookies, drafts, assets, and histories stay on the user's own machine.
 
 ### Requirements
 
@@ -249,14 +228,12 @@ XHS AI Content Studio is a local AI Agent workspace for Xiaohongshu content oper
 - Node.js 20 or later
 - npm
 - A Xiaohongshu account
-- A text model API key
-- An image model API key
-
-The default model settings provide Gemini and OpenAI presets. Most users only need to choose a provider and enter their own API key. Base URL and model names are only needed when using a custom OpenAI-compatible provider.
+- A text model API key, such as Gemini, OpenAI, or an OpenAI-compatible provider
+- An image model API key, such as Gemini 2.5 Flash Image / Nano Banana, OpenAI, or a compatible provider
 
 ### Quick Start
 
-#### 1. Clone The Repository
+#### 1. Clone
 
 ```powershell
 git clone https://github.com/KemiZHANG/xhs-ai-content-studio.git
@@ -275,55 +252,81 @@ npm install
 powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1
 ```
 
-This script starts:
-
-- Xiaohongshu MCP service: `http://localhost:18060/mcp`
-- Web app: `http://localhost:3000`
-
-Open:
+Then open:
 
 ```text
 http://localhost:3000
 ```
 
-#### 4. Login To Xiaohongshu
+The start script launches:
 
-If the sidebar says Xiaohongshu is not logged in, run:
+- Xiaohongshu MCP: `http://localhost:18060/mcp`
+- Web app: `http://localhost:3000`
+
+#### 4. Log In To Xiaohongshu
+
+If the account card in the sidebar shows that Xiaohongshu is not logged in, run:
 
 ```powershell
 .\login-xhs.ps1
 ```
 
-Complete login in the popup window, then return to the web app and refresh the status.
+Complete login in the popup window, return to the web app, and click "Check" in the sidebar account card.
 
-#### 5. Configure AI Models
+### Configure AI Models
 
-Open “Model Settings” in the web app and fill in:
+Open "Model Settings" in the web app and configure:
 
 - Text model provider: Gemini / OpenAI / Custom
 - Text model API key
 - Image model provider: Gemini / OpenAI / Custom
 - Image model API key
 
-If you choose Gemini or OpenAI, Base URL and model names are filled automatically. Only choose “Custom” when you need to enter your own Base URL and model names. After saving, the sidebar will show whether the models are configured.
+Most users only need to choose Gemini or OpenAI and enter their API keys. Base URL and model names are filled automatically. Use the advanced fields only for custom OpenAI-compatible providers.
+
+API keys are stored locally in `data/settings.json`, which is ignored by Git.
 
 ### Recommended Workflow
 
 1. Open `http://localhost:3000`.
-2. Go to “Model Settings” and configure the text and image models.
-3. Go to “One-Click Posting / Topic Research Desk”.
-4. Enter a topic, such as:
-   - Guangzhou coffee shops
-   - commuter bag
-   - new skincare gift box
-   - camping gear
-5. Choose the time range and sample count.
-6. Click “Start Evidence Research”.
-7. Review real post evidence, the sample table, and the research summary.
-8. Open the copy workspace, add product details, selling points, and target audience, then send it to the AI.
-9. Open Image Studio, upload product images or generate images directly.
-10. Go to the Publishing Assembly Desk and confirm title, body, tags, and images.
-11. Choose immediate publishing or scheduled publishing.
+2. Check the Xiaohongshu account status in the sidebar account card.
+3. Configure text and image models in "Model Settings".
+4. Go to "AI Workbench" and type a request, for example:
+
+```text
+Find high-save Guangzhou coffee shop posts from the last week, analyze title and image style, then generate a Xiaohongshu note for a cafe-review account.
+```
+
+5. The agent searches, analyzes, drafts, and syncs results to the right-side workspace canvas.
+6. Use "Image Studio" to generate AI images or image-text cards when needed.
+7. Use "Publishing Assembly" to review title, body, tags, images, and visibility.
+8. Use "Private only" for the first real publishing test.
+
+### Multi-Account Notes
+
+The app can store multiple Xiaohongshu account profiles. Each profile points to one MCP endpoint. You can switch the active account from the sidebar account card, or manage profiles in "Model Settings".
+
+Important notes:
+
+- One MCP service usually maps to one Xiaohongshu login session.
+- To manage multiple accounts at the same time, run separate MCP instances on different ports, such as `18060`, `18061`, and `18062`.
+- Add each MCP endpoint as an account profile in the web app.
+- Search, publishing, creator memory, and audit logs use the currently active account.
+
+### Publishing Safety
+
+The default policy is `review_required`:
+
+- Research, drafting, and image generation can run directly.
+- Real publishing creates a confirmation request first.
+- Publishing events are recorded in the audit log.
+- The audit log stores metadata and a content hash, not the full draft body.
+
+Available policies:
+
+- `draft_only`: Research, draft, and image generation only.
+- `review_required`: Default safety mode. Publishing requires confirmation.
+- `auto_publish_allowed`: Allows more automation, while still passing backend guardrails.
 
 ### Useful Commands
 
@@ -331,6 +334,18 @@ Development server:
 
 ```powershell
 npm run dev
+```
+
+Start MCP and web app:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1
+```
+
+Login to Xiaohongshu:
+
+```powershell
+.\login-xhs.ps1
 ```
 
 Run tests:
@@ -351,31 +366,14 @@ Production build:
 npm run build
 ```
 
-Start MCP and web app together:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1
-```
-
-Login to Xiaohongshu:
-
-```powershell
-.\login-xhs.ps1
-```
-
 ### Local Data
 
-The project creates local files and folders:
+The app creates local files that should not be committed:
 
-- `data/`: settings, jobs, history, drafts, chat history.
-- `generated-assets/`: uploaded images, generated images, cached images.
-- `*.log`: runtime logs.
+- `data/`: settings, jobs, drafts, chat history, audit logs, model usage.
+- `generated-assets/`: uploaded images, generated images, rendered cards.
 - `tools/**/cookies.json`: Xiaohongshu login session.
+- `.next/`: Next.js build cache.
+- `*.log`: runtime logs.
 
-These files are ignored by Git by default.
-
-### Safety Notes
-
-- Do not commit API keys, cookies, or login session files.
-- Publishing is a real external action. Use “private only” for the first real test.
-- Before making the repository public, make sure no personal data, login sessions, or generated private assets have been committed.
+Never commit API keys, cookies, login sessions, private assets, or generated personal content to a public repository.

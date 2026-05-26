@@ -1,19 +1,26 @@
 import { NextResponse } from "next/server";
-import { runChatAgent } from "@/lib/chat/agent";
+import { runAgentTurn } from "@/lib/agent/orchestrator";
+import { readCreatorMemoryProfile, updateCreatorMemoryFromTurn } from "@/lib/agent/memory";
+import { readWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
 import { classifyChatRequest } from "@/lib/chat/router";
+import { getJobRunner } from "@/lib/jobs/runner";
 import { createModelProvider } from "@/lib/models/provider";
 import { createXhsMcpClient } from "@/lib/mcp/xhs";
+import { requireLocalActionToken } from "@/lib/security/action-token";
 import { createDraftRecord, readCurrentDraft, writeCurrentDraft } from "@/lib/storage/drafts";
-import { appendChatTurn } from "@/lib/storage/chat";
+import { appendChatTurn, getChatConversation } from "@/lib/storage/chat";
 import { appendHistory, listHistory } from "@/lib/storage/history";
-import { getAsset, type AssetRecord } from "@/lib/storage/assets";
+import { getAsset, upsertGeneratedAssetPaths, type AssetRecord } from "@/lib/storage/assets";
 import { readSettings } from "@/lib/storage/settings";
-import { runOneClickWorkflow, type OneClickInput, type OneClickResult } from "@/lib/workflows/one-click";
+import type { OneClickInput, OneClickResult } from "@/lib/workflows/one-click";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    const authError = await requireLocalActionToken(request);
+    if (authError) return authError;
+
     const { message, conversationId, assetIds } = (await request.json()) as {
       message?: string;
       conversationId?: string | null;
@@ -26,6 +33,7 @@ export async function POST(request: Request) {
     const settings = await readSettings();
     const history = await listHistory();
     const currentDraft = await readCurrentDraft();
+    const creatorMemory = await readCreatorMemoryProfile(settings.activeAccountId);
     const attachedAssets = Array.isArray(assetIds)
       ? (await Promise.all(assetIds.map((id) => getAsset(String(id))))).filter(
           (asset): asset is AssetRecord => Boolean(asset)
@@ -40,7 +48,7 @@ export async function POST(request: Request) {
         topic: routeDecision.topic,
         contentType: routeDecision.contentType,
         timeRange: routeDecision.timeRange,
-        sampleCount: routeDecision.sampleCount,
+        sampleCount: Math.min(routeDecision.sampleCount, settings.maxResearchSamples),
         visibility: settings.defaultVisibility,
         workflowGoal: routeDecision.workflowGoal,
         publishMode: routeDecision.publishMode,
@@ -50,41 +58,46 @@ export async function POST(request: Request) {
         imageSource: "ai",
         assetIds: []
       };
-      const workflowResult = await runOneClickWorkflow({
-        input,
-        settings,
-        mcp: createXhsMcpClient(settings),
-        model: createModelProvider(settings)
-      });
-      await persistWorkflowResult(input, workflowResult, settings);
-
-      const answer = summarizeWorkflowForChat(workflowResult);
+      const job = await getJobRunner().enqueueWorkflow(input);
+      const answer = `已创建后台 Agent 任务 ${job.id}。你可以继续留在对话页，任务进度和结果会写入任务列表与成果画布。`;
       const conversation = await appendChatTurn({
         conversationId,
         userContent: message,
-        assistantContent: answer,
-        workflowResult
+        assistantContent: answer
       });
+      await updateCreatorMemoryFromTurn({
+        accountId: settings.activeAccountId,
+        message,
+        assistantAnswer: answer,
+        attachedAssets,
+        conversationId: conversation.id
+      }).catch(() => undefined);
 
       return NextResponse.json({
         answer,
-        workflowResult,
+        job,
+        jobId: job.id,
         conversation
       });
     }
 
-    const result = await runChatAgent({
+    const result = await runAgentTurn({
       message,
+      conversationId,
       settings,
       history,
       currentDraft,
       attachedAssets,
+      conversationMessages: conversationId
+        ? ((await getChatConversation(String(conversationId)))?.messages ?? []).slice(-12)
+        : [],
+      creatorMemory,
       mcp: createXhsMcpClient(settings),
       model: createModelProvider(settings)
     });
 
     if (result.workflowResult?.draft) {
-      await persistWorkflowResult(
+      const persisted = await persistWorkflowResult(
         {
           topic: result.workflowResult.draft.title,
           contentType: "自然语言",
@@ -106,10 +119,28 @@ export async function POST(request: Request) {
         result.workflowResult,
         settings
       );
+      if (persisted.currentDraft) {
+        result.currentDraft = persisted.currentDraft;
+      }
     }
 
     if (result.currentDraft) {
-      await writeCurrentDraft(result.currentDraft);
+      const currentDraftRecord = await writeCurrentDraft(result.currentDraft);
+      if (!currentDraftRecord) {
+        throw new Error("Failed to persist current draft");
+      }
+      const registeredImages = await upsertGeneratedAssetPaths(currentDraftRecord.images, {
+        prompt: currentDraftRecord.draft.imagePrompt
+      });
+      const workspace = await readWorkspaceState();
+      await updateWorkspaceState({
+        currentDraftId: currentDraftRecord.id,
+        currentDraft: currentDraftRecord,
+        selectedImageIds: registeredImages.length ? registeredImages.map((asset) => asset.id) : undefined,
+        recentConversationIds: conversationId
+          ? [conversationId, ...workspace.recentConversationIds.filter((id) => id !== conversationId)].slice(0, 20)
+          : undefined
+      });
     }
 
     const conversation = await appendChatTurn({
@@ -119,7 +150,22 @@ export async function POST(request: Request) {
       workflowResult: result.workflowResult
     });
 
-    return NextResponse.json({ ...result, conversation });
+    await updateCreatorMemoryFromTurn({
+      accountId: settings.activeAccountId,
+      message,
+      assistantAnswer: result.answer,
+      currentDraft: result.currentDraft,
+      workflowResult: result.workflowResult,
+      attachedAssets,
+      conversationId: conversation.id
+    }).catch(() => undefined);
+
+    return NextResponse.json({
+      answer: result.answer,
+      workflowResult: result.workflowResult,
+      currentDraft: result.currentDraft,
+      conversation
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "对话执行失败" },
@@ -132,11 +178,15 @@ async function persistWorkflowResult(
   input: OneClickInput,
   workflowResult: OneClickResult,
   settings: Awaited<ReturnType<typeof readSettings>>
-): Promise<void> {
+): Promise<{ currentDraft: Awaited<ReturnType<typeof writeCurrentDraft>> | null }> {
   const run = await appendHistory(input, workflowResult);
+  const registeredImages = await upsertGeneratedAssetPaths(workflowResult.images, {
+    prompt: workflowResult.draft?.imagePrompt,
+    sourceAssetIds: input.assetIds
+  });
 
   if (workflowResult.draft) {
-    await writeCurrentDraft(
+    const currentDraft = await writeCurrentDraft(
       createDraftRecord({
         draft: workflowResult.draft,
         images: workflowResult.images,
@@ -145,7 +195,32 @@ async function persistWorkflowResult(
         runId: run.id
       })
     );
+    if (!currentDraft) {
+      throw new Error("Failed to persist workflow draft");
+    }
+    const workspace = await readWorkspaceState();
+    await updateWorkspaceState({
+      topic: input.topic,
+      researchRunId: run.id,
+      evidenceSummary: workflowResult.researchSummary,
+      selectedSamples: workflowResult.evidence,
+      currentDraftId: currentDraft.id,
+      currentDraft,
+      selectedImageIds: registeredImages.length ? registeredImages.map((asset) => asset.id) : undefined,
+      recentRunIds: [run.id, ...workspace.recentRunIds.filter((id) => id !== run.id)].slice(0, 20)
+    });
+    return { currentDraft };
   }
+
+  const workspace = await readWorkspaceState();
+  await updateWorkspaceState({
+    topic: input.topic,
+    researchRunId: run.id,
+    evidenceSummary: workflowResult.researchSummary,
+    selectedSamples: workflowResult.evidence,
+    recentRunIds: [run.id, ...workspace.recentRunIds.filter((id) => id !== run.id)].slice(0, 20)
+  });
+  return { currentDraft: null };
 }
 
 function summarizeWorkflowForChat(result: OneClickResult): string {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultSettings, parseSettingsJson, redactSettings } from "@/lib/storage/settings";
+import { defaultSettings, mergeSettingsUpdate, parseSettingsJson, redactSettings } from "@/lib/storage/settings";
 
 describe("settings redaction", () => {
   it("keeps routing fields but hides configured API keys", () => {
@@ -30,5 +30,33 @@ describe("settings redaction", () => {
     const parsed = parseSettingsJson(`\uFEFF{"textModel":"gemini-3-flash-preview"}`);
 
     expect(parsed.textModel).toBe("gemini-3-flash-preview");
+  });
+
+  it("keeps account profiles and points mcpUrl at the active account", () => {
+    const next = mergeSettingsUpdate(defaultSettings, {
+      accounts: [
+        {
+          id: "account-a",
+          displayName: "账号 A",
+          mcpUrl: "http://localhost:18060/mcp",
+          status: "unknown",
+          createdAt: "2026-05-25T00:00:00.000Z",
+          updatedAt: "2026-05-25T00:00:00.000Z"
+        },
+        {
+          id: "account-b",
+          displayName: "账号 B",
+          mcpUrl: "http://localhost:18061/mcp",
+          status: "unknown",
+          createdAt: "2026-05-25T00:00:00.000Z",
+          updatedAt: "2026-05-25T00:00:00.000Z"
+        }
+      ],
+      activeAccountId: "account-b"
+    });
+
+    expect(next.activeAccountId).toBe("account-b");
+    expect(next.mcpUrl).toBe("http://localhost:18061/mcp");
+    expect(redactSettings(next).accounts).toHaveLength(2);
   });
 });

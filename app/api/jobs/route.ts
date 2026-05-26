@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getJobRunner } from "@/lib/jobs/runner";
-import { readSettings } from "@/lib/storage/settings";
+import { requireLocalActionToken } from "@/lib/security/action-token";
+import { isPublishVisibility, readSettings } from "@/lib/storage/settings";
 import type { OneClickInput, PublishMode } from "@/lib/workflows/one-click";
 
 export const runtime = "nodejs";
@@ -12,14 +13,17 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const authError = await requireLocalActionToken(request);
+    if (authError) return authError;
+
     const settings = await readSettings();
     const body = (await request.json()) as Partial<OneClickInput>;
-    const input: OneClickInput = {
+    const input: OneClickInput = sanitizeOneClickInput({
       topic: String(body.topic ?? "").trim(),
       contentType: String(body.contentType ?? "图文"),
       timeRange: String(body.timeRange ?? "一周内"),
-      sampleCount: Number(body.sampleCount ?? 8),
-      visibility: body.visibility ?? settings.defaultVisibility,
+      sampleCount: Math.min(Number(body.sampleCount ?? 8), settings.maxResearchSamples),
+      visibility: isPublishVisibility(body.visibility) ? body.visibility : settings.defaultVisibility,
       autoPublish: Boolean(body.autoPublish ?? settings.defaultAutoPublish),
       publishMode: normalizePublishMode(body.publishMode, body.autoPublish, settings.defaultAutoPublish),
       workflowGoal: body.workflowGoal === "research" ? "research" : "draft",
@@ -37,7 +41,7 @@ export async function POST(request: Request) {
       scene: body.scene ? String(body.scene) : undefined,
       style: body.style ? String(body.style) : undefined,
       extraImagePrompt: body.extraImagePrompt ? String(body.extraImagePrompt) : undefined
-    };
+    });
 
     if (!input.topic) {
       return NextResponse.json({ error: "请输入主题" }, { status: 400 });
@@ -51,6 +55,22 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+function sanitizeOneClickInput(input: OneClickInput): OneClickInput {
+  if (input.workflowGoal !== "research") {
+    return input;
+  }
+
+  return {
+    ...input,
+    autoPublish: false,
+    publishMode: "draft",
+    generateImages: false,
+    scheduleAt: undefined,
+    imageSource: "ai",
+    assetIds: []
+  };
 }
 
 function normalizePublishMode(

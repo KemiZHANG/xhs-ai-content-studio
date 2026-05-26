@@ -1,3 +1,4 @@
+import { executeGuardedPublish } from "@/lib/agent/publishing";
 import type { AppSettings } from "@/lib/storage/settings";
 import { buildReferenceImagePrompt, type GeneratedImage, type ModelProvider } from "@/lib/models/provider";
 import { getAsset } from "@/lib/storage/assets";
@@ -183,6 +184,7 @@ export async function runOneClickWorkflow({
 
     const publishDecision = await maybePublish({
       input,
+      settings,
       mode,
       mcp,
       draft: parsed.draft,
@@ -472,6 +474,7 @@ async function resolveAssets(assetIds: string[]) {
 
 async function maybePublish({
   input,
+  settings,
   mode,
   mcp,
   draft,
@@ -479,6 +482,7 @@ async function maybePublish({
   steps
 }: {
   input: OneClickInput;
+  settings: AppSettings;
   mode: PublishMode;
   mcp: XhsMcpWorkflowClient;
   draft: GeneratedDraft;
@@ -527,14 +531,50 @@ async function maybePublish({
     return { status: "failed", publishResult: { skipped: true, reason: "missing scheduleAt" } };
   }
 
-  const publishResult = await mcp.publishContent({
-    title: draft.title,
-    content: draft.content,
-    tags: draft.tags,
-    images: publishableImages,
-    visibility: input.visibility,
-    scheduleAt: mode === "schedule" ? input.scheduleAt : undefined
+  const guardedPublish = await executeGuardedPublish({
+    args: {
+      title: draft.title,
+      content: draft.content,
+      tags: draft.tags,
+      images: publishableImages,
+      visibility: input.visibility,
+      scheduleAt: mode === "schedule" ? input.scheduleAt : undefined
+    },
+    requestedBy: "workflow",
+    policy: {
+      mode: settings.agentPublishPolicy,
+      confirmed: settings.agentPublishPolicy === "auto_publish_allowed"
+    },
+    auditContext: {
+      accountId: settings.activeAccountId,
+      mcpUrl: settings.mcpUrl
+    },
+    publish: (args) => mcp.publishContent(args)
   });
+
+  if (guardedPublish.status === "blocked" || guardedPublish.status === "awaiting_approval") {
+    steps.push({
+      id: "publish",
+      label: mode === "schedule" ? "定时发布确认" : "发布确认",
+      status: guardedPublish.status === "blocked" ? "failed" : "skipped",
+      detail:
+        guardedPublish.status === "awaiting_approval"
+          ? "已创建发布确认单，当前设置需要确认后才会真正发布。"
+          : `发布被安全规则阻止：${guardedPublish.reasons.join("；")}`
+    });
+
+    return {
+      status: guardedPublish.status === "blocked" ? "failed" : "material_ready",
+      publishResult: {
+        skipped: true,
+        status: guardedPublish.status,
+        reasons: guardedPublish.reasons,
+        publishIntent: guardedPublish.publishIntent
+      }
+    };
+  }
+
+  const publishResult = guardedPublish.publishResult;
 
   steps.push({
     id: "publish",
