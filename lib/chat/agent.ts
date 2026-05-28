@@ -338,7 +338,7 @@ async function publishCurrentDraft({
     requestedBy: "chat",
     policy: {
       mode: settings.agentPublishPolicy,
-      confirmed: settings.agentPublishPolicy === "auto_publish_allowed"
+      confirmed: false
     },
     publish: (args) => mcp.publishContent(args)
   });

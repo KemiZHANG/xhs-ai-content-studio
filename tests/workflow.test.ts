@@ -562,9 +562,16 @@ describe("runOneClickWorkflow", () => {
       }
     });
 
-    expect(result.status).toBe("scheduled");
-    expect(publishArgs).toMatchObject({
-      scheduleAt: "2099-05-19T20:00:00+08:00"
-    });
+    expect(result.status).toBe("material_ready");
+    expect(publishArgs).toBeNull();
+    expect(result.publishResult).toEqual(
+      expect.objectContaining({
+        skipped: true,
+        status: "awaiting_approval",
+        publishIntent: expect.objectContaining({
+          scheduleAt: "2099-05-19T20:00:00+08:00"
+        })
+      })
+    );
   });
 });

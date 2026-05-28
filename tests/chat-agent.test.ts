@@ -216,8 +216,8 @@ describe("runChatAgent", () => {
       }
     });
 
-    expect(result.answer).toContain("已发布当前草稿");
-    expect(publishCalls).toBe(1);
+    expect(result.answer).toContain("已生成发布确认单");
+    expect(publishCalls).toBe(0);
     expect(result.currentDraft?.images).toEqual([{ path: generatedPath }]);
   });
 

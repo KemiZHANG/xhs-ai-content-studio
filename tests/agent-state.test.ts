@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile, mkdir } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { readWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
+import { readWorkspaceState, resetWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
 import { defaultSettings } from "@/lib/storage/settings";
 
 let originalCwd: string;
@@ -90,6 +90,61 @@ describe("workspace state", () => {
     expect(state.topic).toBe("new topic");
     expect(reread.selectedImageIds).toEqual(["asset-2"]);
     expect(reread.lastUserIntent).toBe("generateDraft");
+  });
+
+  it("resets to a blank workspace without reviving legacy history or drafts", async () => {
+    await writeFile(
+      path.join("data", "drafts.json"),
+      JSON.stringify({
+        currentDraft: {
+          id: "draft-legacy",
+          updatedAt: "2026-05-21T00:00:00.000Z",
+          draft: {
+            title: "Legacy draft",
+            content: "Legacy content",
+            tags: ["legacy"],
+            structure: [],
+            imagePrompt: "legacy prompt"
+          },
+          images: [],
+          visibility: defaultSettings.defaultVisibility
+        }
+      })
+    );
+    await writeFile(
+      path.join("data", "history.json"),
+      JSON.stringify([
+        {
+          id: "run-legacy",
+          createdAt: "2026-05-21T00:00:00.000Z",
+          input: { topic: "old topic", contentType: "note", timeRange: "week", sampleCount: 4 },
+          result: {
+            status: "research_ready",
+            steps: [],
+            samples: [],
+            evidence: [{ id: "note-1", title: "old sample" }],
+            researchSummary: { contentStrengths: ["old"] },
+            report: "old report",
+            imageStyleReport: "",
+            draft: null,
+            images: [],
+            publishResult: {}
+          }
+        }
+      ])
+    );
+
+    const reset = await resetWorkspaceState({ topic: "fresh topic" });
+    const reread = await readWorkspaceState();
+
+    expect(reset.topic).toBe("fresh topic");
+    expect(reset.researchRunId).toBeUndefined();
+    expect(reset.currentDraft).toBeNull();
+    expect(reset.selectedSamples).toEqual([]);
+    expect(reset.workspaceId).not.toBe("local-default");
+    expect(reread.topic).toBe("fresh topic");
+    expect(reread.researchRunId).toBeUndefined();
+    expect(reread.currentDraft).toBeNull();
   });
 
   it("ignores undefined patch fields so partial updates do not wipe context", async () => {

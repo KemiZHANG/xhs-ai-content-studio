@@ -543,7 +543,7 @@ async function maybePublish({
     requestedBy: "workflow",
     policy: {
       mode: settings.agentPublishPolicy,
-      confirmed: settings.agentPublishPolicy === "auto_publish_allowed"
+      confirmed: false
     },
     auditContext: {
       accountId: settings.activeAccountId,

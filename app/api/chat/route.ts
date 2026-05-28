@@ -33,6 +33,7 @@ export async function POST(request: Request) {
     const settings = await readSettings();
     const history = await listHistory();
     const currentDraft = await readCurrentDraft();
+    const draftForTurn = conversationId ? currentDraft : null;
     const creatorMemory = await readCreatorMemoryProfile(settings.activeAccountId);
     const attachedAssets = Array.isArray(assetIds)
       ? (await Promise.all(assetIds.map((id) => getAsset(String(id))))).filter(
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
       : [];
     const shouldStayInImageChat =
       attachedAssets.length > 0 && !/搜索|找|高收藏|爆款|竞品|小红书笔记|流量/.test(message);
-    const routeDecision = shouldStayInImageChat ? { kind: "direct" as const } : classifyChatRequest(message, Boolean(currentDraft));
+    const routeDecision = shouldStayInImageChat ? { kind: "direct" as const } : classifyChatRequest(message, Boolean(draftForTurn));
 
     if (routeDecision.kind === "queue-workflow") {
       const input: OneClickInput = {
@@ -86,7 +87,7 @@ export async function POST(request: Request) {
       conversationId,
       settings,
       history,
-      currentDraft,
+      currentDraft: draftForTurn,
       attachedAssets,
       conversationMessages: conversationId
         ? ((await getChatConversation(String(conversationId)))?.messages ?? []).slice(-12)

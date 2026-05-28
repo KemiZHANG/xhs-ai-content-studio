@@ -87,7 +87,7 @@ export async function POST(request: Request) {
         preview: {
           profile: "creator_publish",
           risk: "external_write",
-          requiresConfirmation: settings.agentPublishPolicy !== "auto_publish_allowed",
+          requiresConfirmation: true,
           publishPolicy: settings.agentPublishPolicy,
           accountId: settings.activeAccountId,
           mcpUrl: settings.mcpUrl,
@@ -197,11 +197,11 @@ async function resolvePublishConfirmation({
   publishArgs: GuardedPublishArgs;
   accountContext: { accountId?: string; mcpUrl?: string };
 }): Promise<boolean> {
-  if (settingsPolicy === "auto_publish_allowed") {
-    return true;
+  if (settingsPolicy !== "review_required" && settingsPolicy !== "auto_publish_allowed") {
+    return false;
   }
 
-  if (settingsPolicy !== "review_required" || confirmed !== true || !publishIntentId) {
+  if (confirmed !== true || !publishIntentId) {
     return false;
   }
 

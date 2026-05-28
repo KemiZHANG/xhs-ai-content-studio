@@ -24,8 +24,8 @@ export async function POST(request: Request) {
       timeRange: String(body.timeRange ?? "一周内"),
       sampleCount: Math.min(Number(body.sampleCount ?? 8), settings.maxResearchSamples),
       visibility: isPublishVisibility(body.visibility) ? body.visibility : settings.defaultVisibility,
-      autoPublish: Boolean(body.autoPublish ?? settings.defaultAutoPublish),
-      publishMode: normalizePublishMode(body.publishMode, body.autoPublish, settings.defaultAutoPublish),
+      autoPublish: body.publishMode === "publish" || body.publishMode === "schedule" ? Boolean(body.autoPublish) : false,
+      publishMode: normalizePublishMode(body.publishMode),
       workflowGoal: body.workflowGoal === "research" ? "research" : "draft",
       analyzeImages: Boolean(body.analyzeImages ?? false),
       generateImages: Boolean(body.generateImages ?? false),
@@ -73,14 +73,10 @@ function sanitizeOneClickInput(input: OneClickInput): OneClickInput {
   };
 }
 
-function normalizePublishMode(
-  value: unknown,
-  autoPublish: unknown,
-  defaultAutoPublish: boolean
-): PublishMode {
+function normalizePublishMode(value: unknown): PublishMode {
   if (value === "draft" || value === "material" || value === "publish" || value === "schedule") {
     return value;
   }
 
-  return Boolean(autoPublish ?? defaultAutoPublish) ? "publish" : "draft";
+  return "draft";
 }

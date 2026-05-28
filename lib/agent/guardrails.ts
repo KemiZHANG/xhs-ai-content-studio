@@ -114,6 +114,13 @@ export function authorizePublishIntent(intent: PublishIntent, policy: PublishPol
         reasons: []
       };
     case "auto_publish_allowed":
+      if (!policy.confirmed) {
+        return {
+          allowed: false,
+          status: "awaiting_approval",
+          reasons: ["one-time confirmation required before external publishing"]
+        };
+      }
       return {
         allowed: true,
         status: "approved",

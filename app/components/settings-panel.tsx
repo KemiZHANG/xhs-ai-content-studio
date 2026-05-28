@@ -266,10 +266,10 @@ export function SettingsPanel({
             >
               <option value="draft_only">安全模式：只生成内容，不发布</option>
               <option value="review_required">半自动模式：发布前确认</option>
-              <option value="auto_publish_allowed">自动模式：允许对话直接发布/定时</option>
+              <option value="auto_publish_allowed">自动模式：允许对话准备发布确认单</option>
             </select>
             <small className="fieldHint">
-              真实发布仍会经过标题、正文、标签、图片、可见范围、定时时间和重复发布检查。
+              真实发布仍会经过标题、正文、标签、图片、可见范围、定时时间、重复发布检查和一次性确认。
             </small>
           </label>
         </section>

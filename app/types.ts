@@ -1,4 +1,15 @@
-export type Section = "dashboard" | "workflow" | "jobs" | "assets" | "imageStudio" | "chat" | "publish" | "audit" | "history" | "settings";
+export type Section =
+  | "flow"
+  | "dashboard"
+  | "workflow"
+  | "jobs"
+  | "assets"
+  | "imageStudio"
+  | "chat"
+  | "publish"
+  | "audit"
+  | "history"
+  | "settings";
 export type ImageStudioMode = "ai" | "card";
 export type CardTheme = "sketch" | "default" | "professional" | "retro" | "terminal" | "botanical" | "neo-brutalism" | "playful-geometric";
 export type CardPaginationMode = "separator" | "auto-split" | "auto-fit" | "dynamic";

@@ -67,6 +67,31 @@ export async function updateWorkspaceState(
   });
 }
 
+export function createBlankWorkspaceState(seed: Partial<WorkspaceState> = {}): WorkspaceState {
+  return normalizeWorkspaceState({
+    schemaVersion: WORKSPACE_SCHEMA_VERSION,
+    workspaceId: `workspace-${Date.now()}-${randomUUID().slice(0, 8)}`,
+    updatedAt: new Date().toISOString(),
+    topic: seed.topic,
+    researchRunId: seed.researchRunId,
+    evidenceSummary: seed.evidenceSummary,
+    selectedSamples: Array.isArray(seed.selectedSamples) ? seed.selectedSamples : [],
+    currentDraftId: seed.currentDraftId,
+    currentDraft: seed.currentDraft ?? null,
+    selectedImageIds: Array.isArray(seed.selectedImageIds) ? seed.selectedImageIds : [],
+    productImageIds: Array.isArray(seed.productImageIds) ? seed.productImageIds : [],
+    publishPlan: seed.publishPlan ?? null,
+    lastUserIntent: seed.lastUserIntent,
+    recentJobIds: Array.isArray(seed.recentJobIds) ? seed.recentJobIds : [],
+    recentRunIds: Array.isArray(seed.recentRunIds) ? seed.recentRunIds : [],
+    recentConversationIds: Array.isArray(seed.recentConversationIds) ? seed.recentConversationIds : []
+  });
+}
+
+export async function resetWorkspaceState(seed: Partial<WorkspaceState> = {}): Promise<WorkspaceState> {
+  return writeWorkspaceState(createBlankWorkspaceState(seed));
+}
+
 async function createInitialWorkspaceState(): Promise<WorkspaceState> {
   const [currentDraft, history, assets, jobs, conversations] = await Promise.all([
     readCurrentDraft().catch(() => null),

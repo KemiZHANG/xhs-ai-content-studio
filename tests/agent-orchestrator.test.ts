@@ -234,7 +234,7 @@ describe("agent orchestrator", () => {
     expect(publish.workspace.publishPlan?.images).toEqual([secondImage]);
   });
 
-  it("uses the configured publish policy instead of always requiring review", async () => {
+  it("requires a confirmation intent even when auto publish policy is enabled", async () => {
     let publishCalls = 0;
     const result = await runAgentTurn({
       message: "publish current draft",
@@ -271,7 +271,7 @@ describe("agent orchestrator", () => {
       }
     });
 
-    expect(publishCalls).toBe(1);
-    expect(result.workspace.publishPlan?.status).toBe("published");
+    expect(publishCalls).toBe(0);
+    expect(result.workspace.publishPlan?.status).toBe("awaiting_approval");
   });
 });

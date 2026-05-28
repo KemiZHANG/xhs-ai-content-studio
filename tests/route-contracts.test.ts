@@ -348,6 +348,46 @@ describe("API route contracts", () => {
     expect(enqueueWorkflow).toHaveBeenCalledWith(expect.objectContaining({ topic: "coffee" }));
   });
 
+  it("does not infer job publishing from default auto-publish or legacy autoPublish flags", async () => {
+    const enqueueWorkflow = vi.fn(async (input) => ({
+      id: "job-1",
+      type: "workflow",
+      title: "research coffee",
+      status: "queued",
+      progress: 10,
+      createdAt: "",
+      updatedAt: "",
+      input,
+      steps: []
+    }));
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => ({
+        ...defaultSettings,
+        defaultAutoPublish: true,
+        maxResearchSamples: 12
+      }),
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/jobs/runner", () => ({
+      getJobRunner: () => ({ enqueueWorkflow })
+    }));
+
+    const { POST } = await import("@/app/api/jobs/route");
+    const response = await POST(jsonRequest({ topic: "coffee", autoPublish: true }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.job).toEqual(expect.objectContaining({ id: "job-1" }));
+    expect(enqueueWorkflow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        topic: "coffee",
+        publishMode: "draft",
+        autoPublish: false
+      })
+    );
+  });
+
   it("returns published status and currentDraft from the publish route", async () => {
     const asset = {
       id: "asset-1",

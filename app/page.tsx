@@ -4,6 +4,7 @@ import {
   ClipboardList,
   Database,
   FileCheck2,
+  Layers3,
   MessageSquareText,
   RefreshCw,
   Rocket,
@@ -25,6 +26,7 @@ import {
   WorkflowRibbon
 } from "@/app/components/xhs-panels";
 import { AccountStatusCard } from "@/app/components/account-status-card";
+import { AgentFlowPanel } from "@/app/components/agent-flow-panel";
 import { ChatPanel } from "@/app/components/chat-workbench";
 import { StatusPill } from "@/app/components/status-badges";
 import { SettingsPanel } from "@/app/components/settings-panel";
@@ -64,6 +66,7 @@ import type {
 } from "@/app/types";
 
 const navItems: Array<{ id: Section; label: string; icon: typeof ClipboardList }> = [
+  { id: "flow", label: "创作流水线", icon: Layers3 },
   { id: "chat", label: "AI 工作台", icon: MessageSquareText },
   { id: "workflow", label: "主题研究台", icon: Rocket },
   { id: "imageStudio", label: "图片创作台", icon: Sparkles },
@@ -102,13 +105,13 @@ const defaultSettings: RedactedSettings = {
 };
 
 export default function Home() {
-  const [section, setSection] = useState<Section>("chat");
+  const [section, setSection] = useState<Section>("flow");
   const [runs, setRuns] = useState<WorkflowRun[]>([]);
   const [jobs, setJobs] = useState<JobRecord[]>([]);
   const [publishAudits, setPublishAudits] = useState<PublishAuditRecord[]>([]);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [autoReturnJobId, setAutoReturnJobId] = useState<string | null>(null);
-  const [autoReturnTarget, setAutoReturnTarget] = useState<"workflow" | "chat">("workflow");
+  const [autoReturnTarget, setAutoReturnTarget] = useState<"flow" | "workflow" | "chat">("workflow");
   const [assets, setAssets] = useState<AssetRecord[]>([]);
   const [workspace, setWorkspace] = useState<WorkspaceState | null>(null);
   const [creatorMemory, setCreatorMemory] = useState<CreatorMemoryProfile | null>(null);
@@ -233,10 +236,6 @@ export default function Home() {
   async function loadHistory() {
     const data = await clientApi<{ runs: WorkflowRun[] }>("/api/history");
     setRuns(data.runs);
-    const latestResearch = data.runs.find((run) => run.result.status === "research_ready" || run.result.researchSummary);
-    if (latestResearch?.result) {
-      setResearchResult(latestResearch.result);
-    }
   }
 
   async function loadJobs() {
@@ -293,6 +292,8 @@ export default function Home() {
     const data = (await clientApi("/api/drafts/current")) as { currentDraft: DraftRecord | null };
     if (data.currentDraft) {
       applyCurrentDraft(data.currentDraft);
+    } else {
+      setCurrentDraft(null);
     }
   }
 
@@ -362,6 +363,10 @@ export default function Home() {
     setBusy("workflow");
     setNotice("");
     try {
+      await resetActiveWorkspace({
+        topic: workflowForm.topic,
+        lastUserIntent: "start_research"
+      });
       const researchInput = {
         ...workflowForm,
         workflowGoal: "research",
@@ -378,7 +383,7 @@ export default function Home() {
         body: JSON.stringify(researchInput)
       })) as { job: JobRecord };
       setActiveJobId(data.job.id);
-      setAutoReturnTarget("workflow");
+      setAutoReturnTarget(section === "flow" ? "flow" : "workflow");
       setAutoReturnJobId(data.job.id);
       setJobs((current) => [data.job, ...current.filter((job) => job.id !== data.job.id)]);
       setSection("jobs");
@@ -608,10 +613,58 @@ export default function Home() {
     setMessages(conversation.messages);
   }
 
-  function startNewConversation() {
+  async function resetActiveWorkspace(seed: Partial<WorkspaceState> = {}) {
+    const data = (await clientApi("/api/agent/workspace/reset", {
+      method: "POST",
+      body: JSON.stringify(seed)
+    })) as { workspace: WorkspaceState };
+    setWorkspace(data.workspace);
+    setWorkflowResult(null);
+    setResearchResult(null);
+    setCurrentDraft(null);
+    setPublishDraft({ title: "", content: "", tagsText: "", imagePrompt: "" });
+    setPublishAssetIds([]);
+    setPublishScheduleAt("");
+    setPublishStatus("");
+    setPendingPublish(null);
+    setChatAssetIds([]);
+    return data.workspace;
+  }
+
+  async function startNewConversation() {
+    await resetActiveWorkspace({ lastUserIntent: "start_new_conversation" });
     setActiveConversationId(null);
     setMessages([]);
+    setChatInput("");
     setSection("chat");
+    setNotice("已开启干净的新对话，并清空当前工作区草稿、证据和发布计划。");
+  }
+
+  async function startNewProject() {
+    await resetActiveWorkspace({ lastUserIntent: "start_new_project" });
+    setActiveConversationId(null);
+    setMessages([]);
+    setSection("flow");
+    setNotice("已新建干净的创作项目：研究证据、草稿、图片选择和发布计划已清空。");
+  }
+
+  async function rememberCurrentPreference(text: string) {
+    const now = new Date().toISOString();
+    const memoryItem = {
+      text,
+      confidence: "explicit",
+      count: 1,
+      updatedAt: now,
+      source: "draft"
+    };
+    const data = (await clientApi("/api/agent/memory", {
+      method: "PATCH",
+      body: JSON.stringify({
+        liked: [memoryItem, ...(creatorMemory?.liked ?? [])]
+      })
+    })) as { memory: CreatorMemoryProfile };
+    setCreatorMemory(data.memory);
+    setNotice("已记住这次偏好，后续创作会把它作为稳定偏好参考。");
   }
 
   function openCopyWorkspaceFromEvidence(brief?: string) {
@@ -856,6 +909,28 @@ export default function Home() {
           onNavigate={setSection}
         />
 
+        {section === "flow" ? (
+          <AgentFlowPanel
+            form={workflowForm}
+            busy={busy === "workflow"}
+            result={workflowResultForDisplay}
+            workspace={workspace}
+            currentDraft={currentDraft}
+            creatorMemory={creatorMemory}
+            assets={assets}
+            selectedImageIds={publishAssetIds}
+            jobs={jobs}
+            settings={settings}
+            health={health}
+            onChange={(next) => setWorkflowForm((current) => ({ ...current, ...next }))}
+            onSubmitResearch={(event) => void runWorkflow(event)}
+            onSendDraftPrompt={(message) => void submitChatMessage(message, true)}
+            onRememberPreference={(text) => void rememberCurrentPreference(text)}
+            onResetProject={() => void startNewProject()}
+            onNavigate={setSection}
+          />
+        ) : null}
+
         {section === "dashboard" ? (
           <Dashboard
             health={health}
@@ -972,7 +1047,7 @@ export default function Home() {
             }
             onRemoveAsset={(id) => setChatAssetIds((current) => current.filter((assetId) => assetId !== id))}
             onSelectConversation={selectConversation}
-            onNewConversation={startNewConversation}
+            onNewConversation={() => void startNewConversation()}
             onDraftCommand={(message) => void submitChatMessage(message, true)}
             onOpenCopyWorkspace={(brief) => openCopyWorkspaceFromEvidence(brief)}
             onOpenImageStudio={() => openImageStudioFromEvidence()}

@@ -34,8 +34,15 @@ describe("agent publish guardrails", () => {
     expect(decision.status).toBe("awaiting_approval");
   });
 
-  it("allows publish-ready content in auto-publish mode", () => {
+  it("still requires a one-time approval in auto-publish mode", () => {
     const decision = authorizePublishIntent(baseIntent(), { mode: "auto_publish_allowed" });
+
+    expect(decision.allowed).toBe(false);
+    expect(decision.status).toBe("awaiting_approval");
+  });
+
+  it("allows publish-ready content after explicit confirmation", () => {
+    const decision = authorizePublishIntent(baseIntent(), { mode: "auto_publish_allowed", confirmed: true });
 
     expect(decision.allowed).toBe(true);
     expect(decision.status).toBe("approved");

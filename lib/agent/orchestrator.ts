@@ -457,7 +457,7 @@ async function maybeHandleGuardedPublishTurn(
     requestedBy: "chat",
     policy: {
       mode: input.settings.agentPublishPolicy ?? "review_required",
-      confirmed: input.settings.agentPublishPolicy === "auto_publish_allowed"
+      confirmed: false
     },
     auditContext: {
       accountId: input.settings.activeAccountId,
