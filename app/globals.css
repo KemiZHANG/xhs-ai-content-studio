@@ -6,8 +6,8 @@
   --surface-subtle: #f7f7f8;
   --surface-tint: #fff1f3;
   --ink: rgba(0, 0, 0, 0.82);
-  --muted: rgba(0, 0, 0, 0.56);
-  --line: rgba(0, 0, 0, 0.08);
+  --muted: rgba(0, 0, 0, 0.68);
+  --line: rgba(0, 0, 0, 0.14);
   --line-strong: rgba(0, 0, 0, 0.18);
   --accent: #ff2442;
   --accent-strong: #d91d38;
@@ -2591,7 +2591,7 @@ textarea {
 .flowHero {
   align-items: stretch;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(238, 248, 244, 0.88)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 244, 246, 0.92)),
     var(--surface);
   display: grid;
   gap: 18px;
@@ -2659,20 +2659,24 @@ textarea {
 
 .flowHeroRail {
   align-content: center;
-  background: rgba(19, 32, 29, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: #17181d;
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 12px;
   display: grid;
   gap: 8px;
   padding: 14px;
 }
 
+.flowHeroRail.simple {
+  align-content: stretch;
+}
+
 .flowRailItem {
   align-items: center;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  color: #c7d9d4;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  color: #f6f6f7;
   display: flex;
   gap: 8px;
   min-height: 38px;
@@ -2688,13 +2692,12 @@ textarea {
 .flowGrid {
   align-items: start;
   display: grid;
-  gap: 18px;
-  grid-template-columns: minmax(320px, 0.78fr) minmax(0, 1.12fr) minmax(300px, 0.72fr);
+  gap: 16px;
+  grid-template-columns: minmax(300px, 0.9fr) minmax(360px, 1.1fr) minmax(300px, 0.9fr);
 }
 
 .flowResearchPanel,
-.flowPublishPanel,
-.flowAdvancedPanel {
+.flowPublishPanel {
   position: sticky;
   top: 20px;
 }
@@ -2743,9 +2746,7 @@ textarea {
 }
 
 .digestCard {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 252, 250, 0.9)),
-    var(--surface-strong);
+  background: var(--surface-strong);
   border: 1px solid var(--line);
   border-radius: 10px;
   display: grid;
@@ -2772,9 +2773,9 @@ textarea {
 
 .digestCard li,
 .digestCard p {
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.55;
+  color: rgba(0, 0, 0, 0.76);
+  font-size: 14px;
+  line-height: 1.65;
   margin: 0;
 }
 
@@ -2818,6 +2819,13 @@ textarea {
   gap: 12px;
 }
 
+.questionStepper.simple {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+}
+
 .questionTabs {
   display: flex;
   gap: 7px;
@@ -2859,6 +2867,14 @@ textarea {
   min-height: 130px;
 }
 
+.creativeNeedBox {
+  background: #fff;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 180px !important;
+}
+
 .flowDraftPreview {
   background: #fffefa;
   border: 1px solid rgba(25, 33, 30, 0.1);
@@ -2874,7 +2890,7 @@ textarea {
 }
 
 .flowDraftPreview p {
-  color: var(--muted);
+  color: rgba(0, 0, 0, 0.76);
   line-height: 1.7;
   margin: 0;
   white-space: pre-wrap;
@@ -2904,10 +2920,18 @@ textarea {
   background: var(--surface-subtle);
   border: 1px solid var(--line);
   border-radius: 8px;
-  color: var(--muted);
-  font-size: 13px;
+  color: rgba(0, 0, 0, 0.76);
+  font-size: 14px;
   min-height: 34px;
   padding: 8px 10px;
+}
+
+.flowNextActions {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
 }
 
 .advancedShortcutGrid {

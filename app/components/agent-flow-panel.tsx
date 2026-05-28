@@ -4,14 +4,9 @@ import { FormEvent, useMemo, useState } from "react";
 import {
   ArrowRight,
   Bot,
-  CalendarClock,
-  Check,
-  FileText,
-  ImagePlus,
   Library,
   Search,
   ShieldCheck,
-  Sparkles
 } from "lucide-react";
 import type {
   AssetRecord,
@@ -34,13 +29,6 @@ type FlowForm = {
   requirements: string;
 };
 
-type FlowSlot = {
-  id: keyof FlowSlots;
-  label: string;
-  helper: string;
-  placeholder: string;
-};
-
 type FlowSlots = {
   object: string;
   audience: string;
@@ -49,45 +37,6 @@ type FlowSlots = {
   avoid: string;
   imageDirection: string;
 };
-
-const flowSlots: FlowSlot[] = [
-  {
-    id: "object",
-    label: "你要写什么",
-    helper: "产品、门店、服务或具体体验对象。",
-    placeholder: "例如：广州东山口一家安静咖啡馆 / 我的香薰蜡烛新品"
-  },
-  {
-    id: "audience",
-    label: "给谁看",
-    helper: "人群越具体，标题和正文越像真人。",
-    placeholder: "例如：周末想找安静座位办公的女生 / 第一次买香薰的新手"
-  },
-  {
-    id: "tone",
-    label: "想要的语气",
-    helper: "决定是探店感、真实分享、干货收藏还是产品种草。",
-    placeholder: "例如：生活化、不广告、有一点松弛感"
-  },
-  {
-    id: "mustHave",
-    label: "必须写进去",
-    helper: "价格、地址、卖点、使用感、优惠、注意事项都可以放这里。",
-    placeholder: "例如：人均 35、靠窗位置舒服、适合一个人待 2 小时"
-  },
-  {
-    id: "avoid",
-    label: "不要出现",
-    helper: "用来避免夸张、违禁、像广告或不符合品牌的表达。",
-    placeholder: "例如：不要夸大功效，不要写成硬广，不要说绝对化词"
-  },
-  {
-    id: "imageDirection",
-    label: "图片方向",
-    helper: "没有产品图也可以生成图文卡片；有产品图则可做场景化。",
-    placeholder: "例如：封面干净、有标题字；正文用 4 张收藏型图文卡片"
-  }
-];
 
 export function AgentFlowPanel({
   form,
@@ -126,8 +75,7 @@ export function AgentFlowPanel({
   onResetProject: () => void;
   onNavigate: (section: Section) => void;
 }) {
-  const [slotIndex, setSlotIndex] = useState(0);
-  const [slots, setSlots] = useState<FlowSlots>({
+  const [slots] = useState<FlowSlots>({
     object: "",
     audience: "",
     tone: "",
@@ -135,14 +83,13 @@ export function AgentFlowPanel({
     avoid: "",
     imageDirection: ""
   });
+  const [creativeNeed, setCreativeNeed] = useState("");
   const [memoryText, setMemoryText] = useState("");
   const activeJob = jobs.find((job) => job.status === "queued" || job.status === "running") ?? null;
   const selectedAssets = assets.filter((asset) => selectedImageIds.includes(asset.id));
   const draft = workspace?.currentDraft ?? currentDraft;
   const evidenceCount = result?.evidence?.length ?? result?.samples.length ?? workspace?.selectedSamples?.length ?? 0;
   const summary = result?.researchSummary ?? (workspace?.evidenceSummary as WorkflowResult["researchSummary"] | undefined);
-  const activeSlot = flowSlots[slotIndex];
-  const filledSlots = flowSlots.filter((slot) => slots[slot.id].trim()).length;
   const account =
     settings.accounts.find((item) => item.id === settings.activeAccountId) ?? settings.accounts[0];
 
@@ -151,7 +98,8 @@ export function AgentFlowPanel({
       "请基于当前研究总结生成一篇原创小红书图文笔记，不要重新搜索。",
       `主题：${form.topic || workspace?.topic || slots.object || "未填写"}`,
       `内容类型：${form.contentType}`,
-      `写作对象：${slots.object || form.requirements || "请根据研究证据判断"}`,
+      `我的创作要求：${creativeNeed || form.requirements || "请先根据研究证据生成一个可直接修改的初稿"}`,
+      `写作对象：${slots.object || "请根据主题和研究证据判断"}`,
       `目标人群：${slots.audience || "请根据主题推断并说明"}`,
       `语气风格：${slots.tone || "真实分享、生活化、不像硬广"}`,
       `必须包含：${slots.mustHave || form.requirements || "保留真实可执行的信息"}`,
@@ -161,11 +109,7 @@ export function AgentFlowPanel({
       "请输出：3 个标题候选、最终标题、正文、标签、正文结构、图片创作说明。"
     ];
     return lines.join("\n");
-  }, [form, slots, workspace?.topic]);
-
-  function updateSlot(value: string) {
-    setSlots((current) => ({ ...current, [activeSlot.id]: value }));
-  }
+  }, [creativeNeed, form, slots, workspace?.topic]);
 
   function rememberPreference() {
     const text =
@@ -181,10 +125,10 @@ export function AgentFlowPanel({
     <div className="agentFlow">
       <section className="flowHero panel">
         <div>
-          <span className="flowKicker">AI Agent 创作流水线</span>
-          <h2>先找真实笔记，再问清需求，最后装配发布。</h2>
+          <span className="flowKicker">XHS AI Content Studio</span>
+          <h2>一个主题，三步生成小红书笔记。</h2>
           <p>
-            这里是新的主入口。你只需要从主题开始，研究、文案、图片、记忆和发布预览会按顺序推进；旧工作台仍然保留在高级入口里。
+            先搜索真实笔记，提炼标题、正文、标签和图片优点；再按你的要求生成文案；最后进入图片和发布确认。
           </p>
           <div className="flowHeroActions">
             <button className="primaryButton" onClick={onResetProject} type="button">
@@ -195,11 +139,10 @@ export function AgentFlowPanel({
             </button>
           </div>
         </div>
-        <div className="flowHeroRail">
-          <FlowRailItem icon={Search} label="研究" ready={evidenceCount > 0} />
-          <FlowRailItem icon={Bot} label="创作" ready={Boolean(draft)} />
-          <FlowRailItem icon={ImagePlus} label="配图" ready={selectedAssets.length > 0} />
-          <FlowRailItem icon={ShieldCheck} label="确认" ready={Boolean(workspace?.publishPlan)} />
+        <div className="flowHeroRail simple">
+          <FlowRailItem icon={Search} label="1 搜索笔记" ready={evidenceCount > 0} />
+          <FlowRailItem icon={Bot} label="2 生成文案" ready={Boolean(draft)} />
+          <FlowRailItem icon={ShieldCheck} label="3 发布确认" ready={Boolean(workspace?.publishPlan)} />
         </div>
       </section>
 
@@ -276,8 +219,8 @@ export function AgentFlowPanel({
         <section className="panel flowInsightPanel">
           <div className="panelHeader compact">
             <div>
-              <h2>2. 爆款优点</h2>
-              <p>这里只展示可学习结论，完整原帖放在高级研究台。</p>
+              <h2>2. 可学习结论</h2>
+              <p>只看结论，不把整篇原帖塞进主界面。</p>
             </div>
             <button className="secondaryButton" onClick={() => onNavigate("workflow")} type="button">
               完整证据
@@ -310,50 +253,18 @@ export function AgentFlowPanel({
         <section className="panel flowConsultPanel">
           <div className="panelHeader compact">
             <div>
-              <h2>3. AI 追问创作</h2>
-              <p>像对话一样补齐条件，不需要一次写完所有需求。</p>
+              <h2>3. 写下你的要求</h2>
+              <p>不需要填很多表。把你想强调的人群、语气、卖点、禁忌写在这里。</p>
             </div>
-            <span className="flowStepCounter">{filledSlots}/{flowSlots.length}</span>
           </div>
-          <div className="questionStepper">
-            <div className="questionTabs">
-              {flowSlots.map((slot, index) => (
-                <button
-                  className={index === slotIndex ? "active" : slots[slot.id] ? "done" : ""}
-                  key={slot.id}
-                  onClick={() => setSlotIndex(index)}
-                  type="button"
-                >
-                  {slots[slot.id] ? <Check size={13} /> : index + 1}
-                </button>
-              ))}
-            </div>
-            <label>
-              <span>{activeSlot.label}</span>
-              <small>{activeSlot.helper}</small>
-              <textarea
-                placeholder={activeSlot.placeholder}
-                value={slots[activeSlot.id]}
-                onChange={(event) => updateSlot(event.target.value)}
-              />
-            </label>
+          <div className="questionStepper simple">
+            <textarea
+              className="creativeNeedBox"
+              placeholder="例如：写给第一次来上海安静咖啡馆办公的人；语气真实、不广告；必须写环境、价格、适合停留多久；不要夸张。"
+              value={creativeNeed}
+              onChange={(event) => setCreativeNeed(event.target.value)}
+            />
             <div className="actionRow">
-              <button
-                className="secondaryButton"
-                disabled={slotIndex === 0}
-                onClick={() => setSlotIndex((index) => Math.max(0, index - 1))}
-                type="button"
-              >
-                上一步
-              </button>
-              <button
-                className="secondaryButton"
-                disabled={slotIndex === flowSlots.length - 1}
-                onClick={() => setSlotIndex((index) => Math.min(flowSlots.length - 1, index + 1))}
-                type="button"
-              >
-                下一步
-              </button>
               <button className="primaryButton" onClick={() => onSendDraftPrompt(draftPrompt)} type="button">
                 生成文案
                 <ArrowRight size={16} />
@@ -362,61 +273,11 @@ export function AgentFlowPanel({
           </div>
         </section>
 
-        <section className="panel flowDraftPanel">
-          <div className="panelHeader compact">
-            <div>
-              <h2>4. 当前成果</h2>
-              <p>满意后记忆偏好，再进入图片和发布预览。</p>
-            </div>
-          </div>
-          {draft ? (
-            <article className="flowDraftPreview">
-              <span>当前草稿</span>
-              <strong>{draft.draft.title}</strong>
-              <p>{draft.draft.content.slice(0, 220)}{draft.draft.content.length > 220 ? "..." : ""}</p>
-              <div className="tagRow">
-                {draft.draft.tags.slice(0, 6).map((tag) => (
-                  <em key={tag}>#{tag}</em>
-                ))}
-              </div>
-            </article>
-          ) : (
-            <div className="flowEmptyState">
-              <FileText size={24} />
-              <strong>草稿会出现在这里</strong>
-              <p>研究完成后补齐创作条件，点击“生成文案”，右侧会沉淀成当前草稿。</p>
-            </div>
-          )}
-          <div className="flowActionStack">
-            <label>
-              <span>满意后记住什么</span>
-              <input
-                placeholder="例如：以后保持这种生活化、不广告的语气"
-                value={memoryText}
-                onChange={(event) => setMemoryText(event.target.value)}
-              />
-            </label>
-            <button className="secondaryButton fullWidth" onClick={rememberPreference} type="button">
-              记住这次偏好
-            </button>
-            <div className="flowSplitActions">
-              <button className="secondaryButton" onClick={() => onNavigate("imageStudio")} type="button">
-                <ImagePlus size={16} />
-                去做图片
-              </button>
-              <button className="primaryButton" disabled={!draft} onClick={() => onNavigate("publish")} type="button">
-                <CalendarClock size={16} />
-                发布预览
-              </button>
-            </div>
-          </div>
-        </section>
-
         <section className="panel flowPublishPanel">
           <div className="panelHeader compact">
             <div>
-              <h2>发布安全</h2>
-              <p>真实发布统一进入确认单，不会因为默认设置自动误发。</p>
+              <h2>下一步</h2>
+              <p>文案满意后，再去生成图片或进入发布确认。</p>
             </div>
           </div>
           <div className="publishAccountGuard ok">
@@ -432,24 +293,16 @@ export function AgentFlowPanel({
             <span>发布策略：{settings.agentPublishPolicy === "draft_only" ? "只生成草稿" : "先生成确认单"}</span>
             <span>发布图片：{selectedAssets.length} 张</span>
           </div>
-        </section>
-
-        <section className="panel flowAdvancedPanel">
-          <div className="panelHeader compact">
-            <div>
-              <h2>高级入口</h2>
-              <p>旧功能没有删除，只是从主流程里降噪。</p>
-            </div>
-          </div>
-          <div className="advancedShortcutGrid">
-            <button type="button" onClick={() => onNavigate("workflow")}>主题研究台</button>
-            <button type="button" onClick={() => onNavigate("chat")}>AI 工作台</button>
-            <button type="button" onClick={() => onNavigate("imageStudio")}>图片创作台</button>
-            <button type="button" onClick={() => onNavigate("assets")}>素材库</button>
-            <button type="button" onClick={() => onNavigate("jobs")}>任务进度</button>
-            <button type="button" onClick={() => onNavigate("audit")}>发布审计</button>
-            <button type="button" onClick={() => onNavigate("history")}>历史记录</button>
-            <button type="button" onClick={() => onNavigate("settings")}>模型设置</button>
+          <div className="flowNextActions">
+            <button className="secondaryButton" onClick={() => onNavigate("imageStudio")} type="button">
+              去图片创作台
+            </button>
+            <button className="primaryButton" disabled={!draft} onClick={() => onNavigate("publish")} type="button">
+              发布预览
+            </button>
+            <button className="secondaryButton" onClick={rememberPreference} type="button">
+              记住当前偏好
+            </button>
           </div>
         </section>
       </div>
