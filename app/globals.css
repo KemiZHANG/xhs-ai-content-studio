@@ -1606,6 +1606,41 @@ textarea {
   padding: 0;
 }
 
+.evidenceAlignment {
+  border: 1px solid rgba(18, 118, 97, 0.14);
+  border-radius: 12px;
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 10px 11px;
+}
+
+.evidenceAlignment.ok {
+  background: rgba(20, 143, 113, 0.08);
+}
+
+.evidenceAlignment.warn {
+  background: rgba(191, 107, 38, 0.1);
+  border-color: rgba(191, 107, 38, 0.22);
+}
+
+.evidenceAlignment span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.evidenceAlignment strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.evidenceAlignment p {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0;
+}
+
 .miniProgress {
   background: rgba(0, 0, 0, 0.12);
   border-radius: 999px;

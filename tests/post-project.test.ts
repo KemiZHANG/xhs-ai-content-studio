@@ -508,6 +508,8 @@ describe("post project", () => {
     expect(quality.evidenceReview?.viralEvidenceIds).toEqual(["viral-insight-style"]);
     expect(quality.evidenceReview?.missingEvidenceIds).toEqual([]);
     expect(quality.evidenceReview?.summary).toContain("爆款库 1 条");
+    expect(quality.evidenceAlignment?.isAligned).toBe(true);
+    expect(quality.evidenceAlignment?.sharedEvidenceIds).toEqual(["viral-insight-style"]);
   });
 
   it("blocks publish when copy and visual direction cite different evidence", () => {
@@ -593,6 +595,10 @@ describe("post project", () => {
     expect(quality.canPublish).toBe(false);
     expect(quality.issues.join(" ")).toContain("图片方向与文案引用的证据不一致");
     expect(quality.visualConsistencyScore).toBeLessThan(100);
+    expect(quality.evidenceAlignment?.isAligned).toBe(false);
+    expect(quality.evidenceAlignment?.copyEvidenceIds).toEqual(["insight-copy"]);
+    expect(quality.evidenceAlignment?.visualEvidenceIds).toEqual(["insight-visual"]);
+    expect(quality.evidenceAlignment?.sharedEvidenceIds).toEqual([]);
   });
 
   it("blocks publish when draft evidence ids are not in the current evidence pack", () => {

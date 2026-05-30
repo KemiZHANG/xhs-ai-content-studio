@@ -27,6 +27,7 @@ export function runPostQualityGate(project: Pick<
       visualEvidenceIds.length &&
       !hasStringOverlap(draftEvidenceIds, visualEvidenceIds)
   );
+  const evidenceAlignment = buildEvidenceAlignment(draftEvidenceIds, visualEvidenceIds, Boolean(project.visualDirection));
   const evidenceReview = buildEvidenceReview(project, draftEvidenceIds);
   const finalImageIds = finalPost?.imageIds ?? [];
   const selectedImageIds = project.selectedImages ?? [];
@@ -141,7 +142,34 @@ export function runPostQualityGate(project: Pick<
     issues,
     suggestions,
     evidenceReview,
+    evidenceAlignment,
     checkedAt: new Date().toISOString()
+  };
+}
+
+function buildEvidenceAlignment(
+  draftEvidenceIds: string[],
+  visualEvidenceIds: string[],
+  hasVisualDirection: boolean
+): NonNullable<QualityCheck["evidenceAlignment"]> {
+  const copyEvidenceIds = uniqueStrings(draftEvidenceIds).slice(0, 12);
+  const visualIds = uniqueStrings(visualEvidenceIds).slice(0, 12);
+  const sharedEvidenceIds = copyEvidenceIds.filter((id) => visualIds.includes(id));
+  const isAligned = !hasVisualDirection || !copyEvidenceIds.length || !visualIds.length || sharedEvidenceIds.length > 0;
+  const summary = hasVisualDirection
+    ? isAligned
+      ? sharedEvidenceIds.length
+        ? `图文共享 ${sharedEvidenceIds.length} 条证据`
+        : "证据引用不足，未形成强校验"
+      : "文案与图片方向没有共享证据"
+    : "尚未生成图片方向";
+
+  return {
+    copyEvidenceIds,
+    visualEvidenceIds: visualIds,
+    sharedEvidenceIds,
+    isAligned,
+    summary
   };
 }
 

@@ -151,6 +151,15 @@ export function WorkspaceCanvas({
             合规 {quality.complianceScore} · 图文一致 {quality.visualConsistencyScore} · 平台适配 {quality.platformFitScore}
           </p>
           {quality.evidenceReview ? <p>证据覆盖：{quality.evidenceReview.summary}</p> : null}
+          {quality.evidenceAlignment ? (
+            <div className={quality.evidenceAlignment.isAligned ? "evidenceAlignment ok" : "evidenceAlignment warn"}>
+              <span>图文证据</span>
+              <strong>{quality.evidenceAlignment.summary}</strong>
+              <p>
+                文案 {quality.evidenceAlignment.copyEvidenceIds.length} 条 · 图片 {quality.evidenceAlignment.visualEvidenceIds.length} 条 · 共同 {quality.evidenceAlignment.sharedEvidenceIds.length} 条
+              </p>
+            </div>
+          ) : null}
           {quality.issues.length ? (
             <ul className="canvasIssueList">
               {quality.issues.slice(0, 3).map((issue) => (

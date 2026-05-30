@@ -682,6 +682,15 @@ export function PostStudioPanel({
                   {quality.evidenceReview ? (
                     <p className="muted">证据覆盖：{quality.evidenceReview.summary}</p>
                   ) : null}
+                  {quality.evidenceAlignment ? (
+                    <div className={quality.evidenceAlignment.isAligned ? "evidenceAlignment ok" : "evidenceAlignment warn"}>
+                      <span>图文证据</span>
+                      <strong>{quality.evidenceAlignment.summary}</strong>
+                      <p>
+                        文案 {quality.evidenceAlignment.copyEvidenceIds.length} 条 · 图片 {quality.evidenceAlignment.visualEvidenceIds.length} 条 · 共同 {quality.evidenceAlignment.sharedEvidenceIds.length} 条
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
               <div className="inlineActionGrid">

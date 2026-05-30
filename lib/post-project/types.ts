@@ -144,6 +144,13 @@ export type QualityCheck = {
     missingEvidenceIds: string[];
     summary: string;
   };
+  evidenceAlignment?: {
+    copyEvidenceIds: string[];
+    visualEvidenceIds: string[];
+    sharedEvidenceIds: string[];
+    isAligned: boolean;
+    summary: string;
+  };
   checkedAt: string;
 };
 
