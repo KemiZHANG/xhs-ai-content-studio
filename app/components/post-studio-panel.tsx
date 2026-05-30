@@ -33,7 +33,7 @@ import type {
   WorkspaceState
 } from "@/app/types";
 import { getPostStageGuidance } from "@/lib/post-project/guidance";
-import { buildEvidenceCitationReport } from "@/lib/post-project/citations";
+import { buildEvidenceCitationReport, buildEvidenceReferenceSummary } from "@/lib/post-project/citations";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
@@ -186,6 +186,12 @@ export function PostStudioPanel({
   const versionDiff = project ? getPostVersionDiffReport(project) : null;
   const citationReport = project && draftEvidenceIds.length
     ? buildEvidenceCitationReport(project, draftEvidenceIds, project.copyDraft?.draft.evidenceReferences)
+    : null;
+  const briefEvidenceSummary = project?.creativeBrief
+    ? buildEvidenceReferenceSummary(project, project.creativeBrief.basedOnEvidenceIds)
+    : null;
+  const visualEvidenceSummary = project?.visualDirection
+    ? buildEvidenceReferenceSummary(project, project.visualDirection.basedOnEvidenceIds)
     : null;
   const citationTraceReady = Boolean(
     citationReport &&
@@ -594,6 +600,12 @@ export function PostStudioPanel({
                   <BriefLine label="角度" value={brief.contentAngle} />
                   <BriefLine label="语气" value={brief.tone} />
                   <BriefLine label="视觉" value={brief.visualMood} />
+                  {briefEvidenceSummary?.insights.length ? (
+                    <EvidenceReferenceBox title="Brief 参考证据" summary={briefEvidenceSummary} />
+                  ) : null}
+                  {visualEvidenceSummary?.insights.length ? (
+                    <EvidenceReferenceBox title="图片方向参考证据" summary={visualEvidenceSummary} />
+                  ) : null}
                   <ChipList title="证明点" items={brief.proofPoints} />
                   <ChipList title="图片必须有" items={brief.imageMustHave} />
                   <ChipList title="图片避免" items={brief.imageMustAvoid} />
@@ -1052,6 +1064,33 @@ function BriefLine({ label, value }: { label: string; value?: string }) {
     <article className="insightLine">
       <span>{label}</span>
       <p>{value || "待补充"}</p>
+    </article>
+  );
+}
+
+function EvidenceReferenceBox({
+  title,
+  summary
+}: {
+  title: string;
+  summary: ReturnType<typeof buildEvidenceReferenceSummary>;
+}) {
+  return (
+    <article className="citationSummaryBox">
+      <strong>{title}</strong>
+      <p>{summary.summary}</p>
+      <div className="citationFieldGrid">
+        {summary.insights.slice(0, 4).map((insight) => (
+          <article key={insight.id}>
+            <span>{labelForSource(insight.sourceType)} · {labelForInsight(insight.type)}</span>
+            <p>{insight.insight}</p>
+            <small>{insight.id}</small>
+          </article>
+        ))}
+      </div>
+      {summary.missingEvidenceIds.length ? (
+        <small>缺失证据 ID：{summary.missingEvidenceIds.slice(0, 3).join("、")}</small>
+      ) : null}
     </article>
   );
 }

@@ -23,6 +23,17 @@ export type EvidenceCitationReport = {
   summary: string;
 };
 
+export type EvidenceReferenceSummary = {
+  evidenceIds: string[];
+  insights: EvidenceInsight[];
+  missingEvidenceIds: string[];
+  sourceCounts: Record<EvidenceSourceType, number>;
+  hasRealtimeEvidence: boolean;
+  hasViralEvidence: boolean;
+  hasUserInputEvidence: boolean;
+  summary: string;
+};
+
 export function buildEvidenceCitationReport(
   project: Pick<PostProject, "evidencePack" | "creativeBrief">,
   evidenceIds: string[] = [],
@@ -73,6 +84,26 @@ export function formatEvidenceCitationReport(report: EvidenceCitationReport): st
     ...visibleSections,
     warningText
   ].filter(Boolean).join("\n");
+}
+
+export function buildEvidenceReferenceSummary(
+  project: Pick<PostProject, "evidencePack">,
+  evidenceIds: string[] = [],
+  limit = 5
+): EvidenceReferenceSummary {
+  const ids = uniqueIds(evidenceIds).slice(0, Math.max(1, limit));
+  const section = buildCitationSection(project.evidencePack.insights, "content", ids);
+  const sourceCounts = countSources(section.insights);
+  return {
+    evidenceIds: section.evidenceIds,
+    insights: section.insights,
+    missingEvidenceIds: section.missingEvidenceIds,
+    sourceCounts,
+    hasRealtimeEvidence: sourceCounts.realtime > 0,
+    hasViralEvidence: sourceCounts.viral_library > 0,
+    hasUserInputEvidence: sourceCounts.user_input > 0,
+    summary: formatReferenceSummary(sourceCounts, section.missingEvidenceIds, section.insights.length)
+  };
 }
 
 function inferFieldEvidenceIds(
@@ -180,6 +211,23 @@ function formatCitationSummary(
   const missing = missingEvidenceIds.length ? `缺失证据 ${missingEvidenceIds.length} 个。` : "";
   const risk = warnings.length ? "发布前仍需 Quality Gate 复核。" : "";
   return [base, missing, risk].filter(Boolean).join("");
+}
+
+function formatReferenceSummary(
+  sourceCounts: Record<EvidenceSourceType, number>,
+  missingEvidenceIds: string[],
+  insightCount: number
+): string {
+  if (!insightCount && !missingEvidenceIds.length) {
+    return "当前还没有可追溯证据。";
+  }
+  const parts = [
+    sourceCounts.user_input ? `用户输入 ${sourceCounts.user_input} 条` : "",
+    sourceCounts.realtime ? `实时研究 ${sourceCounts.realtime} 条` : "",
+    sourceCounts.viral_library ? `爆款库 ${sourceCounts.viral_library} 条` : ""
+  ].filter(Boolean);
+  const missing = missingEvidenceIds.length ? `，缺失 ${missingEvidenceIds.length} 个证据 ID` : "";
+  return `引用 ${insightCount} 条证据：${parts.join("、") || "暂无可用来源"}${missing}`;
 }
 
 function formatInsightLine(insight: EvidenceInsight): string {

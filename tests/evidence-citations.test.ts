@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildEvidenceCitationReport, formatEvidenceCitationReport } from "@/lib/post-project/citations";
+import {
+  buildEvidenceCitationReport,
+  buildEvidenceReferenceSummary,
+  formatEvidenceCitationReport
+} from "@/lib/post-project/citations";
 import type { PostProject } from "@/lib/post-project/types";
 
 const now = "2026-05-30T00:00:00.000Z";
@@ -108,5 +112,27 @@ describe("evidence citation report", () => {
     expect(formatted).toContain("标题");
     expect(formatted).toContain("图片方向");
     expect(formatted).toContain("viral-insight-visual");
+  });
+
+  it("builds compact reference summaries for CreativeBrief and visual direction cards", () => {
+    const summary = buildEvidenceReferenceSummary(project(), [
+      "insight-user",
+      "insight-live",
+      "viral-insight-visual",
+      "missing-id"
+    ]);
+
+    expect(summary.insights.map((insight) => insight.id)).toEqual([
+      "insight-user",
+      "insight-live",
+      "viral-insight-visual"
+    ]);
+    expect(summary.missingEvidenceIds).toEqual(["missing-id"]);
+    expect(summary.hasUserInputEvidence).toBe(true);
+    expect(summary.hasRealtimeEvidence).toBe(true);
+    expect(summary.hasViralEvidence).toBe(true);
+    expect(summary.summary).toContain("用户输入 1 条");
+    expect(summary.summary).toContain("实时研究 1 条");
+    expect(summary.summary).toContain("爆款库 1 条");
   });
 });

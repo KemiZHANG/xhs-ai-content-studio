@@ -374,6 +374,16 @@ describe("agent orchestrator", () => {
     expect(result.postProject?.visualDirection?.mood).toContain("窗边自然光");
     expect(result.postProject?.imagePrompts.length).toBeGreaterThan(0);
     expect(result.cards.map((card) => card.type)).toContain("visual_direction");
+    expect(result.cards.find((card) => card.type === "creative_brief")?.data).toMatchObject({
+      evidenceSummary: expect.objectContaining({
+        insights: [expect.objectContaining({ id: "insight-visual" })]
+      })
+    });
+    expect(result.cards.find((card) => card.type === "visual_direction")?.data).toMatchObject({
+      evidenceSummary: expect.objectContaining({
+        hasRealtimeEvidence: true
+      })
+    });
     expect(result.stage).toBe("image_prompt_ready");
     expect(result.quickActions.map((action) => action.action)).toContain("generate_images");
     expect(result.answer).toContain("参考证据");

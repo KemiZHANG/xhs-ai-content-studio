@@ -17,7 +17,7 @@ import type {
 } from "@/lib/agent/types";
 import { readPostProject, resetPostProject, updatePostProject } from "@/lib/post-project/store";
 import { copyVersionFromDraft, deriveCreativeBrief, deriveFinalPost, deriveImagePromptVersion, deriveVisualDirection } from "@/lib/post-project/brief";
-import { buildEvidenceCitationReport, formatEvidenceCitationReport } from "@/lib/post-project/citations";
+import { buildEvidenceCitationReport, buildEvidenceReferenceSummary, formatEvidenceCitationReport } from "@/lib/post-project/citations";
 import { insightsFromUserBriefInput, mergeEvidenceInsights } from "@/lib/post-project/evidence";
 import { getPostStageGuidance } from "@/lib/post-project/guidance";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
@@ -1077,12 +1077,16 @@ function buildCardsFromTurn(
     });
   }
   if (postProject?.creativeBrief) {
+    const referenceSummary = buildEvidenceReferenceSummary(postProject, postProject.creativeBrief.basedOnEvidenceIds);
     cards.push({
       id: "card-creative-brief",
       type: "creative_brief",
       title: "CreativeBrief",
       summary: `${postProject.creativeBrief.contentAngle} · ${postProject.creativeBrief.tone}`,
-      data: postProject.creativeBrief
+      data: {
+        ...postProject.creativeBrief,
+        evidenceSummary: referenceSummary
+      }
     });
   }
 
@@ -1120,12 +1124,16 @@ function buildCardsFromTurn(
     }
   }
   if (postProject?.visualDirection) {
+    const referenceSummary = buildEvidenceReferenceSummary(postProject, postProject.visualDirection.basedOnEvidenceIds);
     cards.push({
       id: "card-visual-direction",
       type: "visual_direction",
       title: "视觉方向",
       summary: `${postProject.visualDirection.mood} · ${postProject.visualDirection.composition}`,
-      data: postProject.visualDirection
+      data: {
+        ...postProject.visualDirection,
+        evidenceSummary: referenceSummary
+      }
     });
   }
   if (postProject?.qualityCheck) {
