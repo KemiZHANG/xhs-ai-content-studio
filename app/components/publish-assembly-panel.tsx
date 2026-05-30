@@ -59,7 +59,7 @@ export function PublishAssemblyPanel({
   const quality = postProject?.qualityCheck;
   const finalPost = postProject?.finalPost;
   const postPlan = postProject?.publishPlan;
-  const canSubmit = ready && accountReady && quality?.canPublish !== false;
+  const canSubmit = ready && accountReady && quality?.canPublish === true;
 
   return (
     <div className="twoColumn wideLeft">
@@ -99,7 +99,7 @@ export function PublishAssemblyPanel({
             <StatusLine ok={Boolean(selectedAssets.length)} label={`${selectedAssets.length} 张图片`} />
             <StatusLine ok={visibility === "仅自己可见"} label={`可见范围：${visibility}`} />
             <StatusLine ok={accountReady} label={`发布账号：${activeAccount?.displayName ?? "未配置账号"}`} />
-            <StatusLine ok={quality?.canPublish !== false} label={quality ? `Quality Gate：${quality.canPublish ? "通过" : "需处理"}` : "Quality Gate：待检查"} />
+            <StatusLine ok={quality?.canPublish === true} label={quality ? `Quality Gate：${quality.canPublish ? "通过" : "需处理"}` : "Quality Gate：待检查"} />
           </section>
         </div>
 

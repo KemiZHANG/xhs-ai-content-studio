@@ -140,7 +140,7 @@ export function PostStudioPanel({
       publishDraft.tagsText.trim() &&
       selectedAssets.length &&
       accountReady &&
-      quality?.canPublish !== false
+      quality?.canPublish === true
   );
   const copyVersions = project?.copyVersions ?? [];
   const imagePromptVersions = project?.imagePrompts ?? [];
@@ -1009,6 +1009,9 @@ function buildPublishReadinessHint({
   if (!tagsText.trim()) missing.push("标签");
   if (!imageCount) missing.push("发布图片");
   if (!accountReady) missing.push("小红书登录账号");
+  if (!quality) {
+    missing.push("Quality Gate 未运行");
+  }
   if (quality?.canPublish === false) {
     const issueText = quality.issues.slice(0, 2).join("；") || "需要处理质量检查问题";
     missing.push(`Quality Gate：${issueText}`);

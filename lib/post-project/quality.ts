@@ -19,6 +19,14 @@ export function runPostQualityGate(project: Pick<
   if (!project.evidencePack?.insights.length) issues.push("缺少可追溯证据，不能把生成结果伪装成研究结论");
   const evidenceIds = new Set((project.evidencePack?.insights ?? []).map((insight) => insight.id));
   const draftEvidenceIds = project.copyDraft?.draft.basedOnEvidenceIds ?? [];
+  const finalImageIds = finalPost?.imageIds ?? [];
+  const selectedImageIds = project.selectedImages ?? [];
+  const hasStaleFinalImages = Boolean(
+    finalPost &&
+      selectedImageIds.length &&
+      finalImageIds.length &&
+      !sameStringSet(finalImageIds, selectedImageIds)
+  );
   if (project.copyDraft && !draftEvidenceIds.length) {
     issues.push("当前草稿缺少 basedOnEvidenceIds，无法证明标题、正文和标签来自 evidencePack 规律");
     suggestions.push("请重新基于当前证据生成文案，或补充草稿引用的证据 ID。");
@@ -27,6 +35,10 @@ export function runPostQualityGate(project: Pick<
   if (invalidEvidenceIds.length) {
     issues.push(`当前草稿引用了不存在的证据 ID：${invalidEvidenceIds.slice(0, 3).join("、")}`);
     suggestions.push("请从当前 evidencePack 重新生成文案，保证所有引用可追溯。");
+  }
+  if (hasStaleFinalImages) {
+    issues.push("最终帖子图片版本与当前选中图片不一致");
+    suggestions.push("请重新组装最终帖子或确认当前选中的图片版本，避免误发旧图。");
   }
 
   const titleText = finalPost?.title ?? "";
@@ -73,7 +85,7 @@ export function runPostQualityGate(project: Pick<
     Boolean(copiedSampleTitle),
     project.copyDraft ? !draftEvidenceIds.length || invalidEvidenceIds.length > 0 : false
   ]);
-  const visualConsistencyScore = scoreFromIssues([!finalPost?.imageIds.length, !project.visualDirection]);
+  const visualConsistencyScore = scoreFromIssues([!finalPost?.imageIds.length, !project.visualDirection, hasStaleFinalImages]);
   const platformFitScore = scoreFromIssues([(finalPost?.tags.length ?? 0) === 0, (finalPost?.tags.length ?? 0) > 10]);
   const complianceScore = scoreFromIssues([risky.length > 0, exaggerated.length > 1, Boolean(copiedSampleTitle)]);
   const hasCriticalPublishRisk = Boolean(
@@ -81,6 +93,7 @@ export function runPostQualityGate(project: Pick<
       !finalPost.content ||
       !finalPost.tags.length ||
       !finalPost.imageIds.length ||
+      hasStaleFinalImages ||
       exaggerated.length ||
       risky.length ||
       copiedSampleTitle ||
@@ -103,6 +116,12 @@ export function runPostQualityGate(project: Pick<
     suggestions,
     checkedAt: new Date().toISOString()
   };
+}
+
+function sameStringSet(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) return false;
+  const rightSet = new Set(right);
+  return left.every((item) => rightSet.has(item));
 }
 
 function finalPostFromDraft(project: Pick<PostProject, "copyDraft" | "selectedImages">): FinalPost | undefined {
