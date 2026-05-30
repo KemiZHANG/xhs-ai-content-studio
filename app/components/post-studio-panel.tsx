@@ -63,6 +63,7 @@ export function PostStudioPanel({
   onNavigate,
   onNewProject,
   onGenerateCopy,
+  onQuickAction,
   onSelectCopyVersion,
   onSelectImagePromptVersion,
   onSaveToViralLibrary,
@@ -91,6 +92,7 @@ export function PostStudioPanel({
   onNavigate: (section: Section) => void;
   onNewProject: () => void;
   onGenerateCopy: (message: string) => void;
+  onQuickAction: (action: string) => void;
   onSelectCopyVersion: (versionId: string) => void;
   onSelectImagePromptVersion: (versionId: string) => void;
   onSaveToViralLibrary: (sample: SampleEvidence) => void;
@@ -145,7 +147,13 @@ export function PostStudioPanel({
         </div>
         <div className="nextActionBar">
           <strong>下一步</strong>
-          <span>{nextActions.map(labelForAction).join(" / ")}</span>
+          <div className="nextActionButtons">
+            {nextActions.map((action) => (
+              <button key={action} type="button" onClick={() => onQuickAction(action)}>
+                {labelForAction(action)}
+              </button>
+            ))}
+          </div>
           <button className="secondaryButton" onClick={onNewProject} type="button">新建项目</button>
         </div>
       </section>

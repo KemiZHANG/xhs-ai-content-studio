@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { ModelProvider } from "@/lib/models/provider";
 import type { SampleEvidence } from "@/lib/workflows/one-click";
@@ -342,6 +342,7 @@ async function writeViralKnowledgeFile(file: ViralKnowledgeFile): Promise<void> 
   await mkdir(path.dirname(filePath), { recursive: true });
   const tempPath = `${filePath}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`;
   await writeFile(tempPath, `${JSON.stringify(file, null, 2)}\n`, "utf8");
+  await rm(filePath, { force: true }).catch(() => undefined);
   await rename(tempPath, filePath);
 }
 

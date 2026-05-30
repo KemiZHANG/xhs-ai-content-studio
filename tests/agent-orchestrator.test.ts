@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runAgentTurn } from "@/lib/agent/orchestrator";
+import { resetPostProject } from "@/lib/post-project/store";
 import { defaultSettings } from "@/lib/storage/settings";
 
 let originalCwd: string;
@@ -45,8 +46,9 @@ describe("agent orchestrator", () => {
 
     expect(result.answer).toBe("old answer");
     expect(result.reply).toBe("old answer");
-    expect(result.intent).toBe("answer");
+    expect(result.intent).toBe("ask");
     expect(result.intentConfidence).toBeGreaterThan(0);
+    expect(result.needsUserInput).toBe(true);
     expect(result.quickActions.map((action) => action.action)).toContain("search_research");
     expect(result.toolTrace.length).toBeGreaterThan(0);
     expect(result.agentRun.id).toMatch(/^agent-run-/);
@@ -147,6 +149,64 @@ describe("agent orchestrator", () => {
     expect(result.answer).toContain("图片");
     expect(result.currentDraft?.images).toEqual([{ path: imagePath }]);
     expect(result.workspace.selectedImageIds.length).toBe(1);
+  });
+
+  it("plans visual direction from the active PostProject before image generation", async () => {
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: {
+        sampleIds: ["note-1"],
+        insights: [{
+          id: "insight-visual",
+          type: "visual",
+          insight: "窗边自然光和桌面细节容易形成收藏感",
+          sourceSampleIds: ["note-1"],
+          confidence: 0.82,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }]
+      },
+      creativeBrief: {
+        audience: "广州咖啡爱好者",
+        painPoint: "不知道哪家店适合安静办公",
+        contentAngle: "真实探店避坑",
+        emotionalHook: "先给适用人群",
+        proofPoints: ["座位", "价格"],
+        tone: "真实生活化",
+        visualMood: "窗边自然光、桌面细节",
+        imageMustHave: ["咖啡杯", "窗边座位"],
+        imageMustAvoid: ["不要盗用竞品图片"],
+        platformStyle: "小红书图文",
+        tabooWords: [],
+        complianceNotes: ["不夸大"],
+        basedOnEvidenceIds: ["insight-visual"]
+      },
+      currentStage: "brief_ready"
+    });
+
+    const result = await runAgentTurn({
+      message: "请基于当前 CreativeBrief 生成图片方向和图片提示词",
+      conversationId: "chat-visual",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(result.answer).toContain("图片方向");
+    expect(result.postProject?.visualDirection?.mood).toContain("窗边自然光");
+    expect(result.postProject?.imagePrompts.length).toBeGreaterThan(0);
+    expect(result.cards.map((card) => card.type)).toContain("visual_direction");
   });
 
   it("uses the selected image index when preparing a scheduled publish intent", async () => {

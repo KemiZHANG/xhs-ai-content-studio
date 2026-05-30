@@ -1,14 +1,21 @@
 import type { AgentPlan, AgentPlanStep } from "@/lib/agent/types";
+import type { PostStage } from "@/lib/post-project/types";
 
 export type CreateAgentPlanInput = {
   message: string;
   hasCurrentDraft: boolean;
   attachedAssetCount: number;
+  postStage?: PostStage;
+  allowedActions?: string[];
+  hasEvidence?: boolean;
+  hasCreativeBrief?: boolean;
+  hasSelectedImages?: boolean;
 };
 
 export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
   const message = input.message.trim();
   const lower = message.toLowerCase();
+  const stage = input.postStage ?? "empty";
 
   if (isScheduledPublishRequest(message, lower) && input.hasCurrentDraft) {
     return buildPlan({
@@ -32,6 +39,13 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
   }
 
   if (isImageGenerationRequest(message, lower)) {
+    if ((/方向|提示词|prompt/i.test(message) || input.allowedActions?.includes("plan_visuals")) && !/出图|生图|生成.*(?:配图|场景图|产品图)/.test(message)) {
+      return buildPlan({
+        intent: "answer",
+        topic: inferTopic(message),
+        steps: [step("answer", "Plan visual direction and image prompts from the current CreativeBrief.")]
+      });
+    }
     const needsProductAsset = /产品图|商品图|参考图|上传|换.*背景|背景/.test(message) && input.attachedAssetCount === 0;
     if (needsProductAsset) {
       return buildPlan({
@@ -55,6 +69,14 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
       intent: "revise_draft",
       topic: inferTopic(message),
       steps: [step("reviseDraft", "Revise the current draft while preserving the workspace context.", "draft.reviseCurrent")]
+    });
+  }
+
+  if (isDraftCreationFromProjectRequest(message, lower) && (input.hasEvidence || input.hasCreativeBrief)) {
+    return buildPlan({
+      intent: "answer",
+      topic: inferTopic(message),
+      steps: [step("generateDraft", "Generate copy from the current PostProject evidence and CreativeBrief.", "draft.createFromEvidence")]
     });
   }
 
@@ -88,9 +110,11 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
   }
 
   return buildPlan({
-    intent: "answer",
+    intent: stage === "empty" && !inferTopic(message) ? "ask" : "answer",
     topic: inferTopic(message),
-    steps: [step("answer", "Answer directly or delegate to the legacy chat agent.")]
+    steps: stage === "empty" && !inferTopic(message)
+      ? [step("askClarifyingQuestion", "The user intent is ambiguous and no active PostProject context exists.")]
+      : [step("answer", "Answer directly or delegate to the legacy chat agent.")]
   });
 }
 
@@ -119,6 +143,10 @@ function isCardGenerationRequest(message: string, lower: string): boolean {
 
 function isDraftRevisionRequest(message: string, lower: string): boolean {
   return /修改|改得|优化|生活化|重写|调整|标题|正文|标签/.test(message) || lower.includes("revise");
+}
+
+function isDraftCreationFromProjectRequest(message: string, lower: string): boolean {
+  return /基于当前|基于证据|根据证据|生成文案|生成草稿|写一篇|写成笔记|出一版/.test(message) || lower.includes("draft");
 }
 
 function isScheduledPublishRequest(message: string, lower: string): boolean {

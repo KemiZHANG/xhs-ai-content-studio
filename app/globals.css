@@ -3011,10 +3011,26 @@ textarea {
   align-self: stretch;
 }
 
-.nextActionBar span {
-  color: rgba(0, 0, 0, 0.72);
-  font-size: 13px;
-  line-height: 1.5;
+.nextActionButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nextActionButtons button {
+  background: rgba(18, 118, 97, 0.08);
+  border: 1px solid rgba(18, 118, 97, 0.16);
+  border-radius: 999px;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 9px;
+}
+
+.nextActionButtons button:hover {
+  background: rgba(18, 118, 97, 0.14);
+  border-color: rgba(18, 118, 97, 0.28);
 }
 
 .postStudioGrid {

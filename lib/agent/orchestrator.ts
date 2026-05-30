@@ -12,7 +12,8 @@ import type {
   AgentTurnResult,
   WorkspaceState
 } from "@/lib/agent/types";
-import { readPostProject } from "@/lib/post-project/store";
+import { readPostProject, updatePostProject } from "@/lib/post-project/store";
+import { deriveImagePromptVersion, deriveVisualDirection } from "@/lib/post-project/brief";
 import type { PostProject } from "@/lib/post-project/types";
 import { renderXhsCardSet } from "@/lib/cards/renderer";
 import type { ModelProvider } from "@/lib/models/provider";
@@ -29,10 +30,16 @@ export type RunAgentTurnInput = AgentRuntimeContext & {
 };
 
 export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnResult> {
+  const initialPostProject = await readPostProject();
   const plan = createAgentPlan({
     message: input.message,
     hasCurrentDraft: Boolean(input.currentDraft),
-    attachedAssetCount: input.attachedAssets.length
+    attachedAssetCount: input.attachedAssets.length,
+    postStage: initialPostProject.currentStage,
+    allowedActions: initialPostProject.allowedActions,
+    hasEvidence: Boolean(initialPostProject.evidencePack.insights.length || initialPostProject.selectedSamples.length),
+    hasCreativeBrief: Boolean(initialPostProject.creativeBrief),
+    hasSelectedImages: Boolean(initialPostProject.selectedImages.length)
   });
   let agentRun = createAgentRun({
     message: input.message,
@@ -167,6 +174,34 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
         agentRun,
         trace,
         postProject
+      });
+    }
+
+    const visualPlanningTurn = await maybeHandleVisualPlanningTurn(input, plan, initialPostProject);
+    if (visualPlanningTurn) {
+      trace = addTraceEvent(trace, {
+        type: "tool_called",
+        label: "workflow.planVisuals",
+        detail: "Planned image direction from the active PostProject CreativeBrief.",
+        metadata: {
+          stage: visualPlanningTurn.postProject.currentStage
+        }
+      });
+      agentRun = completeRun(agentRun);
+      trace = addTraceEvent(trace, {
+        type: "run_completed",
+        label: "Agent run completed",
+        detail: "Agent turn completed after visual planning."
+      });
+      await persistAgentTrace(trace);
+      return buildAgentTurnResult({
+        answer: visualPlanningTurn.answer,
+        plan,
+        workspace: visualPlanningTurn.workspace,
+        currentDraft: input.currentDraft ?? undefined,
+        agentRun,
+        trace,
+        postProject: visualPlanningTurn.postProject
       });
     }
 
@@ -547,6 +582,59 @@ async function maybeHandleCardGenerationTurn(
     answer: `已把当前草稿渲染成 ${generatedAssets.length} 张小红书图文卡片，并放入成果画布。`,
     currentDraft: updatedDraft,
     workspace
+  };
+}
+
+async function maybeHandleVisualPlanningTurn(
+  input: RunAgentTurnInput,
+  plan: ReturnType<typeof createAgentPlan>,
+  postProject: PostProject
+): Promise<{ answer: string; workspace: WorkspaceState; postProject: PostProject } | null> {
+  const wantsVisualPlan =
+    plan.intent === "answer" &&
+    plan.steps.some((step) => step.action === "answer" && /visual|image prompt|图片|Prompt/i.test(step.reason));
+  if (!wantsVisualPlan) {
+    return null;
+  }
+  const creativeBrief = postProject.creativeBrief;
+  if (!creativeBrief) {
+    const workspace = await updateWorkspaceState({ lastUserIntent: "plan_visuals" });
+    return {
+      answer: "我可以规划图片方向，但当前项目还没有 CreativeBrief。请先完成主题研究，或补充产品、人群、语气和目标后再生成图片方向。",
+      workspace,
+      postProject
+    };
+  }
+
+  const visualDirection = deriveVisualDirection({
+    creativeBrief,
+    visualDirection: postProject.visualDirection
+  });
+  const imagePrompt = visualDirection
+    ? deriveImagePromptVersion({
+        ...postProject,
+        visualDirection,
+        imagePrompts: []
+      })
+    : undefined;
+  const updatedProject = await updatePostProject({
+    visualDirection,
+    imagePrompts: imagePrompt
+      ? [...postProject.imagePrompts.filter((item) => item.value.prompt !== imagePrompt.value.prompt), imagePrompt]
+      : postProject.imagePrompts,
+    currentStage: imagePrompt ? "image_prompt_ready" : "visual_planning"
+  });
+  const workspace = await updateWorkspaceState({ lastUserIntent: "plan_visuals" });
+  return {
+    answer: [
+      "已基于当前 CreativeBrief 生成图片方向和图片提示词。",
+      `视觉氛围：${updatedProject.visualDirection?.mood ?? creativeBrief.visualMood}`,
+      `构图：${updatedProject.visualDirection?.composition ?? "封面突出主体，正文图递进展示细节"}`,
+      imagePrompt ? `Prompt：${imagePrompt.value.prompt}` : "",
+      "发布前仍需要你确认图片方向和最终选图。"
+    ].filter(Boolean).join("\n"),
+    workspace,
+    postProject: updatedProject
   };
 }
 

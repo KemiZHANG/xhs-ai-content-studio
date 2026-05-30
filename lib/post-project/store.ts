@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { WorkspaceState } from "@/lib/agent/types";
 import { readWorkspaceState } from "@/lib/agent/state";
@@ -162,7 +162,7 @@ function extractViralCasesFromSummary(summary: ResearchSummary | null | undefine
 
 function normalizePostProject(project: PostProject): PostProject {
   const inferredStage = inferPostStage(project);
-  const currentStage = !project.currentStage || (project.currentStage === "empty" && inferredStage !== "empty")
+  const currentStage = !project.currentStage || shouldAdvanceStage(project.currentStage, inferredStage)
     ? inferredStage
     : project.currentStage;
   const normalized = withAllowedActions({
@@ -206,6 +206,34 @@ function normalizePostProject(project: PostProject): PostProject {
     ...normalized,
     updatedAt: normalized.updatedAt || new Date().toISOString()
   };
+}
+
+function shouldAdvanceStage(current: PostProject["currentStage"], inferred: PostProject["currentStage"]): boolean {
+  if (current === inferred) return false;
+  if (current === "failed") return false;
+  return stageRank(inferred) > stageRank(current);
+}
+
+function stageRank(stage: PostProject["currentStage"]): number {
+  const ranks: Record<PostProject["currentStage"], number> = {
+    empty: 0,
+    briefing: 1,
+    researching: 2,
+    evidence_ready: 3,
+    brief_ready: 4,
+    copy_drafting: 5,
+    copy_ready: 6,
+    visual_planning: 7,
+    image_prompt_ready: 8,
+    image_generating: 9,
+    image_ready: 10,
+    assembling: 11,
+    reviewing: 12,
+    scheduled: 13,
+    published: 14,
+    failed: 15
+  };
+  return ranks[stage] ?? 0;
 }
 
 function enrichPostProject(project: PostProject): PostProject {
@@ -292,6 +320,7 @@ async function writePostProjectNow(project: PostProject): Promise<PostProject> {
   await mkdir(path.dirname(filePath), { recursive: true });
   const tempPath = `${filePath}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`;
   await writeFile(tempPath, `${JSON.stringify(normalized, null, 2)}\n`, "utf8");
+  await rm(filePath, { force: true }).catch(() => undefined);
   await rename(tempPath, filePath);
   return normalized;
 }

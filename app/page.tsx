@@ -454,6 +454,10 @@ export default function Home() {
 
   async function runWorkflow(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    await startResearchJob();
+  }
+
+  async function startResearchJob() {
     setBusy("workflow");
     setNotice("");
     try {
@@ -484,6 +488,55 @@ export default function Home() {
       setNotice("主题研究任务已创建，只会搜索和分析，不会生成草稿或发布。完成后会自动回到研究结果。");
     } finally {
       setBusy(null);
+    }
+  }
+
+  async function handlePostStudioAction(action: string) {
+    switch (action) {
+      case "start_brief":
+      case "update_brief_inputs":
+        setChatInput("我想补充这个帖子项目的需求：目标人群是；内容目标是；语气希望；产品/店铺信息是。请先判断还缺什么，再帮我整理 CreativeBrief。");
+        setNotice("已把补充需求模板放入 Agent 输入框。");
+        return;
+      case "search_research":
+      case "summarize_evidence":
+        await startResearchJob();
+        return;
+      case "create_creative_brief":
+        await submitChatMessage("请基于当前研究证据和爆款库规律，生成/刷新这个 PostProject 的 CreativeBrief，并说明参考了哪些证据。", false);
+        return;
+      case "generate_copy":
+        await submitChatMessage("请基于当前 PostProject 的证据、爆款库规律和 CreativeBrief 生成一篇原创小红书图文笔记，不要重新搜索，并记录引用的证据 ID。", false);
+        return;
+      case "revise_copy":
+        setChatInput("请把当前文案改得更生活化、更像真实分享，但不要改变已确认的信息和证据依据。");
+        setNotice("已把文案修改指令放入 Agent 输入框。");
+        return;
+      case "plan_visuals":
+      case "generate_image_prompts":
+        await submitChatMessage("请基于当前 CreativeBrief 和证据生成图片方向与图片提示词，不要直接生图，先让我确认方向。", false);
+        return;
+      case "generate_images":
+        await submitChatMessage("请基于当前草稿、CreativeBrief 和图片提示词生成小红书配图。", false, chatAssetIds);
+        return;
+      case "select_images":
+        setSection("imageStudio");
+        setNotice("请在图片创作台选择或生成要进入发布画布的图片。");
+        return;
+      case "assemble_post":
+      case "run_quality_gate":
+      case "request_publish_confirmation":
+      case "schedule_publish":
+      case "publish_now":
+        await openPublishAssemblyFromWorkspace();
+        return;
+      case "recover":
+        await loadWorkspace();
+        await loadPostProject();
+        setNotice("已刷新当前项目状态。");
+        return;
+      default:
+        setChatInput(`请继续执行下一步：${action}`);
     }
   }
 
@@ -1039,7 +1092,7 @@ export default function Home() {
             researchForm={workflowForm}
             messages={messages}
             chatInput={chatInput}
-            busy={busy === "workflow"}
+            busy={Boolean(busy)}
             assets={assets}
             publishDraft={publishDraft}
             publishAssetIds={publishAssetIds}
@@ -1053,6 +1106,7 @@ export default function Home() {
             onDraftChange={handlePublishDraftChange}
             onNewProject={() => void startNewProject()}
             onGenerateCopy={(message) => void submitChatMessage(message, true)}
+            onQuickAction={(action) => void handlePostStudioAction(action)}
             onSelectCopyVersion={(versionId) => void selectCopyVersion(versionId)}
             onSelectImagePromptVersion={(versionId) => void selectImagePromptVersion(versionId)}
             onSaveToViralLibrary={(sample) => void saveSampleToViralLibrary(sample)}

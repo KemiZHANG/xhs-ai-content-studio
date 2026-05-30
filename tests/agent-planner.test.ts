@@ -38,6 +38,32 @@ describe("agent planner", () => {
     expect(plan.requiresAssets).toBe(false);
   });
 
+  it("plans image direction before generation when the user asks for prompts or visual direction", () => {
+    const plan = createAgentPlan({
+      message: "请基于当前 CreativeBrief 生成图片方向和图片提示词",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      postStage: "brief_ready",
+      allowedActions: ["plan_visuals"],
+      hasCreativeBrief: true
+    });
+
+    expect(plan.intent).toBe("answer");
+    expect(plan.steps[0].reason).toContain("image prompts");
+  });
+
+  it("asks a clarifying question for ambiguous text on an empty project", () => {
+    const plan = createAgentPlan({
+      message: "继续",
+      hasCurrentDraft: false,
+      attachedAssetCount: 0,
+      postStage: "empty"
+    });
+
+    expect(plan.intent).toBe("ask");
+    expect(plan.steps[0].action).toBe("askClarifyingQuestion");
+  });
+
   it("plans card rendering from the current draft", () => {
     const plan = createAgentPlan({
       message: "把当前草稿生成小红书图文卡片",

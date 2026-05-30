@@ -80,7 +80,7 @@ describe("post project", () => {
     expect(project.imagePrompts[0].basedOnEvidenceIds).toEqual(project.creativeBrief?.basedOnEvidenceIds);
     expect(project.finalPost?.title).toBe("Draft");
     expect(project.qualityCheck?.canPublish).toBe(true);
-    expect(project.currentStage).toBe("image_ready");
+    expect(project.currentStage).toBe("reviewing");
   });
 
   it("keeps post-project.json synchronized when workspace state is reset", async () => {
