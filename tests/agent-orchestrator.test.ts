@@ -580,7 +580,7 @@ describe("agent orchestrator", () => {
     await updateWorkspaceState({ currentDraftId: draft.id, currentDraft: draft, selectedImageIds: ["asset-selected"] });
 
     const result = await runAgentTurn({
-      message: "今晚 8 点发",
+      message: "schedule at 2099-05-22T20:00:00+08:00",
       conversationId: "chat-publish-selected-asset",
       settings: defaultSettings,
       history: [],
@@ -603,6 +603,7 @@ describe("agent orchestrator", () => {
 
     expect(result.intent).toBe("schedule_publish");
     expect(result.workspace.publishPlan?.status).toBe("awaiting_approval");
+    expect(result.workspace.publishPlan?.scheduleAt).toBe("2099-05-22T20:00:00+08:00");
     expect(result.workspace.publishPlan?.images).toEqual([selectedImagePath]);
   });
 

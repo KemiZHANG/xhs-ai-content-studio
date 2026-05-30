@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { updateWorkspaceState } from "@/lib/agent/state";
 import { requireLocalActionToken } from "@/lib/security/action-token";
+import { copyVersionFromDraft } from "@/lib/post-project/brief";
 import { readPostProject, updatePostProject } from "@/lib/post-project/store";
 import { createDraftRecord, writeCurrentDraft, type DraftRecord } from "@/lib/storage/drafts";
 import { readSettings } from "@/lib/storage/settings";
@@ -55,9 +56,10 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
   if (body.action === "commit_canvas") {
     const settings = await readSettings();
     const project = await readPostProject();
+    const basedOnEvidenceIds = getCurrentEvidenceIds(project);
     const currentDraft = await writeCurrentDraft(
       createDraftRecord({
-        draft: normalizeDraft(body.draft, getCurrentEvidenceIds(project)),
+        draft: normalizeDraft(body.draft, basedOnEvidenceIds),
         images: [],
         visibility: body.visibility ?? settings.defaultVisibility
       })
@@ -67,7 +69,26 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
       currentDraft,
       selectedImageIds: Array.isArray(body.selectedImageIds) ? body.selectedImageIds : []
     });
-    return { project: await readPostProject(), currentDraft };
+    if (!currentDraft) {
+      throw new Error("保存画布草稿失败");
+    }
+    const syncedProject = await readPostProject();
+    const copyVersion = copyVersionFromDraft(currentDraft, basedOnEvidenceIds);
+    const selectedImageIds = Array.isArray(body.selectedImageIds) ? body.selectedImageIds.map(String).filter(Boolean) : syncedProject.selectedImages;
+    const nextProject = await updatePostProject({
+      copyDraft: currentDraft,
+      copyVersions: [
+        ...(Array.isArray(syncedProject.copyVersions) ? syncedProject.copyVersions : []).filter((version) => version.id !== copyVersion.id),
+        copyVersion
+      ],
+      selectedImages: selectedImageIds,
+      finalPost: undefined,
+      publishPlan: null,
+      qualityCheck: undefined,
+      auditStatus: "unchecked",
+      currentStage: "copy_ready"
+    });
+    return { project: nextProject, currentDraft };
   }
 
   const project = await readPostProject();

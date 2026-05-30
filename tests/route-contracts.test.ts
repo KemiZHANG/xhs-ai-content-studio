@@ -747,9 +747,10 @@ describe("API route contracts", () => {
     vi.doMock("@/lib/agent/state", () => ({
       updateWorkspaceState
     }));
+    const updatePostProject = vi.fn(async (patch) => ({ id: "post-1", ...patch }));
     vi.doMock("@/lib/post-project/store", () => ({
       readPostProject: async () => project,
-      updatePostProject: vi.fn()
+      updatePostProject
     }));
     vi.doMock("@/lib/storage/drafts", () => ({
       createDraftRecord: vi.fn((input) => ({
@@ -783,6 +784,19 @@ describe("API route contracts", () => {
     }));
     expect(updateWorkspaceState).toHaveBeenCalledWith(expect.objectContaining({
       selectedImageIds: ["asset-1"]
+    }));
+    expect(updatePostProject).toHaveBeenCalledWith(expect.objectContaining({
+      copyDraft: expect.objectContaining({ id: "draft-created" }),
+      copyVersions: [expect.objectContaining({
+        id: "copy-draft-created",
+        basedOnEvidenceIds: ["brief-insight"]
+      })],
+      selectedImages: ["asset-1"],
+      finalPost: undefined,
+      publishPlan: null,
+      qualityCheck: undefined,
+      auditStatus: "unchecked",
+      currentStage: "copy_ready"
     }));
   });
 
