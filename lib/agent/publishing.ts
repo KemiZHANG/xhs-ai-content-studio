@@ -191,6 +191,7 @@ export function isPublishIntentConfirmable(
     maxAgeMinutes?: number;
     accountContext?: PublishAccountContext;
     evidenceCitationSummary?: PublishEvidenceCitationSummary;
+    versionSnapshot?: PublishVersionSnapshot;
   } = {}
 ): boolean {
   if (intent.status !== "awaiting_approval" || intent.requestedBy !== "manual") {
@@ -202,6 +203,9 @@ export function isPublishIntentConfirmable(
   if (!publishIntentMatchesEvidence(intent, options.evidenceCitationSummary)) {
     return false;
   }
+  if (!publishIntentMatchesVersionSnapshot(intent, options.versionSnapshot)) {
+    return false;
+  }
 
   const requestedAt = Date.parse(intent.requestedAt);
   if (!Number.isFinite(requestedAt)) {
@@ -210,6 +214,31 @@ export function isPublishIntentConfirmable(
   const now = options.now ?? new Date();
   const maxAgeMs = (options.maxAgeMinutes ?? 30) * 60 * 1000;
   return now.getTime() - requestedAt <= maxAgeMs;
+}
+
+function publishIntentMatchesVersionSnapshot(
+  intent: PublishIntent,
+  currentSnapshot?: PublishVersionSnapshot
+): boolean {
+  if (!intent.versionSnapshot && !currentSnapshot) {
+    return true;
+  }
+  if (!intent.versionSnapshot || !currentSnapshot) {
+    return false;
+  }
+  return versionSnapshotSignature(intent.versionSnapshot) === versionSnapshotSignature(currentSnapshot);
+}
+
+function versionSnapshotSignature(snapshot: PublishVersionSnapshot): string {
+  return JSON.stringify({
+    copyVersionId: snapshot.copyVersionId ?? "",
+    imagePromptVersionIds: [...snapshot.imagePromptVersionIds].sort(),
+    selectedImageIds: [...snapshot.selectedImageIds].sort(),
+    qualityGateFresh: snapshot.qualityGateFresh === true,
+    qualityCanPublish: snapshot.qualityCanPublish === true,
+    finalPostMatchesCanvas: snapshot.finalPostMatchesCanvas === true,
+    warnings: [...snapshot.warnings].sort()
+  });
 }
 
 function publishIntentMatchesEvidence(

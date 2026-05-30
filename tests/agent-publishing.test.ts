@@ -143,6 +143,36 @@ describe("agent guarded publishing", () => {
     })).toBe(true);
   });
 
+  it("expires publish confirmations when the version snapshot changes", async () => {
+    const args = publishArgs();
+    const result = await executeGuardedPublish({
+      args,
+      requestedBy: "manual",
+      policy: { mode: "review_required" },
+      publishContext: {
+        versionSnapshot
+      },
+      publish: async () => ({ ok: true })
+    });
+
+    expect(isPublishIntentConfirmable(result.publishIntent, args, {
+      versionSnapshot
+    })).toBe(true);
+    expect(isPublishIntentConfirmable(result.publishIntent, args)).toBe(false);
+    expect(isPublishIntentConfirmable(result.publishIntent, args, {
+      versionSnapshot: {
+        ...versionSnapshot,
+        copyVersionId: "copy-draft-2"
+      }
+    })).toBe(false);
+    expect(isPublishIntentConfirmable(result.publishIntent, args, {
+      versionSnapshot: {
+        ...versionSnapshot,
+        qualityGateFresh: false
+      }
+    })).toBe(false);
+  });
+
   it("expires publish confirmations when evidence citations change", async () => {
     const args = publishArgs();
     const result = await executeGuardedPublish({
