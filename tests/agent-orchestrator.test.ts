@@ -152,6 +152,11 @@ describe("agent orchestrator", () => {
     expect(result.answer).toContain("图片");
     expect(result.currentDraft?.images).toEqual([{ path: imagePath }]);
     expect(result.workspace.selectedImageIds.length).toBe(1);
+    expect(result.postProject?.generatedImages).toHaveLength(1);
+    expect(result.postProject?.generatedImages[0].assetId).toBe(result.workspace.selectedImageIds[0]);
+    expect(result.postProject?.generatedImages[0].selected).toBe(true);
+    expect(result.postProject?.selectedImages).toEqual(result.workspace.selectedImageIds);
+    expect(result.postProject?.publishPlan).toBeNull();
   });
 
   it("plans visual direction from the active PostProject before image generation", async () => {

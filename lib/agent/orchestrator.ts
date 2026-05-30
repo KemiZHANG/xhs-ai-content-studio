@@ -1035,6 +1035,12 @@ async function maybeHandleCardGenerationTurn(
     selectedImageIds: uniqueIds([...existing.selectedImageIds, ...generatedAssets.map((asset) => asset.id)]),
     lastUserIntent: plan.intent
   });
+  const generatedImageIds = generatedAssets.map((asset) => asset.id);
+  await appendGeneratedAssetsToPostProject({
+    assetIds: generatedImageIds,
+    promptId: null,
+    select: true
+  });
 
   return {
     answer: `已把当前草稿渲染成 ${generatedAssets.length} 张小红书图文卡片，并放入成果画布。`,
@@ -1513,6 +1519,14 @@ async function maybeHandleImageGenerationTurn(
       : existing.productImageIds,
     lastUserIntent: plan.intent
   });
+  if (generatedAsset) {
+    const activeProject = await readPostProject();
+    await appendGeneratedAssetsToPostProject({
+      assetIds: [generatedAsset.id],
+      promptId: activeProject.imagePrompts.at(-1)?.id,
+      select: true
+    });
+  }
 
   return {
     answer: `已为当前草稿生成 1 张新图片，并放入成果画布。\n标题：${updatedDraft.draft.title}`,
@@ -1796,6 +1810,52 @@ function mergeSelectedGeneratedImages(project: PostProject, candidates: string[]
       ...image,
       selected: identity === selected
     };
+  });
+}
+
+async function appendGeneratedAssetsToPostProject({
+  assetIds,
+  promptId,
+  select
+}: {
+  assetIds: string[];
+  promptId?: string | null;
+  select: boolean;
+}): Promise<PostProject> {
+  const ids = uniqueIds(assetIds);
+  const project = await readPostProject();
+  if (!ids.length) {
+    return project;
+  }
+  const existingIds = new Set(project.generatedImages.map((image) => image.assetId ?? image.id));
+  const generatedImages = [
+    ...project.generatedImages,
+    ...ids
+      .filter((id) => !existingIds.has(id))
+      .map((id) => ({
+        id,
+        assetId: id,
+        promptId: promptId ?? undefined,
+        createdAt: new Date().toISOString(),
+        selected: select
+      }))
+  ].map((image) => {
+    const identity = image.assetId ?? image.id;
+    return ids.includes(identity)
+      ? { ...image, selected: select }
+      : select
+        ? { ...image, selected: false }
+        : image;
+  });
+  const selectedImages = select ? ids : project.selectedImages;
+  return updatePostProject({
+    generatedImages,
+    selectedImages,
+    finalPost: undefined,
+    publishPlan: null,
+    qualityCheck: undefined,
+    auditStatus: "unchecked",
+    currentStage: select ? "image_ready" : "image_generating"
   });
 }
 
