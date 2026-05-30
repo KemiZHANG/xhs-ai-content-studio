@@ -19,6 +19,7 @@ export function runPostQualityGate(project: Pick<
   if (!project.evidencePack?.insights.length) issues.push("缺少可追溯证据，不能把生成结果伪装成研究结论");
   const evidenceIds = new Set((project.evidencePack?.insights ?? []).map((insight) => insight.id));
   const draftEvidenceIds = project.copyDraft?.draft.basedOnEvidenceIds ?? [];
+  const evidenceReview = buildEvidenceReview(project, draftEvidenceIds);
   const finalImageIds = finalPost?.imageIds ?? [];
   const selectedImageIds = project.selectedImages ?? [];
   const hasStaleFinalImages = Boolean(
@@ -114,7 +115,43 @@ export function runPostQualityGate(project: Pick<
     canPublish,
     issues,
     suggestions,
+    evidenceReview,
     checkedAt: new Date().toISOString()
+  };
+}
+
+function buildEvidenceReview(
+  project: Partial<Pick<PostProject, "copyDraft" | "creativeBrief" | "visualDirection" | "evidencePack">>,
+  draftEvidenceIds: string[]
+): QualityCheck["evidenceReview"] {
+  const insights = project.evidencePack?.insights ?? [];
+  const insightIds = new Set(insights.map((insight) => insight.id));
+  const referencedEvidenceIds = uniqueStrings([
+    ...draftEvidenceIds,
+    ...(project.creativeBrief?.basedOnEvidenceIds ?? []),
+    ...(project.visualDirection?.basedOnEvidenceIds ?? [])
+  ]).slice(0, 20);
+  const missingEvidenceIds = referencedEvidenceIds.filter((id) => !insightIds.has(id));
+  const realtimeEvidenceIds = referencedEvidenceIds.filter((id) => {
+    const insight = insights.find((item) => item.id === id);
+    return insight && (insight.sourceType ?? "realtime") === "realtime";
+  });
+  const viralEvidenceIds = referencedEvidenceIds.filter((id) => {
+    const insight = insights.find((item) => item.id === id);
+    return insight?.sourceType === "viral_library";
+  });
+  const summary = [
+    `引用证据 ${referencedEvidenceIds.length} 条`,
+    `实时研究 ${realtimeEvidenceIds.length} 条`,
+    `爆款库 ${viralEvidenceIds.length} 条`,
+    missingEvidenceIds.length ? `缺失 ${missingEvidenceIds.length} 条` : "无缺失证据"
+  ].join("；");
+  return {
+    referencedEvidenceIds,
+    realtimeEvidenceIds,
+    viralEvidenceIds,
+    missingEvidenceIds,
+    summary
   };
 }
 
@@ -213,6 +250,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values.map((item) => item.trim()).filter(Boolean))];
 }
 
 function scoreFromIssues(flags: boolean[]): number {

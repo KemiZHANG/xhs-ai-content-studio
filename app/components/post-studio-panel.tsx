@@ -674,6 +674,9 @@ export function PostStudioPanel({
                   {quality.issues.slice(0, 3).map((issue) => (
                     <p className="muted" key={issue}>- {issue}</p>
                   ))}
+                  {quality.evidenceReview ? (
+                    <p className="muted">证据覆盖：{quality.evidenceReview.summary}</p>
+                  ) : null}
                 </div>
               ) : null}
               <div className="inlineActionGrid">

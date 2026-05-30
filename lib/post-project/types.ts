@@ -137,6 +137,13 @@ export type QualityCheck = {
   canPublish: boolean;
   issues: string[];
   suggestions: string[];
+  evidenceReview?: {
+    referencedEvidenceIds: string[];
+    realtimeEvidenceIds: string[];
+    viralEvidenceIds: string[];
+    missingEvidenceIds: string[];
+    summary: string;
+  };
   checkedAt: string;
 };
 

@@ -1570,6 +1570,7 @@ async function maybeHandleQualityCheckTurn(
       `标题：${currentDraft.draft.title}`,
       `图片：${selectedImages.length} 张`,
       qualityCheck.canPublish ? "结果：通过，可以进入人工发布确认。" : "结果：暂不建议发布，需要先处理风险。",
+      qualityCheck.evidenceReview ? `证据覆盖：${qualityCheck.evidenceReview.summary}` : "",
       qualityCheck.issues.length ? `主要问题：${qualityCheck.issues.slice(0, 4).join("；")}` : "",
       qualityCheck.suggestions.length ? `建议：${qualityCheck.suggestions.slice(0, 3).join("；")}` : ""
     ].filter(Boolean).join("\n"),

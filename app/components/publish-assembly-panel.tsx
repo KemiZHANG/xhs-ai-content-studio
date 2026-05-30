@@ -132,6 +132,9 @@ export function PublishAssemblyPanel({
                 {quality.issues.slice(0, 4).map((issue) => <li key={issue}>{issue}</li>)}
               </ul>
             ) : null}
+            {quality?.evidenceReview ? (
+              <p className="muted">证据覆盖：{quality.evidenceReview.summary}</p>
+            ) : null}
           </section>
         ) : null}
 

@@ -817,6 +817,8 @@ describe("agent orchestrator", () => {
     expect(result.postProject?.finalPost?.title).toBe("广州咖啡周末指南");
     expect(result.postProject?.finalPost?.imageIds).toEqual(["asset-1"]);
     expect(result.postProject?.qualityCheck).toBeTruthy();
+    expect(result.postProject?.qualityCheck?.evidenceReview?.summary).toContain("引用证据");
+    expect(result.answer).toContain("证据覆盖");
     expect(result.cards.map((card) => card.type)).toContain("quality_check");
     expect(result.answer).toContain("Quality Gate");
   });

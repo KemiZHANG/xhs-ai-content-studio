@@ -150,6 +150,7 @@ export function WorkspaceCanvas({
           <p>
             合规 {quality.complianceScore} · 图文一致 {quality.visualConsistencyScore} · 平台适配 {quality.platformFitScore}
           </p>
+          {quality.evidenceReview ? <p>证据覆盖：{quality.evidenceReview.summary}</p> : null}
           {quality.issues.length ? (
             <ul className="canvasIssueList">
               {quality.issues.slice(0, 3).map((issue) => (
