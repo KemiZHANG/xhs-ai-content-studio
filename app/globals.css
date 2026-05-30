@@ -3568,6 +3568,11 @@ textarea {
   padding: 9px;
 }
 
+.agentMiniCard.highPriority {
+  border-color: rgba(18, 118, 97, 0.22);
+  box-shadow: 0 8px 20px rgba(18, 118, 97, 0.08);
+}
+
 .agentMiniCard span {
   color: var(--accent-strong);
   font-size: 11px;
@@ -3592,9 +3597,36 @@ textarea {
   white-space: normal;
 }
 
+.agentMiniCard small {
+  color: color-mix(in srgb, var(--accent-strong) 80%, #000);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .agentMiniCard.viral_knowledge {
   background: rgba(190, 122, 20, 0.08);
   border-color: rgba(190, 122, 20, 0.18);
+}
+
+.agentHiddenCards {
+  background: rgba(255, 255, 255, 0.56);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.agentHiddenCards summary {
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.agentHiddenCards p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin-top: 6px;
 }
 
 .agentQuestionBox {
@@ -3638,10 +3670,18 @@ textarea {
   padding-top: 7px;
 }
 
-.agentTraceMini span {
+.agentTraceMini .traceStatus {
   color: var(--accent-strong);
   font-size: 11px;
   font-weight: 800;
+}
+
+.agentTraceMini .traceStatus.failed {
+  color: #b42318;
+}
+
+.agentTraceMini .traceStatus.running {
+  color: #b7791f;
 }
 
 .agentTraceMini p {

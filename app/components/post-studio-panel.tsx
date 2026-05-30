@@ -19,6 +19,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import type {
   AssetRecord,
+  AgentResponseCard,
   ChatMessage,
   Health,
   JobRecord,
@@ -1102,7 +1103,9 @@ function AgentStructuredMessage({
   message: ChatMessage;
   onQuickAction: (action: string) => void;
 }) {
-  const cards = (message.cards ?? []).slice(0, 4);
+  const allCards = message.cards ?? [];
+  const cards = pickVisibleAgentCards(allCards);
+  const hiddenCards = allCards.filter((card) => !cards.some((visible) => visible.id === card.id));
   const trace = (message.toolTrace ?? []).slice(-4);
   const actions = (message.quickActions ?? []).slice(0, 3);
   if (!cards.length && !trace.length && !actions.length && !message.questions?.length) {
@@ -1114,13 +1117,25 @@ function AgentStructuredMessage({
       {cards.length ? (
         <div className="agentCardStrip">
           {cards.map((card) => (
-            <article className={`agentMiniCard ${card.type}`} key={card.id}>
+            <article className={`agentMiniCard ${card.type} ${isHighPriorityAgentCard(card.type) ? "highPriority" : ""}`} key={card.id}>
               <span>{labelForAgentCard(card.type)}</span>
               <strong>{card.title}</strong>
               <p>{card.summary}</p>
+              {extractEvidenceIdsFromAgentCard(card).length ? (
+                <small>证据：{extractEvidenceIdsFromAgentCard(card).slice(0, 3).join(" / ")}</small>
+              ) : null}
             </article>
           ))}
         </div>
+      ) : null}
+
+      {hiddenCards.length ? (
+        <details className="agentHiddenCards">
+          <summary>还有 {hiddenCards.length} 张结构卡已折叠</summary>
+          {hiddenCards.slice(0, 6).map((card) => (
+            <p key={card.id}>{labelForAgentCard(card.type)}：{card.title}</p>
+          ))}
+        </details>
       ) : null}
 
       {message.questions?.length ? (
@@ -1135,7 +1150,7 @@ function AgentStructuredMessage({
           <summary>工具轨迹 · {trace.length}</summary>
           {trace.map((item) => (
             <div key={item.id}>
-              <span>{item.status}</span>
+              <span className={`traceStatus ${item.status}`}>{labelForTraceStatus(item.status)}</span>
               <p>{item.label}：{item.detail}</p>
             </div>
           ))}
@@ -1159,6 +1174,55 @@ function AgentStructuredMessage({
       ) : null}
     </div>
   );
+}
+
+function pickVisibleAgentCards(cards: AgentResponseCard[]): AgentResponseCard[] {
+  const priority: AgentResponseCard["type"][] = [
+    "quality_check",
+    "publish_check",
+    "copy_draft",
+    "creative_brief",
+    "visual_direction",
+    "image_prompt",
+    "evidence_citations",
+    "viral_knowledge",
+    "evidence_summary",
+    "stage_guidance"
+  ];
+  const sorted = [...cards].sort((left, right) => {
+    const leftRank = priority.indexOf(left.type);
+    const rightRank = priority.indexOf(right.type);
+    return (leftRank === -1 ? 99 : leftRank) - (rightRank === -1 ? 99 : rightRank);
+  });
+  const selected: AgentResponseCard[] = [];
+  const usedTypes = new Set<string>();
+  for (const card of sorted) {
+    if (selected.length >= 4) break;
+    if (usedTypes.has(card.type) && selected.length < 3) continue;
+    selected.push(card);
+    usedTypes.add(card.type);
+  }
+  return selected.length ? selected : cards.slice(0, 4);
+}
+
+function isHighPriorityAgentCard(type: AgentResponseCard["type"]): boolean {
+  return type === "quality_check" || type === "publish_check" || type === "copy_draft" || type === "creative_brief";
+}
+
+function extractEvidenceIdsFromAgentCard(card: AgentResponseCard): string[] {
+  if (!isRecordValue(card.data)) return [];
+  const directIds = stringListFromRecordValue(card.data.basedOnEvidenceIds);
+  const reportIds = stringListFromRecordValue(card.data.allEvidenceIds);
+  const viralIds = stringListFromRecordValue(card.data.evidenceIds);
+  return uniqueText([...directIds, ...reportIds, ...viralIds]).slice(0, 6);
+}
+
+function stringListFromRecordValue(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
+function isRecordValue(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 function StagePill({ label, value }: { label: string; value: string }) {
@@ -1611,6 +1675,16 @@ function labelForAgentCard(type: string): string {
     quality_check: "质量检查"
   };
   return labels[type] ?? type;
+}
+
+function labelForTraceStatus(status: string): string {
+  const labels: Record<string, string> = {
+    planned: "已计划",
+    running: "执行中",
+    completed: "完成",
+    failed: "失败"
+  };
+  return labels[status] ?? status;
 }
 
 function labelForPublishStatus(status?: string): string {
