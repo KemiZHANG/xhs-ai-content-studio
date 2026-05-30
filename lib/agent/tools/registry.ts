@@ -1,6 +1,6 @@
 import type { AgentToolDefinition } from "@/lib/agent/types";
 import { retrieveViralKnowledge, type ViralKnowledgePack, type ViralRetrievalInput } from "@/lib/rag/viral";
-import { addViralCasesToPostProject } from "@/lib/post-project/store";
+import { addViralCasesToPostProjectWithSummary } from "@/lib/post-project/store";
 import {
   createViralCaseFromEvidence,
   upsertViralCases
@@ -102,10 +102,16 @@ function defaultToolDefinitions(): AgentToolDefinition[] {
         const request = parseSaveViralCaseToolInput(input);
         const viralCase = await createViralCaseFromEvidence(request);
         const [saved] = await upsertViralCases([viralCase]);
-        const project = await addViralCasesToPostProject([saved]);
+        const saveResult = await addViralCasesToPostProjectWithSummary([saved]);
         return {
           ok: true,
-          data: { case: saved, project },
+          data: {
+            case: saved,
+            project: saveResult.project,
+            addedInsightIds: saveResult.addedInsightIds,
+            addedInsights: saveResult.addedInsights,
+            addedSampleIds: saveResult.addedSampleIds
+          },
           warnings: request.model ? [] : ["未提供模型，已使用本地启发式提取爆款规律。"],
           risk: "local_write",
           display: {

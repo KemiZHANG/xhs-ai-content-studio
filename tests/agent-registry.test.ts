@@ -93,6 +93,9 @@ describe("agent tool registry", () => {
       data: {
         case: { topic: string; extractedInsights: { reusableRules: string[] } };
         project: { evidencePack: { insights: { sourceType?: string }[] } };
+        addedInsightIds: string[];
+        addedInsights: Array<{ sourceType?: string }>;
+        addedSampleIds: string[];
       };
       warnings: string[];
     };
@@ -101,6 +104,9 @@ describe("agent tool registry", () => {
     expect(result.data.case.topic).toBe("广州咖啡馆");
     expect(result.data.case.extractedInsights.reusableRules.join(" ")).toContain("不复制");
     expect(result.data.project.evidencePack.insights.some((insight) => insight.sourceType === "viral_library")).toBe(true);
+    expect(result.data.addedInsightIds.length).toBeGreaterThan(0);
+    expect(result.data.addedInsights.every((insight) => insight.sourceType === "viral_library")).toBe(true);
+    expect(result.data.addedSampleIds).toHaveLength(1);
     expect(result.warnings.join(" ")).toContain("启发式");
   });
 
