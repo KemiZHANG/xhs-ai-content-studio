@@ -143,6 +143,8 @@ export type WorkflowResult = {
     results: Array<{
       score: number;
       reasons: string[];
+      diversityKey?: string;
+      angleSummary?: string;
       matchedQueries?: string[];
       case: ViralCase;
     }>;

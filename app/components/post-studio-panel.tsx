@@ -650,6 +650,15 @@ export function PostStudioPanel({
                 <div className="viralStrategyCard">
                   <strong>爆款策略摘要</strong>
                   <p>{viralPack.strategyReport.summary}</p>
+                  {viralPack.results?.length ? (
+                    <div className="ragAngleStrip" aria-label="爆款库检索角度">
+                      {viralPack.results.slice(0, 4).map((result) => (
+                        <span key={result.case.id} title={[...(result.matchedQueries ?? []), ...result.reasons].slice(0, 3).join(" / ")}>
+                          {result.angleSummary || `${result.case.hookType} · ${result.case.category}`}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                   <div className="viralStrategyGrid">
                     <KnowledgeList title="标题打法" items={viralPack.strategyReport.titleMoves} />
                     <KnowledgeList title="正文结构" items={viralPack.strategyReport.structureMoves} />
@@ -690,6 +699,7 @@ export function PostStudioPanel({
                   {viralCases.slice(0, 5).map((item) => (
                     <article key={item.id}>
                       <strong>{item.hookType}</strong>
+                      <span className="viralAngleLine">{item.hookType} · {item.category} · {item.imageStyle}</span>
                       <p>{item.extractedInsights.reusableRules[0] || item.contentStructure.join(" / ")}</p>
                       <span>赞 {item.metrics.likes} · 藏 {item.metrics.collects}</span>
                       <div className="evidenceActions">
