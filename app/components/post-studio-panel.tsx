@@ -144,6 +144,11 @@ export function PostStudioPanel({
   const latestImagePrompt = publishDraft.imagePrompt || project?.imagePrompts.at(-1)?.value.prompt || "";
   const quality = project?.qualityCheck;
   const brief = project?.creativeBrief;
+  const copyVersions = project?.copyVersions ?? [];
+  const imagePromptVersions = project?.imagePrompts ?? [];
+  const draftEvidenceIds = project?.copyDraft?.draft.basedOnEvidenceIds ?? copyVersions.at(-1)?.basedOnEvidenceIds ?? [];
+  const versionStatus = project ? getPostVersionStatus(project) : null;
+  const hasVisualDirection = Boolean(latestImagePrompt || project?.visualDirection);
   const activeAccount = settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
   const accountReady = Boolean(health?.loggedIn);
   const publishReady = Boolean(
@@ -151,13 +156,11 @@ export function PostStudioPanel({
       publishDraft.content.trim() &&
       publishDraft.tagsText.trim() &&
       selectedAssets.length &&
+      hasVisualDirection &&
       accountReady &&
-      quality?.canPublish === true
+      quality?.canPublish === true &&
+      versionStatus?.qualityGateFresh === true
   );
-  const copyVersions = project?.copyVersions ?? [];
-  const imagePromptVersions = project?.imagePrompts ?? [];
-  const draftEvidenceIds = project?.copyDraft?.draft.basedOnEvidenceIds ?? copyVersions.at(-1)?.basedOnEvidenceIds ?? [];
-  const versionStatus = project ? getPostVersionStatus(project) : null;
 
   const generatedCopyPrompt = useMemo(
     () =>
@@ -676,6 +679,8 @@ export function PostStudioPanel({
               <CheckItem ok={Boolean(publishDraft.content)} label="正文已填写" />
               <CheckItem ok={Boolean(publishDraft.tagsText)} label="标签已填写" />
               <CheckItem ok={Boolean(selectedAssets.length)} label="已选择图片" />
+              <CheckItem ok={hasVisualDirection} label="图片方向 / Prompt 已确认" />
+              <CheckItem ok={versionStatus?.qualityGateFresh === true} label="最终版本与 Quality Gate 一致" />
               <CheckItem ok={accountReady} label={`账号：${activeAccount?.displayName ?? "未配置"}`} />
               <CheckItem ok={publishVisibility === "仅自己可见"} label={`可见范围：${publishVisibility}`} />
               <CheckItem ok={!publishScheduleAt || Date.parse(publishScheduleAt) > Date.now()} label={publishScheduleAt ? `定时：${publishScheduleAt}（本地时区）` : "发布时间：立即"} />
@@ -685,7 +690,16 @@ export function PostStudioPanel({
                 <p>
                   {publishReady
                     ? "下一步会进入人工确认页，确认账号、可见范围、图片版本和时间后才会调用小红书发布。"
-                    : buildPublishReadinessHint({ title: publishDraft.title, content: publishDraft.content, tagsText: publishDraft.tagsText, imageCount: selectedAssets.length, accountReady, quality })}
+                    : buildPublishReadinessHint({
+                        title: publishDraft.title,
+                        content: publishDraft.content,
+                        tagsText: publishDraft.tagsText,
+                        imageCount: selectedAssets.length,
+                        hasVisualDirection,
+                        accountReady,
+                        quality,
+                        qualityGateFresh: versionStatus?.qualityGateFresh === true
+                      })}
                 </p>
                 <span>确认单：{pendingPublish ? `${pendingPublish.mode === "schedule" ? "定时" : "立即"} · 待人工确认` : "未生成"}</span>
                 {health?.activeAccount?.loginName ? <span>登录名：{health.activeAccount.loginName}</span> : null}
@@ -1170,21 +1184,26 @@ function buildPublishReadinessHint({
   content,
   tagsText,
   imageCount,
+  hasVisualDirection,
   accountReady,
-  quality
+  quality,
+  qualityGateFresh
 }: {
   title: string;
   content: string;
   tagsText: string;
   imageCount: number;
+  hasVisualDirection: boolean;
   accountReady: boolean;
   quality?: PostProject["qualityCheck"];
+  qualityGateFresh: boolean;
 }): string {
   const missing: string[] = [];
   if (!title.trim()) missing.push("标题");
   if (!content.trim()) missing.push("正文");
   if (!tagsText.trim()) missing.push("标签");
   if (!imageCount) missing.push("发布图片");
+  if (!hasVisualDirection) missing.push("图片方向 / Prompt");
   if (!accountReady) missing.push("小红书登录账号");
   if (!quality) {
     missing.push("Quality Gate 未运行");
@@ -1192,6 +1211,9 @@ function buildPublishReadinessHint({
   if (quality?.canPublish === false) {
     const issueText = quality.issues.slice(0, 2).join("；") || "需要处理质量检查问题";
     missing.push(`Quality Gate：${issueText}`);
+  }
+  if (quality?.canPublish === true && !qualityGateFresh) {
+    missing.push("版本状态：画布改动后需要重新运行 Quality Gate");
   }
   return missing.length ? `还缺：${missing.join("、")}。` : "请先刷新质量检查，再进入人工发布确认。";
 }
