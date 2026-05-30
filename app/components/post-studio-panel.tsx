@@ -129,6 +129,7 @@ export function PostStudioPanel({
   const insights = project?.evidencePack.insights ?? [];
   const viralInsights = insights.filter((insight) => insight.sourceType === "viral_library");
   const realtimeInsights = insights.filter((insight) => insight.sourceType !== "viral_library");
+  const keyLearningInsights = pickKeyLearningInsights(insights);
   const keyViralInsights = pickKeyViralInsights(viralInsights);
   const viralCaseById = new Map(viralCases.map((item) => [item.id, item]));
   const viralPack = workflowResult?.viralKnowledge ?? workflowResult?.researchSummary?.viralKnowledge ?? null;
@@ -443,13 +444,18 @@ export function PostStudioPanel({
                 <span>实时证据 {realtimeInsights.length}</span>
                 <span>爆款库 {viralInsights.length}</span>
               </div>
-              {realtimeInsights.length ? (
-                realtimeInsights.slice(0, 5).map((insight) => (
+              {keyLearningInsights.length ? (
+                <>
+                {keyLearningInsights.map((insight) => (
                   <article className="insightLine" key={insight.id}>
                     <span>{labelForInsight(insight.type)} · {labelForSource(insight.sourceType)}</span>
                     <p>{insight.insight}</p>
                   </article>
-                ))
+                ))}
+                {insights.length > keyLearningInsights.length ? (
+                  <p className="muted">已压缩展示 {keyLearningInsights.length} 条核心规律；完整实时样本、爆款库来源和评论在“证据 / 爆款库”里查看。</p>
+                ) : null}
+                </>
               ) : (
                 <p className="muted">研究完成后这里只显示 3-5 条核心结论；完整样本、评论和原文放在证据详情里。</p>
               )}
@@ -830,6 +836,40 @@ function ChipList({ title, items }: { title: string; items: string[] }) {
 }
 
 type ProjectInsight = PostProject["evidencePack"]["insights"][number];
+
+function pickKeyLearningInsights(insights: ProjectInsight[]): ProjectInsight[] {
+  const preferredOrder = ["hook", "title", "structure", "copy", "visual", "tag", "pain_point", "audience", "comment"];
+  const sourceRank = (sourceType?: string) => {
+    if (sourceType === "user_input") return 0;
+    if (sourceType === "realtime" || !sourceType) return 1;
+    if (sourceType === "viral_library") return 2;
+    return 3;
+  };
+  const selected: ProjectInsight[] = [];
+  const usedTypes = new Set<string>();
+  const usedSources = new Set<string>();
+  const sorted = [...insights]
+    .filter((insight) => insight.insight.trim())
+    .sort((left, right) => {
+      const leftRank = preferredOrder.indexOf(left.type);
+      const rightRank = preferredOrder.indexOf(right.type);
+      const byType = (leftRank === -1 ? 99 : leftRank) - (rightRank === -1 ? 99 : rightRank);
+      const bySource = sourceRank(left.sourceType) - sourceRank(right.sourceType);
+      return byType || bySource || right.confidence - left.confidence || left.id.localeCompare(right.id);
+    });
+
+  for (const insight of sorted) {
+    if (selected.length >= 5) break;
+    const source = insight.sourceType ?? "realtime";
+    if (usedTypes.has(insight.type) && selected.length < 3) continue;
+    if (usedSources.has(source) && selected.length < 2 && sorted.some((item) => (item.sourceType ?? "realtime") !== source)) continue;
+    selected.push(insight);
+    usedTypes.add(insight.type);
+    usedSources.add(source);
+  }
+
+  return selected.length ? selected : insights.slice(0, 5);
+}
 
 function pickKeyViralInsights(insights: ProjectInsight[]): ProjectInsight[] {
   const preferredOrder = ["hook", "structure", "copy", "tag", "visual", "pain_point", "audience", "comment", "title"];
