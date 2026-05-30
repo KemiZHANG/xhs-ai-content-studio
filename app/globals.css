@@ -3194,6 +3194,133 @@ textarea {
   color: #fff;
 }
 
+.postReadinessPanel {
+  background:
+    linear-gradient(135deg, rgba(18, 118, 97, 0.08), rgba(255, 255, 255, 0.76)),
+    var(--surface-subtle);
+  border: 1px solid rgba(18, 118, 97, 0.16);
+  border-radius: 14px;
+  display: grid;
+  gap: 10px;
+  grid-column: 1 / -1;
+  padding: 12px;
+}
+
+.postReadinessHeader {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.postReadinessHeader span {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.postReadinessHeader strong {
+  color: var(--ink);
+  display: block;
+  font-size: 15px;
+}
+
+.postReadinessHeader em {
+  background: #fff;
+  border: 1px solid rgba(18, 118, 97, 0.18);
+  border-radius: 999px;
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 900;
+  padding: 6px 10px;
+}
+
+.postReadinessTrack {
+  background: rgba(18, 118, 97, 0.1);
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.postReadinessTrack span {
+  background: linear-gradient(90deg, var(--accent), #e1b84e);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+  transition: width 180ms ease;
+}
+
+.postReadinessSteps {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.readinessStep {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 850;
+  gap: 5px;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 9px;
+  white-space: nowrap;
+}
+
+.readinessStep:disabled {
+  cursor: default;
+}
+
+.readinessStep:not(:disabled):hover {
+  border-color: rgba(18, 118, 97, 0.28);
+  color: var(--accent-strong);
+}
+
+.readinessStep span {
+  color: var(--accent-strong);
+  font-weight: 900;
+}
+
+.readinessStep.ready {
+  background: rgba(18, 118, 97, 0.09);
+  border-color: rgba(18, 118, 97, 0.18);
+  color: var(--accent-strong);
+}
+
+.postReadinessNext {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.postReadinessNext span {
+  color: rgba(0, 0, 0, 0.68);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.postReadinessNext button {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 900;
+  min-height: 32px;
+  padding: 0 12px;
+}
+
 .postStudioGrid {
   align-items: start;
   display: grid;
@@ -4469,6 +4596,8 @@ textarea {
   .ribbonStages,
   .formRow,
   .modeSwitch,
+  .postStudioTop,
+  .postStudioGrid,
   .publishControls,
   .publishReadinessGrid,
   .publishStateGrid,
@@ -4482,6 +4611,17 @@ textarea {
   .flowPublishPanel,
   .flowAdvancedPanel {
     position: static;
+  }
+
+  .studioAgentPane,
+  .studioSidePane {
+    max-height: none;
+    min-height: auto;
+    position: static;
+  }
+
+  .postReadinessSteps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .spanTwo {

@@ -1,0 +1,160 @@
+import type { PostAction } from "@/lib/post-project/types";
+
+export type PostReadinessStepId =
+  | "evidence"
+  | "brief"
+  | "copy"
+  | "visual"
+  | "images"
+  | "assembly"
+  | "quality"
+  | "confirmation";
+
+export type PostReadinessItem = {
+  id: PostReadinessStepId;
+  label: string;
+  ready: boolean;
+  detail: string;
+  action?: PostAction;
+};
+
+export type PostReadinessReport = {
+  items: PostReadinessItem[];
+  blockers: PostReadinessItem[];
+  nextAction?: PostAction;
+  progress: number;
+  summary: string;
+  canRequestPublish: boolean;
+};
+
+type ReadinessProject = {
+  allowedActions: readonly string[];
+  copyDraft?: {
+    draft?: {
+      title?: string;
+      content?: string;
+    };
+  } | null;
+  creativeBrief?: unknown;
+  evidencePack: {
+    insights: readonly unknown[];
+  };
+  finalPost?: unknown;
+  imagePrompts: readonly unknown[];
+  publishPlan?: {
+    status?: string;
+  } | null;
+  qualityCheck?: {
+    canPublish?: boolean;
+    issues: string[];
+  };
+  selectedImages: readonly string[];
+  selectedSamples: readonly unknown[];
+  visualDirection?: unknown;
+};
+
+export function buildPostReadinessReport(project: ReadinessProject): PostReadinessReport {
+  const actionSet = new Set(project.allowedActions);
+  const hasEvidence = Boolean(project.evidencePack.insights.length || project.selectedSamples.length);
+  const hasBrief = Boolean(project.creativeBrief);
+  const draft = project.copyDraft?.draft;
+  const hasCopy = Boolean(draft?.title?.trim() && draft?.content?.trim());
+  const hasVisualPlan = Boolean(project.visualDirection || project.imagePrompts.length);
+  const hasImages = project.selectedImages.length > 0;
+  const hasFinalPost = Boolean(project.finalPost);
+  const qualityFreshEnough = Boolean(project.qualityCheck?.canPublish);
+  const hasPublishConfirmation = Boolean(
+    project.publishPlan?.status === "awaiting_approval" ||
+      project.publishPlan?.status === "approved" ||
+      project.publishPlan?.status === "scheduled" ||
+      project.publishPlan?.status === "published"
+  );
+
+  const items: PostReadinessItem[] = [
+    {
+      id: "evidence",
+      label: "研究证据",
+      ready: hasEvidence,
+      detail: hasEvidence ? `已沉淀 ${project.evidencePack.insights.length} 条规律` : "先搜索真实笔记或补充参考样本",
+      action: actionSet.has("search_research") ? "search_research" : undefined
+    },
+    {
+      id: "brief",
+      label: "创作策略",
+      ready: hasBrief,
+      detail: hasBrief ? "CreativeBrief 已生成" : "把证据压缩成目标人群、角度和视觉方向",
+      action: actionSet.has("create_creative_brief") ? "create_creative_brief" : undefined
+    },
+    {
+      id: "copy",
+      label: "文案草稿",
+      ready: hasCopy,
+      detail: hasCopy ? "标题、正文已可继续微调" : "基于证据生成原创标题、正文和标签",
+      action: actionSet.has("generate_copy") ? "generate_copy" : undefined
+    },
+    {
+      id: "visual",
+      label: "图片方向",
+      ready: hasVisualPlan,
+      detail: hasVisualPlan ? "图片方向或 Prompt 已就绪" : "规划封面、场景、构图和禁用项",
+      action: actionSet.has("plan_visuals")
+        ? "plan_visuals"
+        : actionSet.has("generate_image_prompts")
+          ? "generate_image_prompts"
+          : undefined
+    },
+    {
+      id: "images",
+      label: "发布图片",
+      ready: hasImages,
+      detail: hasImages ? `已选择 ${project.selectedImages.length} 张图片` : "生成图片、卡片或从素材中选图",
+      action: actionSet.has("select_images")
+        ? "select_images"
+        : actionSet.has("generate_images")
+          ? "generate_images"
+          : actionSet.has("generate_cards")
+            ? "generate_cards"
+            : undefined
+    },
+    {
+      id: "assembly",
+      label: "成稿装配",
+      ready: hasFinalPost,
+      detail: hasFinalPost ? "文案和图片已绑定为同一篇帖子" : "把当前草稿和选中图片装配成最终帖子",
+      action: actionSet.has("assemble_post") ? "assemble_post" : undefined
+    },
+    {
+      id: "quality",
+      label: "质量检查",
+      ready: qualityFreshEnough,
+      detail: qualityFreshEnough
+        ? "质量门通过"
+        : project.qualityCheck?.issues.slice(0, 2).join("；") || "运行证据、原创性和发布风险检查",
+      action: actionSet.has("run_quality_gate") ? "run_quality_gate" : undefined
+    },
+    {
+      id: "confirmation",
+      label: "发布确认",
+      ready: hasPublishConfirmation,
+      detail: hasPublishConfirmation ? "已有待确认或已执行的发布计划" : "生成发布确认单后才能真实发布",
+      action: actionSet.has("request_publish_confirmation") ? "request_publish_confirmation" : undefined
+    }
+  ];
+
+  const readyCount = items.filter((item) => item.ready).length;
+  const blockers = items.filter((item) => !item.ready);
+  const nextAction = blockers.find((item) => item.action)?.action;
+  const progress = Math.round((readyCount / items.length) * 100);
+  const summary = blockers.length
+    ? `还差 ${blockers.length} 步：${blockers.slice(0, 2).map((item) => item.label).join("、")}`
+    : "已具备发布前确认条件";
+
+  return {
+    items,
+    blockers,
+    nextAction,
+    progress,
+    summary,
+    canRequestPublish: qualityFreshEnough && hasFinalPost && hasImages && hasCopy
+  };
+}

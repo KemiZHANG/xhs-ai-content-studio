@@ -34,7 +34,9 @@ import type {
 } from "@/app/types";
 import { getPostStageGuidance } from "@/lib/post-project/guidance";
 import { buildEvidenceCitationReport } from "@/lib/post-project/citations";
+import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
+import type { PostReadinessItem } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
 
 type StudioTab = "insights" | "brief" | "evidence" | "viral" | "references" | "generated" | "publish";
@@ -203,6 +205,7 @@ export function PostStudioPanel({
       quality?.canPublish === true &&
       versionStatus?.qualityGateFresh === true
   );
+  const readiness = project ? buildPostReadinessReport(project) : null;
 
   const generatedCopyPrompt = useMemo(
     () =>
@@ -243,6 +246,33 @@ export function PostStudioPanel({
           </div>
           <button className="secondaryButton" onClick={onNewProject} type="button">新建项目</button>
         </div>
+        {readiness ? (
+          <div className="postReadinessPanel" aria-label="发布准备度">
+            <div className="postReadinessHeader">
+              <div>
+                <span>发布准备度</span>
+                <strong>{readiness.summary}</strong>
+              </div>
+              <em>{readiness.progress}%</em>
+            </div>
+            <div className="postReadinessTrack" aria-hidden="true">
+              <span style={{ width: `${readiness.progress}%` }} />
+            </div>
+            <div className="postReadinessSteps">
+              {readiness.items.slice(0, 6).map((item) => (
+                <ReadinessStep item={item} key={item.id} onQuickAction={onQuickAction} />
+              ))}
+            </div>
+            <div className="postReadinessNext">
+              <span>{readiness.blockers[0]?.detail ?? "可以生成发布确认单，进入最终人工确认。"}</span>
+              {readiness.nextAction ? (
+                <button type="button" onClick={() => onQuickAction(readiness.nextAction!)}>
+                  {labelForAction(readiness.nextAction)}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
       </section>
 
       <div className="postStudioGrid">
@@ -974,6 +1004,27 @@ function StagePill({ label, value }: { label: string; value: string }) {
       <em>{label}</em>
       <strong>{value}</strong>
     </span>
+  );
+}
+
+function ReadinessStep({
+  item,
+  onQuickAction
+}: {
+  item: PostReadinessItem;
+  onQuickAction: (action: string) => void;
+}) {
+  return (
+    <button
+      className={item.ready ? "readinessStep ready" : "readinessStep"}
+      disabled={item.ready || !item.action}
+      onClick={() => item.action && onQuickAction(item.action)}
+      title={item.detail}
+      type="button"
+    >
+      <span>{item.ready ? "✓" : "·"}</span>
+      {item.label}
+    </button>
   );
 }
 
