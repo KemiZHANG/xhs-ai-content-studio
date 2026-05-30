@@ -309,6 +309,9 @@ export default function Home() {
     setWorkspace(data.workspace);
     if (data.workspace.currentDraft) {
       applyCurrentDraft(data.workspace.currentDraft);
+    } else {
+      setCurrentDraft(null);
+      setPublishDraft({ title: "", content: "", tagsText: "", imagePrompt: "" });
     }
     setPublishAssetIds(data.workspace.selectedImageIds ?? []);
   }
