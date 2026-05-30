@@ -2,6 +2,20 @@ import { describe, expect, it } from "vitest";
 import { createAgentPlan } from "@/lib/agent/planner";
 
 describe("agent planner", () => {
+  it("plans a clean project reset when the user starts a new post project", () => {
+    const plan = createAgentPlan({
+      message: "新建一个帖子项目，主题是通勤包，目标人群是上班族，内容目标是生成真实通勤分享",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      postStage: "copy_ready"
+    });
+
+    expect(plan.intent).toBe("start_project");
+    expect(plan.steps.map((step) => step.action)).toEqual(["startProject"]);
+    expect(plan.steps[0].toolName).toBe("project.startProject");
+    expect(plan.topic).toBe("通勤包");
+  });
+
   it("plans a full research and draft flow from a natural language request", () => {
     const plan = createAgentPlan({
       message: "帮我找最近一周广州咖啡馆高收藏笔记，分析标题和图片风格，再生成一篇适合探店账号的图文笔记",

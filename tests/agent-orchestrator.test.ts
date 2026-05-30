@@ -248,6 +248,117 @@ describe("agent orchestrator", () => {
     expect(result.workspace.topic).toBe("广州咖啡馆");
   });
 
+  it("starts a clean PostProject without carrying old evidence, draft, images, or publish plan", async () => {
+    await resetPostProject({
+      topic: "旧咖啡馆主题",
+      evidencePack: {
+        sampleIds: ["old-note"],
+        insights: [{
+          id: "old-insight",
+          sourceType: "realtime",
+          type: "copy",
+          insight: "旧证据",
+          sourceSampleIds: ["old-note"],
+          confidence: 0.8,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }]
+      },
+      copyDraft: {
+        id: "old-draft",
+        updatedAt: "2026-05-30T00:00:00.000Z",
+        draft: {
+          title: "旧草稿",
+          content: "旧内容",
+          tags: ["旧标签"],
+          structure: [],
+          imagePrompt: ""
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      },
+      generatedImages: [{ id: "old-image", assetId: "old-image", selected: true, createdAt: "2026-05-30T00:00:00.000Z" }],
+      selectedImages: ["old-image"],
+      publishPlan: {
+        id: "old-publish",
+        mode: "manual",
+        status: "awaiting_approval",
+        title: "旧草稿",
+        content: "旧内容",
+        tags: ["旧标签"],
+        images: ["old-image"],
+        visibility: defaultSettings.defaultVisibility,
+        requestedBy: "chat",
+        requestedAt: "2026-05-30T00:00:00.000Z",
+        idempotencyKey: "old-key",
+        guardrailResults: []
+      },
+      currentStage: "reviewing"
+    });
+    const { resetWorkspaceState } = await import("@/lib/agent/state");
+    await resetWorkspaceState({
+      topic: "旧咖啡馆主题",
+      selectedSamples: [{ id: "old-note" }],
+      currentDraftId: "old-draft",
+      selectedImageIds: ["old-image"],
+      publishPlan: {
+        id: "old-publish",
+        mode: "manual",
+        status: "awaiting_approval",
+        title: "旧草稿",
+        content: "旧内容",
+        tags: ["旧标签"],
+        images: ["old-image"],
+        visibility: defaultSettings.defaultVisibility,
+        requestedBy: "chat",
+        requestedAt: "2026-05-30T00:00:00.000Z",
+        idempotencyKey: "old-key",
+        guardrailResults: []
+      }
+    });
+    const runChatAgent = vi.fn(async () => ({ answer: "legacy answer" }));
+
+    const result = await runAgentTurn({
+      message: "新建一个帖子项目，主题是通勤包，目标人群是上班族，内容目标是生成真实通勤分享，语气希望生活化，产品信息是轻便托特包，卖点是大容量和不压肩",
+      conversationId: "chat-new-project",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      },
+      runChatAgentImpl: runChatAgent
+    });
+
+    expect(runChatAgent).not.toHaveBeenCalled();
+    expect(result.intent).toBe("start_project");
+    expect(result.answer).toContain("已新建");
+    expect(result.postProject?.topic).toBe("通勤包");
+    expect(result.postProject?.targetAudience).toBe("上班族");
+    expect(result.postProject?.goal).toBe("生成真实通勤分享");
+    expect(result.postProject?.tone).toBe("生活化");
+    expect(result.postProject?.productInfo.name).toBe("轻便托特包");
+    expect(result.postProject?.productInfo.sellingPoints).toBe("大容量和不压肩");
+    expect(result.postProject?.evidencePack.insights).toEqual([]);
+    expect(result.postProject?.selectedSamples).toEqual([]);
+    expect(result.postProject?.copyDraft).toBeNull();
+    expect(result.postProject?.selectedImages).toEqual([]);
+    expect(result.postProject?.publishPlan).toBeNull();
+    expect(result.workspace.topic).toBe("通勤包");
+    expect(result.workspace.selectedSamples).toEqual([]);
+    expect(result.workspace.currentDraft).toBeNull();
+    expect(result.workspace.selectedImageIds).toEqual([]);
+    expect(result.workspace.publishPlan).toBeNull();
+  });
+
   it("generates a PostProject draft with viral RAG evidence ids before falling back to legacy chat", async () => {
     const viralSample: SampleEvidence = {
       id: "note-viral-coffee",

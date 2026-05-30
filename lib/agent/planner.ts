@@ -17,6 +17,14 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
   const lower = message.toLowerCase();
   const stage = input.postStage ?? "empty";
 
+  if (isNewProjectRequest(message, lower)) {
+    return buildPlan({
+      intent: "start_project",
+      topic: inferNewProjectTopic(message) ?? inferTopic(message),
+      steps: [step("startProject", "Reset the active PostProject and start a clean post workspace.", "project.startProject")]
+    });
+  }
+
   if (isScheduledPublishRequest(message, lower) && input.hasCurrentDraft) {
     return buildPlan({
       intent: "schedule_publish",
@@ -147,6 +155,26 @@ function buildPlan(input: Omit<AgentPlan, "id">): AgentPlan {
 
 function step(action: AgentPlanStep["action"], reason: string, toolName?: string): AgentPlanStep {
   return toolName ? { action, reason, toolName } : { action, reason };
+}
+
+function isNewProjectRequest(message: string, lower: string): boolean {
+  if (lower.includes("new project") || lower.includes("start over")) {
+    return true;
+  }
+  if (/重新搜索|重新研究|重新生成/.test(message)) {
+    return false;
+  }
+  return /新建|新的项目|新项目|开始新的|重新开始|换一个主题|换个主题|另写一篇|下一篇|新帖子|新笔记/.test(message);
+}
+
+function inferNewProjectTopic(message: string): string | undefined {
+  const slot = message.match(/(?:主题|选题|笔记主题|帖子主题)\s*(?:是|为|:|：)?\s*([^，。！？；;\n]+)/);
+  if (slot?.[1]?.trim()) {
+    return cleanupTopic(slot[1]);
+  }
+  const loose = message.match(/(?:新建|开始|做一个|做一篇|我要写|我想写|另写一篇|下一篇)\s*(?:一个|一篇)?\s*([^，。！？；;\n]{2,32})(?:项目|笔记|帖子|图文|内容)?/);
+  if (!loose?.[1]) return undefined;
+  return cleanupTopic(loose[1].replace(/^(关于|小红书)/, "").replace(/(?:项目|笔记|帖子|图文|内容)$/, ""));
 }
 
 function isResearchRequest(message: string, lower: string): boolean {

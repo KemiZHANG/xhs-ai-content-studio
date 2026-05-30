@@ -9,6 +9,7 @@ import type { CreatorMemoryProfile } from "@/lib/agent/memory";
 import type { PostProject, PostStage } from "@/lib/post-project/types";
 
 export type AgentAction =
+  | "startProject"
   | "research"
   | "retrieveViralKnowledge"
   | "summarizeEvidence"
@@ -25,6 +26,7 @@ export type AgentAction =
   | "answer";
 
 export type AgentIntent =
+  | "start_project"
   | "research_to_draft"
   | "research_only"
   | "revise_draft"

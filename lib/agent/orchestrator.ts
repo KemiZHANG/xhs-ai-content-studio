@@ -2,7 +2,7 @@ import { runChatAgent, type ChatAgentResult } from "@/lib/chat/agent";
 import { createAgentPlan } from "@/lib/agent/planner";
 import { executeGuardedPublish } from "@/lib/agent/publishing";
 import { inferAgentScheduleAt } from "@/lib/agent/schedule";
-import { readWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
+import { readWorkspaceState, resetWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
 import { addTraceEvent, createAgentRun, createTrace, persistAgentTrace } from "@/lib/agent/trace";
 import type {
   AgentPlan,
@@ -12,7 +12,7 @@ import type {
   AgentTurnResult,
   WorkspaceState
 } from "@/lib/agent/types";
-import { readPostProject, updatePostProject } from "@/lib/post-project/store";
+import { readPostProject, resetPostProject, updatePostProject } from "@/lib/post-project/store";
 import { copyVersionFromDraft, deriveCreativeBrief, deriveFinalPost, deriveImagePromptVersion, deriveVisualDirection } from "@/lib/post-project/brief";
 import { runPostQualityGate } from "@/lib/post-project/quality";
 import type { PostProject, ProductInfo } from "@/lib/post-project/types";
@@ -65,6 +65,40 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
   });
 
   try {
+    const newProjectTurn = await maybeHandleNewProjectTurn(input, plan, initialPostProject);
+    if (newProjectTurn) {
+      trace = addTraceEvent(trace, {
+        type: "tool_called",
+        label: "project.startProject",
+        detail: "Reset the active PostProject and workspace before starting a new post.",
+        metadata: {
+          stage: newProjectTurn.postProject.currentStage,
+          topic: newProjectTurn.postProject.topic
+        }
+      });
+      trace = addTraceEvent(trace, {
+        type: "workspace_updated",
+        label: "Workspace reset",
+        detail: "Cleared previous evidence, draft, images, and publish plan for a clean project."
+      });
+      agentRun = completeRun(agentRun);
+      trace = addTraceEvent(trace, {
+        type: "run_completed",
+        label: "Agent run completed",
+        detail: "Agent turn completed after starting a clean PostProject."
+      });
+      await persistAgentTrace(trace);
+      return buildAgentTurnResult({
+        answer: newProjectTurn.answer,
+        plan,
+        workspace: newProjectTurn.workspace,
+        currentDraft: undefined,
+        agentRun,
+        trace,
+        postProject: newProjectTurn.postProject
+      });
+    }
+
     const briefUpdateTurn = await maybeHandleBriefUpdateTurn(input, plan, initialPostProject);
     if (briefUpdateTurn) {
       trace = addTraceEvent(trace, {
@@ -597,6 +631,72 @@ function buildClarifyingQuestions(plan: AgentPlan, workspace: WorkspaceState, po
     questions.push("你希望我下一步做什么：继续研究、生成文案、规划图片，还是进入发布检查？");
   }
   return questions.slice(0, 4);
+}
+
+async function maybeHandleNewProjectTurn(
+  input: RunAgentTurnInput,
+  plan: ReturnType<typeof createAgentPlan>,
+  postProject: PostProject
+): Promise<{ answer: string; workspace: WorkspaceState; postProject: PostProject } | null> {
+  if (plan.intent !== "start_project") {
+    return null;
+  }
+
+  const patch = parseBriefPatch(input.message, postProject);
+  const referenceAssetIds = input.attachedAssets.map((asset) => asset.id);
+  const productInfo: ProductInfo = {
+    referenceAssetIds,
+    name: patch.productInfo?.name,
+    sellingPoints: patch.productInfo?.sellingPoints,
+    scene: patch.productInfo?.scene
+  };
+  const projectCandidate = await resetPostProject({
+    topic: patch.topic ?? plan.topic,
+    targetAudience: patch.targetAudience,
+    goal: patch.goal,
+    tone: patch.tone,
+    productInfo,
+    evidencePack: { sampleIds: [], insights: [] },
+    selectedSamples: [],
+    copyDraft: null,
+    copyVersions: [],
+    generatedImages: [],
+    selectedImages: [],
+    publishPlan: null,
+    auditStatus: "unchecked",
+    currentStage: "briefing"
+  });
+  const creativeBrief = deriveCreativeBrief(projectCandidate);
+  const updatedProject = await updatePostProject({
+    creativeBrief,
+    currentStage: creativeBrief ? "brief_ready" : "briefing",
+    visualDirection: undefined,
+    imagePrompts: [],
+    finalPost: undefined,
+    qualityCheck: undefined,
+    auditStatus: "unchecked"
+  });
+  const workspace = await resetWorkspaceState({
+    topic: updatedProject.topic,
+    productImageIds: referenceAssetIds,
+    selectedImageIds: [],
+    selectedSamples: [],
+    currentDraft: null,
+    publishPlan: null,
+    lastUserIntent: plan.intent
+  });
+  const missing = buildMissingBriefSlots(updatedProject);
+  return {
+    answer: [
+      "已新建一个干净的 PostProject，并清空上一轮的证据、草稿、图片选择和发布计划。",
+      formatBriefPatchSummary(updatedProject),
+      referenceAssetIds.length ? `已带入 ${referenceAssetIds.length} 张上传图片作为产品/参考图。` : "",
+      missing.length ? `下一步建议补充：${missing.join("、")}。` : "当前信息已经可以继续做实时研究、爆款库检索、文案生成或图片规划。",
+      "你现在可以直接说：按这个主题找最近一周高收藏笔记，或基于当前信息生成文案。"
+    ].filter(Boolean).join("\n"),
+    workspace,
+    postProject: updatedProject
+  };
 }
 
 async function maybeHandleBriefUpdateTurn(
