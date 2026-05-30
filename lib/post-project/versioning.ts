@@ -11,6 +11,21 @@ export type PostVersionStatus = {
   warnings: string[];
 };
 
+export type PostVersionDiff = {
+  field: "title" | "content" | "tags" | "images" | "imagePrompts";
+  label: string;
+  changed: boolean;
+  beforeSummary: string;
+  afterSummary: string;
+};
+
+export type PostVersionDiffReport = {
+  hasChanges: boolean;
+  changedFields: PostVersionDiff["field"][];
+  changes: PostVersionDiff[];
+  summary: string;
+};
+
 export function getPostVersionStatus(project: Pick<
   PostProject,
   "copyDraft" | "selectedImages" | "imagePrompts" | "finalPost" | "qualityCheck"
@@ -52,8 +67,81 @@ export function getPostVersionStatus(project: Pick<
   };
 }
 
+export function getPostVersionDiffReport(project: Pick<
+  PostProject,
+  "copyDraft" | "selectedImages" | "imagePrompts" | "finalPost"
+>): PostVersionDiffReport {
+  const finalPost = project.finalPost;
+  const draft = project.copyDraft?.draft;
+  const activePromptIds = project.imagePrompts.map((prompt) => prompt.id);
+  const changes: PostVersionDiff[] = [
+    diffItem("title", "标题", finalPost?.title ?? "", draft?.title ?? ""),
+    diffItem("content", "正文", finalPost?.content ?? "", draft?.content ?? ""),
+    diffItem("tags", "标签", finalPost?.tags.join(" / ") ?? "", draft?.tags.join(" / ") ?? ""),
+    diffItem("images", "图片", (finalPost?.imageIds ?? []).join(" / "), project.selectedImages.join(" / ")),
+    diffItem("imagePrompts", "图片 Prompt", (finalPost?.imagePromptVersionIds ?? []).join(" / "), activePromptIds.join(" / "))
+  ];
+  const changedFields = changes.filter((item) => item.changed).map((item) => item.field);
+  return {
+    hasChanges: changedFields.length > 0,
+    changedFields,
+    changes,
+    summary: changedFields.length
+      ? `检测到 ${changedFields.length} 处版本差异：${changes.filter((item) => item.changed).map((item) => item.label).join("、")}`
+      : "当前画布与最终发布快照一致"
+  };
+}
+
+export function compareTextVersion<T extends { title?: string; content?: string; tags?: string[]; imagePrompt?: string }>(
+  previous: T | undefined,
+  next: T | undefined
+): PostVersionDiffReport {
+  const changes: PostVersionDiff[] = [
+    diffItem("title", "标题", previous?.title ?? "", next?.title ?? ""),
+    diffItem("content", "正文", previous?.content ?? "", next?.content ?? ""),
+    diffItem("tags", "标签", (previous?.tags ?? []).join(" / "), (next?.tags ?? []).join(" / ")),
+    diffItem("imagePrompts", "图片 Prompt", previous?.imagePrompt ?? "", next?.imagePrompt ?? "")
+  ];
+  const changedFields = changes.filter((item) => item.changed).map((item) => item.field);
+  return {
+    hasChanges: changedFields.length > 0,
+    changedFields,
+    changes,
+    summary: changedFields.length
+      ? `版本之间有 ${changedFields.length} 处差异：${changes.filter((item) => item.changed).map((item) => item.label).join("、")}`
+      : "两个版本内容一致"
+  };
+}
+
 function sameStringSet(left: string[], right: string[]): boolean {
   if (left.length !== right.length) return false;
   const rightSet = new Set(right);
   return left.every((item) => rightSet.has(item));
+}
+
+function diffItem(
+  field: PostVersionDiff["field"],
+  label: string,
+  before: string,
+  after: string
+): PostVersionDiff {
+  const beforeSummary = summarizeVersionValue(before);
+  const afterSummary = summarizeVersionValue(after);
+  return {
+    field,
+    label,
+    changed: normalizeVersionValue(before) !== normalizeVersionValue(after),
+    beforeSummary,
+    afterSummary
+  };
+}
+
+function normalizeVersionValue(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function summarizeVersionValue(value: string): string {
+  const normalized = normalizeVersionValue(value);
+  if (!normalized) return "空";
+  return normalized.length > 56 ? `${normalized.slice(0, 56)}...` : normalized;
 }

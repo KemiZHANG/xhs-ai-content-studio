@@ -3906,6 +3906,20 @@ textarea {
   gap: 7px;
 }
 
+.versionIntegrity .versionDiffList {
+  align-items: stretch;
+  display: grid;
+  gap: 6px;
+}
+
+.versionIntegrity .versionDiffList small {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px dashed rgba(190, 122, 20, 0.28);
+  border-radius: 10px;
+  color: var(--ink);
+  padding: 7px 8px;
+}
+
 .versionIntegrity span {
   background: rgba(255, 255, 255, 0.68);
   border: 1px solid var(--line);

@@ -34,7 +34,7 @@ import type {
 } from "@/app/types";
 import { getPostStageGuidance } from "@/lib/post-project/guidance";
 import { buildEvidenceCitationReport } from "@/lib/post-project/citations";
-import { getPostVersionStatus } from "@/lib/post-project/versioning";
+import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 import type { PostAction } from "@/lib/post-project/types";
 
 type StudioTab = "insights" | "brief" | "evidence" | "viral" | "references" | "generated" | "publish";
@@ -149,6 +149,7 @@ export function PostStudioPanel({
   const imagePromptVersions = project?.imagePrompts ?? [];
   const draftEvidenceIds = project?.copyDraft?.draft.basedOnEvidenceIds ?? copyVersions.at(-1)?.basedOnEvidenceIds ?? [];
   const versionStatus = project ? getPostVersionStatus(project) : null;
+  const versionDiff = project ? getPostVersionDiffReport(project) : null;
   const citationReport = project && draftEvidenceIds.length
     ? buildEvidenceCitationReport(project, draftEvidenceIds, project.copyDraft?.draft.evidenceReferences)
     : null;
@@ -415,6 +416,18 @@ export function PostStudioPanel({
                 <section className={versionStatus.qualityGateFresh ? "versionIntegrity ok" : "versionIntegrity warn"} aria-label="版本与发布检查状态">
                   <strong>{versionStatus.qualityGateFresh ? "版本已确认" : "版本需要复核"}</strong>
                   <p>{versionStatus.summary}</p>
+                  {versionDiff?.hasChanges ? (
+                    <div className="versionDiffList" aria-label="版本差异">
+                      {versionDiff.changes
+                        .filter((change) => change.changed)
+                        .slice(0, 3)
+                        .map((change) => (
+                          <small key={change.field}>
+                            {change.label}：{change.beforeSummary} → {change.afterSummary}
+                          </small>
+                        ))}
+                    </div>
+                  ) : null}
                   <div>
                     <span>文案：{versionStatus.activeCopyVersionId ?? "待生成"}</span>
                     <span>Prompt：{versionStatus.activeImagePromptVersionIds.length || 0} 个</span>

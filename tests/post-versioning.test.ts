@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getPostVersionStatus } from "@/lib/post-project/versioning";
+import { compareTextVersion, getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 import type { PostProject } from "@/lib/post-project/types";
 
 const baseProject = {
@@ -75,5 +75,39 @@ describe("post versioning status", () => {
     expect(status.needsReassemble).toBe(true);
     expect(status.needsQualityGate).toBe(true);
     expect(status.warnings.join(" ")).toContain("最终帖子快照已落后");
+  });
+  it("summarizes differences between the final post snapshot and current canvas", () => {
+    const report = getPostVersionDiffReport({
+      ...baseProject,
+      selectedImages: ["asset-1", "asset-2"],
+      copyDraft: {
+        ...baseProject.copyDraft,
+        draft: {
+          ...baseProject.copyDraft.draft,
+          title: "Updated commuter bag title",
+          tags: ["commuter bag", "office"]
+        }
+      }
+    });
+
+    expect(report.hasChanges).toBe(true);
+    expect(report.changedFields).toEqual(["title", "tags", "images"]);
+    expect(report.summary).toContain("3");
+    expect(report.changes.find((item) => item.field === "title")?.afterSummary).toContain("Updated commuter");
+  });
+
+  it("compares two copy versions before rollback", () => {
+    const report = compareTextVersion(
+      baseProject.copyDraft.draft,
+      {
+        ...baseProject.copyDraft.draft,
+        content: "A newer body with a different structure and more concrete proof.",
+        imagePrompt: "new image prompt"
+      }
+    );
+
+    expect(report.hasChanges).toBe(true);
+    expect(report.changedFields).toEqual(["content", "imagePrompts"]);
+    expect(report.summary).toContain("正文");
   });
 });
