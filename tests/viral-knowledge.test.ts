@@ -198,6 +198,47 @@ describe("viral knowledge base", () => {
     expect(results[0].reasons.join(" ")).toContain("query");
   });
 
+  it("diversifies fused retrieval so one creative angle does not fill the first results", async () => {
+    const baseCase = await createViralCaseFromEvidence({
+      sample,
+      topic: "Guangzhou coffee",
+      category: "Cafe review"
+    });
+    const sameAngle = [1, 2, 3].map((index) => ({
+      ...baseCase,
+      id: `same-angle-${index}`,
+      sourceSampleId: `same-note-${index}`,
+      sourceUrl: `https://www.xiaohongshu.com/explore/same-${index}`,
+      title: `Guangzhou coffee saveable guide ${index}`,
+      hookType: "scenario hook",
+      category: "Cafe review",
+      imageStyle: "warm table flatlay",
+      metrics: { ...baseCase.metrics, score: 5000 - index, likes: 3000 - index }
+    }));
+    const differentAngle = {
+      ...baseCase,
+      id: "different-angle",
+      sourceSampleId: "different-note",
+      sourceUrl: "https://www.xiaohongshu.com/explore/different",
+      title: "Guangzhou coffee quiet work map",
+      hookType: "map checklist",
+      category: "Work cafe",
+      imageStyle: "wide interior scene",
+      metrics: { ...baseCase.metrics, score: 900, likes: 800 }
+    };
+    await upsertViralCases([...sameAngle, differentAngle]);
+
+    const results = await searchViralCasesFusion({
+      query: "Guangzhou coffee saveable guide",
+      topic: "Guangzhou coffee",
+      limit: 3
+    });
+
+    expect(results).toHaveLength(3);
+    expect(results.map((item) => item.case.id)).toContain("different-angle");
+    expect(results.filter((item) => item.case.hookType === "scenario hook")).toHaveLength(2);
+  });
+
   it("filters by audience, pain point, created time, and interaction metrics", async () => {
     const viralCase = await createViralCaseFromEvidence({
       sample,

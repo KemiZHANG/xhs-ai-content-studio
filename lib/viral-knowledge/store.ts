@@ -444,20 +444,37 @@ function rewriteViralQueries(input: ViralSearchInput): string[] {
 
 function diversifyViralResults(results: ViralSearchResult[]): ViralSearchResult[] {
   const sorted = results.sort((a, b) => b.score - a.score);
-  const selected: ViralSearchResult[] = [];
-  const usedAngles = new Map<string, number>();
-
+  const groups = new Map<string, ViralSearchResult[]>();
   for (const result of sorted) {
-    const angle = `${result.case.hookType}|${result.case.category}|${result.case.imageStyle}`.slice(0, 80);
-    const count = usedAngles.get(angle) ?? 0;
-    if (count >= 2 && selected.length >= 4) {
-      continue;
-    }
-    selected.push(result);
-    usedAngles.set(angle, count + 1);
+    const angle = viralDiversityKey(result.case);
+    groups.set(angle, [...(groups.get(angle) ?? []), result]);
   }
 
-  return selected.length ? selected : sorted;
+  const buckets = [...groups.values()].sort((left, right) => right[0].score - left[0].score);
+  const selected: ViralSearchResult[] = [];
+  let cursor = 0;
+  while (selected.length < sorted.length && buckets.some((bucket) => bucket.length)) {
+    const bucket = buckets[cursor % buckets.length];
+    const next = bucket.shift();
+    if (next) {
+      selected.push(next);
+    }
+    cursor += 1;
+  }
+
+  return selected;
+}
+
+function viralDiversityKey(item: ViralCase): string {
+  return [
+    normalizeDiversityField(item.hookType),
+    normalizeDiversityField(item.category),
+    normalizeDiversityField(item.imageStyle)
+  ].join("|");
+}
+
+function normalizeDiversityField(value: string): string {
+  return value.replace(/\s+/g, " ").trim().toLowerCase().slice(0, 40);
 }
 
 function matchesFilters(item: ViralCase, filters: ViralCaseFilters): boolean {
