@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { ModelProvider } from "@/lib/models/provider";
@@ -362,7 +362,7 @@ function evidenceInsight(
 ) {
   if (!insight.trim()) return null;
   return {
-    id: `viral-insight-${type}-${randomUUID().slice(0, 8)}`,
+    id: stableViralInsightId({ type, sourceSampleIds, insight }),
     sourceType: "viral_library" as const,
     type,
     insight: insight.trim(),
@@ -370,6 +370,23 @@ function evidenceInsight(
     confidence,
     createdAt
   };
+}
+
+function stableViralInsightId({
+  type,
+  sourceSampleIds,
+  insight
+}: {
+  type: string;
+  sourceSampleIds: string[];
+  insight: string;
+}): string {
+  const key = JSON.stringify({
+    type,
+    sourceSampleIds: [...sourceSampleIds].sort(),
+    insight: insight.replace(/\s+/g, " ").trim()
+  });
+  return `viral-insight-${type}-${createHash("sha1").update(key).digest("hex").slice(0, 10)}`;
 }
 
 function createLocalEmbedding(text: string): number[] {

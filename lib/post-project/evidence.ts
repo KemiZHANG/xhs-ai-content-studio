@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import type { ResearchSummary, SampleEvidence } from "@/lib/workflows/one-click";
 import type { EvidenceInsight, EvidenceInsightType, EvidenceSourceType } from "@/lib/post-project/types";
 
@@ -35,7 +35,7 @@ function toInsights(
     .filter(Boolean)
     .slice(0, 5)
     .map((insight) => ({
-      id: `insight-${type}-${randomUUID().slice(0, 8)}`,
+      id: stableEvidenceInsightId({ type, sourceType, sampleIds, insight }),
       sourceType,
       type,
       insight,
@@ -51,4 +51,24 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function safeStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function stableEvidenceInsightId({
+  type,
+  sourceType,
+  sampleIds,
+  insight
+}: {
+  type: EvidenceInsightType;
+  sourceType: EvidenceSourceType;
+  sampleIds: string[];
+  insight: string;
+}): string {
+  const key = JSON.stringify({
+    type,
+    sourceType,
+    sampleIds: [...sampleIds].sort(),
+    insight: insight.replace(/\s+/g, " ").trim()
+  });
+  return `insight-${type}-${createHash("sha1").update(key).digest("hex").slice(0, 10)}`;
 }

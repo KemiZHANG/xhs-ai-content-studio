@@ -86,6 +86,27 @@ describe("post project", () => {
     expect(project.currentStage).toBe("reviewing");
   });
 
+  it("keeps migrated evidence ids stable across repeated workspace syncs", async () => {
+    const workspace = await resetWorkspaceState({
+      topic: "coffee",
+      researchRunId: "run-stable",
+      evidenceSummary: {
+        contentStrengths: ["标题前置真实场景"],
+        learningsForContent: ["正文先讲痛点再给选择标准"],
+        imageStrengths: ["封面主体清晰"],
+        learningsForImages: ["用环境细节增加真实感"],
+        nextQuestions: ["补充目标人群"]
+      },
+      selectedSamples: [{ id: "note-stable", title: "sample" }]
+    });
+
+    const first = postProjectFromWorkspace(workspace).evidencePack.insights.map((insight) => insight.id);
+    const second = postProjectFromWorkspace(workspace).evidencePack.insights.map((insight) => insight.id);
+
+    expect(first.length).toBeGreaterThan(0);
+    expect(second).toEqual(first);
+  });
+
   it("keeps post-project.json synchronized when workspace state is reset", async () => {
     await resetWorkspaceState({
       topic: "fresh",

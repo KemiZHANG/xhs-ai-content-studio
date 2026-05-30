@@ -74,6 +74,20 @@ describe("viral knowledge base", () => {
     expect(insights.map((item) => item.type)).toContain("structure");
   });
 
+  it("keeps viral evidence insight ids stable for the same reusable pattern", async () => {
+    const viralCase = await createViralCaseFromEvidence({
+      sample,
+      topic: "广州咖啡馆",
+      category: "探店"
+    });
+    const first = viralCasesToEvidenceInsights([viralCase]).map((insight) => insight.id);
+    const second = viralCasesToEvidenceInsights([viralCase]).map((insight) => insight.id);
+
+    expect(first.length).toBeGreaterThan(0);
+    expect(second).toEqual(first);
+    expect(first.every((id) => id.startsWith("viral-insight-"))).toBe(true);
+  });
+
   it("uses multi-query fusion and preserves matched query reasons", async () => {
     const viralCase = await createViralCaseFromEvidence({
       sample,
