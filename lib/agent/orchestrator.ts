@@ -17,6 +17,7 @@ import type {
 } from "@/lib/agent/types";
 import { readPostProject, resetPostProject, updatePostProject } from "@/lib/post-project/store";
 import { copyVersionFromDraft, deriveCreativeBrief, deriveFinalPost, deriveImagePromptVersion, deriveVisualDirection } from "@/lib/post-project/brief";
+import { buildEvidenceCitationReport, formatEvidenceCitationReport } from "@/lib/post-project/citations";
 import { insightsFromUserBriefInput, mergeEvidenceInsights } from "@/lib/post-project/evidence";
 import { runPostQualityGate } from "@/lib/post-project/quality";
 import type { PostAction, PostProject, ProductInfo } from "@/lib/post-project/types";
@@ -1502,7 +1503,7 @@ ${JSON.stringify(selectedSamples, null, 2)}
     lastUserIntent: "generate_copy"
   });
 
-  const referenced = summarizeReferencedEvidence(updatedProject, draft.basedOnEvidenceIds ?? evidenceIds, draft.evidenceReferences);
+  const referenced = summarizeEvidenceCitationReport(updatedProject, draft.basedOnEvidenceIds ?? evidenceIds, draft.evidenceReferences);
   return {
     answer: [
       "已基于当前 PostProject、CreativeBrief、实时证据和爆款库规律生成原创草稿。",
@@ -2036,6 +2037,15 @@ function formatEvidenceSection(title: string, insights: PostProject["evidencePac
   }
   const items = insights.map((insight) => `- ${insight.id}｜${labelForEvidenceSource(insight.sourceType)}｜${insight.type}：${insight.insight}`);
   return `${title}：\n${items.join("\n")}`;
+}
+
+function summarizeEvidenceCitationReport(
+  project: PostProject,
+  evidenceIds: string[],
+  evidenceReferences?: GeneratedDraft["evidenceReferences"]
+): string {
+  const report = buildEvidenceCitationReport(project, evidenceIds, evidenceReferences);
+  return report.allEvidenceIds.length ? formatEvidenceCitationReport(report) : "";
 }
 
 function mergeSelectedGeneratedImages(project: PostProject, candidates: string[], selected: string) {
