@@ -5,6 +5,7 @@ import { parseTagsText } from "@/lib/publishing/assembly";
 import type { AssetRecord, Health, PendingPublishConfirmation, PostProject, PublishDraftState, RedactedSettings } from "@/app/types";
 import { formatMcpEndpoint } from "@/app/components/xhs-display-utils";
 import { StatusLine, StatusPill } from "@/app/components/status-badges";
+import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 
 export function PublishAssemblyPanel({
   assets,
@@ -59,7 +60,9 @@ export function PublishAssemblyPanel({
   const quality = postProject?.qualityCheck;
   const finalPost = postProject?.finalPost;
   const postPlan = postProject?.publishPlan;
-  const canSubmit = ready && accountReady && quality?.canPublish === true;
+  const versionStatus = postProject ? getPostVersionStatus(postProject) : null;
+  const versionDiff = postProject ? getPostVersionDiffReport(postProject) : null;
+  const canSubmit = ready && accountReady && quality?.canPublish === true && versionStatus?.qualityGateFresh === true;
 
   return (
     <div className="twoColumn wideLeft">
@@ -103,6 +106,7 @@ export function PublishAssemblyPanel({
             <StatusLine ok={visibility === "仅自己可见"} label={`可见范围：${visibility}`} />
             <StatusLine ok={accountReady} label={`发布账号：${activeAccount?.displayName ?? "未配置账号"}`} />
             <StatusLine ok={quality?.canPublish === true} label={quality ? `Quality Gate：${quality.canPublish ? "通过" : "需处理"}` : "Quality Gate：待检查"} />
+            <StatusLine ok={versionStatus?.qualityGateFresh === true} label={versionStatus ? `版本状态：${versionStatus.qualityGateFresh ? "已锁定" : "需复核"}` : "版本状态：待组装"} />
           </section>
         </div>
 
@@ -128,6 +132,28 @@ export function PublishAssemblyPanel({
               <span>
                 <small>确认单</small>
                 <strong>{postPlan?.status ? labelForPublishStatus(postPlan.status) : "未生成"}</strong>
+              </span>
+            </div>
+            <div className="publishSafetyGrid" aria-label="发布安全摘要">
+              <span className={versionStatus?.qualityGateFresh ? "ok" : "warn"}>
+                <small>版本锁定</small>
+                <strong>{versionStatus?.qualityGateFresh ? "一致" : "需重新检查"}</strong>
+                <em>{versionDiff?.hasChanges ? versionDiff.summary : versionStatus?.summary ?? "等待最终帖子快照"}</em>
+              </span>
+              <span className={quality?.evidenceReview?.missingEvidenceIds.length ? "warn" : "ok"}>
+                <small>证据追溯</small>
+                <strong>{quality?.evidenceReview ? `${quality.evidenceReview.referencedEvidenceIds.length} 条引用` : "待检查"}</strong>
+                <em>{quality?.evidenceReview?.summary ?? "运行 Quality Gate 后展示"}</em>
+              </span>
+              <span className={quality?.evidenceAlignment?.isAligned === false ? "warn" : "ok"}>
+                <small>图文一致</small>
+                <strong>{quality?.evidenceAlignment?.isAligned === false ? "不一致" : quality?.evidenceAlignment ? "一致" : "待检查"}</strong>
+                <em>{quality?.evidenceAlignment?.summary ?? "图片方向和文案需要共享证据"}</em>
+              </span>
+              <span className={quality?.originalityReview?.isSafe === false ? "warn" : "ok"}>
+                <small>原创边界</small>
+                <strong>{quality?.originalityReview?.isSafe === false ? "有风险" : quality?.originalityReview ? "安全" : "待检查"}</strong>
+                <em>{quality?.originalityReview?.summary ?? "避免复制爆款库原文、图片和具体表达"}</em>
               </span>
             </div>
             {quality?.issues.length ? (

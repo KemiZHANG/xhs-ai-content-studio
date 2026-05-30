@@ -2316,6 +2316,47 @@ textarea {
   white-space: nowrap;
 }
 
+.publishSafetyGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.publishSafetyGrid span {
+  border-radius: 12px;
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 11px;
+}
+
+.publishSafetyGrid span.ok {
+  background: rgba(18, 118, 97, 0.08);
+  border: 1px solid rgba(18, 118, 97, 0.2);
+}
+
+.publishSafetyGrid span.warn {
+  background: rgba(190, 122, 20, 0.1);
+  border: 1px solid rgba(190, 122, 20, 0.24);
+}
+
+.publishSafetyGrid small {
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.publishSafetyGrid strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.publishSafetyGrid em {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.45;
+}
+
 .publishIssueList {
   color: rgba(141, 73, 36, 0.92);
   line-height: 1.6;
@@ -4370,6 +4411,7 @@ textarea {
   .publishControls,
   .publishReadinessGrid,
   .publishStateGrid,
+  .publishSafetyGrid,
   .promptGrid,
   .researchSummaryGrid {
     grid-template-columns: 1fr;
