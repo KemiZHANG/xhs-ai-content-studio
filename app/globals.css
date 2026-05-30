@@ -4560,7 +4560,8 @@ textarea {
   text-transform: uppercase;
 }
 
-.viralSearchPanel input {
+.viralSearchPanel input,
+.viralSearchPanel select {
   background: rgba(255, 255, 255, 0.86);
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -4568,6 +4569,24 @@ textarea {
   font-size: 12px;
   min-width: 0;
   padding: 9px 10px;
+}
+
+.viralAdvancedSearch {
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px dashed rgba(18, 118, 97, 0.16);
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.viralAdvancedSearch summary {
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.viralAdvancedSearch[open] summary {
+  margin-bottom: 8px;
 }
 
 .viralSearchGrid,

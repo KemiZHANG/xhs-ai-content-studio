@@ -128,7 +128,17 @@ export function PostStudioPanel({
   onSelectPostImages: (assetIds: string[]) => void;
   onSaveToViralLibrary: (sample: SampleEvidence) => void;
   onReloadViralLibrary: () => void;
-  onSearchViralLibrary: (filters: { query?: string; audience?: string; minCollects?: string; sortBy?: "createdAt" | "likes" | "collects" | "score" }) => void;
+  onSearchViralLibrary: (filters: {
+    query?: string;
+    category?: string;
+    tags?: string;
+    audience?: string;
+    painPoint?: string;
+    minLikes?: string;
+    minCollects?: string;
+    minScore?: string;
+    sortBy?: "createdAt" | "likes" | "collects" | "score";
+  }) => void;
   onRefreshViralEvidence: () => void;
   onOpenImageStudio: () => void;
   onOpenPublish: () => void;
@@ -141,7 +151,17 @@ export function PostStudioPanel({
   const [tab, setTab] = useState<StudioTab>("insights");
   const [selectedEvidence, setSelectedEvidence] = useState<SampleEvidence | null>(null);
   const [selectedViralCase, setSelectedViralCase] = useState<ViralCase | null>(null);
-  const [viralSearchForm, setViralSearchForm] = useState({ query: "", audience: "", minCollects: "" });
+  const [viralSearchForm, setViralSearchForm] = useState({
+    query: "",
+    category: "",
+    tags: "",
+    audience: "",
+    painPoint: "",
+    minLikes: "",
+    minCollects: "",
+    minScore: "",
+    sortBy: "score" as "createdAt" | "likes" | "collects" | "score"
+  });
   const selectedAssets = assets.filter((asset) => publishAssetIds.includes(asset.id));
   const uploadAssets = assets.filter((asset) => asset.kind === "upload");
   const generatedAssets = [...assets].filter((asset) => asset.kind === "generated").sort(sortNewestAsset);
@@ -688,9 +708,14 @@ export function PostStudioPanel({
                   event.preventDefault();
                   onSearchViralLibrary({
                     query: viralSearchForm.query,
+                    category: viralSearchForm.category,
+                    tags: viralSearchForm.tags,
                     audience: viralSearchForm.audience,
+                    painPoint: viralSearchForm.painPoint,
+                    minLikes: viralSearchForm.minLikes,
                     minCollects: viralSearchForm.minCollects,
-                    sortBy: "score"
+                    minScore: viralSearchForm.minScore,
+                    sortBy: viralSearchForm.sortBy
                   });
                 }}
               >
@@ -704,6 +729,14 @@ export function PostStudioPanel({
                 </label>
                 <div className="viralSearchGrid">
                   <label>
+                    <span>类目</span>
+                    <input
+                      value={viralSearchForm.category}
+                      onChange={(event) => setViralSearchForm((current) => ({ ...current, category: event.target.value }))}
+                      placeholder="探店 / 干货 / 种草"
+                    />
+                  </label>
+                  <label>
                     <span>目标人群</span>
                     <input
                       value={viralSearchForm.audience}
@@ -711,6 +744,35 @@ export function PostStudioPanel({
                       placeholder="例如：上班族"
                     />
                   </label>
+                  <label>
+                    <span>痛点</span>
+                    <input
+                      value={viralSearchForm.painPoint}
+                      onChange={(event) => setViralSearchForm((current) => ({ ...current, painPoint: event.target.value }))}
+                      placeholder="例如：不知道怎么选"
+                    />
+                  </label>
+                  <label>
+                    <span>标签</span>
+                    <input
+                      value={viralSearchForm.tags}
+                      onChange={(event) => setViralSearchForm((current) => ({ ...current, tags: event.target.value }))}
+                      placeholder="逗号分隔"
+                    />
+                  </label>
+                </div>
+                <details className="viralAdvancedSearch">
+                  <summary>高级过滤</summary>
+                  <div className="viralSearchGrid">
+                    <label>
+                      <span>最低点赞</span>
+                      <input
+                        inputMode="numeric"
+                        value={viralSearchForm.minLikes}
+                        onChange={(event) => setViralSearchForm((current) => ({ ...current, minLikes: event.target.value }))}
+                        placeholder="可选"
+                      />
+                    </label>
                   <label>
                     <span>最低收藏</span>
                     <input
@@ -720,14 +782,46 @@ export function PostStudioPanel({
                       placeholder="可选"
                     />
                   </label>
-                </div>
+                    <label>
+                      <span>最低评分</span>
+                      <input
+                        inputMode="decimal"
+                        value={viralSearchForm.minScore}
+                        onChange={(event) => setViralSearchForm((current) => ({ ...current, minScore: event.target.value }))}
+                        placeholder="可选"
+                      />
+                    </label>
+                    <label>
+                      <span>排序</span>
+                      <select
+                        value={viralSearchForm.sortBy}
+                        onChange={(event) => setViralSearchForm((current) => ({ ...current, sortBy: event.target.value as typeof current.sortBy }))}
+                      >
+                        <option value="score">综合分</option>
+                        <option value="collects">收藏</option>
+                        <option value="likes">点赞</option>
+                        <option value="createdAt">入库时间</option>
+                      </select>
+                    </label>
+                  </div>
+                </details>
                 <div className="viralSearchActions">
                   <button className="primaryButton" type="submit">检索爆款规律</button>
                   <button
                     className="secondaryButton"
                     type="button"
                     onClick={() => {
-                      setViralSearchForm({ query: "", audience: "", minCollects: "" });
+                      setViralSearchForm({
+                        query: "",
+                        category: "",
+                        tags: "",
+                        audience: "",
+                        painPoint: "",
+                        minLikes: "",
+                        minCollects: "",
+                        minScore: "",
+                        sortBy: "score"
+                      });
                       onReloadViralLibrary();
                     }}
                   >
