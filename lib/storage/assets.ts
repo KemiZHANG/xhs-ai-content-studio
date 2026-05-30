@@ -13,6 +13,8 @@ export type AssetRecord = {
   size: number;
   createdAt: string;
   prompt?: string;
+  promptVersionId?: string;
+  basedOnEvidenceIds?: string[];
   sourceAssetIds?: string[];
 };
 
@@ -29,6 +31,8 @@ export function createAssetRecord({
   mimeType,
   size,
   prompt,
+  promptVersionId,
+  basedOnEvidenceIds,
   sourceAssetIds
 }: {
   kind: AssetKind;
@@ -37,6 +41,8 @@ export function createAssetRecord({
   mimeType: string;
   size: number;
   prompt?: string;
+  promptVersionId?: string;
+  basedOnEvidenceIds?: string[];
   sourceAssetIds?: string[];
 }): AssetRecord {
   const safeName = originalName.replace(/\.[^.]+$/, "").replace(/[^\w\u4e00-\u9fa5-]+/g, "-");
@@ -50,6 +56,8 @@ export function createAssetRecord({
     size,
     createdAt: new Date().toISOString(),
     prompt,
+    promptVersionId,
+    basedOnEvidenceIds,
     sourceAssetIds
   };
 }
@@ -67,6 +75,8 @@ export function toPublicAssetRecord(asset: AssetRecord): PublicAssetRecord {
     mimeType: asset.mimeType,
     size: asset.size,
     createdAt: asset.createdAt,
+    promptVersionId: asset.promptVersionId,
+    basedOnEvidenceIds: asset.basedOnEvidenceIds,
     sourceAssetIds: asset.sourceAssetIds,
     url: publicAssetUrl(asset)
   };
@@ -101,7 +111,7 @@ export async function saveAsset(asset: AssetRecord): Promise<AssetRecord> {
 
 export async function upsertGeneratedAssetPaths(
   images: Array<{ path?: string; url?: string }>,
-  options: { prompt?: string; sourceAssetIds?: string[] } = {}
+  options: { prompt?: string; promptVersionId?: string; basedOnEvidenceIds?: string[]; sourceAssetIds?: string[] } = {}
 ): Promise<AssetRecord[]> {
   const paths = [...new Set(images.map((image) => image.path).filter((item): item is string => Boolean(item)))];
   if (!paths.length) {
@@ -128,6 +138,8 @@ export async function upsertGeneratedAssetPaths(
       mimeType: mimeFromPath(absolutePath),
       size: fileStat?.size ?? 0,
       prompt: options.prompt,
+      promptVersionId: options.promptVersionId,
+      basedOnEvidenceIds: options.basedOnEvidenceIds,
       sourceAssetIds: options.sourceAssetIds
     });
     next = [asset, ...next].slice(0, 500);

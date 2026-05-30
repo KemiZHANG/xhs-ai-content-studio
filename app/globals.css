@@ -4822,6 +4822,14 @@ textarea {
   padding: 0 2px 2px;
 }
 
+.studioAssetPick small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  padding: 0 2px 2px;
+}
+
 .checkItem {
   background: var(--surface-subtle);
   border: 1px solid var(--line);

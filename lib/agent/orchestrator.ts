@@ -1871,6 +1871,14 @@ async function maybeHandleImageGenerationTurn(
     updatedAt: new Date().toISOString(),
     images: [...currentDraft.images, generatedImage]
   };
+  const activeProject = await readPostProject();
+  const activePromptVersion = activeProject.imagePrompts.at(-1);
+  const imageEvidenceIds = uniqueIds([
+    ...(activePromptVersion?.basedOnEvidenceIds ?? []),
+    ...(activeProject.visualDirection?.basedOnEvidenceIds ?? []),
+    ...(activeProject.creativeBrief?.basedOnEvidenceIds ?? [])
+  ]).slice(0, 12);
+  const sourceAssetIds = input.attachedAssets.map((asset) => asset.id);
   const generatedAsset =
     generatedImage.path
       ? await saveAsset(
@@ -1881,7 +1889,9 @@ async function maybeHandleImageGenerationTurn(
             mimeType: "image/png",
             size: 0,
             prompt,
-            sourceAssetIds: input.attachedAssets.map((asset) => asset.id)
+            promptVersionId: activePromptVersion?.id,
+            basedOnEvidenceIds: imageEvidenceIds,
+            sourceAssetIds
           })
         )
       : null;
@@ -1896,10 +1906,11 @@ async function maybeHandleImageGenerationTurn(
     lastUserIntent: plan.intent
   });
   if (generatedAsset) {
-    const activeProject = await readPostProject();
     await appendGeneratedAssetsToPostProject({
       assetIds: [generatedAsset.id],
-      promptId: activeProject.imagePrompts.at(-1)?.id,
+      promptId: activePromptVersion?.id,
+      basedOnEvidenceIds: imageEvidenceIds,
+      sourceAssetIds,
       select: true
     });
   }
@@ -2240,10 +2251,14 @@ function mergeSelectedGeneratedImages(project: PostProject, candidates: string[]
 async function appendGeneratedAssetsToPostProject({
   assetIds,
   promptId,
+  basedOnEvidenceIds,
+  sourceAssetIds,
   select
 }: {
   assetIds: string[];
   promptId?: string | null;
+  basedOnEvidenceIds?: string[];
+  sourceAssetIds?: string[];
   select: boolean;
 }): Promise<PostProject> {
   const ids = uniqueIds(assetIds);
@@ -2260,16 +2275,29 @@ async function appendGeneratedAssetsToPostProject({
         id,
         assetId: id,
         promptId: promptId ?? undefined,
+        promptVersionId: promptId ?? undefined,
+        basedOnEvidenceIds: basedOnEvidenceIds ?? [],
+        sourceAssetIds: sourceAssetIds ?? [],
         createdAt: new Date().toISOString(),
         selected: select
       }))
   ].map((image) => {
     const identity = image.assetId ?? image.id;
+    const isIncoming = ids.includes(identity);
+    const enrichedImage = isIncoming
+      ? {
+          ...image,
+          promptId: image.promptId ?? promptId ?? undefined,
+          promptVersionId: image.promptVersionId ?? image.promptId ?? promptId ?? undefined,
+          basedOnEvidenceIds: image.basedOnEvidenceIds?.length ? image.basedOnEvidenceIds : (basedOnEvidenceIds ?? []),
+          sourceAssetIds: image.sourceAssetIds ?? sourceAssetIds ?? []
+        }
+      : image;
     return ids.includes(identity)
-      ? { ...image, selected: select }
+      ? { ...enrichedImage, selected: select }
       : select
-        ? { ...image, selected: false }
-        : image;
+        ? { ...enrichedImage, selected: false }
+        : enrichedImage;
   });
   const selectedImages = select ? ids : project.selectedImages;
   return updatePostProject({

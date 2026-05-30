@@ -123,12 +123,7 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
     await updateWorkspaceState({ selectedImageIds, publishPlan: null });
     const nextProject = await updatePostProject({
       selectedImages: selectedImageIds,
-      generatedImages: selectedImageIds.map((id) => ({
-        id,
-        assetId: id,
-        createdAt: new Date().toISOString(),
-        selected: true
-      })),
+      generatedImages: mergeSelectedImageRecords(project, selectedImageIds),
       finalPost: undefined,
       publishPlan: null,
       qualityCheck: undefined,
@@ -236,6 +231,36 @@ function getCurrentEvidenceIds(project: PostProject): string[] {
   return project.copyDraft?.draft.basedOnEvidenceIds?.length
     ? project.copyDraft.draft.basedOnEvidenceIds
     : project.creativeBrief?.basedOnEvidenceIds ?? project.evidencePack.insights.map((insight) => insight.id);
+}
+
+function mergeSelectedImageRecords(project: PostProject, selectedImageIds: string[]): PostProject["generatedImages"] {
+  const selected = uniqueStrings(selectedImageIds);
+  const existingById = new Map(project.generatedImages.map((image) => [image.assetId ?? image.id, image]));
+  const activePrompt = project.imagePrompts.at(-1);
+  const fallbackEvidenceIds = uniqueStrings([
+    ...(activePrompt?.basedOnEvidenceIds ?? []),
+    ...(project.visualDirection?.basedOnEvidenceIds ?? []),
+    ...(project.creativeBrief?.basedOnEvidenceIds ?? [])
+  ]).slice(0, 12);
+  return selected.map((id) => {
+    const existing = existingById.get(id);
+    return {
+      id: existing?.id ?? id,
+      assetId: existing?.assetId ?? id,
+      path: existing?.path,
+      url: existing?.url,
+      promptId: existing?.promptId ?? activePrompt?.id,
+      promptVersionId: existing?.promptVersionId ?? existing?.promptId ?? activePrompt?.id,
+      basedOnEvidenceIds: existing?.basedOnEvidenceIds?.length ? existing.basedOnEvidenceIds : fallbackEvidenceIds,
+      sourceAssetIds: existing?.sourceAssetIds ?? [],
+      createdAt: existing?.createdAt ?? new Date().toISOString(),
+      selected: true
+    };
+  });
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values.map(String).map((value) => value.trim()).filter(Boolean))];
 }
 
 function sanitizeExternalPatch(value: unknown): Partial<PostProject> {

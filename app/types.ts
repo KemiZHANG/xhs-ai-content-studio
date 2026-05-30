@@ -298,6 +298,8 @@ export type AssetRecord = {
   size: number;
   createdAt: string;
   prompt?: string;
+  promptVersionId?: string;
+  basedOnEvidenceIds?: string[];
   sourceAssetIds?: string[];
 };
 
@@ -495,7 +497,17 @@ export type PostProject = {
     };
     basedOnEvidenceIds: string[];
   }>;
-  generatedImages: Array<{ id: string; assetId?: string; path?: string; url?: string; selected?: boolean }>;
+  generatedImages: Array<{
+    id: string;
+    assetId?: string;
+    path?: string;
+    url?: string;
+    promptId?: string;
+    promptVersionId?: string;
+    basedOnEvidenceIds?: string[];
+    sourceAssetIds?: string[];
+    selected?: boolean;
+  }>;
   selectedImages: string[];
   finalPost?: {
     title: string;

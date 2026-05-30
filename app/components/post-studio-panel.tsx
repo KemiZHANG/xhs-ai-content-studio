@@ -1002,6 +1002,7 @@ export function PostStudioPanel({
                 <div className="studioAssetGrid selectable">
                   {recentGeneratedAssets.map((asset) => {
                     const selected = publishAssetIds.includes(asset.id);
+                    const projectImage = project?.generatedImages.find((image) => (image.assetId ?? image.id) === asset.id);
                     return (
                       <button
                         className={selected ? "studioAssetPick selected" : "studioAssetPick"}
@@ -1017,6 +1018,12 @@ export function PostStudioPanel({
                       >
                         <img alt={asset.name} src={`/api/assets/file/${asset.id}`} />
                         <span>{selected ? "已选" : "生成图"}</span>
+                        {projectImage?.promptVersionId || projectImage?.basedOnEvidenceIds?.length ? (
+                          <small>
+                            {projectImage.promptVersionId ? `Prompt ${projectImage.promptVersionId}` : "Prompt 待绑定"}
+                            {projectImage.basedOnEvidenceIds?.length ? ` · 证据 ${projectImage.basedOnEvidenceIds.length}` : ""}
+                          </small>
+                        ) : null}
                       </button>
                     );
                   })}

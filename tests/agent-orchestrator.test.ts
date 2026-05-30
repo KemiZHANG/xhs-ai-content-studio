@@ -217,9 +217,54 @@ describe("agent orchestrator", () => {
   it("generates images from the current draft inside the agent turn and updates workspace state", async () => {
     const imagePath = path.join(tempDir, "generated-assets", "generated", "agent-image.png");
     let prompt = "";
+    await resetPostProject({
+      topic: "coffee shop",
+      creativeBrief: {
+        audience: "coffee fans",
+        painPoint: "need a calm place",
+        contentAngle: "real visit",
+        emotionalHook: "weekend save",
+        proofPoints: ["light"],
+        tone: "warm",
+        visualMood: "warm coffee shop",
+        imageMustHave: ["coffee"],
+        imageMustAvoid: [],
+        platformStyle: "xiaohongshu",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-visual"]
+      },
+      visualDirection: {
+        mood: "warm",
+        composition: "coffee table",
+        colorPalette: "warm neutral",
+        mustHave: ["coffee"],
+        mustAvoid: [],
+        basedOnEvidenceIds: ["insight-visual"]
+      },
+      evidencePack: {
+        sampleIds: ["sample-1"],
+        insights: [{
+          id: "insight-visual",
+          sourceType: "realtime",
+          type: "visual",
+          insight: "Use warm coffee table light",
+          sourceSampleIds: ["sample-1"],
+          confidence: 0.9,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }]
+      },
+      imagePrompts: [{
+        id: "prompt-v1",
+        createdAt: "2026-05-31T00:00:00.000Z",
+        label: "主图 Prompt",
+        value: { prompt: "warm coffee shop cover image" },
+        basedOnEvidenceIds: ["insight-visual"]
+      }]
+    });
 
     const result = await runAgentTurn({
-      message: "generate image for this draft",
+      message: "请基于当前草稿生成配图",
       conversationId: "chat-1",
       settings: { ...defaultSettings, imageApiKey: "image-key" },
       history: [],
@@ -260,6 +305,11 @@ describe("agent orchestrator", () => {
     expect(result.postProject?.generatedImages).toHaveLength(1);
     expect(result.postProject?.generatedImages[0].assetId).toBe(result.workspace.selectedImageIds[0]);
     expect(result.postProject?.generatedImages[0].selected).toBe(true);
+    expect(result.postProject?.generatedImages[0]).toMatchObject({
+      promptVersionId: "prompt-v1",
+      basedOnEvidenceIds: ["insight-visual"],
+      sourceAssetIds: []
+    });
     expect(result.postProject?.selectedImages).toEqual(result.workspace.selectedImageIds);
     expect(result.postProject?.publishPlan).toBeNull();
   });

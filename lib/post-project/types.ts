@@ -115,6 +115,9 @@ export type GeneratedProjectImage = {
   path?: string;
   url?: string;
   promptId?: string;
+  promptVersionId?: string;
+  basedOnEvidenceIds?: string[];
+  sourceAssetIds?: string[];
   createdAt: string;
   selected?: boolean;
 };

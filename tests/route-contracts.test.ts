@@ -1714,9 +1714,25 @@ describe("API route contracts", () => {
     vi.doMock("@/lib/post-project/store", () => ({
       readPostProject: async () => ({
         selectedImages: [],
-        generatedImages: [],
-        imagePrompts: [],
-        evidencePack: { insights: [] }
+        generatedImages: [{
+          id: "image-existing",
+          assetId: "asset-1",
+          promptVersionId: "prompt-existing",
+          basedOnEvidenceIds: ["insight-existing"],
+          sourceAssetIds: ["product-1"],
+          createdAt: "2026-05-30T00:00:00.000Z",
+          selected: false
+        }],
+        creativeBrief: { basedOnEvidenceIds: ["brief-insight"] },
+        visualDirection: { basedOnEvidenceIds: ["visual-insight"] },
+        imagePrompts: [{
+          id: "prompt-v1",
+          createdAt: "2026-05-31T00:00:00.000Z",
+          label: "prompt",
+          value: { prompt: "图像提示词" },
+          basedOnEvidenceIds: ["visual-insight"]
+        }],
+        evidencePack: { insights: [{ id: "visual-insight" }] }
       }),
       updatePostProject
     }));
@@ -1738,6 +1754,24 @@ describe("API route contracts", () => {
     expect(updateWorkspaceState).toHaveBeenCalledWith({ selectedImageIds: ["asset-1", "asset-2"], publishPlan: null });
     expect(updatePostProject).toHaveBeenCalledWith(expect.objectContaining({
       selectedImages: ["asset-1", "asset-2"],
+      generatedImages: [
+        expect.objectContaining({
+          id: "image-existing",
+          assetId: "asset-1",
+          promptVersionId: "prompt-existing",
+          basedOnEvidenceIds: ["insight-existing"],
+          sourceAssetIds: ["product-1"],
+          selected: true
+        }),
+        expect.objectContaining({
+          id: "asset-2",
+          assetId: "asset-2",
+          promptVersionId: "prompt-v1",
+          basedOnEvidenceIds: ["visual-insight", "brief-insight"],
+          sourceAssetIds: [],
+          selected: true
+        })
+      ],
       publishPlan: null,
       finalPost: undefined,
       qualityCheck: undefined,
