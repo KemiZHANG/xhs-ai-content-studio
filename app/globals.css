@@ -3505,6 +3505,18 @@ textarea {
   margin: 0;
 }
 
+.miniEvidenceList .keyViralInsight {
+  border-color: rgba(18, 118, 97, 0.2);
+  background: rgba(18, 118, 97, 0.055);
+}
+
+.keyViralInsight small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
 .ragStatus {
   border: 1px solid var(--line);
   border-radius: 12px;

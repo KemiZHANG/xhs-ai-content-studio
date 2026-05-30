@@ -127,6 +127,8 @@ export function PostStudioPanel({
   const insights = project?.evidencePack.insights ?? [];
   const viralInsights = insights.filter((insight) => insight.sourceType === "viral_library");
   const realtimeInsights = insights.filter((insight) => insight.sourceType !== "viral_library");
+  const keyViralInsights = pickKeyViralInsights(viralInsights);
+  const viralCaseById = new Map(viralCases.map((item) => [item.id, item]));
   const viralPack = workflowResult?.viralKnowledge ?? workflowResult?.researchSummary?.viralKnowledge ?? null;
   const samples = project?.selectedSamples ?? workflowResult?.evidence ?? workspace?.selectedSamples ?? [];
   const saveableSamples = samples.filter(isSampleEvidence).slice(0, 3);
@@ -509,12 +511,30 @@ export function PostStudioPanel({
               ) : null}
               {viralInsights.length ? (
                 <div className="miniEvidenceList">
-                  {viralInsights.slice(0, 5).map((insight) => (
-                    <article key={insight.id}>
-                      <span>{labelForInsight(insight.type)} · 爆款库</span>
+                  {keyViralInsights.map((insight) => (
+                    <article className="keyViralInsight" key={insight.id}>
+                      <span>{labelForInsight(insight.type)} · 爆款库 · 置信 {Math.round(insight.confidence * 100)}%</span>
                       <p>{insight.insight}</p>
+                      <small>{insight.id}</small>
+                      {findViralCaseForInsight(insight, viralCaseById) ? (
+                        <div className="evidenceActions">
+                          <button
+                            className="textButton"
+                            type="button"
+                            onClick={() => {
+                              const source = findViralCaseForInsight(insight, viralCaseById);
+                              if (source) setSelectedViralCase(source);
+                            }}
+                          >
+                            查看来源规律
+                          </button>
+                        </div>
+                      ) : null}
                     </article>
                   ))}
+                  {viralInsights.length > keyViralInsights.length ? (
+                    <p className="muted">已默认压缩展示 {keyViralInsights.length} 条关键规律，完整 {viralInsights.length} 条已写入 evidencePack，生成文案和图片方向时可追溯引用。</p>
+                  ) : null}
                 </div>
               ) : viralCases.length ? (
                 <div className="miniEvidenceList">
@@ -787,6 +807,39 @@ function ChipList({ title, items }: { title: string; items: string[] }) {
       </div>
     </div>
   );
+}
+
+type ProjectInsight = PostProject["evidencePack"]["insights"][number];
+
+function pickKeyViralInsights(insights: ProjectInsight[]): ProjectInsight[] {
+  const preferredOrder = ["hook", "structure", "copy", "tag", "visual", "pain_point", "audience", "comment", "title"];
+  const selected: ProjectInsight[] = [];
+  const usedTypes = new Set<string>();
+  const sorted = [...insights]
+    .filter((insight) => insight.insight.trim())
+    .sort((left, right) => {
+      const leftRank = preferredOrder.indexOf(left.type);
+      const rightRank = preferredOrder.indexOf(right.type);
+      const byType = (leftRank === -1 ? 99 : leftRank) - (rightRank === -1 ? 99 : rightRank);
+      return byType || right.confidence - left.confidence || left.id.localeCompare(right.id);
+    });
+
+  for (const insight of sorted) {
+    if (selected.length >= 5) break;
+    if (usedTypes.has(insight.type) && selected.length < 3) continue;
+    selected.push(insight);
+    usedTypes.add(insight.type);
+  }
+
+  return selected.length ? selected : insights.slice(0, 5);
+}
+
+function findViralCaseForInsight(insight: ProjectInsight, viralCaseById: Map<string, ViralCase>): ViralCase | undefined {
+  for (const id of insight.sourceSampleIds) {
+    const viralCase = viralCaseById.get(id);
+    if (viralCase) return viralCase;
+  }
+  return undefined;
 }
 
 function CheckItem({ ok, label }: { ok: boolean; label: string }) {
