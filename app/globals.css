@@ -4006,6 +4006,22 @@ textarea {
   margin-bottom: 6px;
 }
 
+.drawerInlineWarning {
+  background: rgba(190, 122, 20, 0.08);
+  border: 1px solid rgba(190, 122, 20, 0.18);
+  border-radius: 12px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.drawerInlineWarning article {
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(190, 122, 20, 0.12);
+  border-radius: 10px;
+  padding: 10px;
+}
+
 .warningSection {
   background: rgba(190, 122, 20, 0.08);
   border: 1px solid rgba(190, 122, 20, 0.18);

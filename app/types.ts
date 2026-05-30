@@ -186,6 +186,12 @@ export type ViralCase = {
     reusableRules: string[];
     avoidCopying: string[];
   };
+  creativeSafety?: {
+    summary: string;
+    reusablePatterns: string[];
+    doNotCopy: string[];
+    transformationGuidance: string[];
+  };
 };
 
 export type SampleEvidence = {

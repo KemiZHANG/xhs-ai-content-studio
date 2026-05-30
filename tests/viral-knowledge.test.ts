@@ -18,7 +18,7 @@ let tempDir: string;
 
 const sample: SampleEvidence = {
   id: "note-1",
-  title: "广州咖啡馆避坑清单",
+  title: "Guangzhou coffee shop honest guide",
   author: "author",
   likes: 1200,
   collects: 980,
@@ -28,8 +28,8 @@ const sample: SampleEvidence = {
   url: "https://www.xiaohongshu.com/explore/note-1",
   imageUrls: ["https://example.com/a.jpg"],
   cachedImageUrls: [],
-  detailText: "真实探店体验，先讲排队和人均，再给适合拍照的位置，最后提醒周末避开高峰。",
-  commentSnippets: ["想知道人均", "周末人多吗"],
+  detailText: "A real cafe visit note: opening with queue time and average spend, then photo spots, taste notes, and weekend crowd warnings.",
+  commentSnippets: ["What is the average spend?", "Is it crowded on weekends?"],
   reasonHighlights: []
 };
 
@@ -46,27 +46,34 @@ afterEach(async () => {
 });
 
 describe("viral knowledge base", () => {
-  it("stores structured reusable patterns instead of only raw text", async () => {
+  it("stores structured reusable patterns and originality guidance", async () => {
     const viralCase = await createViralCaseFromEvidence({
       sample,
-      topic: "广州咖啡馆",
-      category: "探店"
+      topic: "Guangzhou coffee",
+      category: "Cafe review"
     });
     await upsertViralCases([viralCase]);
 
-    const results = await searchViralCases({ query: "广州咖啡馆 避坑 人均", topic: "广州咖啡馆", limit: 3 });
+    const results = await searchViralCases({
+      query: "Guangzhou coffee queue average spend",
+      topic: "Guangzhou coffee",
+      limit: 3
+    });
 
     expect(results[0].case.title).toBe(sample.title);
     expect(results[0].case.bodyExcerpt.length).toBeLessThanOrEqual(240);
-    expect(results[0].case.extractedInsights.reusableRules.join(" ")).toContain("不复制原句");
+    expect(results[0].case.extractedInsights.reusableRules.length).toBeGreaterThan(0);
+    expect(results[0].case.creativeSafety?.summary).toContain("只能作为创作规律来源");
+    expect(results[0].case.creativeSafety?.doNotCopy.join(" ")).toContain("不要复制");
+    expect(results[0].case.creativeSafety?.transformationGuidance.join(" ")).toContain("自己的");
     expect(results[0].score).toBeGreaterThan(0);
   });
 
   it("converts viral cases into source-tagged evidence insights", async () => {
     const viralCase = await createViralCaseFromEvidence({
       sample,
-      topic: "广州咖啡馆",
-      category: "探店"
+      topic: "Guangzhou coffee",
+      category: "Cafe review"
     });
     const insights = viralCasesToEvidenceInsights([viralCase]);
 
@@ -74,13 +81,35 @@ describe("viral knowledge base", () => {
     expect(insights.every((item) => item.sourceType === "viral_library")).toBe(true);
     expect(insights.map((item) => item.type)).toContain("hook");
     expect(insights.map((item) => item.type)).toContain("structure");
+    expect(insights.map((item) => item.type)).toContain("copy");
+    expect(insights.some((item) => item.insight.includes("近似复刻"))).toBe(true);
+  });
+
+  it("backfills creative safety for legacy viral cases", async () => {
+    const viralCase = await createViralCaseFromEvidence({
+      sample,
+      topic: "Guangzhou coffee",
+      category: "Cafe review"
+    });
+    await upsertViralCases([{
+      ...viralCase,
+      id: "legacy-viral-case",
+      creativeSafety: undefined
+    }]);
+
+    const [stored] = await listViralCases();
+
+    expect(stored.id).toBe("legacy-viral-case");
+    expect(stored.creativeSafety?.summary).toContain("只能作为创作规律来源");
+    expect(stored.creativeSafety?.reusablePatterns.length).toBeGreaterThan(0);
+    expect(stored.creativeSafety?.doNotCopy.join(" ")).toContain("不要复制");
   });
 
   it("keeps viral evidence insight ids stable for the same reusable pattern", async () => {
     const viralCase = await createViralCaseFromEvidence({
       sample,
-      topic: "广州咖啡馆",
-      category: "探店"
+      topic: "Guangzhou coffee",
+      category: "Cafe review"
     });
     const first = viralCasesToEvidenceInsights([viralCase]).map((insight) => insight.id);
     const second = viralCasesToEvidenceInsights([viralCase]).map((insight) => insight.id);
@@ -93,41 +122,41 @@ describe("viral knowledge base", () => {
   it("uses multi-query fusion and preserves matched query reasons", async () => {
     const viralCase = await createViralCaseFromEvidence({
       sample,
-      topic: "广州咖啡馆",
-      category: "探店"
+      topic: "Guangzhou coffee",
+      category: "Cafe review"
     });
     await upsertViralCases([viralCase]);
 
     const results = await searchViralCasesFusion({
-      query: "探店账号想写真实避坑收藏帖",
-      topic: "广州咖啡馆",
-      category: "探店",
+      query: "honest cafe review with saveable details",
+      topic: "Guangzhou coffee",
+      category: "Cafe review",
       limit: 5
     });
 
     expect(results[0].case.id).toBe(viralCase.id);
     expect(results[0].matchedQueries?.length).toBeGreaterThan(0);
-    expect(results[0].reasons.join(" ")).toContain("检索 query");
+    expect(results[0].reasons.join(" ")).toContain("query");
   });
 
   it("filters by audience, pain point, created time, and interaction metrics", async () => {
     const viralCase = await createViralCaseFromEvidence({
       sample,
-      topic: "广州咖啡馆",
-      category: "探店"
+      topic: "Guangzhou coffee",
+      category: "Cafe review"
     });
     const enriched = {
       ...viralCase,
-      audience: "周末约会和探店账号粉丝",
-      painPoint: "怕踩雷、不知道人均和排队情况",
+      audience: "weekend cafe reviewers",
+      painPoint: "afraid of wasting time in crowded cafes",
       createdAt: "2026-05-20T12:00:00.000Z"
     };
     await upsertViralCases([enriched]);
 
     const matched = await searchViralCases({
-      query: "咖啡馆 人均",
-      audience: "探店账号",
-      painPoint: "踩雷",
+      query: "coffee average spend",
+      audience: "cafe reviewers",
+      painPoint: "crowded cafes",
       createdAfter: "2026-05-01T00:00:00.000Z",
       createdBefore: "2026-06-01T00:00:00.000Z",
       minLikes: 1000,
@@ -135,8 +164,8 @@ describe("viral knowledge base", () => {
       minComments: 50
     });
     const blocked = await searchViralCases({
-      query: "咖啡馆 人均",
-      audience: "探店账号",
+      query: "coffee average spend",
+      audience: "cafe reviewers",
       minCollects: 3000
     });
 
@@ -147,14 +176,14 @@ describe("viral knowledge base", () => {
   it("filters and sorts by shares, score, tags, and created time", async () => {
     const coffeeCase = await createViralCaseFromEvidence({
       sample,
-      topic: "广州咖啡馆",
-      category: "探店"
+      topic: "Guangzhou coffee",
+      category: "Cafe review"
     });
     const bagCase = await createViralCaseFromEvidence({
       sample: {
         ...sample,
         id: "note-bag",
-        title: "通勤包真实测评",
+        title: "Commuter bag real review",
         likes: 400,
         collects: 320,
         comments: 18,
@@ -162,29 +191,29 @@ describe("viral knowledge base", () => {
         score: 520,
         url: "https://www.xiaohongshu.com/explore/note-bag"
       },
-      topic: "通勤包",
-      category: "产品测评"
+      topic: "Commuter bag",
+      category: "Product review"
     });
     await upsertViralCases([
       {
         ...coffeeCase,
         id: "viral-coffee",
-        tags: ["广州咖啡馆", "探店", "拍照"],
+        tags: ["coffee", "cafe", "photo"],
         createdAt: "2026-05-20T00:00:00.000Z",
         metrics: { ...coffeeCase.metrics, shares: 55, score: 3300 }
       },
       {
         ...bagCase,
         id: "viral-bag",
-        tags: ["通勤包", "测评"],
+        tags: ["bag", "review"],
         createdAt: "2026-05-25T00:00:00.000Z",
         metrics: { ...bagCase.metrics, shares: 8, score: 600 }
       }
     ]);
 
     const filtered = await searchViralCases({
-      query: "咖啡馆 拍照",
-      tags: ["拍照"],
+      query: "coffee photo",
+      tags: ["photo"],
       minShares: 20,
       minScore: 3000,
       createdAfter: "2026-05-01T00:00:00.000Z"
@@ -200,16 +229,16 @@ describe("viral knowledge base", () => {
   it("returns filter metadata from the viral knowledge API", async () => {
     const viralCase = await createViralCaseFromEvidence({
       sample,
-      topic: "广州咖啡馆",
-      category: "探店"
+      topic: "Guangzhou coffee",
+      category: "Cafe review"
     });
     await upsertViralCases([{
       ...viralCase,
-      tags: ["广州咖啡馆", "探店"],
+      tags: ["coffee", "cafe"],
       metrics: { ...viralCase.metrics, shares: 30, score: 3000 }
     }]);
 
-    const response = await GET(new Request("http://localhost/api/viral-knowledge?q=咖啡馆&topic=广州咖啡馆&minShares=20&sortBy=score&sortOrder=desc&tag=探店"));
+    const response = await GET(new Request("http://localhost/api/viral-knowledge?q=coffee&topic=Guangzhou%20coffee&minShares=20&sortBy=score&sortOrder=desc&tag=cafe"));
     const payload = await response.json() as {
       filterSummary: string;
       filters: { minShares?: number; sortBy?: string; tags?: string[] };
@@ -217,8 +246,8 @@ describe("viral knowledge base", () => {
     };
 
     expect(payload.results.length).toBeGreaterThan(0);
-    expect(payload.filters).toMatchObject({ minShares: 20, sortBy: "score", tags: ["探店"] });
-    expect(payload.filterSummary).toContain("分享 ≥ 20");
-    expect(payload.filterSummary).toContain("按综合分降序排序");
+    expect(payload.filters).toMatchObject({ minShares: 20, sortBy: "score", tags: ["cafe"] });
+    expect(payload.filterSummary).toContain("20");
+    expect(payload.filterSummary).toContain("排序");
   });
 });

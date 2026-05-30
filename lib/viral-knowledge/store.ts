@@ -6,6 +6,7 @@ import type { SampleEvidence } from "@/lib/workflows/one-click";
 import type {
   ViralCase,
   ViralCaseFilters,
+  ViralCreativeSafety,
   ViralExtractedInsights,
   ViralSearchInput,
   ViralSearchResult
@@ -79,10 +80,11 @@ export async function searchViralCasesFusion(input: ViralSearchInput): Promise<V
 export async function upsertViralCases(cases: ViralCase[]): Promise<ViralCase[]> {
   return queueViralKnowledgeWrite(async () => {
     const file = await readViralKnowledgeFile();
-    const ids = new Set(cases.map((item) => item.id));
-    const next = [...cases, ...file.cases.filter((item) => !ids.has(item.id))].slice(0, 2000);
+    const normalizedCases = cases.map(normalizeViralCase);
+    const ids = new Set(normalizedCases.map((item) => item.id));
+    const next = [...normalizedCases, ...file.cases.filter((item) => !ids.has(item.id))].slice(0, 2000);
     await writeViralKnowledgeFile({ schemaVersion: VIRAL_SCHEMA_VERSION, cases: next });
-    return cases;
+    return normalizedCases;
   });
 }
 
@@ -102,6 +104,16 @@ export async function createViralCaseFromEvidence({
     : extractViralInsightsHeuristically(sample);
   const hookType = first(extractedInsights.titleHooks) || inferHookType(sample.title);
   const bodyExcerpt = summarizeBody(sample.detailText);
+  const contentStructure = extractedInsights.copyStructures.length
+    ? extractedInsights.copyStructures
+    : inferStructure(sample.detailText);
+  const imageStyle = first(extractedInsights.visualPatterns) || inferImageStyle(sample);
+  const creativeSafety = buildCreativeSafety({
+    title: sample.title,
+    extractedInsights,
+    contentStructure,
+    imageStyle
+  });
   return normalizeViralCase({
     id: `viral-${Date.now()}-${randomUUID().slice(0, 8)}`,
     platform: "xiaohongshu",
@@ -110,11 +122,9 @@ export async function createViralCaseFromEvidence({
     title: sample.title,
     bodyExcerpt,
     tags: inferTags(sample, topic, category),
-    imageStyle: first(extractedInsights.visualPatterns) || inferImageStyle(sample),
+    imageStyle,
     hookType,
-    contentStructure: extractedInsights.copyStructures.length
-      ? extractedInsights.copyStructures
-      : inferStructure(sample.detailText),
+    contentStructure,
     painPoint: first(extractedInsights.painPoints) || "用户需要更真实、具体、可执行的判断依据",
     audience: first(extractedInsights.audienceSignals) || "对该主题感兴趣的小红书用户",
     emotionalTrigger: first(extractedInsights.emotionalTriggers) || "真实体验、避坑感、可收藏",
@@ -127,8 +137,9 @@ export async function createViralCaseFromEvidence({
     },
     sourceUrl: sample.url,
     createdAt: new Date().toISOString(),
-    embedding: createLocalEmbedding(`${sample.title}\n${bodyExcerpt}\n${extractedInsights.reusableRules.join("\n")}`),
-    extractedInsights
+    embedding: createLocalEmbedding(`${sample.title}\n${bodyExcerpt}\n${creativeSafety.summary}\n${extractedInsights.reusableRules.join("\n")}`),
+    extractedInsights,
+    creativeSafety
   });
 }
 
@@ -142,7 +153,8 @@ export function viralCasesToEvidenceInsights(cases: ViralCase[]) {
       evidenceInsight("tag", item.extractedInsights.tagPatterns.slice(0, 3).join("；") || item.tags.join("、"), sourceSampleIds, now, 0.68),
       evidenceInsight("visual", item.imageStyle, sourceSampleIds, now, 0.72),
       evidenceInsight("audience", item.audience, sourceSampleIds, now, 0.68),
-      evidenceInsight("pain_point", item.painPoint, sourceSampleIds, now, 0.7)
+      evidenceInsight("pain_point", item.painPoint, sourceSampleIds, now, 0.7),
+      evidenceInsight("copy", item.creativeSafety?.summary ?? "", sourceSampleIds, now, 0.78)
     ]);
   });
 }
@@ -191,13 +203,92 @@ ${sample.commentSnippets.slice(0, 6).join("\n") || "无"}
 }
 
 function normalizeViralCase(item: ViralCase): ViralCase {
+  const extractedInsights = normalizeExtractedInsights(item.extractedInsights);
+  const contentStructure = uniqueStrings(item.contentStructure).slice(0, 8);
+  const imageStyle = item.imageStyle || first(extractedInsights.visualPatterns) || "";
+  const creativeSafety = normalizeCreativeSafety(item.creativeSafety, {
+    title: item.title,
+    extractedInsights,
+    contentStructure,
+    imageStyle
+  });
   return {
     ...item,
     platform: "xiaohongshu",
     tags: uniqueStrings(item.tags).slice(0, 12),
-    contentStructure: uniqueStrings(item.contentStructure).slice(0, 8),
-    embedding: item.embedding.length ? item.embedding : createLocalEmbedding(`${item.title}\n${item.bodyExcerpt}`),
-    extractedInsights: normalizeExtractedInsights(item.extractedInsights)
+    imageStyle,
+    contentStructure,
+    embedding: Array.isArray(item.embedding) && item.embedding.length
+      ? item.embedding
+      : createLocalEmbedding(`${item.title}\n${item.bodyExcerpt}\n${creativeSafety.summary}`),
+    extractedInsights,
+    creativeSafety
+  };
+}
+
+function normalizeCreativeSafety(
+  value: ViralCreativeSafety | undefined,
+  fallback: {
+    title: string;
+    extractedInsights: ViralExtractedInsights;
+    contentStructure: string[];
+    imageStyle: string;
+  }
+): ViralCreativeSafety {
+  const record: Record<string, unknown> = isRecord(value) ? value : {};
+  const normalized: ViralCreativeSafety = {
+    summary: typeof record.summary === "string" ? record.summary.trim() : "",
+    reusablePatterns: stringArray(record.reusablePatterns),
+    doNotCopy: stringArray(record.doNotCopy),
+    transformationGuidance: stringArray(record.transformationGuidance)
+  };
+  const generated = buildCreativeSafety(fallback);
+  return {
+    summary: normalized.summary || generated.summary,
+    reusablePatterns: normalized.reusablePatterns.length ? normalized.reusablePatterns : generated.reusablePatterns,
+    doNotCopy: normalized.doNotCopy.length ? normalized.doNotCopy : generated.doNotCopy,
+    transformationGuidance: normalized.transformationGuidance.length
+      ? normalized.transformationGuidance
+      : generated.transformationGuidance
+  };
+}
+
+function buildCreativeSafety({
+  title,
+  extractedInsights,
+  contentStructure,
+  imageStyle
+}: {
+  title: string;
+  extractedInsights: ViralExtractedInsights;
+  contentStructure: string[];
+  imageStyle: string;
+}): ViralCreativeSafety {
+  const reusablePatterns = uniqueStrings([
+    ...extractedInsights.reusableRules,
+    ...contentStructure.map((item) => `学习结构：${item}`),
+    imageStyle ? `学习视觉规律：${imageStyle}` : ""
+  ]).slice(0, 10);
+  const doNotCopy = uniqueStrings([
+    ...extractedInsights.avoidCopying,
+    "不要复制标题原句、正文段落、评论表达或图片构图到近似可识别的程度。",
+    "不要盗用原图、原作者视角、品牌认证、销量数据或无法验证的效果承诺。"
+  ]).slice(0, 10);
+  const transformationGuidance = uniqueStrings([
+    first(extractedInsights.titleHooks) ? `把标题钩子转成自己的产品/场景/人群表达：${first(extractedInsights.titleHooks)}` : "",
+    contentStructure.length ? `保留信息组织方式，但替换为自己的体验、证据和表达：${contentStructure.slice(0, 3).join(" / ")}` : "",
+    imageStyle ? `图片只学习光线、信息层级和情绪氛围，必须重新生成或使用自有素材：${imageStyle}` : "",
+    "生成内容时必须引用 evidencePack 里的规律编号，而不是复述样本原句。"
+  ]).slice(0, 8);
+  const summary = uniqueStrings([
+    `样本「${title}」只能作为创作规律来源：学习钩子、结构、标签和视觉节奏。`,
+    "输出必须换成新的主题事实、用户需求、产品信息和原创表达，避免标题/正文/图片的近似复刻。"
+  ]).join(" ");
+  return {
+    summary,
+    reusablePatterns,
+    doNotCopy,
+    transformationGuidance
   };
 }
 
@@ -248,7 +339,10 @@ function scoreViralCase(item: ViralCase, queryTokens: string[], input: ViralSear
     item.painPoint,
     item.audience,
     item.emotionalTrigger,
-    item.extractedInsights.reusableRules.join(" ")
+    item.extractedInsights.reusableRules.join(" "),
+    item.creativeSafety?.summary,
+    item.creativeSafety?.reusablePatterns.join(" "),
+    item.creativeSafety?.transformationGuidance.join(" ")
   ].join(" ");
   const textTokens = tokenize(text);
   const tokenHits = queryTokens.filter((token) => textTokens.includes(token));

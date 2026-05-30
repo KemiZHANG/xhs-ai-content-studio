@@ -21,6 +21,13 @@ export type ViralExtractedInsights = {
   avoidCopying: string[];
 };
 
+export type ViralCreativeSafety = {
+  summary: string;
+  reusablePatterns: string[];
+  doNotCopy: string[];
+  transformationGuidance: string[];
+};
+
 export type ViralCase = {
   id: string;
   platform: ViralPlatform;
@@ -40,6 +47,7 @@ export type ViralCase = {
   createdAt: string;
   embedding: number[];
   extractedInsights: ViralExtractedInsights;
+  creativeSafety?: ViralCreativeSafety;
 };
 
 export type ViralCaseFilters = {

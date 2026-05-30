@@ -1061,6 +1061,14 @@ function ViralCaseDrawer({ viralCase, onClose }: { viralCase: ViralCase; onClose
 
         <section className="drawerSection">
           <h4>结构化创作知识</h4>
+          {viralCase.creativeSafety ? (
+            <div className="drawerInlineWarning">
+              <strong>原创安全摘要</strong>
+              <p>{viralCase.creativeSafety.summary}</p>
+              <KnowledgeList title="可学习" items={viralCase.creativeSafety.reusablePatterns} />
+              <KnowledgeList title="必须改写/替换" items={viralCase.creativeSafety.transformationGuidance} />
+            </div>
+          ) : null}
           <div className="viralKnowledgeGrid">
             <KnowledgeList title="标题钩子" items={insights.titleHooks.length ? insights.titleHooks : [viralCase.hookType]} />
             <KnowledgeList title="正文结构" items={insights.copyStructures.length ? insights.copyStructures : viralCase.contentStructure} />
