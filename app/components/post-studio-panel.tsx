@@ -84,6 +84,7 @@ export function PostStudioPanel({
   onSelectPostImages,
   onSaveToViralLibrary,
   onReloadViralLibrary,
+  onSearchViralLibrary,
   onRefreshViralEvidence,
   onOpenImageStudio,
   onOpenPublish,
@@ -126,6 +127,7 @@ export function PostStudioPanel({
   onSelectPostImages: (assetIds: string[]) => void;
   onSaveToViralLibrary: (sample: SampleEvidence) => void;
   onReloadViralLibrary: () => void;
+  onSearchViralLibrary: (filters: { query?: string; audience?: string; minCollects?: string; sortBy?: "createdAt" | "likes" | "collects" | "score" }) => void;
   onRefreshViralEvidence: () => void;
   onOpenImageStudio: () => void;
   onOpenPublish: () => void;
@@ -138,6 +140,7 @@ export function PostStudioPanel({
   const [tab, setTab] = useState<StudioTab>("insights");
   const [selectedEvidence, setSelectedEvidence] = useState<SampleEvidence | null>(null);
   const [selectedViralCase, setSelectedViralCase] = useState<ViralCase | null>(null);
+  const [viralSearchForm, setViralSearchForm] = useState({ query: "", audience: "", minCollects: "" });
   const selectedAssets = assets.filter((asset) => publishAssetIds.includes(asset.id));
   const uploadAssets = assets.filter((asset) => asset.kind === "upload");
   const generatedAssets = [...assets].filter((asset) => asset.kind === "generated").sort(sortNewestAsset);
@@ -675,6 +678,59 @@ export function PostStudioPanel({
             <SideSection icon={Library} title="爆款库证据">
               <strong>{viralCases.length} 条历史爆款规律</strong>
               <p className="muted">这里长期沉淀标题钩子、正文结构、标签组合、图片风格和评论关注点。默认只显示关键规律，不保存原文合集。</p>
+              <form
+                className="viralSearchPanel"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  onSearchViralLibrary({
+                    query: viralSearchForm.query,
+                    audience: viralSearchForm.audience,
+                    minCollects: viralSearchForm.minCollects,
+                    sortBy: "score"
+                  });
+                }}
+              >
+                <label>
+                  <span>知识库检索</span>
+                  <input
+                    value={viralSearchForm.query}
+                    onChange={(event) => setViralSearchForm((current) => ({ ...current, query: event.target.value }))}
+                    placeholder="例如：广州咖啡馆、通勤包、产品种草"
+                  />
+                </label>
+                <div className="viralSearchGrid">
+                  <label>
+                    <span>目标人群</span>
+                    <input
+                      value={viralSearchForm.audience}
+                      onChange={(event) => setViralSearchForm((current) => ({ ...current, audience: event.target.value }))}
+                      placeholder="例如：上班族"
+                    />
+                  </label>
+                  <label>
+                    <span>最低收藏</span>
+                    <input
+                      inputMode="numeric"
+                      value={viralSearchForm.minCollects}
+                      onChange={(event) => setViralSearchForm((current) => ({ ...current, minCollects: event.target.value }))}
+                      placeholder="可选"
+                    />
+                  </label>
+                </div>
+                <div className="viralSearchActions">
+                  <button className="primaryButton" type="submit">检索爆款规律</button>
+                  <button
+                    className="secondaryButton"
+                    type="button"
+                    onClick={() => {
+                      setViralSearchForm({ query: "", audience: "", minCollects: "" });
+                      onReloadViralLibrary();
+                    }}
+                  >
+                    重置
+                  </button>
+                </div>
+              </form>
               {viralPack?.sufficiency ? (
                 <div className={viralPack.sufficiency.isEnough ? "ragStatus good" : "ragStatus warn"}>
                   <strong>{viralPack.sufficiency.isEnough ? "RAG 证据充足" : "RAG 证据还不够"}</strong>

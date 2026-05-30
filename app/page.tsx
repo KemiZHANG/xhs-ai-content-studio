@@ -319,8 +319,16 @@ export default function Home() {
     return data.project;
   }
 
-  async function loadViralKnowledge() {
-    const data = (await clientApi("/api/viral-knowledge?limit=12")) as { cases: ViralCase[] };
+  async function loadViralKnowledge(filters: { query?: string; audience?: string; minCollects?: string; sortBy?: "createdAt" | "likes" | "collects" | "score" } = {}) {
+    const params = new URLSearchParams({ limit: "12" });
+    const query = filters.query?.trim();
+    const audience = filters.audience?.trim();
+    const minCollects = filters.minCollects?.trim();
+    if (query) params.set("q", query);
+    if (audience) params.set("audience", audience);
+    if (minCollects && Number.isFinite(Number(minCollects))) params.set("minCollects", minCollects);
+    if (filters.sortBy) params.set("sortBy", filters.sortBy);
+    const data = (await clientApi(`/api/viral-knowledge?${params.toString()}`)) as { cases: ViralCase[] };
     setViralCases(data.cases ?? []);
   }
 
@@ -1232,6 +1240,7 @@ export default function Home() {
             onSelectPostImages={(ids) => void selectPostImages(ids)}
             onSaveToViralLibrary={(sample) => void saveSampleToViralLibrary(sample)}
             onReloadViralLibrary={() => void loadViralKnowledge()}
+            onSearchViralLibrary={(filters) => void loadViralKnowledge(filters)}
             onRefreshViralEvidence={() => void handlePostStudioAction("retrieve_viral_knowledge")}
             onOpenImageStudio={() => setSection("imageStudio")}
             onOpenPublish={() => void openPublishAssemblyFromWorkspace()}

@@ -4499,6 +4499,50 @@ textarea {
   color: var(--accent-strong);
 }
 
+.viralSearchPanel {
+  background: rgba(255, 255, 255, 0.64);
+  border: 1px solid rgba(18, 118, 97, 0.12);
+  border-radius: 14px;
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+}
+
+.viralSearchPanel label {
+  display: grid;
+  gap: 5px;
+}
+
+.viralSearchPanel label span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.viralSearchPanel input {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink);
+  font-size: 12px;
+  min-width: 0;
+  padding: 9px 10px;
+}
+
+.viralSearchGrid,
+.viralSearchActions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.viralSearchActions .primaryButton,
+.viralSearchActions .secondaryButton {
+  min-height: 36px;
+  padding-inline: 10px;
+}
+
 .ragAngleStrip {
   display: flex;
   flex-wrap: wrap;
