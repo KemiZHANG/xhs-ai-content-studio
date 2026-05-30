@@ -1138,6 +1138,25 @@ export function PostStudioPanel({
                   {quality.issues.slice(0, 3).map((issue) => (
                     <p className="muted" key={issue}>- {issue}</p>
                   ))}
+                  {quality.issues.length || quality.suggestions.length ? (
+                    <div className="qualityActionList" aria-label="Quality Gate action list">
+                      {quality.issues.slice(0, 3).map((issue) => (
+                        <div className="qualityActionItem issue" key={`issue-${issue}`}>
+                          <span>阻塞项</span>
+                          <strong>{issue}</strong>
+                        </div>
+                      ))}
+                      {quality.suggestions.slice(0, 3).map((suggestion) => (
+                        <div className="qualityActionItem suggestion" key={`suggestion-${suggestion}`}>
+                          <span>建议优化</span>
+                          <strong>{suggestion}</strong>
+                        </div>
+                      ))}
+                      {quality.issues.length > 3 || quality.suggestions.length > 3 ? (
+                        <small>还有 {Math.max(quality.issues.length - 3, 0) + Math.max(quality.suggestions.length - 3, 0)} 条细节，可在完整发布台继续复核。</small>
+                      ) : null}
+                    </div>
+                  ) : null}
                   {quality.evidenceReview ? (
                     <p className="muted">证据覆盖：{quality.evidenceReview.summary}</p>
                   ) : null}

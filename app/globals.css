@@ -4861,6 +4861,54 @@ textarea {
   text-align: center;
 }
 
+.qualityActionList {
+  display: grid;
+  gap: 8px;
+}
+
+.qualityActionList small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.qualityActionItem {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 4px;
+  padding: 9px 10px;
+}
+
+.qualityActionItem span {
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.qualityActionItem strong {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.qualityActionItem.issue {
+  background: rgba(191, 107, 38, 0.1);
+  border-color: rgba(191, 107, 38, 0.24);
+}
+
+.qualityActionItem.issue span {
+  color: #9a4d12;
+}
+
+.qualityActionItem.suggestion {
+  background: rgba(18, 118, 97, 0.08);
+  border-color: rgba(18, 118, 97, 0.2);
+}
+
+.qualityActionItem.suggestion span {
+  color: var(--accent-strong);
+}
+
 .advancedEntry {
   border-top: 1px solid var(--line);
   margin-top: 14px;
