@@ -115,6 +115,7 @@ export function PostStudioPanel({
 }) {
   const [tab, setTab] = useState<StudioTab>("insights");
   const [selectedEvidence, setSelectedEvidence] = useState<SampleEvidence | null>(null);
+  const [selectedViralCase, setSelectedViralCase] = useState<ViralCase | null>(null);
   const selectedAssets = assets.filter((asset) => publishAssetIds.includes(asset.id));
   const generatedAssets = assets.filter((asset) => asset.kind === "generated");
   const imageCandidates = uniqueAssets([...selectedAssets, ...generatedAssets, ...assets]).slice(0, 8);
@@ -517,6 +518,11 @@ export function PostStudioPanel({
                       <strong>{item.hookType}</strong>
                       <p>{item.extractedInsights.reusableRules[0] || item.contentStructure.join(" / ")}</p>
                       <span>赞 {item.metrics.likes} · 藏 {item.metrics.collects}</span>
+                      <div className="evidenceActions">
+                        <button className="textButton" type="button" onClick={() => setSelectedViralCase(item)}>
+                          查看规律
+                        </button>
+                      </div>
                     </article>
                   ))}
                 </div>
@@ -619,6 +625,9 @@ export function PostStudioPanel({
 
       {selectedEvidence ? (
         <EvidenceDrawer sample={selectedEvidence} onClose={() => setSelectedEvidence(null)} onSave={() => onSaveToViralLibrary(selectedEvidence)} />
+      ) : null}
+      {selectedViralCase ? (
+        <ViralCaseDrawer viralCase={selectedViralCase} onClose={() => setSelectedViralCase(null)} />
       ) : null}
     </div>
   );
@@ -793,6 +802,91 @@ function EvidenceDrawer({ sample, onClose, onSave }: { sample: SampleEvidence; o
         </footer>
       </aside>
     </div>
+  );
+}
+
+function ViralCaseDrawer({ viralCase, onClose }: { viralCase: ViralCase; onClose: () => void }) {
+  const insights = viralCase.extractedInsights;
+  return (
+    <div className="studioDrawerBackdrop" role="presentation" onClick={onClose}>
+      <aside className="studioDrawer" role="dialog" aria-modal="true" aria-label="爆款库规律详情" onClick={(event) => event.stopPropagation()}>
+        <header>
+          <div>
+            <span>Viral Knowledge Detail</span>
+            <h3>{viralCase.hookType || viralCase.title}</h3>
+            <p>{viralCase.topic} · {viralCase.category} · 赞 {viralCase.metrics.likes} · 藏 {viralCase.metrics.collects} · 评 {viralCase.metrics.comments}</p>
+          </div>
+          <button type="button" onClick={onClose}>关闭</button>
+        </header>
+
+        <section className="drawerSection">
+          <h4>可复用规律</h4>
+          <ul>
+            {insights.reusableRules.slice(0, 8).map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </section>
+
+        <section className="drawerSection">
+          <h4>结构化创作知识</h4>
+          <div className="viralKnowledgeGrid">
+            <KnowledgeList title="标题钩子" items={insights.titleHooks.length ? insights.titleHooks : [viralCase.hookType]} />
+            <KnowledgeList title="正文结构" items={insights.copyStructures.length ? insights.copyStructures : viralCase.contentStructure} />
+            <KnowledgeList title="标签组合" items={insights.tagPatterns.length ? insights.tagPatterns : viralCase.tags} />
+            <KnowledgeList title="图片风格" items={insights.visualPatterns.length ? insights.visualPatterns : [viralCase.imageStyle]} />
+            <KnowledgeList title="目标人群" items={insights.audienceSignals.length ? insights.audienceSignals : [viralCase.audience]} />
+            <KnowledgeList title="痛点/情绪" items={[...insights.painPoints, ...insights.emotionalTriggers].length ? [...insights.painPoints, ...insights.emotionalTriggers] : [viralCase.painPoint, viralCase.emotionalTrigger]} />
+          </div>
+        </section>
+
+        {insights.commentConcerns.length ? (
+          <section className="drawerSection">
+            <h4>评论关注点</h4>
+            <ul>
+              {insights.commentConcerns.slice(0, 8).map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </section>
+        ) : null}
+
+        {insights.avoidCopying.length ? (
+          <section className="drawerSection warningSection">
+            <h4>不可复制/仿写</h4>
+            <ul>
+              {insights.avoidCopying.slice(0, 6).map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </section>
+        ) : null}
+
+        {viralCase.bodyExcerpt ? (
+          <section className="drawerSection">
+            <h4>原文摘要</h4>
+            <p>{viralCase.bodyExcerpt}</p>
+          </section>
+        ) : null}
+
+        <footer>
+          {viralCase.sourceUrl ? (
+            <a className="secondaryButton" href={viralCase.sourceUrl} target="_blank" rel="noreferrer">
+              <ExternalLink size={14} />
+              来源链接
+            </a>
+          ) : null}
+          <span className="drawerFootnote">只学习结构、风格和规律，不复制原文或原图。</span>
+        </footer>
+      </aside>
+    </div>
+  );
+}
+
+function KnowledgeList({ title, items }: { title: string; items: string[] }) {
+  const visible = items.map((item) => item.trim()).filter(Boolean).slice(0, 5);
+  if (!visible.length) return null;
+  return (
+    <article>
+      <strong>{title}</strong>
+      <ul>
+        {visible.map((item) => <li key={item}>{item}</li>)}
+      </ul>
+    </article>
   );
 }
 
