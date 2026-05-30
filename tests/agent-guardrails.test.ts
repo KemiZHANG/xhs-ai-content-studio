@@ -82,6 +82,40 @@ describe("agent publish guardrails", () => {
     expect(intent.confirmationChecklist?.find((item) => item.id === "quality")?.detail).toContain("实时研究");
   });
 
+  it("blocks publish intents with incomplete evidence citation coverage", () => {
+    const missingIdIntent = createPublishIntent({
+      ...baseIntent(),
+      evidenceCitationSummary: {
+        summary: "missing evidence",
+        missingEvidenceIds: ["old-insight"],
+        warnings: [],
+        sourceCounts: { realtime: 1, viral_library: 0, user_input: 0 },
+        fieldCounts: { title: 1, content: 1, tags: 1, imagePrompt: 1 }
+      }
+    });
+    const missingFieldIntent = createPublishIntent({
+      ...baseIntent(),
+      evidenceCitationSummary: {
+        summary: "missing image prompt evidence",
+        missingEvidenceIds: [],
+        warnings: [],
+        sourceCounts: { realtime: 1, viral_library: 0, user_input: 0 },
+        fieldCounts: { title: 1, content: 1, tags: 1, imagePrompt: 0 }
+      }
+    });
+
+    expect(validatePublishIntent(missingIdIntent)).toEqual(
+      expect.arrayContaining([expect.stringContaining("current evidencePack")])
+    );
+    expect(validatePublishIntent(missingFieldIntent)).toEqual(
+      expect.arrayContaining([expect.stringContaining("imagePrompt")])
+    );
+    expect(authorizePublishIntent(missingFieldIntent, { mode: "auto_publish_allowed", confirmed: true })).toMatchObject({
+      allowed: false,
+      status: "blocked"
+    });
+  });
+
   it("marks schedule confirmation as required only for scheduled publish intents", () => {
     const manual = baseIntent();
     const scheduled = createPublishIntent({

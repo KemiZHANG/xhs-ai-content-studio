@@ -171,6 +171,7 @@ export function validatePublishIntent(
   if (intent.images.some((image) => !isSafePublishImagePath(image))) {
     errors.push("image path must come from the workspace asset folders");
   }
+  errors.push(...validatePublishEvidenceCitations(intent.evidenceCitationSummary));
 
   if (intent.mode === "scheduled") {
     if (!intent.scheduleAt) {
@@ -188,6 +189,20 @@ export function validatePublishIntent(
     }
   }
 
+  return errors;
+}
+
+function validatePublishEvidenceCitations(summary: PublishEvidenceCitationSummary | undefined): string[] {
+  if (!summary) return [];
+  const errors: string[] = [];
+  if (summary.missingEvidenceIds.length) {
+    errors.push("evidence citations must reference the current evidencePack");
+  }
+  const missingFields = (["title", "content", "tags", "imagePrompt"] as const)
+    .filter((field) => (summary.fieldCounts[field] ?? 0) <= 0);
+  if (missingFields.length) {
+    errors.push(`evidence citations must cover ${missingFields.join(", ")}`);
+  }
   return errors;
 }
 
