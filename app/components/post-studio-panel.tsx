@@ -87,6 +87,9 @@ export function PostStudioPanel({
   onRefreshViralEvidence,
   onOpenImageStudio,
   onOpenPublish,
+  onPreparePublish,
+  onVisibilityChange,
+  onScheduleAtChange,
   onConfirmPublish,
   onCancelPublish
 }: {
@@ -126,6 +129,9 @@ export function PostStudioPanel({
   onRefreshViralEvidence: () => void;
   onOpenImageStudio: () => void;
   onOpenPublish: () => void;
+  onPreparePublish: () => void;
+  onVisibilityChange: (value: RedactedSettings["defaultVisibility"]) => void;
+  onScheduleAtChange: (value: string) => void;
   onConfirmPublish: () => void;
   onCancelPublish: () => void;
 }) {
@@ -843,6 +849,20 @@ export function PostStudioPanel({
               <CheckItem ok={publishVisibility === "仅自己可见"} label={`可见范围：${publishVisibility}`} />
               <CheckItem ok={!publishScheduleAt || Date.parse(publishScheduleAt) > Date.now()} label={publishScheduleAt ? `定时：${publishScheduleAt}（本地时区）` : "发布时间：立即"} />
               <CheckItem ok={settings.defaultAutoPublish === false} label="自动发布默认关闭" />
+              <div className="publishInlineControls">
+                <label>
+                  <span>可见范围</span>
+                  <select value={publishVisibility} onChange={(event) => onVisibilityChange(event.target.value as RedactedSettings["defaultVisibility"])}>
+                    <option>仅自己可见</option>
+                    <option>公开可见</option>
+                    <option>仅互关好友可见</option>
+                  </select>
+                </label>
+                <label>
+                  <span>定时时间</span>
+                  <input type="datetime-local" value={publishScheduleAt} onChange={(event) => onScheduleAtChange(event.target.value)} />
+                </label>
+              </div>
               <div className={publishReady ? "publishConfirmMini ready" : "publishConfirmMini warn"}>
                 <strong>{publishReady ? "可以生成发布确认单" : "发布前还需要处理"}</strong>
                 <p>
@@ -959,7 +979,10 @@ export function PostStudioPanel({
               ) : null}
               <div className="inlineActionGrid">
                 <button className="secondaryButton fullWidth" onClick={() => onQuickAction("run_quality_gate")} type="button">刷新质量检查</button>
-                <button className="primaryButton fullWidth" disabled={!publishReady} onClick={onOpenPublish} type="button">进入发布确认</button>
+                <button className="primaryButton fullWidth" disabled={!publishReady || busy} onClick={onPreparePublish} type="button">
+                  {pendingPublish ? "重新生成确认单" : publishScheduleAt ? "生成定时确认单" : "生成发布确认单"}
+                </button>
+                <button className="secondaryButton fullWidth" onClick={onOpenPublish} type="button">打开完整发布台</button>
               </div>
             </SideSection>
           ) : null}

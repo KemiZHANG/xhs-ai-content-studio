@@ -3917,6 +3917,34 @@ textarea {
   margin: 0;
 }
 
+.publishInlineControls {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.publishInlineControls label {
+  display: grid;
+  gap: 5px;
+}
+
+.publishInlineControls span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.publishInlineControls input,
+.publishInlineControls select {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--ink);
+  min-height: 38px;
+  padding: 0 10px;
+  width: 100%;
+}
+
 .publishIntentSummary {
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(18, 118, 97, 0.18);
