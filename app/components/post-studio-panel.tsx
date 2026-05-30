@@ -32,6 +32,8 @@ import type {
   WorkflowResult,
   WorkspaceState
 } from "@/app/types";
+import { getPostStageGuidance } from "@/lib/post-project/guidance";
+import type { PostAction } from "@/lib/post-project/types";
 
 type StudioTab = "insights" | "brief" | "evidence" | "viral" | "references" | "generated" | "publish";
 
@@ -132,7 +134,9 @@ export function PostStudioPanel({
   const viralPack = workflowResult?.viralKnowledge ?? workflowResult?.researchSummary?.viralKnowledge ?? null;
   const samples = project?.selectedSamples ?? workflowResult?.evidence ?? workspace?.selectedSamples ?? [];
   const saveableSamples = samples.filter(isSampleEvidence).slice(0, 3);
-  const nextActions = project?.allowedActions.slice(0, 3) ?? ["search_research"];
+  const allowedPostActions = (project?.allowedActions ?? []) as PostAction[];
+  const nextActions = allowedPostActions.length ? allowedPostActions.slice(0, 3) : (["search_research"] as PostAction[]);
+  const stageGuidance = getPostStageGuidance(project?.currentStage ?? "empty", allowedPostActions);
   const projectTitle = project?.topic || workspace?.topic || researchForm.topic || "未命名帖子项目";
   const canGenerateCopy = Boolean(insights.length || workflowResult?.researchSummary || workspace?.evidenceSummary);
   const latestImagePrompt = publishDraft.imagePrompt || project?.imagePrompts.at(-1)?.value.prompt || "";
@@ -180,10 +184,11 @@ export function PostStudioPanel({
           <StagePill label="发布" value={labelForPublishStatus(project?.publishPlan?.status)} />
         </div>
         <div className="nextActionBar">
-          <strong>下一步</strong>
+          <strong>{stageGuidance.title}</strong>
+          <p>{stageGuidance.description}</p>
           <div className="nextActionButtons">
             {nextActions.map((action) => (
-              <button key={action} type="button" onClick={() => onQuickAction(action)}>
+              <button className={action === stageGuidance.primaryAction ? "isPrimaryNext" : undefined} key={action} type="button" onClick={() => onQuickAction(action)}>
                 {labelForAction(action)}
               </button>
             ))}

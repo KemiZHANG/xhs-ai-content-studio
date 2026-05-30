@@ -3083,6 +3083,13 @@ textarea {
   align-self: stretch;
 }
 
+.nextActionBar p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+}
+
 .nextActionButtons {
   display: flex;
   flex-wrap: wrap;
@@ -3103,6 +3110,12 @@ textarea {
 .nextActionButtons button:hover {
   background: rgba(18, 118, 97, 0.14);
   border-color: rgba(18, 118, 97, 0.28);
+}
+
+.nextActionButtons button.isPrimaryNext {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
 }
 
 .postStudioGrid {

@@ -6,6 +6,7 @@ import { resetWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
 import {
   addViralCasesToPostProject,
   appendPostProjectMemoryFromTurn,
+  getPostStageGuidance,
   getAllowedPostActions,
   postProjectFromWorkspace,
   readPostProject,
@@ -39,6 +40,18 @@ describe("post project", () => {
     expect(project.topic).toBe("广州咖啡馆");
     expect(project.currentStage).toBe("briefing");
     expect(project.allowedActions).toContain("search_research");
+  });
+
+  it("describes stage-specific next steps for the Post Studio header", () => {
+    const evidenceGuidance = getPostStageGuidance("evidence_ready", ["create_creative_brief", "search_research"]);
+    const imageGuidance = getPostStageGuidance("image_ready", ["select_images", "assemble_post"]);
+    const reviewGuidance = getPostStageGuidance("reviewing", ["request_publish_confirmation", "revise_copy"]);
+
+    expect(evidenceGuidance.title).toContain("CreativeBrief");
+    expect(evidenceGuidance.primaryAction).toBe("create_creative_brief");
+    expect(imageGuidance.primaryAction).toBe("assemble_post");
+    expect(reviewGuidance.description).toContain("账号");
+    expect(reviewGuidance.primaryAction).toBe("request_publish_confirmation");
   });
 
   it("migrates workspace evidence and draft into one post project", async () => {
