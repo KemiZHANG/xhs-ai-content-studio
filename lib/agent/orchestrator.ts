@@ -1,6 +1,7 @@
 import { runChatAgent, type ChatAgentResult } from "@/lib/chat/agent";
 import { createAgentPlan } from "@/lib/agent/planner";
 import { executeGuardedPublish } from "@/lib/agent/publishing";
+import { buildEvidencePackWithViralKnowledge } from "@/lib/agent/evidence-builder";
 import { inferAgentScheduleAt } from "@/lib/agent/schedule";
 import { readWorkspaceState, resetWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
 import { createAgentToolRegistry } from "@/lib/agent/tools/registry";
@@ -1896,25 +1897,12 @@ async function ensureViralEvidenceForProject(
     return project;
   }
 
-  const existingInsightIds = new Set(project.evidencePack.insights.map((insight) => insight.id));
-  const nextInsights = [
-    ...project.evidencePack.insights,
-    ...pack.insights.filter((insight) => !existingInsightIds.has(insight.id))
-  ];
-  const nextSummary = mergeViralKnowledgeSummary(project.evidencePack.summary, pack);
-  const needsBriefRefresh = !project.creativeBrief?.basedOnEvidenceIds.some((id) =>
-    nextInsights.some((insight) => insight.sourceType === "viral_library" && insight.id === id)
-  );
+  const evidenceBuild = buildEvidencePackWithViralKnowledge(project, pack);
   const nextProject = {
     ...project,
-    evidencePack: {
-      ...project.evidencePack,
-      insights: nextInsights,
-      summary: nextSummary,
-      updatedAt: new Date().toISOString()
-    }
+    evidencePack: evidenceBuild.evidencePack
   };
-  const refreshedBrief = needsBriefRefresh
+  const refreshedBrief = evidenceBuild.shouldRefreshCreativeBrief
     ? deriveCreativeBrief({ ...nextProject, creativeBrief: undefined })
     : project.creativeBrief;
 
@@ -1930,16 +1918,6 @@ function parseViralKnowledgeToolPack(result: unknown): ViralKnowledgePack {
     throw new Error("爆款库工具没有返回有效 RAG 结果");
   }
   return result.data as ViralKnowledgePack;
-}
-
-function mergeViralKnowledgeSummary(summary: unknown, pack: ViralKnowledgePack): unknown {
-  if (isRecord(summary)) {
-    return {
-      ...summary,
-      viralKnowledge: pack
-    };
-  }
-  return { viralKnowledge: pack };
 }
 
 function parseGeneratedDraft(raw: string, fallback: GeneratedDraft, allowedEvidenceIds: string[]): GeneratedDraft {
