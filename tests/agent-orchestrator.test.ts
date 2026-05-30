@@ -57,7 +57,14 @@ describe("agent orchestrator", () => {
       id: "card-stage-guidance",
       type: "stage_guidance"
     });
-    expect((result.cards.find((card) => card.type === "stage_guidance")?.data as { stage?: string } | undefined)?.stage).toBe("empty");
+    const stageCardData = result.cards.find((card) => card.type === "stage_guidance")?.data as
+      | { stage?: string; readiness?: { progress?: number; nextAction?: string; blockers?: Array<{ id: string }> } }
+      | undefined;
+    expect(stageCardData?.stage).toBe("empty");
+    expect(stageCardData?.readiness).toMatchObject({
+      progress: 0
+    });
+    expect(stageCardData?.readiness?.blockers?.[0]).toMatchObject({ id: "evidence" });
     expect(result.toolTrace.length).toBeGreaterThan(0);
     expect(result.agentRun.id).toMatch(/^agent-run-/);
     expect(result.agentRun.plan.steps.length).toBeGreaterThan(0);

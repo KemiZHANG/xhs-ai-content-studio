@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { updateWorkspaceState } from "@/lib/agent/state";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { copyVersionFromDraft } from "@/lib/post-project/brief";
+import { buildPostReadinessReport } from "@/lib/post-project/readiness";
+import type { PostReadinessReport } from "@/lib/post-project/readiness";
 import { readPostProject, updatePostProject } from "@/lib/post-project/store";
 import { createDraftRecord, writeCurrentDraft, type DraftRecord } from "@/lib/storage/drafts";
 import { readSettings } from "@/lib/storage/settings";
@@ -31,7 +33,7 @@ type PostProjectActionBody =
 
 export async function GET() {
   const project = await readPostProject();
-  return NextResponse.json({ project });
+  return NextResponse.json(withReadiness({ project }));
 }
 
 export async function PATCH(request: Request) {
@@ -42,11 +44,11 @@ export async function PATCH(request: Request) {
 
   if (isActionBody(patch)) {
     const result = await handlePostProjectAction(patch);
-    return NextResponse.json(result);
+    return NextResponse.json(withReadiness(result));
   }
 
   const project = await updatePostProject(sanitizeExternalPatch(patch));
-  return NextResponse.json({ project });
+  return NextResponse.json(withReadiness({ project }));
 }
 
 async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
@@ -228,4 +230,11 @@ function sanitizeExternalPatch(value: unknown): Partial<PostProject> {
     ...safePatch
   } = value as Record<string, unknown>;
   return safePatch as Partial<PostProject>;
+}
+
+function withReadiness<T extends { project: PostProject }>(result: T): T & { readiness: PostReadinessReport } {
+  return {
+    ...result,
+    readiness: buildPostReadinessReport(result.project)
+  };
 }

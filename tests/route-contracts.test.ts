@@ -23,6 +23,41 @@ describe("API route contracts", () => {
     }));
   });
 
+  it("returns PostProject readiness with the project contract", async () => {
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => ({
+        schemaVersion: 1,
+        id: "post-1",
+        productInfo: { referenceAssetIds: [] },
+        evidencePack: { sampleIds: [], insights: [] },
+        selectedSamples: [],
+        copyVersions: [],
+        imagePrompts: [],
+        generatedImages: [],
+        selectedImages: [],
+        agentMemory: [],
+        currentStage: "empty",
+        allowedActions: ["search_research"],
+        updatedAt: "2026-05-31T00:00:00.000Z"
+      }),
+      updatePostProject: vi.fn()
+    }));
+
+    const { GET } = await import("@/app/api/post-project/route");
+    const response = await GET();
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.project).toMatchObject({ id: "post-1", currentStage: "empty" });
+    expect(payload.readiness).toMatchObject({
+      progress: 0,
+      nextAction: "search_research",
+      canRequestPublish: false
+    });
+    expect(payload.readiness.blockers[0]).toMatchObject({ id: "evidence" });
+    vi.doUnmock("@/lib/post-project/store");
+  });
+
   it("returns a stable one-click validation error shape", async () => {
     vi.doMock("@/lib/storage/settings", () => ({
       readSettings: async () => defaultSettings,

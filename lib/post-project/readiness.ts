@@ -1,4 +1,5 @@
-import type { PostAction } from "@/lib/post-project/types";
+import { getAllowedPostActions, normalizePostStage } from "@/lib/post-project/stage-machine";
+import type { PostAction, PostStage } from "@/lib/post-project/types";
 
 export type PostReadinessStepId =
   | "evidence"
@@ -28,7 +29,7 @@ export type PostReadinessReport = {
 };
 
 type ReadinessProject = {
-  allowedActions: readonly string[];
+  allowedActions?: readonly string[];
   copyDraft?: {
     draft?: {
       title?: string;
@@ -36,11 +37,12 @@ type ReadinessProject = {
     };
   } | null;
   creativeBrief?: unknown;
-  evidencePack: {
-    insights: readonly unknown[];
-  };
+  currentStage?: PostStage | string;
+  evidencePack?: {
+    insights?: readonly unknown[];
+  } | null;
   finalPost?: unknown;
-  imagePrompts: readonly unknown[];
+  imagePrompts?: readonly unknown[];
   publishPlan?: {
     status?: string;
   } | null;
@@ -48,19 +50,25 @@ type ReadinessProject = {
     canPublish?: boolean;
     issues: string[];
   };
-  selectedImages: readonly string[];
-  selectedSamples: readonly unknown[];
+  selectedImages?: readonly string[];
+  selectedSamples?: readonly unknown[];
   visualDirection?: unknown;
 };
 
 export function buildPostReadinessReport(project: ReadinessProject): PostReadinessReport {
-  const actionSet = new Set(project.allowedActions);
-  const hasEvidence = Boolean(project.evidencePack.insights.length || project.selectedSamples.length);
+  const currentStage = normalizePostStage(project.currentStage);
+  const allowedActions = project.allowedActions?.length ? project.allowedActions : getAllowedPostActions(currentStage);
+  const actionSet = new Set(allowedActions);
+  const insights = project.evidencePack?.insights ?? [];
+  const selectedSamples = project.selectedSamples ?? [];
+  const imagePrompts = project.imagePrompts ?? [];
+  const selectedImages = project.selectedImages ?? [];
+  const hasEvidence = Boolean(insights.length || selectedSamples.length);
   const hasBrief = Boolean(project.creativeBrief);
   const draft = project.copyDraft?.draft;
   const hasCopy = Boolean(draft?.title?.trim() && draft?.content?.trim());
-  const hasVisualPlan = Boolean(project.visualDirection || project.imagePrompts.length);
-  const hasImages = project.selectedImages.length > 0;
+  const hasVisualPlan = Boolean(project.visualDirection || imagePrompts.length);
+  const hasImages = selectedImages.length > 0;
   const hasFinalPost = Boolean(project.finalPost);
   const qualityFreshEnough = Boolean(project.qualityCheck?.canPublish);
   const hasPublishConfirmation = Boolean(
@@ -75,7 +83,7 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
       id: "evidence",
       label: "研究证据",
       ready: hasEvidence,
-      detail: hasEvidence ? `已沉淀 ${project.evidencePack.insights.length} 条规律` : "先搜索真实笔记或补充参考样本",
+      detail: hasEvidence ? `已沉淀 ${insights.length} 条规律` : "先搜索真实笔记或补充参考样本",
       action: actionSet.has("search_research") ? "search_research" : undefined
     },
     {
@@ -107,7 +115,7 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
       id: "images",
       label: "发布图片",
       ready: hasImages,
-      detail: hasImages ? `已选择 ${project.selectedImages.length} 张图片` : "生成图片、卡片或从素材中选图",
+      detail: hasImages ? `已选择 ${selectedImages.length} 张图片` : "生成图片、卡片或从素材中选图",
       action: actionSet.has("select_images")
         ? "select_images"
         : actionSet.has("generate_images")

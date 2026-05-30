@@ -20,6 +20,7 @@ import { copyVersionFromDraft, deriveCreativeBrief, deriveFinalPost, deriveImage
 import { buildEvidenceCitationReport, formatEvidenceCitationReport } from "@/lib/post-project/citations";
 import { insightsFromUserBriefInput, mergeEvidenceInsights } from "@/lib/post-project/evidence";
 import { getPostStageGuidance } from "@/lib/post-project/guidance";
+import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { runPostQualityGate } from "@/lib/post-project/quality";
 import type { PostAction, PostProject, ProductInfo } from "@/lib/post-project/types";
 import { renderXhsCardSet } from "@/lib/cards/renderer";
@@ -1032,6 +1033,7 @@ function buildCardsFromTurn(
   const cards: AgentResponseCard[] = [];
   if (postProject) {
     const guidance = getPostStageGuidance(postProject.currentStage, postProject.allowedActions);
+    const readiness = buildPostReadinessReport(postProject);
     cards.push({
       id: "card-stage-guidance",
       type: "stage_guidance",
@@ -1040,7 +1042,8 @@ function buildCardsFromTurn(
       data: {
         stage: postProject.currentStage,
         allowedActions: postProject.allowedActions,
-        primaryAction: guidance.primaryAction
+        primaryAction: readiness.nextAction ?? guidance.primaryAction,
+        readiness
       }
     });
   }
