@@ -44,6 +44,17 @@ export type RagSufficiency = {
   recommendation: string;
 };
 
+export type ViralStrategyReport = {
+  summary: string;
+  titleMoves: string[];
+  structureMoves: string[];
+  visualMoves: string[];
+  audiencePainPoints: string[];
+  originalityRules: string[];
+  recommendedAngles: string[];
+  evidenceIds: string[];
+};
+
 export type ViralKnowledgePack = {
   query: string;
   rewrittenQueries: string[];
@@ -52,6 +63,7 @@ export type ViralKnowledgePack = {
   results: ViralSearchResult[];
   insights: EvidenceInsight[];
   sufficiency: RagSufficiency;
+  strategyReport: ViralStrategyReport;
 };
 
 export async function retrieveViralKnowledge(input: ViralRetrievalInput): Promise<ViralKnowledgePack> {
@@ -59,19 +71,83 @@ export async function retrieveViralKnowledge(input: ViralRetrievalInput): Promis
   const filters = extractViralRetrievalFilters(input);
   const results = await retrieveViralCasesWithFusion(input, rewrittenQueries);
   const insights = viralCasesToEvidenceInsights(results.map((result) => result.case));
+  const sufficiency = evaluateRagSufficiency({
+    realtimeCount: input.realtimeEvidenceCount ?? 0,
+    viralCount: results.length,
+    hasVisual: insights.some((insight) => insight.type === "visual"),
+    hasHook: insights.some((insight) => insight.type === "hook" || insight.type === "title"),
+    hasStructure: insights.some((insight) => insight.type === "structure" || insight.type === "copy")
+  });
   return {
     query: input.query,
     rewrittenQueries,
     ...(filters ? { filters, filterSummary: summarizeViralRetrievalFilters(filters) } : {}),
     results,
     insights,
-    sufficiency: evaluateRagSufficiency({
-      realtimeCount: input.realtimeEvidenceCount ?? 0,
-      viralCount: results.length,
-      hasVisual: insights.some((insight) => insight.type === "visual"),
-      hasHook: insights.some((insight) => insight.type === "hook" || insight.type === "title"),
-      hasStructure: insights.some((insight) => insight.type === "structure" || insight.type === "copy")
-    })
+    sufficiency,
+    strategyReport: buildViralStrategyReport({ query: input.query, results, insights, sufficiency })
+  };
+}
+
+export function buildViralStrategyReport({
+  query,
+  results,
+  insights,
+  sufficiency
+}: {
+  query: string;
+  results: ViralSearchResult[];
+  insights: EvidenceInsight[];
+  sufficiency: RagSufficiency;
+}): ViralStrategyReport {
+  const cases = results.map((result) => result.case);
+  const evidenceIds = uniqueStrings([
+    ...cases.map((item) => item.id),
+    ...insights.map((item) => item.id)
+  ]).slice(0, 24);
+  const titleMoves = uniqueStrings([
+    ...cases.flatMap((item) => item.extractedInsights.titleHooks),
+    ...insights.filter((item) => item.type === "hook" || item.type === "title").map((item) => item.insight)
+  ]).slice(0, 5);
+  const structureMoves = uniqueStrings([
+    ...cases.flatMap((item) => item.contentStructure),
+    ...cases.flatMap((item) => item.extractedInsights.copyStructures),
+    ...insights.filter((item) => item.type === "structure" || item.type === "copy").map((item) => item.insight)
+  ]).slice(0, 5);
+  const visualMoves = uniqueStrings([
+    ...cases.map((item) => item.imageStyle),
+    ...cases.flatMap((item) => item.extractedInsights.visualPatterns),
+    ...insights.filter((item) => item.type === "visual").map((item) => item.insight)
+  ]).slice(0, 5);
+  const audiencePainPoints = uniqueStrings([
+    ...cases.map((item) => item.audience),
+    ...cases.map((item) => item.painPoint),
+    ...cases.flatMap((item) => item.extractedInsights.audienceSignals),
+    ...cases.flatMap((item) => item.extractedInsights.painPoints),
+    ...insights.filter((item) => item.type === "audience" || item.type === "pain_point").map((item) => item.insight)
+  ]).slice(0, 5);
+  const originalityRules = uniqueStrings([
+    ...cases.flatMap((item) => item.creativeSafety?.doNotCopy ?? item.extractedInsights.avoidCopying),
+    ...cases.flatMap((item) => item.creativeSafety?.transformationGuidance ?? []),
+    "只学习结构、钩子、节奏和视觉规律，不能复制原文、原图、具体数据或作者表达。"
+  ]).slice(0, 6);
+  const recommendedAngles = uniqueStrings([
+    ...cases.map((item) => [item.hookType, item.painPoint, item.emotionalTrigger].filter(Boolean).join(" + ")),
+    ...titleMoves.slice(0, 2).map((item) => `标题先用 ${item}，正文再落到自己的真实场景和证据。`),
+    ...visualMoves.slice(0, 2).map((item) => `图片方向学习 ${item}，但使用自有素材或重新生成。`)
+  ]).slice(0, 5);
+  const summary = results.length
+    ? `爆款库为“${query}”提炼出 ${results.length} 个历史样本的可复用策略：先用清晰钩子承接人群/痛点，再用可收藏结构组织正文，图片只学习风格和信息层级。${sufficiency.isEnough ? "" : ` ${sufficiency.recommendation}`}`.trim()
+    : `爆款库暂未命中“${query}”的可用历史策略，建议继续实时搜索或手动保存参考样本。`;
+  return {
+    summary,
+    titleMoves,
+    structureMoves,
+    visualMoves,
+    audiencePainPoints,
+    originalityRules,
+    recommendedAngles,
+    evidenceIds
   };
 }
 

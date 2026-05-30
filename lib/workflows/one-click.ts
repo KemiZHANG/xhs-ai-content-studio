@@ -697,6 +697,7 @@ ${viralKnowledge ? JSON.stringify({
   query: viralKnowledge.query,
   rewrittenQueries: viralKnowledge.rewrittenQueries,
   sufficiency: viralKnowledge.sufficiency,
+  strategyReport: viralKnowledge.strategyReport,
   insights: viralKnowledge.insights.slice(0, 10)
 }, null, 2) : "未启用爆款库 RAG。"}
 
@@ -765,6 +766,7 @@ ${viralKnowledge ? JSON.stringify({
   query: viralKnowledge.query,
   rewrittenQueries: viralKnowledge.rewrittenQueries,
   sufficiency: viralKnowledge.sufficiency,
+  strategyReport: viralKnowledge.strategyReport,
   insights: viralKnowledge.insights.slice(0, 10)
 }, null, 2) : "未启用爆款库 RAG。"}
 

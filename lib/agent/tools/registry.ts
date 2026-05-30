@@ -83,7 +83,7 @@ function defaultToolDefinitions(): AgentToolDefinition[] {
           risk: "read",
           display: {
             title: "爆款库 RAG 检索",
-            summary: formatViralPackSummary(pack),
+            summary: `${formatViralPackSummary(pack)} ${pack.strategyReport.summary}`,
             items: pack.insights.slice(0, 5)
           }
         };

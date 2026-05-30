@@ -101,5 +101,9 @@ describe("viral RAG retrieval", () => {
     expect(pack.insights.every((insight) => insight.sourceType === "viral_library")).toBe(true);
     expect(pack.sufficiency.realtimeCount).toBe(4);
     expect(pack.sufficiency.viralCount).toBe(pack.results.length);
+    expect(pack.strategyReport.summary).toContain("可复用策略");
+    expect(pack.strategyReport.evidenceIds).toContain(focusedCafe.id);
+    expect(pack.strategyReport.titleMoves.length).toBeGreaterThan(0);
+    expect(pack.strategyReport.originalityRules.join(" ")).toContain("不要复制");
   });
 });

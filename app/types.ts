@@ -121,6 +121,16 @@ export type WorkflowResult = {
       missing: string[];
       recommendation: string;
     };
+    strategyReport: {
+      summary: string;
+      titleMoves: string[];
+      structureMoves: string[];
+      visualMoves: string[];
+      audiencePainPoints: string[];
+      originalityRules: string[];
+      recommendedAngles: string[];
+      evidenceIds: string[];
+    };
     insights: Array<{
       id: string;
       sourceType?: "realtime" | "viral_library" | "user_input";

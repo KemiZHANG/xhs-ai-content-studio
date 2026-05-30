@@ -568,6 +568,18 @@ export function PostStudioPanel({
                   ) : null}
                 </div>
               ) : null}
+              {viralPack?.strategyReport ? (
+                <div className="viralStrategyCard">
+                  <strong>爆款策略摘要</strong>
+                  <p>{viralPack.strategyReport.summary}</p>
+                  <div className="viralStrategyGrid">
+                    <KnowledgeList title="标题打法" items={viralPack.strategyReport.titleMoves} />
+                    <KnowledgeList title="正文结构" items={viralPack.strategyReport.structureMoves} />
+                    <KnowledgeList title="图片方向" items={viralPack.strategyReport.visualMoves} />
+                    <KnowledgeList title="原创边界" items={viralPack.strategyReport.originalityRules} />
+                  </div>
+                </div>
+              ) : null}
               {viralInsights.length ? (
                 <div className="miniEvidenceList">
                   {keyViralInsights.map((insight) => (

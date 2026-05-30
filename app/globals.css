@@ -4006,6 +4006,39 @@ textarea {
   margin-bottom: 6px;
 }
 
+.viralStrategyCard {
+  background: linear-gradient(135deg, rgba(18, 118, 97, 0.09), rgba(190, 122, 20, 0.08));
+  border: 1px solid rgba(18, 118, 97, 0.14);
+  border-radius: 14px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.viralStrategyCard > strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.viralStrategyCard > p {
+  color: rgba(0, 0, 0, 0.7);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.viralStrategyGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.viralStrategyGrid article {
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(18, 118, 97, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+}
+
 .drawerInlineWarning {
   background: rgba(190, 122, 20, 0.08);
   border: 1px solid rgba(190, 122, 20, 0.18);

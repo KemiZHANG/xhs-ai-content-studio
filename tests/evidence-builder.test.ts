@@ -10,7 +10,7 @@ function insight(overrides: Partial<EvidenceInsight> = {}): EvidenceInsight {
     id: "insight-live-title",
     sourceType: "realtime",
     type: "title",
-    insight: "标题先给明确场景和利益点",
+    insight: "Lead with a clear scene and user benefit",
     sourceSampleIds: ["note-live"],
     confidence: 0.8,
     createdAt: now,
@@ -27,18 +27,18 @@ function project(overrides: Partial<PostProject> = {}): Pick<PostProject, "evide
       updatedAt: now
     },
     creativeBrief: {
-      audience: "探店账号粉丝",
-      painPoint: "怕踩雷",
-      contentAngle: "真实体验",
-      emotionalHook: "避坑感",
-      proofPoints: ["人均", "排队"],
-      tone: "真实",
-      visualMood: "自然光",
-      imageMustHave: ["店内场景"],
-      imageMustAvoid: ["盗图"],
-      platformStyle: "小红书图文",
-      tabooWords: ["最"],
-      complianceNotes: ["不夸大"],
+      audience: "local review account followers",
+      painPoint: "fear of wasting time on overhyped places",
+      contentAngle: "honest visit notes",
+      emotionalHook: "avoid disappointment",
+      proofPoints: ["average spend", "queue time"],
+      tone: "honest",
+      visualMood: "natural light",
+      imageMustHave: ["interior scene"],
+      imageMustAvoid: ["copied source images"],
+      platformStyle: "xiaohongshu image-text post",
+      tabooWords: ["best"],
+      complianceNotes: ["do not exaggerate"],
       basedOnEvidenceIds: ["insight-live-title"]
     },
     ...overrides
@@ -47,43 +47,49 @@ function project(overrides: Partial<PostProject> = {}): Pick<PostProject, "evide
 
 function pack(overrides: Partial<ViralKnowledgePack> = {}): ViralKnowledgePack {
   return {
-    query: "广州咖啡馆",
-    rewrittenQueries: ["广州咖啡馆 高收藏"],
+    query: "Guangzhou cafe",
+    rewrittenQueries: ["Guangzhou cafe high collect"],
     filters: { minCollects: 1000 },
-    filterSummary: "收藏 ≥ 1000",
+    filterSummary: "collects >= 1000",
     results: [
       {
         score: 0.8,
-        reasons: ["语义相似"],
+        reasons: ["semantic match"],
         case: {
           id: "viral-case-1",
           platform: "xiaohongshu",
-          topic: "广州咖啡馆",
-          category: "探店",
-          title: "高收藏咖啡馆攻略",
-          bodyExcerpt: "先说人群，再说位置和人均。",
-          tags: ["咖啡馆"],
-          imageStyle: "自然光",
-          hookType: "避坑钩子",
-          contentStructure: ["人群", "场景", "提醒"],
-          painPoint: "怕踩雷",
-          audience: "探店账号粉丝",
-          emotionalTrigger: "真实避坑",
+          topic: "Guangzhou cafe",
+          category: "local guide",
+          title: "High collect cafe guide",
+          bodyExcerpt: "Start with audience, then location and average spend.",
+          tags: ["cafe"],
+          imageStyle: "natural light",
+          hookType: "avoidance hook",
+          contentStructure: ["audience", "scene", "reminder"],
+          painPoint: "fear of wasting time",
+          audience: "local review followers",
+          emotionalTrigger: "honest avoid-disappointment note",
           metrics: { likes: 1200, collects: 1800, comments: 90, shares: 20, score: 3000 },
           sourceUrl: "https://www.xiaohongshu.com/explore/viral-case-1",
           createdAt: now,
           embedding: [],
           extractedInsights: {
-            titleHooks: ["避坑钩子"],
-            copyStructures: ["人群/场景/提醒"],
-            tagPatterns: ["主题+场景"],
-            visualPatterns: ["自然光"],
-            audienceSignals: ["探店账号粉丝"],
-            painPoints: ["怕踩雷"],
-            emotionalTriggers: ["真实避坑"],
-            commentConcerns: ["人均"],
-            reusableRules: ["保留结构，不复制原文"],
-            avoidCopying: ["不要复制标题"]
+            titleHooks: ["avoidance hook"],
+            copyStructures: ["audience / scene / reminder"],
+            tagPatterns: ["topic + scene"],
+            visualPatterns: ["natural light"],
+            audienceSignals: ["local review followers"],
+            painPoints: ["fear of wasting time"],
+            emotionalTriggers: ["honest avoid-disappointment note"],
+            commentConcerns: ["average spend"],
+            reusableRules: ["keep the structure, do not copy source text"],
+            avoidCopying: ["do not copy title wording"]
+          },
+          creativeSafety: {
+            summary: "Use as reusable pattern evidence only.",
+            reusablePatterns: ["audience / scene / reminder"],
+            doNotCopy: ["do not copy title wording"],
+            transformationGuidance: ["replace with your own scene and proof"]
           }
         }
       }
@@ -93,7 +99,7 @@ function pack(overrides: Partial<ViralKnowledgePack> = {}): ViralKnowledgePack {
         id: "viral-insight-hook",
         sourceType: undefined,
         type: "hook",
-        insight: "标题用避坑场景切入",
+        insight: "Use an avoid-disappointment scene hook",
         sourceSampleIds: ["viral-case-1"],
         confidence: 1.4
       }),
@@ -101,7 +107,7 @@ function pack(overrides: Partial<ViralKnowledgePack> = {}): ViralKnowledgePack {
         id: "insight-live-title",
         sourceType: "viral_library",
         type: "title",
-        insight: "重复证据不应再次加入",
+        insight: "Duplicate evidence should not be added again",
         sourceSampleIds: ["viral-case-1"]
       })
     ],
@@ -110,7 +116,17 @@ function pack(overrides: Partial<ViralKnowledgePack> = {}): ViralKnowledgePack {
       realtimeCount: 1,
       viralCount: 1,
       missing: [],
-      recommendation: "证据足够"
+      recommendation: "enough evidence"
+    },
+    strategyReport: {
+      summary: "Viral strategy summary",
+      titleMoves: ["avoidance hook"],
+      structureMoves: ["audience / scene / reminder"],
+      visualMoves: ["natural light"],
+      audiencePainPoints: ["fear of wasting time"],
+      originalityRules: ["learn structure without copying source text"],
+      recommendedAngles: ["avoidance hook + honest scene"],
+      evidenceIds: ["viral-case-1", "viral-insight-hook"]
     },
     ...overrides
   };
@@ -137,7 +153,10 @@ describe("agent evidence builder", () => {
     expect(result.sourceCounts).toMatchObject({ realtime: 1, viral_library: 1, user_input: 0 });
     expect(result.evidencePack.summary).toMatchObject({
       viralKnowledge: {
-        filterSummary: "收藏 ≥ 1000",
+        filterSummary: "collects >= 1000",
+        strategyReport: {
+          summary: "Viral strategy summary"
+        },
         evidenceSourceCounts: { realtime: 1, viral_library: 1, user_input: 0 }
       }
     });
