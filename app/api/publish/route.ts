@@ -133,6 +133,7 @@ export async function POST(request: Request) {
       publishIntentId: body.publishIntentId,
       settingsPolicy: settings.agentPublishPolicy,
       publishArgs,
+      evidenceCitationSummary: qualityReview.evidenceCitationSummary,
       accountContext: {
         accountId: settings.activeAccountId,
         mcpUrl: settings.mcpUrl
@@ -409,12 +410,14 @@ async function resolvePublishConfirmation({
   publishIntentId,
   settingsPolicy,
   publishArgs,
+  evidenceCitationSummary,
   accountContext
 }: {
   confirmed?: boolean;
   publishIntentId?: string;
   settingsPolicy: "draft_only" | "review_required" | "auto_publish_allowed";
   publishArgs: GuardedPublishArgs;
+  evidenceCitationSummary?: PublishEvidenceCitationSummary;
   accountContext: { accountId?: string; mcpUrl?: string };
 }): Promise<boolean> {
   if (settingsPolicy !== "review_required" && settingsPolicy !== "auto_publish_allowed") {
@@ -426,5 +429,5 @@ async function resolvePublishConfirmation({
   }
 
   const intent = await getPublishIntent(publishIntentId);
-  return Boolean(intent && isPublishIntentConfirmable(intent, publishArgs, { accountContext }));
+  return Boolean(intent && isPublishIntentConfirmable(intent, publishArgs, { accountContext, evidenceCitationSummary }));
 }

@@ -12,6 +12,13 @@ import { readWorkspaceState } from "@/lib/agent/state";
 import { defaultSettings } from "@/lib/storage/settings";
 
 const originalCwd = process.cwd();
+const citationSummary = {
+  summary: "参考证据：实时研究 1 条。",
+  missingEvidenceIds: [],
+  warnings: [],
+  sourceCounts: { realtime: 1, viral_library: 0, user_input: 0 },
+  fieldCounts: { title: 1, content: 1, tags: 1, imagePrompt: 1 }
+};
 
 describe("agent guarded publishing", () => {
   let tempDir: string;
@@ -42,13 +49,7 @@ describe("agent guarded publishing", () => {
       requestedBy: "chat",
       policy: { mode: "review_required" },
       publishContext: {
-        evidenceCitationSummary: {
-          summary: "参考证据：实时研究 1 条。",
-          missingEvidenceIds: [],
-          warnings: [],
-          sourceCounts: { realtime: 1, viral_library: 0, user_input: 0 },
-          fieldCounts: { title: 1, content: 1, tags: 1, imagePrompt: 1 }
-        }
+        evidenceCitationSummary: citationSummary
       },
       publish: async () => {
         calls += 1;
@@ -125,6 +126,30 @@ describe("agent guarded publishing", () => {
       now: new Date(Date.parse(result.publishIntent.requestedAt) + 3 * 60 * 1000),
       maxAgeMinutes: 30
     })).toBe(true);
+  });
+
+  it("expires publish confirmations when evidence citations change", async () => {
+    const args = publishArgs();
+    const result = await executeGuardedPublish({
+      args,
+      requestedBy: "manual",
+      policy: { mode: "review_required" },
+      publishContext: {
+        evidenceCitationSummary: citationSummary
+      },
+      publish: async () => ({ ok: true })
+    });
+
+    expect(isPublishIntentConfirmable(result.publishIntent, args, {
+      evidenceCitationSummary: citationSummary
+    })).toBe(true);
+    expect(isPublishIntentConfirmable(result.publishIntent, args)).toBe(false);
+    expect(isPublishIntentConfirmable(result.publishIntent, args, {
+      evidenceCitationSummary: {
+        ...citationSummary,
+        fieldCounts: { ...citationSummary.fieldCounts, imagePrompt: 0 }
+      }
+    })).toBe(false);
   });
 
   it("binds publish confirmations to the active Xiaohongshu account", async () => {

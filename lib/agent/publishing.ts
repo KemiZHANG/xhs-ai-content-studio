@@ -184,12 +184,20 @@ export function publishIntentMatchesArgs(
 export function isPublishIntentConfirmable(
   intent: PublishIntent,
   args: GuardedPublishArgs,
-  options: { now?: Date; maxAgeMinutes?: number; accountContext?: PublishAccountContext } = {}
+  options: {
+    now?: Date;
+    maxAgeMinutes?: number;
+    accountContext?: PublishAccountContext;
+    evidenceCitationSummary?: PublishEvidenceCitationSummary;
+  } = {}
 ): boolean {
   if (intent.status !== "awaiting_approval" || intent.requestedBy !== "manual") {
     return false;
   }
   if (!publishIntentMatchesArgs(intent, args, options.accountContext)) {
+    return false;
+  }
+  if (!publishIntentMatchesEvidence(intent, options.evidenceCitationSummary)) {
     return false;
   }
 
@@ -200,6 +208,32 @@ export function isPublishIntentConfirmable(
   const now = options.now ?? new Date();
   const maxAgeMs = (options.maxAgeMinutes ?? 30) * 60 * 1000;
   return now.getTime() - requestedAt <= maxAgeMs;
+}
+
+function publishIntentMatchesEvidence(
+  intent: PublishIntent,
+  currentSummary?: PublishEvidenceCitationSummary
+): boolean {
+  if (!intent.evidenceCitationSummary && !currentSummary) {
+    return true;
+  }
+  if (!intent.evidenceCitationSummary || !currentSummary) {
+    return false;
+  }
+  return evidenceCitationSignature(intent.evidenceCitationSummary) === evidenceCitationSignature(currentSummary);
+}
+
+function evidenceCitationSignature(summary: PublishEvidenceCitationSummary): string {
+  return JSON.stringify({
+    missingEvidenceIds: [...summary.missingEvidenceIds].sort(),
+    warnings: [...summary.warnings].sort(),
+    sourceCounts: sortRecord(summary.sourceCounts),
+    fieldCounts: sortRecord(summary.fieldCounts)
+  });
+}
+
+function sortRecord<T extends Record<string, number>>(record: T): Array<[string, number]> {
+  return Object.entries(record).sort(([left], [right]) => left.localeCompare(right));
 }
 
 export async function readPublishIntents(): Promise<PublishIntent[]> {
