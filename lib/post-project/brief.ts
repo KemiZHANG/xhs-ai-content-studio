@@ -29,21 +29,36 @@ export function deriveCreativeBrief(project: Pick<
   const visualInsights = byType(insights, "visual");
   const audienceInsights = [...byType(insights, "audience"), ...byType(insights, "comment")];
   const painPointInsights = byType(insights, "pain_point");
+  const viralStrategy = extractViralStrategy(project.evidencePack.summary);
+  const strategyEvidenceIds = viralStrategy
+    ? viralStrategy.evidenceIds.filter((id) => evidenceIds.includes(id))
+    : [];
+  const basedOnEvidenceIds = uniqueStrings([...evidenceIds, ...strategyEvidenceIds]);
 
   return {
     audience: project.targetAudience || firstText(audienceInsights) || "对这个主题感兴趣、需要真实经验和可执行建议的小红书用户",
     painPoint: firstText(painPointInsights) || firstText(audienceInsights) || "不知道如何判断内容是否真实有用，容易被硬广或空泛推荐劝退",
-    contentAngle: project.goal || firstText(structureInsights) || firstText(titleInsights) || `${project.topic ?? project.productInfo.name ?? "这个主题"}的真实体验与可收藏建议`,
-    emotionalHook: firstText(hookInsights) || firstText(titleInsights) || "用具体场景和真实细节建立代入感",
-    proofPoints: takeTexts([...structureInsights, ...copyInsights], 4),
+    contentAngle: project.goal || first(viralStrategy?.recommendedAngles ?? []) || firstText(structureInsights) || firstText(titleInsights) || `${project.topic ?? project.productInfo.name ?? "这个主题"}的真实体验与可收藏建议`,
+    emotionalHook: firstText(hookInsights) || first(viralStrategy?.titleMoves ?? []) || firstText(titleInsights) || "用具体场景和真实细节建立代入感",
+    proofPoints: uniqueStrings([...takeTexts([...structureInsights, ...copyInsights], 4), ...(viralStrategy?.structureMoves ?? [])]).slice(0, 5),
     tone: project.tone || "真实、生活化、不夸张、不像硬广",
-    visualMood: firstText(visualInsights) || "真实生活感、主体清晰、适合小红书封面浏览",
-    imageMustHave: takeTexts(visualInsights, 3),
-    imageMustAvoid: ["不要盗用竞品图片", "不要生成错误文字、假 logo、假认证", "不要夸大功效或制造虚假对比"],
+    visualMood: firstText(visualInsights) || first(viralStrategy?.visualMoves ?? []) || "真实生活感、主体清晰、适合小红书封面浏览",
+    imageMustHave: uniqueStrings([...takeTexts(visualInsights, 3), ...(viralStrategy?.visualMoves ?? [])]).slice(0, 4),
+    imageMustAvoid: uniqueStrings([
+      "不要盗用竞品图片",
+      "不要生成错误文字、假 logo、假认证",
+      "不要夸大功效或制造虚假对比",
+      ...(viralStrategy?.originalityRules ?? [])
+    ]).slice(0, 8),
     platformStyle: "小红书图文：标题前置利益点，正文有真实场景、结构清晰，标签聚焦主题和场景",
     tabooWords: ["最", "第一", "必买", "永久", "绝对", "治愈", "保证"],
-    complianceNotes: ["基于证据提炼写法，不复制原帖表达", "产品信息不编造认证、销量、功效或价格", "图片不能误改产品外观和包装文字"],
-    basedOnEvidenceIds: evidenceIds
+    complianceNotes: uniqueStrings([
+      "基于证据提炼写法，不复制原帖表达",
+      "产品信息不编造认证、销量、功效或价格",
+      "图片不能误改产品外观和包装文字",
+      ...(viralStrategy?.originalityRules ?? [])
+    ]).slice(0, 8),
+    basedOnEvidenceIds
   };
 }
 
@@ -155,6 +170,45 @@ function firstText(insights: EvidenceInsight[]): string | undefined {
   return insights.find((insight) => insight.insight.trim())?.insight.trim();
 }
 
+function first(values: string[]): string | undefined {
+  return values.find((item) => item.trim());
+}
+
 function takeTexts(insights: EvidenceInsight[], count: number): string[] {
   return insights.map((insight) => insight.insight.trim()).filter(Boolean).slice(0, count);
+}
+
+function extractViralStrategy(summary: unknown): {
+  titleMoves: string[];
+  structureMoves: string[];
+  visualMoves: string[];
+  originalityRules: string[];
+  recommendedAngles: string[];
+  evidenceIds: string[];
+} | null {
+  const viralKnowledge = isRecord(summary) ? summary.viralKnowledge : undefined;
+  const strategyReport = isRecord(viralKnowledge) ? viralKnowledge.strategyReport : undefined;
+  if (!isRecord(strategyReport)) return null;
+  return {
+    titleMoves: stringArray(strategyReport.titleMoves),
+    structureMoves: stringArray(strategyReport.structureMoves),
+    visualMoves: stringArray(strategyReport.visualMoves),
+    originalityRules: stringArray(strategyReport.originalityRules),
+    recommendedAngles: stringArray(strategyReport.recommendedAngles),
+    evidenceIds: stringArray(strategyReport.evidenceIds)
+  };
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? uniqueStrings(value.filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean))
+    : [];
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values.map((item) => item.trim()).filter(Boolean))];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object";
 }
