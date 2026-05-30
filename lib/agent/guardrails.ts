@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
-import type { PublishConfirmationItem, PublishDecision, PublishIntent, PublishPolicy } from "@/lib/agent/types";
+import type { PublishConfirmationItem, PublishDecision, PublishEvidenceCitationSummary, PublishIntent, PublishPolicy } from "@/lib/agent/types";
 import { isPublishVisibility, type AppSettings } from "@/lib/storage/settings";
 
 export type CreatePublishIntentInput = {
@@ -14,6 +14,7 @@ export type CreatePublishIntentInput = {
   requestedBy: PublishIntent["requestedBy"];
   mode?: PublishIntent["mode"];
   scheduleAt?: string;
+  evidenceCitationSummary?: PublishEvidenceCitationSummary;
 };
 
 export function createPublishIntent(input: CreatePublishIntentInput): PublishIntent {
@@ -30,6 +31,25 @@ export function createPublishIntent(input: CreatePublishIntentInput): PublishInt
     mode,
     scheduleAt: input.scheduleAt
   });
+  const confirmationChecklist = buildPublishConfirmationChecklist({
+    title: input.title,
+    content: input.content,
+    images: input.images,
+    visibility: input.visibility,
+    accountId: input.accountId,
+    mcpUrl: input.mcpUrl,
+    mode,
+    scheduleAt: input.scheduleAt,
+    confirmed: false,
+    evidenceCitationSummary: input.evidenceCitationSummary
+  }).map((item) =>
+    item.id === "quality" && input.evidenceCitationSummary
+      ? {
+          ...item,
+          detail: `${input.evidenceCitationSummary.summary} 缺失证据 ${input.evidenceCitationSummary.missingEvidenceIds.length} 个`
+        }
+      : item
+  );
 
   return {
     id: `publish-${Date.now()}-${randomUUID().slice(0, 8)}`,
@@ -46,18 +66,9 @@ export function createPublishIntent(input: CreatePublishIntentInput): PublishInt
     requestedAt,
     scheduleAt: input.scheduleAt,
     idempotencyKey: createHash("sha256").update(idempotencySource).digest("hex"),
-    confirmationChecklist: buildPublishConfirmationChecklist({
-      title: input.title,
-      content: input.content,
-      images: input.images,
-      visibility: input.visibility,
-      accountId: input.accountId,
-      mcpUrl: input.mcpUrl,
-      mode,
-      scheduleAt: input.scheduleAt,
-      confirmed: false
-    }),
-    guardrailResults: []
+    confirmationChecklist,
+    guardrailResults: [],
+    evidenceCitationSummary: input.evidenceCitationSummary
   };
 }
 
@@ -70,7 +81,8 @@ export function buildPublishConfirmationChecklist({
   mcpUrl,
   mode,
   scheduleAt,
-  confirmed
+  confirmed,
+  evidenceCitationSummary
 }: {
   title: string;
   content: string;
@@ -81,8 +93,9 @@ export function buildPublishConfirmationChecklist({
   mode: PublishIntent["mode"];
   scheduleAt?: string;
   confirmed: boolean;
+  evidenceCitationSummary?: PublishEvidenceCitationSummary;
 }): PublishConfirmationItem[] {
-  return [
+  const checklist: PublishConfirmationItem[] = [
     {
       id: "copy",
       label: "最终文案版本",
@@ -133,6 +146,16 @@ export function buildPublishConfirmationChecklist({
       detail: "发布前质量检查已通过后才允许确认"
     }
   ];
+  return evidenceCitationSummary
+    ? checklist.map((item) =>
+        item.id === "quality"
+          ? {
+              ...item,
+              detail: `${evidenceCitationSummary.summary} 缺失证据 ${evidenceCitationSummary.missingEvidenceIds.length} 个`
+            }
+          : item
+      )
+    : checklist;
 }
 
 export function validatePublishIntent(

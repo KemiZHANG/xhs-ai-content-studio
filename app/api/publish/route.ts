@@ -8,8 +8,10 @@ import {
 import { createPublishIntent, validatePublishIntent } from "@/lib/agent/guardrails";
 import { updateWorkspaceState } from "@/lib/agent/state";
 import { createXhsMcpClient, readMcpText } from "@/lib/mcp/xhs";
+import { buildEvidenceCitationReport } from "@/lib/post-project/citations";
 import { runPostQualityGate } from "@/lib/post-project/quality";
 import { readPostProject, updatePostProject } from "@/lib/post-project/store";
+import type { PublishEvidenceCitationSummary } from "@/lib/agent/types";
 import type { QualityCheck } from "@/lib/post-project/types";
 import { buildPublishContentArgs, parseTagsText } from "@/lib/publishing/assembly";
 import { requireLocalActionToken } from "@/lib/security/action-token";
@@ -62,7 +64,8 @@ export async function POST(request: Request) {
         requestedBy: "manual",
         mode: publishArgs.scheduleAt ? "scheduled" : "manual",
         accountId: settings.activeAccountId,
-        mcpUrl: settings.mcpUrl
+        mcpUrl: settings.mcpUrl,
+        evidenceCitationSummary: qualityReview.evidenceCitationSummary
       });
       const validationErrors = [...validatePublishIntent(publishIntent), ...qualityReview.reasons];
       await appendPublishAudit({
@@ -158,6 +161,9 @@ export async function POST(request: Request) {
         accountId: settings.activeAccountId,
         mcpUrl: settings.mcpUrl
       },
+      publishContext: {
+        evidenceCitationSummary: qualityReview.evidenceCitationSummary
+      },
       publish: (args) => mcpClient.publishContent(args)
     });
 
@@ -247,15 +253,16 @@ export async function POST(request: Request) {
 async function getQualityGateReview(
   publishArgs: GuardedPublishArgs,
   assetIds: string[]
-): Promise<{ qualityCheck?: QualityCheck; reasons: string[] }> {
+): Promise<{ qualityCheck?: QualityCheck; reasons: string[]; evidenceCitationSummary?: PublishEvidenceCitationSummary }> {
   try {
     const project = await readPostProject();
+    const evidenceCitationSummary = buildPublishEvidenceCitationSummary(project);
     const snapshotMismatchReasons = getProjectSnapshotMismatchReasons(project, publishArgs, assetIds);
     if (snapshotMismatchReasons.length) {
-      return { reasons: snapshotMismatchReasons };
+      return { reasons: snapshotMismatchReasons, evidenceCitationSummary };
     }
     if (!shouldRunProjectQualityGate(project, publishArgs, assetIds)) {
-      return { reasons: [] };
+      return { reasons: [], evidenceCitationSummary };
     }
     const imageIds = assetIds.length ? assetIds : publishArgs.images;
     const qualityCheck = runPostQualityGate({
@@ -272,10 +279,11 @@ async function getQualityGateReview(
       selectedImages: imageIds
     });
     if (qualityCheck.canPublish) {
-      return { qualityCheck, reasons: [] };
+      return { qualityCheck, reasons: [], evidenceCitationSummary };
     }
     return {
       qualityCheck,
+      evidenceCitationSummary,
       reasons: [
       "当前发布内容未通过 Quality Gate",
       ...qualityCheck.issues.slice(0, 5)
@@ -284,6 +292,28 @@ async function getQualityGateReview(
   } catch {
     return { reasons: [] };
   }
+}
+
+function buildPublishEvidenceCitationSummary(
+  project: Awaited<ReturnType<typeof readPostProject>>
+): PublishEvidenceCitationSummary | undefined {
+  const evidenceIds = project.copyDraft?.draft.basedOnEvidenceIds ?? project.creativeBrief?.basedOnEvidenceIds ?? [];
+  if (!project.evidencePack?.insights?.length || !evidenceIds.length) {
+    return undefined;
+  }
+  const report = buildEvidenceCitationReport(project, evidenceIds, project.copyDraft?.draft.evidenceReferences);
+  return {
+    summary: report.summary,
+    missingEvidenceIds: report.missingEvidenceIds,
+    warnings: report.warnings,
+    sourceCounts: report.sourceCounts,
+    fieldCounts: {
+      title: report.sections.find((section) => section.field === "title")?.insights.length ?? 0,
+      content: report.sections.find((section) => section.field === "content")?.insights.length ?? 0,
+      tags: report.sections.find((section) => section.field === "tags")?.insights.length ?? 0,
+      imagePrompt: report.sections.find((section) => section.field === "imagePrompt")?.insights.length ?? 0
+    }
+  };
 }
 
 function getProjectSnapshotMismatchReasons(

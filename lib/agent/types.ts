@@ -115,6 +115,14 @@ export type PublishIntentStatus =
   | "failed"
   | "cancelled";
 
+export type PublishEvidenceCitationSummary = {
+  summary: string;
+  missingEvidenceIds: string[];
+  warnings: string[];
+  sourceCounts: Record<string, number>;
+  fieldCounts: Record<"title" | "content" | "tags" | "imagePrompt", number>;
+};
+
 export type PublishIntent = {
   id: string;
   mode: "manual" | "auto" | "scheduled";
@@ -132,6 +140,7 @@ export type PublishIntent = {
   idempotencyKey: string;
   confirmationChecklist?: PublishConfirmationItem[];
   guardrailResults: string[];
+  evidenceCitationSummary?: PublishEvidenceCitationSummary;
   mcpResult?: unknown;
 };
 

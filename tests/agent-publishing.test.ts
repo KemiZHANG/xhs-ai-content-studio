@@ -41,6 +41,15 @@ describe("agent guarded publishing", () => {
       args: publishArgs(),
       requestedBy: "chat",
       policy: { mode: "review_required" },
+      publishContext: {
+        evidenceCitationSummary: {
+          summary: "参考证据：实时研究 1 条。",
+          missingEvidenceIds: [],
+          warnings: [],
+          sourceCounts: { realtime: 1, viral_library: 0, user_input: 0 },
+          fieldCounts: { title: 1, content: 1, tags: 1, imagePrompt: 1 }
+        }
+      },
       publish: async () => {
         calls += 1;
         return { ok: true };
@@ -52,6 +61,7 @@ describe("agent guarded publishing", () => {
     expect(calls).toBe(0);
     expect(result.status).toBe("awaiting_approval");
     expect(result.publishIntent.status).toBe("awaiting_approval");
+    expect(result.publishIntent.evidenceCitationSummary?.fieldCounts.title).toBe(1);
     expect((result.publishIntent.confirmationChecklist ?? []).filter((item) => item.required).every((item) => item.confirmed === false)).toBe(true);
     expect(await getPublishIntent(result.publishIntent.id)).toEqual(result.publishIntent);
     expect(publishIntentMatchesArgs(result.publishIntent, publishArgs())).toBe(true);

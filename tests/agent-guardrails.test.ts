@@ -66,6 +66,22 @@ describe("agent publish guardrails", () => {
     expect(visualItem?.detail).toContain("CreativeBrief");
   });
 
+  it("stores evidence citation summaries on publish intents", () => {
+    const intent = createPublishIntent({
+      ...baseIntent(),
+      evidenceCitationSummary: {
+        summary: "参考证据：实时研究 2 条、爆款库 1 条。",
+        missingEvidenceIds: [],
+        warnings: [],
+        sourceCounts: { realtime: 2, viral_library: 1, user_input: 0 },
+        fieldCounts: { title: 1, content: 2, tags: 1, imagePrompt: 1 }
+      }
+    });
+
+    expect(intent.evidenceCitationSummary?.fieldCounts.imagePrompt).toBe(1);
+    expect(intent.confirmationChecklist?.find((item) => item.id === "quality")?.detail).toContain("实时研究");
+  });
+
   it("marks schedule confirmation as required only for scheduled publish intents", () => {
     const manual = baseIntent();
     const scheduled = createPublishIntent({
