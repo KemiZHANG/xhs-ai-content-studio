@@ -1051,11 +1051,17 @@ export default function Home() {
     setPublishStatus("已取消本次发布确认。内容和图片仍保留在发布装配台。");
   }
 
-  function viewJobResult(job: JobRecord) {
+  async function viewJobResult(job: JobRecord) {
     if (job.result) {
       setWorkflowResult(job.result);
+      if (job.result.status === "research_ready" || job.result.researchSummary) {
+        setResearchResult(job.result);
+      }
       setActiveJobId(job.id);
-      setSection("workflow");
+      setSection("flow");
+      await loadWorkspace();
+      await loadPostProject();
+      setNotice("已把任务结果带回 Post Studio，可以继续生成 CreativeBrief、文案或图片。");
     }
   }
 
