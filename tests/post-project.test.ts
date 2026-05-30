@@ -510,6 +510,91 @@ describe("post project", () => {
     expect(quality.evidenceReview?.summary).toContain("爆款库 1 条");
   });
 
+  it("blocks publish when copy and visual direction cite different evidence", () => {
+    const longContent = "这篇笔记面向周末想找安静咖啡馆的人，先说明适合的人群和真实体验，再补充座位、光线、人均、排队时间和避坑提醒，最后用一个轻互动问题收尾。";
+    const quality = runPostQualityGate({
+      creativeBrief: {
+        audience: "广州咖啡爱好者",
+        painPoint: "不知道周末去哪家咖啡馆更稳",
+        contentAngle: "真实探店避坑",
+        emotionalHook: "先给结论",
+        proofPoints: ["人均", "排队", "座位"],
+        tone: "真实",
+        visualMood: "自然光",
+        imageMustHave: ["窗边座位"],
+        imageMustAvoid: [],
+        platformStyle: "小红书真实分享",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-copy", "insight-visual"]
+      },
+      visualDirection: {
+        mood: "自然光",
+        composition: "窗边座位和咖啡杯",
+        colorPalette: "暖色",
+        mustHave: ["窗边座位"],
+        mustAvoid: [],
+        basedOnEvidenceIds: ["insight-visual"]
+      },
+      imagePrompts: [{
+        id: "prompt-1",
+        label: "封面方向",
+        createdAt: "2026-05-30T00:00:00.000Z",
+        value: { prompt: "窗边自然光咖啡馆封面图" },
+        basedOnEvidenceIds: ["insight-visual"]
+      }],
+      selectedImages: ["asset-1"],
+      evidencePack: {
+        sampleIds: ["note-1", "note-2"],
+        insights: [
+          {
+            id: "insight-copy",
+            sourceType: "realtime",
+            type: "copy",
+            insight: "正文先给适合人群，再补充座位、人均和避坑提醒",
+            sourceSampleIds: ["note-1"],
+            confidence: 0.82,
+            createdAt: "2026-05-30T00:00:00.000Z"
+          },
+          {
+            id: "insight-visual",
+            sourceType: "viral_library",
+            type: "visual",
+            insight: "封面使用窗边自然光和真实座位细节",
+            sourceSampleIds: ["note-2"],
+            confidence: 0.8,
+            createdAt: "2026-05-30T00:00:00.000Z"
+          }
+        ]
+      },
+      finalPost: {
+        title: "广州周末咖啡馆真实探店",
+        content: longContent,
+        tags: ["广州咖啡馆", "周末探店"],
+        imageIds: ["asset-1"],
+        imagePromptVersionIds: ["prompt-1"]
+      },
+      copyDraft: {
+        id: "draft-mismatch",
+        updatedAt: "2026-05-30T00:00:00.000Z",
+        draft: {
+          title: "广州周末咖啡馆真实探店",
+          content: longContent,
+          tags: ["广州咖啡馆", "周末探店"],
+          structure: ["适合谁", "真实体验", "避坑提醒"],
+          imagePrompt: "窗边自然光咖啡馆封面图",
+          basedOnEvidenceIds: ["insight-copy"]
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      }
+    });
+
+    expect(quality.canPublish).toBe(false);
+    expect(quality.issues.join(" ")).toContain("图片方向与文案引用的证据不一致");
+    expect(quality.visualConsistencyScore).toBeLessThan(100);
+  });
+
   it("blocks publish when draft evidence ids are not in the current evidence pack", () => {
     const quality = runPostQualityGate({
       creativeBrief: {

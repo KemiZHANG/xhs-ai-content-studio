@@ -6,7 +6,7 @@ const riskyClaims = ["认证", "销量", "全网", "官方", "治愈", "疗效",
 export function runPostQualityGate(project: Pick<
   PostProject,
   "finalPost" | "copyDraft" | "selectedImages" | "creativeBrief" | "visualDirection"
-> & Partial<Pick<PostProject, "selectedSamples" | "evidencePack">>): QualityCheck {
+> & Partial<Pick<PostProject, "selectedSamples" | "evidencePack" | "imagePrompts">>): QualityCheck {
   const finalPost = project.finalPost ?? finalPostFromDraft(project);
   const issues: string[] = [];
   const suggestions: string[] = [];
@@ -19,6 +19,14 @@ export function runPostQualityGate(project: Pick<
   if (!project.evidencePack?.insights.length) issues.push("缺少可追溯证据，不能把生成结果伪装成研究结论");
   const evidenceIds = new Set((project.evidencePack?.insights ?? []).map((insight) => insight.id));
   const draftEvidenceIds = project.copyDraft?.draft.basedOnEvidenceIds ?? [];
+  const visualEvidenceIds = collectVisualEvidenceIds(project);
+  const hasVisualEvidenceMissing = Boolean(project.visualDirection && !visualEvidenceIds.length);
+  const hasVisualEvidenceMismatch = Boolean(
+    project.visualDirection &&
+      draftEvidenceIds.length &&
+      visualEvidenceIds.length &&
+      !hasStringOverlap(draftEvidenceIds, visualEvidenceIds)
+  );
   const evidenceReview = buildEvidenceReview(project, draftEvidenceIds);
   const finalImageIds = finalPost?.imageIds ?? [];
   const selectedImageIds = project.selectedImages ?? [];
@@ -40,6 +48,15 @@ export function runPostQualityGate(project: Pick<
   if (hasStaleFinalImages) {
     issues.push("最终帖子图片版本与当前选中图片不一致");
     suggestions.push("请重新组装最终帖子或确认当前选中的图片版本，避免误发旧图。");
+  }
+
+  if (hasVisualEvidenceMissing) {
+    issues.push("图片方向缺少 basedOnEvidenceIds，无法证明图片策略来自 CreativeBrief 和 evidencePack");
+    suggestions.push("请重新基于当前证据生成图片方向或图片 Prompt，确保图文共享同一套创作证据。");
+  }
+  if (hasVisualEvidenceMismatch) {
+    issues.push("图片方向与文案引用的证据不一致，图文可能各走各的爆款逻辑");
+    suggestions.push("请基于同一个 CreativeBrief 重新生成图片方向/Prompt，或重新生成文案，确保图文共用同一个证据包。");
   }
 
   const titleText = finalPost?.title ?? "";
@@ -86,7 +103,13 @@ export function runPostQualityGate(project: Pick<
     Boolean(copiedSampleTitle),
     project.copyDraft ? !draftEvidenceIds.length || invalidEvidenceIds.length > 0 : false
   ]);
-  const visualConsistencyScore = scoreFromIssues([!finalPost?.imageIds.length, !project.visualDirection, hasStaleFinalImages]);
+  const visualConsistencyScore = scoreFromIssues([
+    !finalPost?.imageIds.length,
+    !project.visualDirection,
+    hasStaleFinalImages,
+    hasVisualEvidenceMissing,
+    hasVisualEvidenceMismatch
+  ]);
   const platformFitScore = scoreFromIssues([(finalPost?.tags.length ?? 0) === 0, (finalPost?.tags.length ?? 0) > 10]);
   const complianceScore = scoreFromIssues([risky.length > 0, exaggerated.length > 1, Boolean(copiedSampleTitle)]);
   const hasCriticalPublishRisk = Boolean(
@@ -95,6 +118,8 @@ export function runPostQualityGate(project: Pick<
       !finalPost.tags.length ||
       !finalPost.imageIds.length ||
       hasStaleFinalImages ||
+      hasVisualEvidenceMissing ||
+      hasVisualEvidenceMismatch ||
       exaggerated.length ||
       risky.length ||
       copiedSampleTitle ||
@@ -121,7 +146,7 @@ export function runPostQualityGate(project: Pick<
 }
 
 function buildEvidenceReview(
-  project: Partial<Pick<PostProject, "copyDraft" | "creativeBrief" | "visualDirection" | "evidencePack">>,
+  project: Partial<Pick<PostProject, "copyDraft" | "creativeBrief" | "visualDirection" | "imagePrompts" | "evidencePack">>,
   draftEvidenceIds: string[]
 ): QualityCheck["evidenceReview"] {
   const insights = project.evidencePack?.insights ?? [];
@@ -129,7 +154,8 @@ function buildEvidenceReview(
   const referencedEvidenceIds = uniqueStrings([
     ...draftEvidenceIds,
     ...(project.creativeBrief?.basedOnEvidenceIds ?? []),
-    ...(project.visualDirection?.basedOnEvidenceIds ?? [])
+    ...(project.visualDirection?.basedOnEvidenceIds ?? []),
+    ...collectVisualEvidenceIds(project)
   ]).slice(0, 20);
   const missingEvidenceIds = referencedEvidenceIds.filter((id) => !insightIds.has(id));
   const realtimeEvidenceIds = referencedEvidenceIds.filter((id) => {
@@ -159,6 +185,20 @@ function sameStringSet(left: string[], right: string[]): boolean {
   if (left.length !== right.length) return false;
   const rightSet = new Set(right);
   return left.every((item) => rightSet.has(item));
+}
+
+function collectVisualEvidenceIds(
+  project: Partial<Pick<PostProject, "visualDirection" | "imagePrompts">>
+): string[] {
+  return uniqueStrings([
+    ...(project.visualDirection?.basedOnEvidenceIds ?? []),
+    ...(project.imagePrompts ?? []).flatMap((prompt) => prompt.basedOnEvidenceIds ?? [])
+  ]);
+}
+
+function hasStringOverlap(left: string[], right: string[]): boolean {
+  const rightSet = new Set(right);
+  return left.some((item) => rightSet.has(item));
 }
 
 function finalPostFromDraft(project: Pick<PostProject, "copyDraft" | "selectedImages">): FinalPost | undefined {
