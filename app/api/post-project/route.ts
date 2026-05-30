@@ -50,9 +50,10 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
 }> {
   if (body.action === "commit_canvas") {
     const settings = await readSettings();
+    const project = await readPostProject();
     const currentDraft = await writeCurrentDraft(
       createDraftRecord({
-        draft: normalizeDraft(body.draft),
+        draft: normalizeDraft(body.draft, getCurrentEvidenceIds(project)),
         images: [],
         visibility: body.visibility ?? settings.defaultVisibility
       })
@@ -115,14 +116,22 @@ function isActionBody(value: unknown): value is PostProjectActionBody {
   return value !== null && typeof value === "object" && "action" in value;
 }
 
-function normalizeDraft(draft: DraftRecord["draft"]): DraftRecord["draft"] {
+function normalizeDraft(draft: DraftRecord["draft"], basedOnEvidenceIds: string[] = []): DraftRecord["draft"] {
   return {
     title: draft.title ?? "",
     content: draft.content ?? "",
     tags: Array.isArray(draft.tags) ? draft.tags : [],
     structure: Array.isArray(draft.structure) ? draft.structure : [],
-    imagePrompt: draft.imagePrompt ?? ""
+    imagePrompt: draft.imagePrompt ?? "",
+    basedOnEvidenceIds: draft.basedOnEvidenceIds?.length ? draft.basedOnEvidenceIds : basedOnEvidenceIds,
+    evidenceReferences: draft.evidenceReferences
   };
+}
+
+function getCurrentEvidenceIds(project: PostProject): string[] {
+  return project.copyDraft?.draft.basedOnEvidenceIds?.length
+    ? project.copyDraft.draft.basedOnEvidenceIds
+    : project.creativeBrief?.basedOnEvidenceIds ?? project.evidencePack.insights.map((insight) => insight.id);
 }
 
 function sanitizeExternalPatch(value: unknown): Partial<PostProject> {

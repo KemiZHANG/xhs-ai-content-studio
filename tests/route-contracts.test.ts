@@ -716,6 +716,60 @@ describe("API route contracts", () => {
     expect(publishContent).not.toHaveBeenCalled();
   });
 
+  it("preserves evidence references when committing the Post Studio canvas", async () => {
+    const writeCurrentDraft = vi.fn(async (draft) => ({ id: "draft-committed", updatedAt: "now", ...draft }));
+    const updateWorkspaceState = vi.fn();
+    const project = {
+      creativeBrief: { basedOnEvidenceIds: ["brief-insight"] },
+      evidencePack: { insights: [{ id: "fallback-insight" }] },
+      copyDraft: null
+    };
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings
+    }));
+    vi.doMock("@/lib/agent/state", () => ({
+      updateWorkspaceState
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => project,
+      updatePostProject: vi.fn()
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn((input) => ({
+        id: "draft-created",
+        updatedAt: "now",
+        draft: input.draft,
+        images: input.images,
+        visibility: input.visibility
+      })),
+      writeCurrentDraft
+    }));
+
+    const { PATCH } = await import("@/app/api/post-project/route");
+    const response = await PATCH(jsonRequest({
+      action: "commit_canvas",
+      draft: {
+        title: "标题",
+        content: "正文",
+        tags: ["咖啡"],
+        structure: [],
+        imagePrompt: "图片"
+      },
+      selectedImageIds: ["asset-1"]
+    }));
+
+    expect(response.status).toBe(200);
+    expect(writeCurrentDraft).toHaveBeenCalledWith(expect.objectContaining({
+      draft: expect.objectContaining({
+        basedOnEvidenceIds: ["brief-insight"]
+      })
+    }));
+    expect(updateWorkspaceState).toHaveBeenCalledWith(expect.objectContaining({
+      selectedImageIds: ["asset-1"]
+    }));
+  });
+
   it("blocks asset file reads outside workspace asset folders", async () => {
     vi.doMock("@/lib/storage/assets", () => ({
       getAsset: async () => ({

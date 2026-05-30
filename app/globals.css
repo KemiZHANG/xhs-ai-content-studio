@@ -3275,6 +3275,12 @@ textarea {
   margin: 0;
 }
 
+.evidenceActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .briefStack,
 .qualityBox {
   display: grid;
@@ -3305,9 +3311,14 @@ textarea {
 }
 
 .versionSwitcher > div:last-child {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 8px;
+}
+
+.versionCard {
+  align-items: start;
+  display: grid;
+  gap: 4px;
 }
 
 .versionSwitcher button {
@@ -3318,6 +3329,7 @@ textarea {
   cursor: pointer;
   font-weight: 800;
   padding: 7px 10px;
+  width: fit-content;
 }
 
 .versionSwitcher button:hover {
@@ -3327,6 +3339,100 @@ textarea {
 
 .compactVersionSwitcher {
   background: var(--surface-subtle);
+}
+
+.studioDrawerBackdrop {
+  align-items: stretch;
+  background: rgba(0, 0, 0, 0.28);
+  display: flex;
+  inset: 0;
+  justify-content: flex-end;
+  position: fixed;
+  z-index: 60;
+}
+
+.studioDrawer {
+  background: rgba(255, 252, 247, 0.98);
+  border-left: 1px solid var(--line);
+  box-shadow: -24px 0 70px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: min(520px, 92vw);
+  overflow: auto;
+  padding: 24px;
+  width: 520px;
+}
+
+.studioDrawer header {
+  align-items: start;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding-bottom: 14px;
+}
+
+.studioDrawer header span {
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.studioDrawer h3,
+.studioDrawer h4 {
+  color: var(--ink);
+  margin: 0;
+}
+
+.studioDrawer header p,
+.drawerSection p,
+.drawerSection li {
+  color: rgba(0, 0, 0, 0.72);
+  line-height: 1.65;
+}
+
+.studioDrawer header button {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 8px 12px;
+}
+
+.drawerSection {
+  display: grid;
+  gap: 8px;
+}
+
+.drawerSection ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.drawerImageGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.drawerImageGrid img {
+  aspect-ratio: 1;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.studioDrawer footer {
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 14px;
 }
 
 .evidenceReferenceStrip {

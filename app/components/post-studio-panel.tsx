@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import {
   Bot,
   CheckCircle2,
+  ExternalLink,
   FileText,
   ImagePlus,
   Library,
@@ -101,6 +102,7 @@ export function PostStudioPanel({
   onOpenPublish: () => void;
 }) {
   const [tab, setTab] = useState<StudioTab>("insights");
+  const [selectedEvidence, setSelectedEvidence] = useState<SampleEvidence | null>(null);
   const selectedAssets = assets.filter((asset) => publishAssetIds.includes(asset.id));
   const runningJob = jobs.find((job) => job.status === "queued" || job.status === "running") ?? null;
   const insights = project?.evidencePack.insights ?? [];
@@ -266,21 +268,23 @@ export function PostStudioPanel({
                   </div>
                   <div>
                     {copyVersions.slice(-4).map((version, index) => (
-                      <button
-                        key={version.id}
-                        type="button"
-                        onClick={() => {
-                          onDraftChange({
-                            title: version.value.title,
-                            content: version.value.content,
-                            tagsText: version.value.tags.map((tag) => `#${tag}`).join(" "),
-                            imagePrompt: version.value.imagePrompt || publishDraft.imagePrompt
-                          });
-                          onSelectCopyVersion(version.id);
-                        }}
-                      >
-                        {version.label || `版本 ${index + 1}`}
-                      </button>
+                      <article className="versionCard" key={version.id}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onDraftChange({
+                              title: version.value.title,
+                              content: version.value.content,
+                              tagsText: version.value.tags.map((tag) => `#${tag}`).join(" "),
+                              imagePrompt: version.value.imagePrompt || publishDraft.imagePrompt
+                            });
+                            onSelectCopyVersion(version.id);
+                          }}
+                        >
+                          {version.label || `版本 ${index + 1}`}
+                        </button>
+                        <span>{summarizeDraftDiff(publishDraft, version.value)}</span>
+                      </article>
                     ))}
                   </div>
                 </section>
@@ -408,14 +412,19 @@ export function PostStudioPanel({
                     <article key={sample.id}>
                       <strong>{sample.title}</strong>
                       <span>赞 {sample.likes} · 藏 {sample.collects} · 评 {sample.comments}</span>
-                      <button className="textButton" type="button" onClick={() => onSaveToViralLibrary(sample)}>
-                        保存到爆款库
-                      </button>
+                      <div className="evidenceActions">
+                        <button className="textButton" type="button" onClick={() => setSelectedEvidence(sample)}>
+                          查看详情
+                        </button>
+                        <button className="textButton" type="button" onClick={() => onSaveToViralLibrary(sample)}>
+                          保存到爆款库
+                        </button>
+                      </div>
                     </article>
                   ))}
                 </div>
               ) : null}
-              <button className="secondaryButton fullWidth" onClick={() => onNavigate("workflow")} type="button">查看证据详情</button>
+              <button className="secondaryButton fullWidth" onClick={() => saveableSamples[0] ? setSelectedEvidence(saveableSamples[0]) : onNavigate("workflow")} type="button">查看证据详情</button>
             </SideSection>
           ) : null}
 
@@ -498,6 +507,10 @@ export function PostStudioPanel({
           </div>
         </aside>
       </div>
+
+      {selectedEvidence ? (
+        <EvidenceDrawer sample={selectedEvidence} onClose={() => setSelectedEvidence(null)} onSave={() => onSaveToViralLibrary(selectedEvidence)} />
+      ) : null}
     </div>
   );
 }
@@ -545,6 +558,67 @@ function ChipList({ title, items }: { title: string; items: string[] }) {
 
 function CheckItem({ ok, label }: { ok: boolean; label: string }) {
   return <span className={ok ? "checkItem ok" : "checkItem"}>{ok ? "✓" : "·"} {label}</span>;
+}
+
+function EvidenceDrawer({ sample, onClose, onSave }: { sample: SampleEvidence; onClose: () => void; onSave: () => void }) {
+  return (
+    <div className="studioDrawerBackdrop" role="presentation" onClick={onClose}>
+      <aside className="studioDrawer" role="dialog" aria-modal="true" aria-label="证据详情" onClick={(event) => event.stopPropagation()}>
+        <header>
+          <div>
+            <span>Evidence Detail</span>
+            <h3>{sample.title}</h3>
+            <p>{sample.author || "未知作者"} · 赞 {sample.likes} · 藏 {sample.collects} · 评 {sample.comments}</p>
+          </div>
+          <button type="button" onClick={onClose}>关闭</button>
+        </header>
+
+        <section className="drawerSection">
+          <h4>正文摘要</h4>
+          <p>{sample.detailText || "当前 MCP 详情没有返回正文；可以保留互动数据和图片风格作为证据。"}</p>
+        </section>
+
+        {sample.reasonHighlights.length ? (
+          <section className="drawerSection">
+            <h4>为什么值得参考</h4>
+            <ul>
+              {sample.reasonHighlights.slice(0, 6).map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </section>
+        ) : null}
+
+        {sample.commentSnippets.length ? (
+          <section className="drawerSection">
+            <h4>评论关注点</h4>
+            <ul>
+              {sample.commentSnippets.slice(0, 8).map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </section>
+        ) : null}
+
+        {(sample.cachedImageUrls?.length ?? 0) || (sample.imageUrls?.length ?? 0) ? (
+          <section className="drawerSection">
+            <h4>图片参考</h4>
+            <div className="drawerImageGrid">
+              {[...(sample.cachedImageUrls ?? []), ...(sample.imageUrls ?? [])].slice(0, 6).map((url) => (
+                <img alt={sample.title} key={url} src={url} />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        <footer>
+          {sample.url ? (
+            <a className="secondaryButton" href={sample.url} target="_blank" rel="noreferrer">
+              <ExternalLink size={14} />
+              来源链接
+            </a>
+          ) : null}
+          <button className="primaryButton" type="button" onClick={onSave}>保存到爆款库</button>
+        </footer>
+      </aside>
+    </div>
+  );
 }
 
 function labelForStage(stage: PostProject["currentStage"]): string {
@@ -633,4 +707,20 @@ function labelForPublishStatus(status?: string): string {
 
 function isSampleEvidence(value: unknown): value is SampleEvidence {
   return Boolean(value) && typeof value === "object" && typeof (value as { id?: unknown }).id === "string" && typeof (value as { title?: unknown }).title === "string";
+}
+
+function summarizeDraftDiff(current: PublishDraftState, version: NonNullable<WorkflowResult["draft"]>): string {
+  const changes = [];
+  if (current.title.trim() && current.title.trim() !== version.title.trim()) changes.push("标题不同");
+  const currentLength = current.content.trim().length;
+  const nextLength = version.content.trim().length;
+  if (currentLength && currentLength !== nextLength) changes.push(`正文 ${nextLength - currentLength > 0 ? "+" : ""}${nextLength - currentLength} 字`);
+  const currentTags = parseTags(current.tagsText).join("|");
+  const versionTags = version.tags.join("|");
+  if (currentTags && currentTags !== versionTags) changes.push("标签不同");
+  return changes.length ? changes.join(" · ") : "当前画布一致";
+}
+
+function parseTags(value: string): string[] {
+  return value.split(/[\s#，,、]+/).map((item) => item.trim()).filter(Boolean);
 }
