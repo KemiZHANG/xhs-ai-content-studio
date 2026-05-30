@@ -31,15 +31,7 @@ export type ViralKnowledgePack = {
 
 export async function retrieveViralKnowledge(input: ViralRetrievalInput): Promise<ViralKnowledgePack> {
   const rewrittenQueries = rewriteRetrievalQueries(input);
-  const results = await searchViralCasesFusion({
-    query: rewrittenQueries.join(" "),
-    topic: input.topic,
-    category: input.category,
-    audience: input.audience,
-    painPoint: input.painPoint,
-    tags: input.tags,
-    limit: input.limit
-  });
+  const results = await retrieveViralCasesWithFusion(input, rewrittenQueries);
   const insights = viralCasesToEvidenceInsights(results.map((result) => result.case));
   return {
     query: input.query,
@@ -54,6 +46,82 @@ export async function retrieveViralKnowledge(input: ViralRetrievalInput): Promis
       hasStructure: insights.some((insight) => insight.type === "structure" || insight.type === "copy")
     })
   };
+}
+
+async function retrieveViralCasesWithFusion(
+  input: ViralRetrievalInput,
+  rewrittenQueries: string[]
+): Promise<ViralSearchResult[]> {
+  const limit = Math.max(1, Math.min(Number(input.limit ?? 8), 30));
+  const merged = new Map<string, ViralSearchResult>();
+  const searchInputs = [
+    input,
+    ...(input.audience || input.painPoint || input.tags?.length
+      ? [{
+          ...input,
+          audience: undefined,
+          painPoint: undefined,
+          tags: undefined
+        }]
+      : [])
+  ];
+
+  for (const searchInput of searchInputs) {
+    for (const query of rewrittenQueries) {
+      const partial = await searchViralCasesFusion({
+        query,
+        topic: searchInput.topic,
+        category: searchInput.category,
+        audience: searchInput.audience,
+        painPoint: searchInput.painPoint,
+        tags: searchInput.tags,
+        limit: Math.max(limit * 2, 8)
+      });
+
+      partial.forEach((result, rank) => {
+        const existing = merged.get(result.case.id);
+        const fusionBoost = 1 / (60 + rank + 1);
+        const nextScore = Number((result.score + fusionBoost).toFixed(4));
+        const relaxedFilterReason = searchInput === input ? "" : "relaxed audience/pain-point filters";
+        if (!existing) {
+          merged.set(result.case.id, {
+            ...result,
+            score: nextScore,
+            matchedQueries: uniqueStrings([...(result.matchedQueries ?? []), query]),
+            reasons: uniqueStrings([...result.reasons, `RAG-Fusion query: ${query}`, relaxedFilterReason]).slice(0, 10)
+          });
+          return;
+        }
+        existing.score = Number((Math.max(existing.score, result.score) + fusionBoost).toFixed(4));
+        existing.reasons = uniqueStrings([...existing.reasons, ...result.reasons, `RAG-Fusion query: ${query}`, relaxedFilterReason]).slice(0, 10);
+        existing.matchedQueries = uniqueStrings([...(existing.matchedQueries ?? []), ...(result.matchedQueries ?? []), query]).slice(0, 8);
+      });
+    }
+
+    if (merged.size) {
+      break;
+    }
+  }
+
+  return diversifyRetrievedResults([...merged.values()]).slice(0, limit);
+}
+
+function diversifyRetrievedResults(results: ViralSearchResult[]): ViralSearchResult[] {
+  const sorted = results.sort((a, b) => b.score - a.score);
+  const selected: ViralSearchResult[] = [];
+  const angleCounts = new Map<string, number>();
+
+  for (const result of sorted) {
+    const angle = `${result.case.category}|${result.case.hookType}|${result.case.imageStyle}`.slice(0, 100);
+    const count = angleCounts.get(angle) ?? 0;
+    if (count >= 2 && selected.length >= 4) {
+      continue;
+    }
+    selected.push(result);
+    angleCounts.set(angle, count + 1);
+  }
+
+  return selected.length ? selected : sorted;
 }
 
 export function rewriteRetrievalQueries(input: ViralRetrievalInput): string[] {
