@@ -253,6 +253,10 @@ describe("agent orchestrator", () => {
     expect(result.postProject?.productInfo.name).toBe("独立咖啡店合集");
     expect(result.postProject?.productInfo.sellingPoints).toBe("安静办公和自然光");
     expect(result.postProject?.creativeBrief?.audience).toBe("探店账号粉丝");
+    expect(result.postProject?.evidencePack.sampleIds).toContain("user-brief");
+    expect(result.postProject?.evidencePack.insights.some((insight) => insight.sourceType === "user_input" && insight.type === "audience")).toBe(true);
+    expect(result.postProject?.evidencePack.insights.some((insight) => insight.sourceType === "user_input" && insight.insight.includes("安静办公和自然光"))).toBe(true);
+    expect(result.postProject?.creativeBrief?.basedOnEvidenceIds.some((id) => id.includes("audience"))).toBe(true);
     expect(result.stage).toBe("brief_ready");
     expect(result.workspace.topic).toBe("广州咖啡馆");
   });
@@ -356,7 +360,9 @@ describe("agent orchestrator", () => {
     expect(result.postProject?.tone).toBe("生活化");
     expect(result.postProject?.productInfo.name).toBe("轻便托特包");
     expect(result.postProject?.productInfo.sellingPoints).toBe("大容量和不压肩");
-    expect(result.postProject?.evidencePack.insights).toEqual([]);
+    expect(result.postProject?.evidencePack.insights.some((insight) => insight.id === "old-insight")).toBe(false);
+    expect(result.postProject?.evidencePack.insights.every((insight) => insight.sourceType === "user_input")).toBe(true);
+    expect(result.postProject?.evidencePack.insights.map((insight) => insight.insight).join(" ")).toContain("用户指定主题：通勤包");
     expect(result.postProject?.selectedSamples).toEqual([]);
     expect(result.postProject?.copyDraft).toBeNull();
     expect(result.postProject?.selectedImages).toEqual([]);

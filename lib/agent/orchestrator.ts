@@ -17,6 +17,7 @@ import type {
 } from "@/lib/agent/types";
 import { readPostProject, resetPostProject, updatePostProject } from "@/lib/post-project/store";
 import { copyVersionFromDraft, deriveCreativeBrief, deriveFinalPost, deriveImagePromptVersion, deriveVisualDirection } from "@/lib/post-project/brief";
+import { insightsFromUserBriefInput, mergeEvidenceInsights } from "@/lib/post-project/evidence";
 import { runPostQualityGate } from "@/lib/post-project/quality";
 import type { PostAction, PostProject, ProductInfo } from "@/lib/post-project/types";
 import { renderXhsCardSet } from "@/lib/cards/renderer";
@@ -731,13 +732,24 @@ async function maybeHandleNewProjectTurn(
     sellingPoints: patch.productInfo?.sellingPoints,
     scene: patch.productInfo?.scene
   };
+  const userInsights = insightsFromUserBriefInput({
+    topic: patch.topic ?? plan.topic,
+    targetAudience: patch.targetAudience,
+    goal: patch.goal,
+    tone: patch.tone,
+    productInfo
+  });
   const projectCandidate = await resetPostProject({
     topic: patch.topic ?? plan.topic,
     targetAudience: patch.targetAudience,
     goal: patch.goal,
     tone: patch.tone,
     productInfo,
-    evidencePack: { sampleIds: [], insights: [] },
+    evidencePack: {
+      sampleIds: userInsights.length ? ["user-brief"] : [],
+      insights: userInsights,
+      updatedAt: new Date().toISOString()
+    },
     selectedSamples: [],
     copyDraft: null,
     copyVersions: [],
@@ -797,6 +809,20 @@ async function maybeHandleBriefUpdateTurn(
     goal: patch.goal ?? postProject.goal,
     tone: patch.tone ?? postProject.tone,
     productInfo: patch.productInfo ?? postProject.productInfo,
+    evidencePack: {
+      ...postProject.evidencePack,
+      sampleIds: postProject.evidencePack.sampleIds.includes("user-brief")
+        ? postProject.evidencePack.sampleIds
+        : [...postProject.evidencePack.sampleIds, "user-brief"],
+      insights: mergeEvidenceInsights(postProject.evidencePack.insights.filter((insight) => insight.sourceType !== "user_input"), insightsFromUserBriefInput({
+        topic: patch.topic ?? postProject.topic,
+        targetAudience: patch.targetAudience ?? postProject.targetAudience,
+        goal: patch.goal ?? postProject.goal,
+        tone: patch.tone ?? postProject.tone,
+        productInfo: patch.productInfo ?? postProject.productInfo
+      })),
+      updatedAt: new Date().toISOString()
+    },
     creativeBrief: undefined,
     visualDirection: undefined,
     qualityCheck: undefined,
@@ -810,6 +836,7 @@ async function maybeHandleBriefUpdateTurn(
     goal: nextProjectCandidate.goal,
     tone: nextProjectCandidate.tone,
     productInfo: nextProjectCandidate.productInfo,
+    evidencePack: nextProjectCandidate.evidencePack,
     creativeBrief,
     visualDirection: undefined,
     imagePrompts: [],
