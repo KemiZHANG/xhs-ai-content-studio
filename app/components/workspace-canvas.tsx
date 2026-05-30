@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { AssetRecord, CreatorMemoryProfile, DraftRecord, JobRecord, PostProject, WorkspaceState } from "@/app/types";
+import { buildPostReadinessReport } from "@/lib/post-project/readiness";
+import type { PostReadinessItem } from "@/lib/post-project/readiness";
 
 export function WorkspaceCanvas({
   workspace,
@@ -36,6 +38,8 @@ export function WorkspaceCanvas({
   const realtimeInsights = projectInsights.filter((insight) => insight.sourceType !== "viral_library");
   const keyInsights = [...viralInsights.slice(0, 2), ...realtimeInsights.slice(0, 2)].slice(0, 4);
   const quality = postProject?.qualityCheck;
+  const readiness = postProject ? buildPostReadinessReport(postProject) : null;
+  const readinessSteps = readiness ? pickCanvasReadinessSteps(readiness.items) : [];
   const memorySignals = [
     ...(postProject?.agentMemory ?? []).slice(0, 2),
     ...(creatorMemory?.liked ?? []).slice(0, 2).map((item) => item.text),
@@ -107,11 +111,21 @@ export function WorkspaceCanvas({
         <span>当前项目</span>
         <strong>{workspace?.topic || draft?.draft.title || "等待任务"}</strong>
         <p>阶段：{postProject?.currentStage ?? "empty"} · 最近意图：{workspace?.lastUserIntent || "-"}</p>
-        {postProject?.allowedActions?.length ? (
-          <div className="tagRow">
-            {postProject.allowedActions.slice(0, 3).map((action) => (
-              <em key={action}>{action}</em>
-            ))}
+        {readiness ? (
+          <div className="canvasReadiness">
+            <div className="canvasReadinessHeader">
+              <strong>{readiness.progress}%</strong>
+              <span>{readiness.summary}</span>
+            </div>
+            <div className="miniProgress">
+              <i style={{ width: `${readiness.progress}%` }} />
+            </div>
+            <div className="canvasReadinessSteps">
+              {readinessSteps.map((item) => (
+                <ReadinessMiniStep item={item} key={item.id} />
+              ))}
+            </div>
+            <p>{readiness.blockers[0]?.detail ?? "可以进入发布确认，但仍需要人工确认账号、可见范围和时间。"}</p>
           </div>
         ) : null}
       </section>
@@ -269,5 +283,22 @@ export function WorkspaceCanvas({
         </button>
       </section>
     </aside>
+  );
+}
+
+function pickCanvasReadinessSteps(items: PostReadinessItem[]): PostReadinessItem[] {
+  const preferred = ["evidence", "copy", "images", "quality", "confirmation"];
+  return [...items]
+    .sort((left, right) => preferred.indexOf(left.id) - preferred.indexOf(right.id))
+    .filter((item) => preferred.includes(item.id))
+    .slice(0, 5);
+}
+
+function ReadinessMiniStep({ item }: { item: PostReadinessItem }) {
+  return (
+    <span className={item.ready ? "canvasReadinessStep ready" : "canvasReadinessStep"} title={item.detail}>
+      <b>{item.ready ? "✓" : "·"}</b>
+      {item.label}
+    </span>
   );
 }
