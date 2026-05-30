@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -427,6 +427,72 @@ describe("agent orchestrator", () => {
     expect(publish.workspace.publishPlan?.status).toBe("awaiting_approval");
     expect(publish.workspace.publishPlan?.scheduleAt).toBe("2099-05-22T20:00:00+08:00");
     expect(publish.workspace.publishPlan?.images).toEqual([secondImage]);
+  });
+
+  it("uses selected PostProject asset images when preparing publish from chat", async () => {
+    const selectedImagePath = path.join(tempDir, "generated-assets", "uploads", "selected.png");
+    await mkdir(path.join(tempDir, "data"), { recursive: true });
+    await writeFile(
+      path.join(tempDir, "data", "assets.json"),
+      JSON.stringify([
+        {
+          id: "asset-selected",
+          kind: "upload",
+          name: "selected",
+          originalName: "selected.png",
+          absolutePath: selectedImagePath,
+          mimeType: "image/png",
+          size: 10,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }
+      ])
+    );
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      selectedImages: ["asset-selected"],
+      currentStage: "image_ready"
+    });
+    const { updateWorkspaceState } = await import("@/lib/agent/state");
+    const draft = {
+      id: "draft-selected-asset",
+      updatedAt: "2026-05-30T00:00:00.000Z",
+      draft: {
+        title: "A useful title",
+        content: "Original body content",
+        tags: ["tag"],
+        structure: [],
+        imagePrompt: ""
+      },
+      images: [],
+      visibility: defaultSettings.defaultVisibility
+    };
+    await updateWorkspaceState({ currentDraftId: draft.id, currentDraft: draft, selectedImageIds: ["asset-selected"] });
+
+    const result = await runAgentTurn({
+      message: "今晚 8 点发",
+      conversationId: "chat-publish-selected-asset",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: draft,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => {
+          throw new Error("should not publish before review");
+        }
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(result.intent).toBe("schedule_publish");
+    expect(result.workspace.publishPlan?.status).toBe("awaiting_approval");
+    expect(result.workspace.publishPlan?.images).toEqual([selectedImagePath]);
   });
 
   it("stores standalone image selection on workspace and PostProject", async () => {

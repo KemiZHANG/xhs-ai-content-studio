@@ -18,7 +18,7 @@ import { runPostQualityGate } from "@/lib/post-project/quality";
 import type { PostProject, ProductInfo } from "@/lib/post-project/types";
 import { renderXhsCardSet } from "@/lib/cards/renderer";
 import type { ModelProvider } from "@/lib/models/provider";
-import { createAssetRecord, saveAsset } from "@/lib/storage/assets";
+import { createAssetRecord, getAsset, saveAsset } from "@/lib/storage/assets";
 import { createDraftRecord, type DraftRecord } from "@/lib/storage/drafts";
 import { retrieveViralKnowledge } from "@/lib/rag/viral";
 import type { GeneratedDraft, XhsMcpWorkflowClient } from "@/lib/workflows/one-click";
@@ -1440,7 +1440,11 @@ async function maybeHandleGuardedPublishTurn(
     };
   }
 
-  const allImages = currentDraft.images.flatMap((image) => [image.path, image.url].filter(Boolean) as string[]);
+  const activeProject = await readPostProject();
+  const selectedAssetIds = activeProject.selectedImages.length ? activeProject.selectedImages : existing.selectedImageIds;
+  const selectedAssetImages = await resolveSelectedPublishImages(selectedAssetIds);
+  const draftImages = currentDraft.images.flatMap((image) => [image.path, image.url].filter(Boolean) as string[]);
+  const allImages = selectedAssetImages.length ? selectedAssetImages : draftImages;
   const selectedByIndex =
     plan.selectedImageIndex && plan.selectedImageIndex > 0 ? allImages[plan.selectedImageIndex - 1] : undefined;
   const images = selectedByIndex ? [selectedByIndex] : allImages;
@@ -1693,6 +1697,16 @@ function mergeSelectedGeneratedImages(project: PostProject, candidates: string[]
       selected: identity === selected
     };
   });
+}
+
+async function resolveSelectedPublishImages(assetIds: string[]): Promise<string[]> {
+  const resolved = await Promise.all(
+    uniqueIds(assetIds).map(async (id) => {
+      const asset = await getAsset(id).catch(() => null);
+      return asset?.absolutePath;
+    })
+  );
+  return resolved.filter((item): item is string => Boolean(item));
 }
 
 function uniqueIds(ids: string[]): string[] {
