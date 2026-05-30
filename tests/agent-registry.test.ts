@@ -180,11 +180,14 @@ describe("agent tool registry", () => {
       data: {
         results: Array<{ case: { metrics: { shares: number; score: number } } }>;
       };
+      display?: { summary?: string };
     };
 
     expect(result.ok).toBe(true);
     expect(result.data.results.length).toBeGreaterThan(0);
     expect(result.data.results.every((item) => item.case.metrics.shares >= 20)).toBe(true);
     expect(result.data.results.every((item) => item.case.metrics.score >= 3000)).toBe(true);
+    expect(result.display?.summary).toContain("筛选：");
+    expect(result.display?.summary).toContain("分享 ≥ 20");
   });
 });

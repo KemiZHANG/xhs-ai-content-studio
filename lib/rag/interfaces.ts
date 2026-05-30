@@ -38,6 +38,11 @@ export type Evaluator<TInput = unknown, TResult = unknown> = {
 export type AgentRuntime = {
   toolRegistry: AgentToolRegistry;
   retrievers: Retriever[];
+  vectorStore?: VectorStore;
+  reranker?: Reranker;
+  evaluator?: Evaluator;
+  workflowRunner?: WorkflowRunner;
+  memoryProvider?: MemoryProvider;
   traceProvider: TraceProvider;
 };
 

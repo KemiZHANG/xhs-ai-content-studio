@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { retrieveViralKnowledge, rewriteRetrievalQueries, evaluateRagSufficiency } from "@/lib/rag/viral";
+import { createViralKnowledgePackRetriever, createViralKnowledgeRetriever } from "@/lib/rag/retrievers";
 import { createViralCaseFromEvidence, upsertViralCases } from "@/lib/viral-knowledge/store";
 import type { SampleEvidence } from "@/lib/workflows/one-click";
 
@@ -96,5 +97,35 @@ describe("viral RAG retrieval", () => {
     expect(sufficiency.isEnough).toBe(false);
     expect(sufficiency.missing.join(" ")).toContain("实时小红书样本不足");
     expect(sufficiency.recommendation).toContain("建议继续搜索");
+  });
+
+  it("exposes viral knowledge as replaceable retriever adapters", async () => {
+    const viralCase = await createViralCaseFromEvidence({
+      sample,
+      topic: "广州咖啡馆",
+      category: "探店"
+    });
+    await upsertViralCases([viralCase]);
+
+    const caseRetriever = createViralKnowledgeRetriever();
+    const caseResults = await caseRetriever.retrieve({
+      query: "广州咖啡馆 拍照攻略",
+      topic: "广州咖啡馆",
+      limit: 3
+    });
+
+    const packRetriever = createViralKnowledgePackRetriever();
+    const [pack] = await packRetriever.retrieve({
+      query: "广州咖啡馆 拍照攻略",
+      topic: "广州咖啡馆",
+      minCollects: 1000,
+      limit: 3,
+      realtimeEvidenceCount: 2
+    });
+
+    expect(caseResults[0].case.id).toBe(viralCase.id);
+    expect(pack.results[0].case.id).toBe(viralCase.id);
+    expect(pack.filterSummary).toContain("收藏 ≥ 1000");
+    expect(pack.insights.every((item) => item.sourceType === "viral_library")).toBe(true);
   });
 });

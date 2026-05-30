@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { GET } from "@/app/api/viral-knowledge/route";
 import {
   createViralCaseFromEvidence,
   listViralCases,
@@ -194,5 +195,30 @@ describe("viral knowledge base", () => {
     expect(filtered.map((item) => item.case.id)).toEqual(["viral-coffee"]);
     expect(sortedByScore.map((item) => item.id)).toEqual(["viral-coffee", "viral-bag"]);
     expect(sortedByCreated.map((item) => item.id)).toEqual(["viral-coffee", "viral-bag"]);
+  });
+
+  it("returns filter metadata from the viral knowledge API", async () => {
+    const viralCase = await createViralCaseFromEvidence({
+      sample,
+      topic: "广州咖啡馆",
+      category: "探店"
+    });
+    await upsertViralCases([{
+      ...viralCase,
+      tags: ["广州咖啡馆", "探店"],
+      metrics: { ...viralCase.metrics, shares: 30, score: 3000 }
+    }]);
+
+    const response = await GET(new Request("http://localhost/api/viral-knowledge?q=咖啡馆&topic=广州咖啡馆&minShares=20&sortBy=score&sortOrder=desc&tag=探店"));
+    const payload = await response.json() as {
+      filterSummary: string;
+      filters: { minShares?: number; sortBy?: string; tags?: string[] };
+      results: unknown[];
+    };
+
+    expect(payload.results.length).toBeGreaterThan(0);
+    expect(payload.filters).toMatchObject({ minShares: 20, sortBy: "score", tags: ["探店"] });
+    expect(payload.filterSummary).toContain("分享 ≥ 20");
+    expect(payload.filterSummary).toContain("按综合分降序排序");
   });
 });

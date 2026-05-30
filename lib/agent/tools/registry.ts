@@ -339,7 +339,8 @@ function parseSaveViralCaseToolInput(input: unknown): {
 
 function formatViralPackSummary(pack: ViralKnowledgePack): string {
   const status = pack.sufficiency.isEnough ? "证据充足" : "证据不足";
-  return `${status}，命中 ${pack.results.length} 条历史爆款规律，生成 ${pack.insights.length} 条可追溯 evidencePack 结论。`;
+  const filterSummary = pack.filterSummary ? `筛选：${pack.filterSummary}。` : "";
+  return `${status}，${filterSummary}命中 ${pack.results.length} 条历史爆款规律，生成 ${pack.insights.length} 条可追溯 evidencePack 结论。`;
 }
 
 function isSampleEvidence(value: unknown): value is SampleEvidence {

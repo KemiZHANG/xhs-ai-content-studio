@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createModelProvider } from "@/lib/models/provider";
 import { addViralCasesToPostProject } from "@/lib/post-project/store";
+import { extractViralRetrievalFilters, summarizeViralRetrievalFilters } from "@/lib/rag/viral";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { readSettings } from "@/lib/storage/settings";
 import { createViralCaseFromEvidence, listViralCases, searchViralCasesFusion, upsertViralCases } from "@/lib/viral-knowledge/store";
@@ -46,17 +47,19 @@ export async function GET(request: Request) {
     tags,
     limit
   };
+  const retrievalFilters = extractViralRetrievalFilters({ ...filters, query: query || topic || "viral-library" });
+  const filterSummary = summarizeViralRetrievalFilters(retrievalFilters);
 
   if (query || topic || category || audience || painPoint || createdAfter || createdBefore || minLikes !== undefined || minCollects !== undefined || minComments !== undefined || minShares !== undefined || minScore !== undefined || tags.length) {
     const results = await searchViralCasesFusion({
       ...filters,
       tags: tags.length ? tags : undefined
     });
-    return NextResponse.json({ results, cases: results.map((item) => item.case) });
+    return NextResponse.json({ results, cases: results.map((item) => item.case), filters: retrievalFilters, filterSummary });
   }
 
   const cases = await listViralCases(filters);
-  return NextResponse.json({ cases: cases.slice(0, limit || 20) });
+  return NextResponse.json({ cases: cases.slice(0, limit || 20), filters: retrievalFilters, filterSummary });
 }
 
 export async function POST(request: Request) {
