@@ -55,6 +55,7 @@ import type {
   ImageStudioMode,
   JobRecord,
   PendingPublishConfirmation,
+  PostProject,
   PublishAuditRecord,
   PublishDraftState,
   PublishPayload,
@@ -114,6 +115,7 @@ export default function Home() {
   const [autoReturnTarget, setAutoReturnTarget] = useState<"flow" | "workflow" | "chat">("workflow");
   const [assets, setAssets] = useState<AssetRecord[]>([]);
   const [workspace, setWorkspace] = useState<WorkspaceState | null>(null);
+  const [postProject, setPostProject] = useState<PostProject | null>(null);
   const [creatorMemory, setCreatorMemory] = useState<CreatorMemoryProfile | null>(null);
   const [workflowResult, setWorkflowResult] = useState<WorkflowResult | null>(null);
   const [researchResult, setResearchResult] = useState<WorkflowResult | null>(null);
@@ -223,6 +225,7 @@ export default function Home() {
       loadChatHistory(),
       loadCurrentDraft(),
       loadWorkspace(),
+      loadPostProject(),
       loadCreatorMemory()
     ]);
   }
@@ -265,6 +268,7 @@ export default function Home() {
       setSection(autoReturnTarget);
       setNotice("研究完成，已回到结果页。可以继续进入文案创作或图片创作。");
       await loadWorkspace();
+      await loadPostProject();
       if (autoReturnJob.result.draft) {
         await loadCurrentDraft();
       }
@@ -306,6 +310,12 @@ export default function Home() {
     setPublishAssetIds(data.workspace.selectedImageIds ?? []);
   }
 
+  async function loadPostProject() {
+    const data = (await clientApi("/api/post-project")) as { project: PostProject };
+    setPostProject(data.project);
+    return data.project;
+  }
+
   async function loadCreatorMemory() {
     const data = (await clientApi("/api/agent/memory")) as { memory: CreatorMemoryProfile };
     setCreatorMemory(data.memory);
@@ -321,6 +331,7 @@ export default function Home() {
       applyCurrentDraft(data.workspace.currentDraft);
     }
     setPublishAssetIds(data.workspace.selectedImageIds ?? []);
+    await loadPostProject();
     return data.workspace;
   }
 
@@ -602,6 +613,7 @@ export default function Home() {
       await loadHistory();
       await loadChatHistory();
       await loadWorkspace();
+      await loadPostProject();
       await loadCreatorMemory();
     } finally {
       setBusy(null);
@@ -628,6 +640,7 @@ export default function Home() {
     setPublishStatus("");
     setPendingPublish(null);
     setChatAssetIds([]);
+    await loadPostProject();
     return data.workspace;
   }
 
@@ -751,6 +764,7 @@ export default function Home() {
         applyCurrentDraft(data.currentDraft);
       }
       await loadWorkspace();
+      await loadPostProject();
       await loadPublishAudit();
       setPublishStatus(data.status === "scheduled" ? "已提交定时发布" : "已提交立即发布");
       setNotice(data.status === "scheduled" ? "定时发布已提交" : "发布已提交");
@@ -793,6 +807,7 @@ export default function Home() {
       }
       setPendingPublish(null);
       await loadWorkspace();
+      await loadPostProject();
       await loadPublishAudit();
       setPublishStatus(data.status === "scheduled" ? "已提交定时发布" : "已提交立即发布");
       setNotice(data.status === "scheduled" ? "定时发布已提交" : "发布已提交");
@@ -915,6 +930,7 @@ export default function Home() {
             busy={busy === "workflow"}
             result={workflowResultForDisplay}
             workspace={workspace}
+            postProject={postProject}
             currentDraft={currentDraft}
             creatorMemory={creatorMemory}
             assets={assets}

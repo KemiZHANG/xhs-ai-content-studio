@@ -14,6 +14,7 @@ import type {
   DraftRecord,
   Health,
   JobRecord,
+  PostProject,
   RedactedSettings,
   Section,
   WorkflowResult,
@@ -43,6 +44,7 @@ export function AgentFlowPanel({
   busy,
   result,
   workspace,
+  postProject,
   currentDraft,
   creatorMemory,
   assets,
@@ -61,6 +63,7 @@ export function AgentFlowPanel({
   busy: boolean;
   result: WorkflowResult | null;
   workspace: WorkspaceState | null;
+  postProject: PostProject | null;
   currentDraft: DraftRecord | null;
   creatorMemory: CreatorMemoryProfile | null;
   assets: AssetRecord[];
@@ -92,6 +95,8 @@ export function AgentFlowPanel({
   const summary = result?.researchSummary ?? (workspace?.evidenceSummary as WorkflowResult["researchSummary"] | undefined);
   const account =
     settings.accounts.find((item) => item.id === settings.activeAccountId) ?? settings.accounts[0];
+  const stageLabel = postProject ? labelForStage(postProject.currentStage) : "等待开始";
+  const nextActions = postProject?.allowedActions.slice(0, 3).map(labelForAction) ?? ["填写主题", "开始研究"];
 
   const draftPrompt = useMemo(() => {
     const lines = [
@@ -137,6 +142,11 @@ export function AgentFlowPanel({
             <button className="secondaryButton" onClick={() => onNavigate("chat")} type="button">
               进入 AI 工作台
             </button>
+          </div>
+          <div className="postProjectStatus">
+            <strong>当前项目：{postProject?.topic || form.topic || "未命名帖子"}</strong>
+            <span>阶段：{stageLabel}</span>
+            <span>下一步：{nextActions.join(" / ")}</span>
           </div>
         </div>
         <div className="flowHeroRail simple">
@@ -342,4 +352,49 @@ function extractTagHints(result: WorkflowResult | null): string[] {
     return [];
   }
   return [`保留主题词 + 场景词：${result.draft.tags.slice(0, 4).map((tag) => `#${tag}`).join(" ")}`];
+}
+
+function labelForStage(stage: PostProject["currentStage"]): string {
+  const labels: Record<PostProject["currentStage"], string> = {
+    empty: "空项目",
+    briefing: "补充需求",
+    researching: "研究中",
+    evidence_ready: "证据已就绪",
+    brief_ready: "创作简报已就绪",
+    copy_drafting: "文案生成中",
+    copy_ready: "文案已就绪",
+    visual_planning: "图片方向规划",
+    image_prompt_ready: "图片提示词已就绪",
+    image_generating: "图片生成中",
+    image_ready: "图片已就绪",
+    assembling: "组装帖子",
+    reviewing: "发布检查",
+    scheduled: "已定时",
+    published: "已发布",
+    failed: "失败"
+  };
+  return labels[stage] ?? stage;
+}
+
+function labelForAction(action: string): string {
+  const labels: Record<string, string> = {
+    start_brief: "填写主题",
+    update_brief_inputs: "补充需求",
+    search_research: "搜索笔记",
+    summarize_evidence: "总结证据",
+    create_creative_brief: "生成创作简报",
+    generate_copy: "生成文案",
+    revise_copy: "修改文案",
+    plan_visuals: "规划图片",
+    generate_image_prompts: "生成图片提示词",
+    generate_images: "生成图片",
+    select_images: "选图",
+    assemble_post: "组装帖子",
+    run_quality_gate: "发布检查",
+    request_publish_confirmation: "生成确认单",
+    schedule_publish: "定时发布",
+    publish_now: "立即发布",
+    recover: "恢复/重试"
+  };
+  return labels[action] ?? action;
 }

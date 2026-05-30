@@ -2657,6 +2657,27 @@ textarea {
   backdrop-filter: blur(10px);
 }
 
+.postProjectStatus {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  gap: 5px;
+  margin-top: 14px;
+  max-width: 560px;
+  padding: 12px 14px;
+}
+
+.postProjectStatus strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.postProjectStatus span {
+  color: rgba(0, 0, 0, 0.72);
+  font-size: 13px;
+}
+
 .flowHeroRail {
   align-content: center;
   background: #17181d;

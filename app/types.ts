@@ -231,6 +231,57 @@ export type WorkspaceState = {
   recentConversationIds: string[];
 };
 
+export type PostStage =
+  | "empty"
+  | "briefing"
+  | "researching"
+  | "evidence_ready"
+  | "brief_ready"
+  | "copy_drafting"
+  | "copy_ready"
+  | "visual_planning"
+  | "image_prompt_ready"
+  | "image_generating"
+  | "image_ready"
+  | "assembling"
+  | "reviewing"
+  | "scheduled"
+  | "published"
+  | "failed";
+
+export type PostProject = {
+  id: string;
+  topic?: string;
+  targetAudience?: string;
+  goal?: string;
+  tone?: string;
+  currentStage: PostStage;
+  allowedActions: string[];
+  evidencePack: {
+    runId?: string;
+    sampleIds: string[];
+    insights: Array<{
+      id: string;
+      type: string;
+      insight: string;
+      sourceSampleIds: string[];
+      confidence: number;
+      createdAt: string;
+    }>;
+  };
+  creativeBrief?: unknown;
+  copyDraft?: DraftRecord | null;
+  copyVersions: Array<{ id: string; label: string; createdAt: string; value: NonNullable<WorkflowResult["draft"]> }>;
+  visualDirection?: unknown;
+  imagePrompts: unknown[];
+  generatedImages: Array<{ id: string; assetId?: string; path?: string; url?: string; selected?: boolean }>;
+  selectedImages: string[];
+  finalPost?: unknown;
+  publishPlan?: WorkspacePublishPlan | null;
+  qualityCheck?: unknown;
+  updatedAt: string;
+};
+
 export type CreatorMemoryProfile = {
   liked: Array<{ text: string }>;
   disliked: Array<{ text: string }>;
