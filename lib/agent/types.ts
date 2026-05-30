@@ -10,6 +10,7 @@ import type { PostProject, PostStage } from "@/lib/post-project/types";
 
 export type AgentAction =
   | "research"
+  | "retrieveViralKnowledge"
   | "summarizeEvidence"
   | "generateDraft"
   | "reviseDraft"
@@ -210,6 +211,7 @@ export type AgentTurnResult = {
 
 export type AgentResponseCardType =
   | "evidence_summary"
+  | "viral_knowledge"
   | "creative_brief"
   | "copy_draft"
   | "visual_direction"

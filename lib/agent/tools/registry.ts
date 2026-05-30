@@ -57,6 +57,16 @@ function defaultToolDefinitions(): AgentToolDefinition[] {
       supportsDryRun: true
     },
     {
+      name: "knowledge.retrieveViralPatterns",
+      description: "Retrieve reusable Xiaohongshu creative patterns from the local viral knowledge base.",
+      risk: "read",
+      profile: "research",
+      requiresConfirmation: false,
+      requiresModel: false,
+      requiresMcp: false,
+      supportsDryRun: true
+    },
+    {
       name: "workflow.loadEvidence",
       description: "Load note details, body text, comments, images, and evidence snippets for selected samples.",
       risk: "read",

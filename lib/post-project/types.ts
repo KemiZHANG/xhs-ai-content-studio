@@ -46,10 +46,15 @@ export type EvidenceInsightType =
   | "visual"
   | "comment"
   | "audience"
-  | "pain_point";
+  | "pain_point"
+  | "structure"
+  | "hook";
+
+export type EvidenceSourceType = "realtime" | "viral_library" | "user_input";
 
 export type EvidenceInsight = {
   id: string;
+  sourceType?: EvidenceSourceType;
   type: EvidenceInsightType;
   insight: string;
   sourceSampleIds: string[];

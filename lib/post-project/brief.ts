@@ -23,6 +23,8 @@ export function deriveCreativeBrief(project: Pick<
 
   const evidenceIds = insights.map((insight) => insight.id);
   const titleInsights = byType(insights, "title");
+  const hookInsights = byType(insights, "hook");
+  const structureInsights = byType(insights, "structure");
   const copyInsights = byType(insights, "copy");
   const visualInsights = byType(insights, "visual");
   const audienceInsights = [...byType(insights, "audience"), ...byType(insights, "comment")];
@@ -31,9 +33,9 @@ export function deriveCreativeBrief(project: Pick<
   return {
     audience: project.targetAudience || firstText(audienceInsights) || "对这个主题感兴趣、需要真实经验和可执行建议的小红书用户",
     painPoint: firstText(painPointInsights) || firstText(audienceInsights) || "不知道如何判断内容是否真实有用，容易被硬广或空泛推荐劝退",
-    contentAngle: project.goal || firstText(titleInsights) || `${project.topic ?? project.productInfo.name ?? "这个主题"}的真实体验与可收藏建议`,
-    emotionalHook: firstText(titleInsights) || "用具体场景和真实细节建立代入感",
-    proofPoints: takeTexts(copyInsights, 4),
+    contentAngle: project.goal || firstText(structureInsights) || firstText(titleInsights) || `${project.topic ?? project.productInfo.name ?? "这个主题"}的真实体验与可收藏建议`,
+    emotionalHook: firstText(hookInsights) || firstText(titleInsights) || "用具体场景和真实细节建立代入感",
+    proofPoints: takeTexts([...structureInsights, ...copyInsights], 4),
     tone: project.tone || "真实、生活化、不夸张、不像硬广",
     visualMood: firstText(visualInsights) || "真实生活感、主体清晰、适合小红书封面浏览",
     imageMustHave: takeTexts(visualInsights, 3),

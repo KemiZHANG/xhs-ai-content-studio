@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type { ResearchSummary, SampleEvidence } from "@/lib/workflows/one-click";
-import type { EvidenceInsight, EvidenceInsightType } from "@/lib/post-project/types";
+import type { EvidenceInsight, EvidenceInsightType, EvidenceSourceType } from "@/lib/post-project/types";
 
 export function insightsFromResearchSummary(
   summary: ResearchSummary | null | undefined,
-  samples: SampleEvidence[] | unknown[] = []
+  samples: SampleEvidence[] | unknown[] = [],
+  sourceType: EvidenceSourceType = "realtime"
 ): EvidenceInsight[] {
   if (!summary) return [];
   const sampleIds = samples
@@ -12,10 +13,12 @@ export function insightsFromResearchSummary(
     .filter((id): id is string => Boolean(id));
   const now = new Date().toISOString();
   return [
-    ...toInsights("title", safeStringArray(summary.contentStrengths), sampleIds, now),
-    ...toInsights("copy", safeStringArray(summary.learningsForContent), sampleIds, now),
-    ...toInsights("visual", [...safeStringArray(summary.imageStrengths), ...safeStringArray(summary.learningsForImages)], sampleIds, now),
-    ...toInsights("audience", safeStringArray(summary.nextQuestions), sampleIds, now, 0.55)
+    ...toInsights("title", safeStringArray(summary.contentStrengths), sampleIds, now, sourceType),
+    ...toInsights("hook", safeStringArray(summary.hookInsights), sampleIds, now, sourceType),
+    ...toInsights("structure", safeStringArray(summary.structureInsights), sampleIds, now, sourceType),
+    ...toInsights("copy", safeStringArray(summary.learningsForContent), sampleIds, now, sourceType),
+    ...toInsights("visual", [...safeStringArray(summary.imageStrengths), ...safeStringArray(summary.learningsForImages)], sampleIds, now, sourceType),
+    ...toInsights("audience", safeStringArray(summary.nextQuestions), sampleIds, now, sourceType, 0.55)
   ];
 }
 
@@ -24,6 +27,7 @@ function toInsights(
   values: string[] | undefined,
   sampleIds: string[],
   createdAt: string,
+  sourceType: EvidenceSourceType,
   confidence = 0.72
 ): EvidenceInsight[] {
   return (values ?? [])
@@ -32,6 +36,7 @@ function toInsights(
     .slice(0, 5)
     .map((insight) => ({
       id: `insight-${type}-${randomUUID().slice(0, 8)}`,
+      sourceType,
       type,
       insight,
       sourceSampleIds: sampleIds,

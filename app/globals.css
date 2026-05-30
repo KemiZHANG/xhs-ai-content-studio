@@ -3203,7 +3203,7 @@ textarea {
   border-radius: 12px;
   display: grid;
   gap: 6px;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
   margin-bottom: 14px;
   padding: 5px;
 }
@@ -3228,6 +3228,34 @@ textarea {
   align-items: center;
   display: flex;
   gap: 8px;
+  margin: 0;
+}
+
+.miniEvidenceList {
+  display: grid;
+  gap: 10px;
+}
+
+.miniEvidenceList article {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+}
+
+.miniEvidenceList strong {
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.miniEvidenceList p,
+.miniEvidenceList span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
   margin: 0;
 }
 

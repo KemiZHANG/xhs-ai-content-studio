@@ -57,7 +57,10 @@ export async function POST(request: Request) {
         generateImages: routeDecision.generateImages,
         scheduleAt: routeDecision.scheduleAt,
         imageSource: "ai",
-        assetIds: []
+        assetIds: [],
+        useViralKnowledge: true,
+        retrievalQuery: message,
+        retrievalLimit: 8
       };
       const job = await getJobRunner().enqueueWorkflow(input);
       const answer = `已创建后台 Agent 任务 ${job.id}。你可以继续留在对话页，任务进度和结果会写入任务列表与成果画布。`;

@@ -4,6 +4,8 @@ import { buildReferenceImagePrompt, type GeneratedImage, type ModelProvider } fr
 import { getAsset } from "@/lib/storage/assets";
 import type { AssetRecord } from "@/lib/storage/assets";
 import { cacheEvidenceImages } from "@/lib/storage/evidence-images";
+import { searchViralCases } from "@/lib/viral-knowledge/store";
+import type { ViralSearchResult } from "@/lib/viral-knowledge/types";
 import { rankFeeds, toNumber, type RankedFeed } from "@/lib/workflows/ranking";
 
 export type PublishMode = "draft" | "material" | "publish" | "schedule";
@@ -30,6 +32,9 @@ export type OneClickInput = {
   scene?: string;
   style?: string;
   extraImagePrompt?: string;
+  useViralKnowledge?: boolean;
+  retrievalQuery?: string;
+  retrievalLimit?: number;
 };
 
 export type WorkflowStep = {
@@ -71,6 +76,13 @@ export type ResearchSummary = {
   learningsForContent: string[];
   learningsForImages: string[];
   nextQuestions: string[];
+  structureInsights?: string[];
+  hookInsights?: string[];
+};
+
+export type ViralKnowledgePack = {
+  query: string;
+  results: ViralSearchResult[];
 };
 
 export type OneClickResult = {
@@ -84,6 +96,7 @@ export type OneClickResult = {
   draft: GeneratedDraft | null;
   images: GeneratedImage[];
   publishResult: unknown;
+  viralKnowledge?: ViralKnowledgePack | null;
 };
 
 export type XhsMcpWorkflowClient = {
@@ -133,15 +146,17 @@ export async function runOneClickWorkflow({
       imageStyleReport: "",
       draft: null,
       images: [],
-      publishResult: { skipped: true }
+      publishResult: { skipped: true },
+      viralKnowledge: null
     };
   }
 
   try {
     const details = await loadDetails(samples.slice(0, input.sampleCount), mcp, steps);
     const evidence = await maybeCacheEvidenceImages(buildSampleEvidence(samples, details), steps);
+    const viralKnowledge = await maybeRetrieveViralKnowledge(input, evidence, steps);
     const imageStyleReport = await maybeAnalyzeImages(input, samples, details, model, steps);
-    const research = await generateResearchSummary(input, evidence, imageStyleReport, model, steps);
+    const research = await generateResearchSummary(input, evidence, imageStyleReport, model, steps, viralKnowledge);
 
     if (workflowGoal === "research") {
       steps.push({
@@ -161,7 +176,8 @@ export async function runOneClickWorkflow({
         imageStyleReport,
         draft: null,
         images: [],
-        publishResult: { skipped: true, reason: "research mode" }
+        publishResult: { skipped: true, reason: "research mode" },
+        viralKnowledge
       };
     }
 
@@ -202,7 +218,8 @@ export async function runOneClickWorkflow({
       imageStyleReport,
       draft: parsed.draft,
       images,
-      publishResult: publishDecision.publishResult
+      publishResult: publishDecision.publishResult,
+      viralKnowledge
     };
   } catch (error) {
     steps.push({
@@ -222,7 +239,8 @@ export async function runOneClickWorkflow({
       imageStyleReport: "",
       draft: null,
       images: [],
-      publishResult: { skipped: true }
+      publishResult: { skipped: true },
+      viralKnowledge: null
     };
   }
 }
@@ -353,9 +371,10 @@ async function generateResearchSummary(
   evidence: SampleEvidence[],
   imageStyleReport: string,
   model: ModelProvider,
-  steps: WorkflowStep[]
+  steps: WorkflowStep[],
+  viralKnowledge: ViralKnowledgePack | null = null
 ): Promise<{ report: string; summary: ResearchSummary }> {
-  const raw = await model.generateStructuredText(buildResearchPrompt(input, evidence, imageStyleReport));
+  const raw = await model.generateStructuredText(buildResearchPrompt(input, evidence, imageStyleReport, viralKnowledge));
   const parsed = parseResearch(raw, evidence);
 
   steps.push({
@@ -366,6 +385,41 @@ async function generateResearchSummary(
   });
 
   return parsed;
+}
+
+async function maybeRetrieveViralKnowledge(
+  input: OneClickInput,
+  evidence: SampleEvidence[],
+  steps: WorkflowStep[]
+): Promise<ViralKnowledgePack | null> {
+  if (input.useViralKnowledge === false) {
+    steps.push({
+      id: "viral-knowledge",
+      label: "爆款库检索",
+      status: "skipped",
+      detail: "本次研究未启用历史爆款库。"
+    });
+    return null;
+  }
+  const query = input.retrievalQuery || [input.topic, input.contentType, input.requirements].filter(Boolean).join(" ");
+  const results = await searchViralCases({
+    query,
+    topic: input.topic,
+    category: input.contentType,
+    limit: input.retrievalLimit ?? Math.max(4, Math.min(8, input.sampleCount))
+  });
+  steps.push({
+    id: "viral-knowledge",
+    label: "爆款库检索",
+    status: results.length ? "done" : "skipped",
+    detail: results.length
+      ? `已从历史爆款库检索 ${results.length} 条可复用创作规律。`
+      : "爆款库暂无匹配样本，本次只使用实时小红书证据。"
+  });
+  return {
+    query,
+    results
+  };
 }
 
 function skipImageGeneration(steps: WorkflowStep[]): GeneratedImage[] {
@@ -631,7 +685,12 @@ ${imageStyleReport || "未启用或未获取到图片分析。"}
 }`;
 }
 
-function buildResearchPrompt(input: OneClickInput, evidence: SampleEvidence[], imageStyleReport: string): string {
+function buildResearchPrompt(
+  input: OneClickInput,
+  evidence: SampleEvidence[],
+  imageStyleReport: string,
+  viralKnowledge: ViralKnowledgePack | null = null
+): string {
   return `你是小红书内容研究员。现在只做“选题研究”，不要直接写成新笔记。
 
 用户要研究的主题：${input.topic}
@@ -640,6 +699,22 @@ function buildResearchPrompt(input: OneClickInput, evidence: SampleEvidence[], i
 
 真实笔记证据：
 ${JSON.stringify(evidence, null, 2)}
+
+历史爆款库规律：
+${viralKnowledge?.results.length ? JSON.stringify(viralKnowledge.results.map((item) => ({
+  id: item.case.id,
+  score: item.score,
+  title: item.case.title,
+  topic: item.case.topic,
+  hookType: item.case.hookType,
+  contentStructure: item.case.contentStructure,
+  imageStyle: item.case.imageStyle,
+  audience: item.case.audience,
+  painPoint: item.case.painPoint,
+  emotionalTrigger: item.case.emotionalTrigger,
+  extractedInsights: item.case.extractedInsights,
+  reasons: item.reasons
+})), null, 2) : "爆款库暂无匹配结果。"}
 
 图片风格分析：
 ${imageStyleReport || "未启用或未获取到图片分析。"}
@@ -659,6 +734,8 @@ ${imageStyleReport || "未启用或未获取到图片分析。"}
     "imageStrengths": ["图片优点1"],
     "learningsForContent": ["下一步正文应该学习什么"],
     "learningsForImages": ["下一步图片应该学习什么"],
+    "structureInsights": ["可学习的正文结构规律"],
+    "hookInsights": ["可学习的标题钩子/情绪触发规律"],
     "nextQuestions": ["生成前需要问用户的问题"]
   }
 }`;
@@ -674,7 +751,9 @@ function parseResearch(raw: string, evidence: SampleEvidence[]): { report: strin
       : ["暂未拿到足够图片，图片策略需要人工补充参考图。"],
     learningsForContent: ["先基于证据总结角度，再结合用户的产品/店铺/探店需求写原创内容。"],
     learningsForImages: ["只学习构图、光线、场景和信息呈现，不复制样本图片。"],
-    nextQuestions: ["你要写的具体对象是什么？是产品、店铺、探店还是生活方式内容？"]
+    nextQuestions: ["你要写的具体对象是什么？是产品、店铺、探店还是生活方式内容？"],
+    structureInsights: ["开头提出场景或痛点，中段给具体信息，结尾给适用人群或互动问题。"],
+    hookInsights: evidence.length ? evidence.slice(0, 2).map((item) => `${item.title}：标题前置场景、利益点或真实体验。`) : []
   };
 
   const jsonText = extractJson(raw);
@@ -691,7 +770,9 @@ function parseResearch(raw: string, evidence: SampleEvidence[]): { report: strin
         imageStrengths: safeStringArray(parsed.researchSummary?.imageStrengths, fallbackSummary.imageStrengths),
         learningsForContent: safeStringArray(parsed.researchSummary?.learningsForContent, fallbackSummary.learningsForContent),
         learningsForImages: safeStringArray(parsed.researchSummary?.learningsForImages, fallbackSummary.learningsForImages),
-        nextQuestions: safeStringArray(parsed.researchSummary?.nextQuestions, fallbackSummary.nextQuestions)
+        nextQuestions: safeStringArray(parsed.researchSummary?.nextQuestions, fallbackSummary.nextQuestions),
+        structureInsights: safeStringArray(parsed.researchSummary?.structureInsights, fallbackSummary.structureInsights ?? []),
+        hookInsights: safeStringArray(parsed.researchSummary?.hookInsights, fallbackSummary.hookInsights ?? [])
       }
     };
   } catch {

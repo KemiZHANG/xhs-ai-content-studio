@@ -331,6 +331,7 @@ function buildStructuredAgentResponse({
 function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecord | null, postProject?: PostProject | null): AgentResponseCard[] {
   const cards: AgentResponseCard[] = [];
   if (workspace.evidenceSummary || workspace.selectedSamples.length) {
+    const viralKnowledge = isRecord(workspace.evidenceSummary) ? workspace.evidenceSummary.viralKnowledge : undefined;
     cards.push({
       id: "card-evidence-summary",
       type: "evidence_summary",
@@ -338,6 +339,15 @@ function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecor
       summary: `已沉淀 ${workspace.selectedSamples.length} 条样本和研究结论。`,
       data: workspace.evidenceSummary
     });
+    if (isRecord(viralKnowledge) && Array.isArray(viralKnowledge.results) && viralKnowledge.results.length) {
+      cards.push({
+        id: "card-viral-knowledge",
+        type: "viral_knowledge",
+        title: "爆款库规律",
+        summary: `已检索 ${viralKnowledge.results.length} 条历史爆款规律，用于补充实时证据。`,
+        data: viralKnowledge
+      });
+    }
   }
   if (postProject?.creativeBrief) {
     cards.push({
@@ -752,4 +762,8 @@ function buildAgentImagePrompt({
 
 function uniqueIds(ids: string[]): string[] {
   return [...new Set(ids.filter(Boolean))];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object";
 }

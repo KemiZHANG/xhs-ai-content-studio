@@ -67,11 +67,13 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
       steps: wantsDraft
         ? [
             step("research", "Search and collect Xiaohongshu evidence.", "workflow.searchRank"),
+            step("retrieveViralKnowledge", "Retrieve reusable patterns from the viral knowledge base.", "knowledge.retrieveViralPatterns"),
             step("summarizeEvidence", "Summarize evidence into title, body, tag, and image insights.", "workflow.summarizeEvidence"),
             step("generateDraft", "Generate an original draft from summarized evidence.", "workflow.generateDraft")
           ]
         : [
             step("research", "Search and collect Xiaohongshu evidence.", "workflow.searchRank"),
+            step("retrieveViralKnowledge", "Retrieve reusable patterns from the viral knowledge base.", "knowledge.retrieveViralPatterns"),
             step("summarizeEvidence", "Summarize evidence for the user.", "workflow.summarizeEvidence")
           ]
     });

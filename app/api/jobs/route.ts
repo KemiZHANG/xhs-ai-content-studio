@@ -40,7 +40,10 @@ export async function POST(request: Request) {
       sellingPoints: body.sellingPoints ? String(body.sellingPoints) : undefined,
       scene: body.scene ? String(body.scene) : undefined,
       style: body.style ? String(body.style) : undefined,
-      extraImagePrompt: body.extraImagePrompt ? String(body.extraImagePrompt) : undefined
+      extraImagePrompt: body.extraImagePrompt ? String(body.extraImagePrompt) : undefined,
+      useViralKnowledge: body.useViralKnowledge !== false,
+      retrievalQuery: body.retrievalQuery ? String(body.retrievalQuery) : undefined,
+      retrievalLimit: body.retrievalLimit ? Number(body.retrievalLimit) : undefined
     });
 
     if (!input.topic) {

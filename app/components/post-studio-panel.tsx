@@ -23,12 +23,14 @@ import type {
   PostProject,
   PublishDraftState,
   RedactedSettings,
+  SampleEvidence,
   Section,
+  ViralCase,
   WorkflowResult,
   WorkspaceState
 } from "@/app/types";
 
-type StudioTab = "insights" | "brief" | "evidence" | "assets" | "publish";
+type StudioTab = "insights" | "brief" | "evidence" | "viral" | "assets" | "publish";
 
 type ResearchForm = {
   topic: string;
@@ -52,6 +54,7 @@ export function PostStudioPanel({
   publishAssetIds,
   settings,
   jobs,
+  viralCases,
   onResearchFormChange,
   onRunResearch,
   onChatInput,
@@ -62,6 +65,8 @@ export function PostStudioPanel({
   onGenerateCopy,
   onSelectCopyVersion,
   onSelectImagePromptVersion,
+  onSaveToViralLibrary,
+  onReloadViralLibrary,
   onOpenImageStudio,
   onOpenPublish
 }: {
@@ -77,6 +82,7 @@ export function PostStudioPanel({
   publishAssetIds: string[];
   settings: RedactedSettings;
   jobs: JobRecord[];
+  viralCases: ViralCase[];
   onResearchFormChange: (next: ResearchForm) => void;
   onRunResearch: (event: FormEvent<HTMLFormElement>) => void;
   onChatInput: (value: string) => void;
@@ -87,6 +93,8 @@ export function PostStudioPanel({
   onGenerateCopy: (message: string) => void;
   onSelectCopyVersion: (versionId: string) => void;
   onSelectImagePromptVersion: (versionId: string) => void;
+  onSaveToViralLibrary: (sample: SampleEvidence) => void;
+  onReloadViralLibrary: () => void;
   onOpenImageStudio: () => void;
   onOpenPublish: () => void;
 }) {
@@ -94,7 +102,10 @@ export function PostStudioPanel({
   const selectedAssets = assets.filter((asset) => publishAssetIds.includes(asset.id));
   const runningJob = jobs.find((job) => job.status === "queued" || job.status === "running") ?? null;
   const insights = project?.evidencePack.insights ?? [];
+  const viralInsights = insights.filter((insight) => insight.sourceType === "viral_library");
+  const realtimeInsights = insights.filter((insight) => insight.sourceType !== "viral_library");
   const samples = project?.selectedSamples ?? workflowResult?.evidence ?? workspace?.selectedSamples ?? [];
+  const saveableSamples = samples.filter(isSampleEvidence).slice(0, 3);
   const nextActions = project?.allowedActions.slice(0, 3) ?? ["search_research"];
   const projectTitle = project?.topic || workspace?.topic || researchForm.topic || "未命名帖子项目";
   const canGenerateCopy = Boolean(insights.length || workflowResult?.researchSummary || workspace?.evidenceSummary);
@@ -328,6 +339,7 @@ export function PostStudioPanel({
               { id: "insights", label: "结论" },
               { id: "brief", label: "Brief" },
               { id: "evidence", label: "证据" },
+              { id: "viral", label: "爆款库" },
               { id: "assets", label: "素材" },
               { id: "publish", label: "检查" }
             ].map((item) => (
@@ -339,10 +351,10 @@ export function PostStudioPanel({
 
           {tab === "insights" ? (
             <SideSection icon={FileText} title="可学习结论">
-              {insights.length ? (
-                insights.slice(0, 5).map((insight) => (
+              {realtimeInsights.length ? (
+                realtimeInsights.slice(0, 5).map((insight) => (
                   <article className="insightLine" key={insight.id}>
-                    <span>{labelForInsight(insight.type)}</span>
+                    <span>{labelForInsight(insight.type)} · {labelForSource(insight.sourceType)}</span>
                     <p>{insight.insight}</p>
                   </article>
                 ))
@@ -375,7 +387,50 @@ export function PostStudioPanel({
             <SideSection icon={Library} title="研究证据">
               <strong>{samples.length} 条样本</strong>
               <p className="muted">默认只展示摘要；完整笔记、评论和图片证据保留在主题研究台。</p>
+              {saveableSamples.length ? (
+                <div className="miniEvidenceList">
+                  {saveableSamples.map((sample) => (
+                    <article key={sample.id}>
+                      <strong>{sample.title}</strong>
+                      <span>赞 {sample.likes} · 藏 {sample.collects} · 评 {sample.comments}</span>
+                      <button className="textButton" type="button" onClick={() => onSaveToViralLibrary(sample)}>
+                        保存到爆款库
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              ) : null}
               <button className="secondaryButton fullWidth" onClick={() => onNavigate("workflow")} type="button">查看证据详情</button>
+            </SideSection>
+          ) : null}
+
+          {tab === "viral" ? (
+            <SideSection icon={Library} title="爆款库证据">
+              <strong>{viralCases.length} 条历史爆款规律</strong>
+              <p className="muted">这里长期沉淀标题钩子、正文结构、标签组合、图片风格和评论关注点。默认只显示关键规律，不保存原文合集。</p>
+              {viralInsights.length ? (
+                <div className="miniEvidenceList">
+                  {viralInsights.slice(0, 5).map((insight) => (
+                    <article key={insight.id}>
+                      <span>{labelForInsight(insight.type)} · 爆款库</span>
+                      <p>{insight.insight}</p>
+                    </article>
+                  ))}
+                </div>
+              ) : viralCases.length ? (
+                <div className="miniEvidenceList">
+                  {viralCases.slice(0, 5).map((item) => (
+                    <article key={item.id}>
+                      <strong>{item.hookType}</strong>
+                      <p>{item.extractedInsights.reusableRules[0] || item.contentStructure.join(" / ")}</p>
+                      <span>赞 {item.metrics.likes} · 藏 {item.metrics.collects}</span>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className="muted">还没有爆款库样本。可以先在“研究证据”里把高质量样本保存进库。</p>
+              )}
+              <button className="secondaryButton fullWidth" onClick={onReloadViralLibrary} type="button">刷新爆款库</button>
             </SideSection>
           ) : null}
 
@@ -530,9 +585,20 @@ function labelForInsight(type: string): string {
     visual: "图片",
     comment: "评论",
     audience: "人群",
-    pain_point: "痛点"
+    pain_point: "痛点",
+    structure: "结构",
+    hook: "钩子"
   };
   return labels[type] ?? type;
+}
+
+function labelForSource(sourceType?: string): string {
+  const labels: Record<string, string> = {
+    realtime: "实时",
+    viral_library: "爆款库",
+    user_input: "用户输入"
+  };
+  return sourceType ? labels[sourceType] ?? sourceType : "实时";
 }
 
 function labelForPublishStatus(status?: string): string {
@@ -548,4 +614,8 @@ function labelForPublishStatus(status?: string): string {
     cancelled: "已取消"
   };
   return status ? labels[status] ?? status : "待检查";
+}
+
+function isSampleEvidence(value: unknown): value is SampleEvidence {
+  return Boolean(value) && typeof value === "object" && typeof (value as { id?: unknown }).id === "string" && typeof (value as { title?: unknown }).title === "string";
 }

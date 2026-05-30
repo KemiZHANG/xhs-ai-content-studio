@@ -20,6 +20,7 @@ XHS AI Content Studio 是一个本地优先的小红书 AI 内容创作 Agent。
 - **AI Agent 调度层**：根据用户自然语言判断意图，例如研究、总结、生成文案、改写、生成图片、选图、发布检查、定时发布。
 - **PostProject 状态**：保存当前主题、证据包、样本、CreativeBrief、文案版本、图片方向、生成图片、最终帖子、发布计划和阶段。
 - **真实证据研究**：通过 Xiaohongshu MCP 搜索和读取真实笔记，再提炼标题、正文、标签、图片、评论和用户痛点。
+- **爆款库 RAG**：把高质量样本沉淀为标题钩子、正文结构、标签组合、图片风格、痛点和情绪触发点，后续创作可同时参考实时证据和历史规律。
 - **原创重写**：根据研究结论和用户需求生成新内容，避免直接复制或拼接竞品内容。
 - **图片创作台**：支持 AI 生图、产品图场景化、参考图生成和图文卡片渲染。
 - **图文卡片引擎**：本地生成小红书常用尺寸卡片，适合干货、清单、教程、避坑类内容。
@@ -100,10 +101,11 @@ API Key 会保存在本地 `data/settings.json`，该目录已被 `.gitignore` �
 ```
 
 5. Agent 会搜索真实笔记、提炼证据、生成 CreativeBrief 和草稿。
-6. 在 Post Canvas 里检查标题、正文、标签和图片方向。
-7. 到图片创作台生成 AI 图片、产品场景图或图文卡片。
-8. 回到发布装配台，确认最终标题、正文、标签、图片、账号和可见范围。
-9. 第一次真实发布建议使用“仅自己可见”。
+6. 如果发现值得长期复用的高质量样本，可以在右侧证据面板保存到爆款库。
+7. 在 Post Canvas 里检查标题、正文、标签和图片方向。
+8. 到图片创作台生成 AI 图片、产品场景图或图文卡片。
+9. 回到发布装配台，确认最终标题、正文、标签、图片、账号和可见范围。
+10. 第一次真实发布建议使用“仅自己可见”。
 
 ### 多账号说明
 
@@ -184,6 +186,7 @@ It is not just an auto-posting script. It is designed as an evidence-based conte
 - **AI Agent Orchestrator**: Detects user intent such as research, summarize, draft, revise, generate images, select images, prepare publishing, and schedule publishing.
 - **PostProject State**: Stores topic, evidence pack, selected samples, CreativeBrief, copy versions, visual direction, generated images, final post, publish plan, and current stage.
 - **Evidence-Based Research**: Uses Xiaohongshu MCP to search and read real notes before generating content.
+- **Viral Knowledge RAG**: Saves strong samples as reusable creative patterns, including title hooks, copy structures, tag patterns, image style, pain points, and emotional triggers.
 - **Original Rewriting**: Generates new Xiaohongshu content from extracted patterns and user requirements.
 - **Image Studio**: Supports AI image generation, product-scene generation, reference-image generation, and local image-text card rendering.
 - **Card Engine**: Renders Xiaohongshu-style card images locally for guides, lists, tutorials, and educational posts.
@@ -252,10 +255,11 @@ Find high-save Guangzhou coffee shop posts from the last week, analyze title and
 ```
 
 5. The agent searches real posts, extracts evidence, creates a CreativeBrief, and drafts the post.
-6. Review title, body, tags, and image direction in Post Canvas.
-7. Use Image Studio to generate AI images, product-scene images, or image-text cards.
-8. Use Publishing Assembly to confirm the final post, account, visibility, and schedule.
-9. Use “private only” for the first real publishing test.
+6. Save valuable samples into the Viral Knowledge Base when you find reusable patterns.
+7. Review title, body, tags, and image direction in Post Canvas.
+8. Use Image Studio to generate AI images, product-scene images, or image-text cards.
+9. Use Publishing Assembly to confirm the final post, account, visibility, and schedule.
+10. Use “private only” for the first real publishing test.
 
 ### Multi-Account Notes
 

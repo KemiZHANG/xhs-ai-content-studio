@@ -12,11 +12,13 @@ describe("agent planner", () => {
     expect(plan.intent).toBe("research_to_draft");
     expect(plan.steps.map((step) => step.action)).toEqual([
       "research",
+      "retrieveViralKnowledge",
       "summarizeEvidence",
       "generateDraft"
     ]);
     expect(plan.steps.map((step) => step.toolName)).toEqual([
       "workflow.searchRank",
+      "knowledge.retrieveViralPatterns",
       "workflow.summarizeEvidence",
       "workflow.generateDraft"
     ]);

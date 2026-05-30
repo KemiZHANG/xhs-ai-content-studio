@@ -156,7 +156,9 @@ async function runWorkflowJob(jobId: string, input: OneClickInput): Promise<void
       await updateWorkspaceState({
         topic: input.topic,
         researchRunId: run.id,
-        evidenceSummary: result.researchSummary,
+        evidenceSummary: result.researchSummary
+          ? { ...result.researchSummary, viralKnowledge: result.viralKnowledge ?? null }
+          : result.researchSummary,
         selectedSamples: result.evidence,
         currentDraftId: currentDraft.id,
         currentDraft,
@@ -177,7 +179,9 @@ async function runWorkflowJob(jobId: string, input: OneClickInput): Promise<void
       await updateWorkspaceState({
         topic: input.topic,
         researchRunId: run.id,
-        evidenceSummary: result.researchSummary,
+        evidenceSummary: result.researchSummary
+          ? { ...result.researchSummary, viralKnowledge: result.viralKnowledge ?? null }
+          : result.researchSummary,
         selectedSamples: result.evidence,
         recentJobIds: [jobId, ...workspace.recentJobIds.filter((id) => id !== jobId)].slice(0, 20),
         recentRunIds: [run.id, ...workspace.recentRunIds.filter((id) => id !== run.id)].slice(0, 20)

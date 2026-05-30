@@ -80,6 +80,14 @@ export type WorkflowResult = {
   };
   images: Array<{ path?: string; url?: string }>;
   publishResult: unknown;
+  viralKnowledge?: {
+    query: string;
+    results: Array<{
+      score: number;
+      reasons: string[];
+      case: ViralCase;
+    }>;
+  } | null;
 };
 
 export type ResearchSummary = {
@@ -88,6 +96,46 @@ export type ResearchSummary = {
   learningsForContent: string[];
   learningsForImages: string[];
   nextQuestions: string[];
+  structureInsights?: string[];
+  hookInsights?: string[];
+  viralKnowledge?: WorkflowResult["viralKnowledge"];
+};
+
+export type ViralCase = {
+  id: string;
+  platform: "xiaohongshu";
+  topic: string;
+  category: string;
+  title: string;
+  bodyExcerpt: string;
+  tags: string[];
+  imageStyle: string;
+  hookType: string;
+  contentStructure: string[];
+  painPoint: string;
+  audience: string;
+  emotionalTrigger: string;
+  metrics: {
+    likes: number;
+    collects: number;
+    comments: number;
+    shares: number;
+    score: number;
+  };
+  sourceUrl: string;
+  createdAt: string;
+  extractedInsights: {
+    titleHooks: string[];
+    copyStructures: string[];
+    tagPatterns: string[];
+    visualPatterns: string[];
+    audienceSignals: string[];
+    painPoints: string[];
+    emotionalTriggers: string[];
+    commentConcerns: string[];
+    reusableRules: string[];
+    avoidCopying: string[];
+  };
 };
 
 export type SampleEvidence = {
@@ -262,6 +310,7 @@ export type PostProject = {
     sampleIds: string[];
     insights: Array<{
       id: string;
+      sourceType?: "realtime" | "viral_library" | "user_input";
       type: string;
       insight: string;
       sourceSampleIds: string[];

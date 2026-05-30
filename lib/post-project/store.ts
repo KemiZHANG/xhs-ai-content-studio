@@ -14,6 +14,8 @@ import {
 import { runPostQualityGate } from "@/lib/post-project/quality";
 import { inferPostStage, withAllowedActions } from "@/lib/post-project/stage-machine";
 import type { PostProject } from "@/lib/post-project/types";
+import { viralCasesToEvidenceInsights } from "@/lib/viral-knowledge/store";
+import type { ViralCase } from "@/lib/viral-knowledge/types";
 import type { ResearchSummary, SampleEvidence } from "@/lib/workflows/one-click";
 
 const POST_PROJECT_SCHEMA_VERSION = 1 as const;
@@ -100,7 +102,11 @@ export function createBlankPostProject(seed: Partial<PostProject> = {}): PostPro
 export function postProjectFromWorkspace(workspace: WorkspaceState): PostProject {
   const samples = Array.isArray(workspace.selectedSamples) ? workspace.selectedSamples : [];
   const summary = workspace.evidenceSummary as ResearchSummary | null | undefined;
-  const insights = insightsFromResearchSummary(summary, samples);
+  const viralCases = extractViralCasesFromSummary(summary);
+  const insights = [
+    ...insightsFromResearchSummary(summary, samples, "realtime"),
+    ...viralCasesToEvidenceInsights(viralCases)
+  ];
   const evidenceIds = insights.map((insight) => insight.id);
   const copyVersions = workspace.currentDraft ? [copyVersionFromDraft(workspace.currentDraft, evidenceIds)] : [];
 
@@ -145,6 +151,13 @@ export function postProjectFromWorkspace(workspace: WorkspaceState): PostProject
     updatedAt: workspace.updatedAt
   });
   return enrichPostProject(base);
+}
+
+function extractViralCasesFromSummary(summary: ResearchSummary | null | undefined) {
+  const value = (summary as { viralKnowledge?: { results?: Array<{ case?: unknown }> } } | null | undefined)?.viralKnowledge;
+  return Array.isArray(value?.results)
+    ? value.results.map((item) => item.case).filter((item): item is ViralCase => isRecord(item))
+    : [];
 }
 
 function normalizePostProject(project: PostProject): PostProject {

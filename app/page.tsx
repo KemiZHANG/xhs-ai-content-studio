@@ -60,7 +60,9 @@ import type {
   PublishDraftState,
   PublishPayload,
   RedactedSettings,
+  SampleEvidence,
   Section,
+  ViralCase,
   WorkflowResult,
   WorkflowRun,
   WorkspaceState
@@ -112,6 +114,7 @@ export default function Home() {
   const [assets, setAssets] = useState<AssetRecord[]>([]);
   const [workspace, setWorkspace] = useState<WorkspaceState | null>(null);
   const [postProject, setPostProject] = useState<PostProject | null>(null);
+  const [viralCases, setViralCases] = useState<ViralCase[]>([]);
   const [creatorMemory, setCreatorMemory] = useState<CreatorMemoryProfile | null>(null);
   const [workflowResult, setWorkflowResult] = useState<WorkflowResult | null>(null);
   const [researchResult, setResearchResult] = useState<WorkflowResult | null>(null);
@@ -222,6 +225,7 @@ export default function Home() {
       loadCurrentDraft(),
       loadWorkspace(),
       loadPostProject(),
+      loadViralKnowledge(),
       loadCreatorMemory()
     ]);
   }
@@ -310,6 +314,11 @@ export default function Home() {
     const data = (await clientApi("/api/post-project")) as { project: PostProject };
     setPostProject(data.project);
     return data.project;
+  }
+
+  async function loadViralKnowledge() {
+    const data = (await clientApi("/api/viral-knowledge?limit=12")) as { cases: ViralCase[] };
+    setViralCases(data.cases ?? []);
   }
 
   async function loadCreatorMemory() {
@@ -412,6 +421,26 @@ export default function Home() {
     }
     await loadWorkspace();
     setNotice("已切换图片 Prompt，并同步到当前帖子项目。");
+  }
+
+  async function saveSampleToViralLibrary(sample: SampleEvidence) {
+    setBusy("viral");
+    try {
+      const data = (await clientApi("/api/viral-knowledge", {
+        method: "POST",
+        body: JSON.stringify({
+          sample,
+          topic: postProject?.topic || workflowForm.topic,
+          category: workflowForm.contentType,
+          useModel: modelReady
+        })
+      })) as { case: ViralCase };
+      setViralCases((current) => [data.case, ...current.filter((item) => item.id !== data.case.id)].slice(0, 12));
+      setNotice("已保存到爆款库：系统会沉淀结构化创作规律，不会把原文当作仿写素材。");
+      await loadPostProject();
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function loadChatHistory() {
@@ -1016,6 +1045,7 @@ export default function Home() {
             publishAssetIds={publishAssetIds}
             settings={settings}
             jobs={jobs}
+            viralCases={viralCases}
             onResearchFormChange={(next) => setWorkflowForm((current) => ({ ...current, ...next }))}
             onRunResearch={(event) => void runWorkflow(event)}
             onChatInput={setChatInput}
@@ -1025,6 +1055,8 @@ export default function Home() {
             onGenerateCopy={(message) => void submitChatMessage(message, true)}
             onSelectCopyVersion={(versionId) => void selectCopyVersion(versionId)}
             onSelectImagePromptVersion={(versionId) => void selectImagePromptVersion(versionId)}
+            onSaveToViralLibrary={(sample) => void saveSampleToViralLibrary(sample)}
+            onReloadViralLibrary={() => void loadViralKnowledge()}
             onOpenImageStudio={() => setSection("imageStudio")}
             onOpenPublish={() => void openPublishAssemblyFromWorkspace()}
             onNavigate={setSection}
