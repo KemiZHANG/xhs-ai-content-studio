@@ -1001,7 +1001,146 @@ describe("API route contracts", () => {
     expect(updateWorkspaceState).toHaveBeenCalledWith({ selectedImageIds: ["asset-1", "asset-2"] });
     expect(updatePostProject).toHaveBeenCalledWith(expect.objectContaining({
       selectedImages: ["asset-1", "asset-2"],
-      publishPlan: null
+      publishPlan: null,
+      finalPost: undefined,
+      qualityCheck: undefined,
+      auditStatus: "unchecked"
+    }));
+  });
+
+  it("switches copy versions through PostProject and invalidates stale publish checks", async () => {
+    const updateWorkspaceState = vi.fn();
+    const updatePostProject = vi.fn(async (patch) => ({ id: "post-1", ...patch }));
+    const currentProject = {
+      selectedImages: ["asset-1"],
+      copyDraft: {
+        id: "draft-old",
+        updatedAt: "old",
+        draft: { title: "旧标题", content: "旧正文", tags: [], structure: [], imagePrompt: "" },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      },
+      copyVersions: [{
+        id: "copy-v1",
+        createdAt: "then",
+        label: "v1",
+        value: { title: "新标题", content: "新正文", tags: ["咖啡"], structure: [], imagePrompt: "图" },
+        basedOnEvidenceIds: ["insight-1"]
+      }],
+      imagePrompts: [],
+      evidencePack: { insights: [{ id: "insight-1" }] }
+    };
+
+    vi.doMock("@/lib/agent/state", () => ({
+      updateWorkspaceState
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => currentProject,
+      updatePostProject
+    }));
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn((input) => ({
+        id: "draft-switched",
+        updatedAt: "now",
+        draft: input.draft,
+        images: input.images,
+        visibility: input.visibility
+      })),
+      writeCurrentDraft: vi.fn(async (draft) => draft)
+    }));
+
+    const { PATCH } = await import("@/app/api/post-project/route");
+    const response = await PATCH(jsonRequest({
+      action: "select_copy_version",
+      versionId: "copy-v1"
+    }));
+
+    expect(response.status).toBe(200);
+    expect(updateWorkspaceState).toHaveBeenCalledWith(expect.objectContaining({
+      currentDraftId: "draft-switched",
+      selectedImageIds: ["asset-1"]
+    }));
+    expect(updatePostProject).toHaveBeenCalledWith(expect.objectContaining({
+      copyDraft: expect.objectContaining({ id: "draft-switched" }),
+      copyVersions: expect.arrayContaining([expect.objectContaining({
+        id: "copy-draft-switched",
+        basedOnEvidenceIds: ["insight-1"]
+      })]),
+      finalPost: undefined,
+      publishPlan: null,
+      qualityCheck: undefined,
+      auditStatus: "unchecked",
+      currentStage: "copy_ready"
+    }));
+  });
+
+  it("switches image prompt versions through the current draft and invalidates stale publish checks", async () => {
+    const updateWorkspaceState = vi.fn();
+    const updatePostProject = vi.fn(async (patch) => ({ id: "post-1", ...patch }));
+    const currentProject = {
+      selectedImages: ["asset-1"],
+      creativeBrief: { basedOnEvidenceIds: ["brief-insight"] },
+      copyDraft: {
+        id: "draft-old",
+        updatedAt: "old",
+        draft: { title: "标题", content: "正文", tags: ["咖啡"], structure: [], imagePrompt: "旧图" },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      },
+      copyVersions: [],
+      imagePrompts: [{
+        id: "prompt-v1",
+        createdAt: "then",
+        label: "prompt",
+        value: { prompt: "新图提示词", negativePrompt: "不要文字错误" },
+        basedOnEvidenceIds: ["visual-insight"]
+      }],
+      evidencePack: { insights: [{ id: "fallback-insight" }] }
+    };
+
+    vi.doMock("@/lib/agent/state", () => ({
+      updateWorkspaceState
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => currentProject,
+      updatePostProject
+    }));
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(),
+      writeCurrentDraft: vi.fn(async (draft) => draft)
+    }));
+
+    const { PATCH } = await import("@/app/api/post-project/route");
+    const response = await PATCH(jsonRequest({
+      action: "select_image_prompt_version",
+      versionId: "prompt-v1"
+    }));
+
+    expect(response.status).toBe(200);
+    expect(updateWorkspaceState).toHaveBeenCalledWith(expect.objectContaining({
+      currentDraft: expect.objectContaining({
+        draft: expect.objectContaining({ imagePrompt: "新图提示词" })
+      }),
+      selectedImageIds: ["asset-1"]
+    }));
+    expect(updatePostProject).toHaveBeenCalledWith(expect.objectContaining({
+      copyDraft: expect.objectContaining({
+        draft: expect.objectContaining({ imagePrompt: "新图提示词" })
+      }),
+      copyVersions: [expect.objectContaining({
+        basedOnEvidenceIds: ["brief-insight"]
+      })],
+      finalPost: undefined,
+      publishPlan: null,
+      qualityCheck: undefined,
+      auditStatus: "unchecked",
+      currentStage: "copy_ready"
     }));
   });
 

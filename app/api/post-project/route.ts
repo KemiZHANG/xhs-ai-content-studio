@@ -104,7 +104,9 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
         selected: true
       })),
       finalPost: undefined,
-      publishPlan: null
+      publishPlan: null,
+      qualityCheck: undefined,
+      auditStatus: "unchecked"
     });
     return { project: nextProject };
   }
@@ -127,7 +129,23 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
       currentDraft,
       selectedImageIds: project.selectedImages
     });
-    return { project: await readPostProject(), currentDraft };
+    if (!currentDraft) {
+      throw new Error("切换文案版本失败");
+    }
+    const copyVersion = copyVersionFromDraft(currentDraft, version.basedOnEvidenceIds);
+    const nextProject = await updatePostProject({
+      copyDraft: currentDraft,
+      copyVersions: [
+        ...project.copyVersions.filter((item) => item.id !== copyVersion.id),
+        copyVersion
+      ],
+      finalPost: undefined,
+      publishPlan: null,
+      qualityCheck: undefined,
+      auditStatus: "unchecked",
+      currentStage: "copy_ready"
+    });
+    return { project: nextProject, currentDraft };
   }
 
   const version = project.imagePrompts.find((item) => item.id === body.versionId);
@@ -151,7 +169,23 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
     currentDraft,
     selectedImageIds: project.selectedImages
   });
-  return { project: await readPostProject(), currentDraft };
+  if (!currentDraft) {
+    throw new Error("切换图片 Prompt 版本失败");
+  }
+  const copyVersion = copyVersionFromDraft(currentDraft, getCurrentEvidenceIds(project));
+  const nextProject = await updatePostProject({
+    copyDraft: currentDraft,
+    copyVersions: [
+      ...project.copyVersions.filter((item) => item.id !== copyVersion.id),
+      copyVersion
+    ],
+    finalPost: undefined,
+    publishPlan: null,
+    qualityCheck: undefined,
+    auditStatus: "unchecked",
+    currentStage: "copy_ready"
+  });
+  return { project: nextProject, currentDraft };
 }
 
 function isActionBody(value: unknown): value is PostProjectActionBody {
