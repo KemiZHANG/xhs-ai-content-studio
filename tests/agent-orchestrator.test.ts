@@ -44,12 +44,18 @@ describe("agent orchestrator", () => {
     });
 
     expect(result.answer).toBe("old answer");
+    expect(result.reply).toBe("old answer");
+    expect(result.intent).toBe("answer");
+    expect(result.intentConfidence).toBeGreaterThan(0);
+    expect(result.quickActions.map((action) => action.action)).toContain("search_research");
+    expect(result.toolTrace.length).toBeGreaterThan(0);
     expect(result.agentRun.id).toMatch(/^agent-run-/);
     expect(result.agentRun.plan.steps.length).toBeGreaterThan(0);
     expect(result.trace.events.map((event) => event.type)).toEqual(
       expect.arrayContaining(["plan_created", "legacy_chat_agent_called", "workspace_updated"])
     );
     expect(result.workspace.lastUserIntent).toBe(result.agentRun.plan.intent);
+    expect(result.postProject?.currentStage).toBe("empty");
     expect(runChatAgent).toHaveBeenCalledWith(expect.objectContaining({ message: "hello" }));
   });
 
@@ -92,6 +98,8 @@ describe("agent orchestrator", () => {
 
     expect(publishCalls).toBe(0);
     expect(result.answer).toContain("确认");
+    expect(result.cards.map((card) => card.type)).toContain("publish_check");
+    expect(result.stage).toBe("reviewing");
     expect(result.workspace.publishPlan?.status).toBe("awaiting_approval");
     expect(result.trace.events.map((event) => event.type)).toContain("tool_called");
   });

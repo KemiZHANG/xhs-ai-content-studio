@@ -163,8 +163,19 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       answer: result.answer,
+      reply: result.reply,
+      stage: result.stage,
+      intent: result.intent,
+      intentConfidence: result.intentConfidence,
+      needsUserInput: result.needsUserInput,
+      questions: result.questions,
+      workspacePatch: result.workspacePatch,
+      cards: result.cards,
+      quickActions: result.quickActions,
+      toolTrace: result.toolTrace,
       workflowResult: result.workflowResult,
       currentDraft: result.currentDraft,
+      postProject: result.postProject,
       conversation
     });
   } catch (error) {

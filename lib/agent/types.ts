@@ -6,6 +6,7 @@ import type { JobRecord } from "@/lib/storage/jobs";
 import type { StoredChatMessage } from "@/lib/storage/chat";
 import type { OneClickResult } from "@/lib/workflows/one-click";
 import type { CreatorMemoryProfile } from "@/lib/agent/memory";
+import type { PostProject, PostStage } from "@/lib/post-project/types";
 
 export type AgentAction =
   | "research"
@@ -189,9 +190,52 @@ export type AgentToolDefinition = {
 
 export type AgentTurnResult = {
   answer: string;
+  reply: string;
+  stage: PostStage;
+  intent: AgentIntent;
+  intentConfidence: number;
+  needsUserInput: boolean;
+  questions: string[];
+  workspacePatch: Partial<WorkspaceState>;
+  cards: AgentResponseCard[];
+  quickActions: AgentQuickAction[];
+  toolTrace: AgentToolTraceItem[];
   workflowResult?: OneClickResult;
   currentDraft?: DraftRecord;
   agentRun: AgentRun;
   trace: AgentTrace;
   workspace: WorkspaceState;
+  postProject?: PostProject;
+};
+
+export type AgentResponseCardType =
+  | "evidence_summary"
+  | "creative_brief"
+  | "copy_draft"
+  | "visual_direction"
+  | "image_prompt"
+  | "publish_check"
+  | "quality_check";
+
+export type AgentResponseCard = {
+  id: string;
+  type: AgentResponseCardType;
+  title: string;
+  summary: string;
+  data?: unknown;
+};
+
+export type AgentQuickAction = {
+  id: string;
+  label: string;
+  action: string;
+  disabled?: boolean;
+};
+
+export type AgentToolTraceItem = {
+  id: string;
+  label: string;
+  status: "planned" | "running" | "completed" | "failed";
+  detail: string;
+  createdAt: string;
 };

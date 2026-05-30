@@ -4,7 +4,15 @@ import { executeGuardedPublish } from "@/lib/agent/publishing";
 import { inferAgentScheduleAt } from "@/lib/agent/schedule";
 import { readWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
 import { addTraceEvent, createAgentRun, createTrace, persistAgentTrace } from "@/lib/agent/trace";
-import type { AgentRuntimeContext, AgentTurnResult } from "@/lib/agent/types";
+import type {
+  AgentPlan,
+  AgentResponseCard,
+  AgentRuntimeContext,
+  AgentToolTraceItem,
+  AgentTurnResult,
+  WorkspaceState
+} from "@/lib/agent/types";
+import { readPostProject } from "@/lib/post-project/store";
 import { renderXhsCardSet } from "@/lib/cards/renderer";
 import type { ModelProvider } from "@/lib/models/provider";
 import { createAssetRecord, saveAsset } from "@/lib/storage/assets";
@@ -78,11 +86,18 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
       await persistAgentTrace(trace);
 
       return {
-        answer: cardGenerationTurn.answer,
+        ...buildStructuredAgentResponse({
+          answer: cardGenerationTurn.answer,
+          plan,
+          workspace: cardGenerationTurn.workspace,
+          cards: buildCardsFromTurn(cardGenerationTurn.workspace, cardGenerationTurn.currentDraft),
+          traceItems: buildToolTraceItems(trace)
+        }),
         currentDraft: cardGenerationTurn.currentDraft,
         agentRun,
         trace,
-        workspace: cardGenerationTurn.workspace
+        workspace: cardGenerationTurn.workspace,
+        postProject: await readPostProject()
       };
     }
 
@@ -117,11 +132,18 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
       await persistAgentTrace(trace);
 
       return {
-        answer: imageGenerationTurn.answer,
+        ...buildStructuredAgentResponse({
+          answer: imageGenerationTurn.answer,
+          plan,
+          workspace: imageGenerationTurn.workspace,
+          cards: buildCardsFromTurn(imageGenerationTurn.workspace, imageGenerationTurn.currentDraft),
+          traceItems: buildToolTraceItems(trace)
+        }),
         currentDraft: imageGenerationTurn.currentDraft,
         agentRun,
         trace,
-        workspace: imageGenerationTurn.workspace
+        workspace: imageGenerationTurn.workspace,
+        postProject: await readPostProject()
       };
     }
 
@@ -156,11 +178,18 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
       await persistAgentTrace(trace);
 
       return {
-        answer: guardedPublishTurn.answer,
+        ...buildStructuredAgentResponse({
+          answer: guardedPublishTurn.answer,
+          plan,
+          workspace: guardedPublishTurn.workspace,
+          cards: buildCardsFromTurn(guardedPublishTurn.workspace, guardedPublishTurn.currentDraft),
+          traceItems: buildToolTraceItems(trace)
+        }),
         currentDraft: guardedPublishTurn.currentDraft,
         agentRun,
         trace,
-        workspace: guardedPublishTurn.workspace
+        workspace: guardedPublishTurn.workspace,
+        postProject: await readPostProject()
       };
     }
 
@@ -211,9 +240,17 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
 
     return {
       ...legacyResult,
+      ...buildStructuredAgentResponse({
+        answer: legacyResult.answer,
+        plan,
+        workspace,
+        cards: buildCardsFromTurn(workspace, legacyResult.currentDraft ?? input.currentDraft ?? undefined),
+        traceItems: buildToolTraceItems(trace)
+      }),
       agentRun,
       trace,
-      workspace
+      workspace,
+      postProject: await readPostProject()
     };
   } catch (error) {
     agentRun = {
@@ -229,6 +266,138 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
     await persistAgentTrace(trace).catch(() => undefined);
     throw error;
   }
+}
+
+function buildStructuredAgentResponse({
+  answer,
+  plan,
+  workspace,
+  cards,
+  traceItems
+}: {
+  answer: string;
+  plan: AgentPlan;
+  workspace: WorkspaceState;
+  cards: AgentResponseCard[];
+  traceItems: AgentToolTraceItem[];
+}): Pick<
+  AgentTurnResult,
+  "answer" | "reply" | "stage" | "intent" | "intentConfidence" | "needsUserInput" | "questions" | "workspacePatch" | "cards" | "quickActions" | "toolTrace"
+> {
+  const needsUserInput = plan.intent === "ask" || plan.steps.some((step) => step.action === "askClarifyingQuestion");
+  const questions = needsUserInput
+    ? ["请补充产品图、目标人群、语气或发布时间等缺失信息。"]
+    : [];
+
+  return {
+    answer,
+    reply: answer,
+    stage: inferStageFromWorkspace(workspace),
+    intent: plan.intent,
+    intentConfidence: inferIntentConfidence(plan, workspace),
+    needsUserInput,
+    questions,
+    workspacePatch: {
+      topic: workspace.topic,
+      researchRunId: workspace.researchRunId,
+      currentDraftId: workspace.currentDraftId,
+      selectedImageIds: workspace.selectedImageIds,
+      lastUserIntent: plan.intent
+    },
+    cards,
+    quickActions: buildQuickActions(plan, workspace),
+    toolTrace: traceItems
+  };
+}
+
+function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecord | null): AgentResponseCard[] {
+  const cards: AgentResponseCard[] = [];
+  if (workspace.evidenceSummary || workspace.selectedSamples.length) {
+    cards.push({
+      id: "card-evidence-summary",
+      type: "evidence_summary",
+      title: "研究证据摘要",
+      summary: `已沉淀 ${workspace.selectedSamples.length} 条样本和研究结论。`,
+      data: workspace.evidenceSummary
+    });
+  }
+  const draft = currentDraft ?? workspace.currentDraft;
+  if (draft) {
+    cards.push({
+      id: "card-copy-draft",
+      type: "copy_draft",
+      title: draft.draft.title,
+      summary: draft.draft.content.slice(0, 160),
+      data: draft.draft
+    });
+    if (draft.draft.imagePrompt) {
+      cards.push({
+        id: "card-image-prompt",
+        type: "image_prompt",
+        title: "图片提示词",
+        summary: draft.draft.imagePrompt,
+        data: { imagePrompt: draft.draft.imagePrompt }
+      });
+    }
+  }
+  if (workspace.publishPlan) {
+    cards.push({
+      id: "card-publish-check",
+      type: "publish_check",
+      title: "发布确认",
+      summary: `发布状态：${workspace.publishPlan.status}`,
+      data: workspace.publishPlan
+    });
+  }
+  return cards;
+}
+
+function buildQuickActions(plan: AgentPlan, workspace: WorkspaceState) {
+  if (plan.intent === "research_only" || workspace.selectedSamples.length) {
+    return [
+      { id: "qa-generate-copy", label: "基于证据生成文案", action: "generate_copy" },
+      { id: "qa-plan-visual", label: "生成图片方向", action: "plan_visuals" }
+    ];
+  }
+  if (workspace.currentDraft) {
+    return [
+      { id: "qa-revise-copy", label: "修改当前文案", action: "revise_copy" },
+      { id: "qa-generate-images", label: "生成配图", action: "generate_images" },
+      { id: "qa-publish-check", label: "进入发布检查", action: "run_quality_gate" }
+    ];
+  }
+  return [
+    { id: "qa-start-research", label: "先搜索真实笔记", action: "search_research" },
+    { id: "qa-add-brief", label: "补充创作需求", action: "update_brief_inputs" }
+  ];
+}
+
+function buildToolTraceItems(trace: ReturnType<typeof createTrace>): AgentToolTraceItem[] {
+  return trace.events.map((event) => ({
+    id: event.id,
+    label: event.label,
+    status: event.type === "run_failed" ? "failed" : event.type === "run_started" ? "running" : "completed",
+    detail: event.detail,
+    createdAt: event.createdAt
+  }));
+}
+
+function inferStageFromWorkspace(workspace: WorkspaceState): AgentTurnResult["stage"] {
+  if (workspace.publishPlan?.status === "published") return "published";
+  if (workspace.publishPlan?.status === "scheduled") return "scheduled";
+  if (workspace.publishPlan) return "reviewing";
+  if (workspace.selectedImageIds.length) return "image_ready";
+  if (workspace.currentDraft) return "copy_ready";
+  if (workspace.evidenceSummary || workspace.selectedSamples.length) return "evidence_ready";
+  if (workspace.topic) return "briefing";
+  return "empty";
+}
+
+function inferIntentConfidence(plan: AgentPlan, workspace: WorkspaceState): number {
+  if (plan.intent === "answer" && !workspace.topic) return 0.62;
+  if (plan.intent === "ask") return 0.66;
+  if (plan.topic || workspace.topic || workspace.currentDraft) return 0.86;
+  return 0.74;
 }
 
 async function maybeHandleCardGenerationTurn(
