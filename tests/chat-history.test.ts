@@ -45,4 +45,44 @@ describe("chat history storage", () => {
     expect(conversations[0].messages.map((message) => message.role)).toEqual(["user", "assistant"]);
     expect(conversations[0].messages[1].workflowResult?.report).toBe("证据报告");
   });
+
+  it("persists structured agent cards, quick actions, and tool trace", async () => {
+    const conversation = await appendChatTurn({
+      userContent: "基于证据生成文案",
+      assistantContent: "我整理了当前项目的下一步。",
+      assistantMeta: {
+        intent: "research_to_draft",
+        stage: "copy_ready",
+        questions: ["请确认目标人群"],
+        cards: [{
+          id: "card-copy",
+          type: "copy_draft",
+          title: "文案草稿",
+          summary: "一版基于证据的草稿"
+        }],
+        quickActions: [{
+          id: "qa-quality",
+          label: "进入发布检查",
+          action: "run_quality_gate"
+        }],
+        toolTrace: [{
+          id: "trace-1",
+          label: "draft.createFromEvidence",
+          status: "completed",
+          detail: "基于 evidencePack 生成草稿",
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }]
+      }
+    });
+
+    const conversations = await listChatConversations();
+    const assistant = conversations.find((item) => item.id === conversation.id)?.messages.at(-1);
+
+    expect(assistant?.cards?.[0].type).toBe("copy_draft");
+    expect(assistant?.quickActions?.[0].action).toBe("run_quality_gate");
+    expect(assistant?.toolTrace?.[0].label).toBe("draft.createFromEvidence");
+    expect(assistant?.questions).toEqual(["请确认目标人群"]);
+    expect(assistant?.intent).toBe("research_to_draft");
+    expect(assistant?.stage).toBe("copy_ready");
+  });
 });

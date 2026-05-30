@@ -219,8 +219,14 @@ export function PostStudioPanel({
           <div className="studioChatList">
             {messages.slice(-6).map((message, index) => (
               <article className={message.role === "user" ? "studioChatBubble user" : "studioChatBubble"} key={message.id ?? `${message.role}-${index}`}>
-                <strong>{message.role === "user" ? "你" : "AI"}</strong>
+                <div className="chatBubbleHeader">
+                  <strong>{message.role === "user" ? "你" : "AI Agent"}</strong>
+                  {message.role === "assistant" && message.intent ? <span>{message.intent}</span> : null}
+                </div>
                 <p>{message.content}</p>
+                {message.role === "assistant" ? (
+                  <AgentStructuredMessage message={message} onQuickAction={onQuickAction} />
+                ) : null}
               </article>
             ))}
             {!messages.length ? (
@@ -550,6 +556,72 @@ export function PostStudioPanel({
   );
 }
 
+function AgentStructuredMessage({
+  message,
+  onQuickAction
+}: {
+  message: ChatMessage;
+  onQuickAction: (action: string) => void;
+}) {
+  const cards = (message.cards ?? []).slice(0, 4);
+  const trace = (message.toolTrace ?? []).slice(-4);
+  const actions = (message.quickActions ?? []).slice(0, 3);
+  if (!cards.length && !trace.length && !actions.length && !message.questions?.length) {
+    return null;
+  }
+
+  return (
+    <div className="agentMessageMeta">
+      {cards.length ? (
+        <div className="agentCardStrip">
+          {cards.map((card) => (
+            <article className={`agentMiniCard ${card.type}`} key={card.id}>
+              <span>{labelForAgentCard(card.type)}</span>
+              <strong>{card.title}</strong>
+              <p>{card.summary}</p>
+            </article>
+          ))}
+        </div>
+      ) : null}
+
+      {message.questions?.length ? (
+        <div className="agentQuestionBox">
+          <strong>Agent 还需要你补充</strong>
+          {message.questions.slice(0, 3).map((question) => <p key={question}>{question}</p>)}
+        </div>
+      ) : null}
+
+      {trace.length ? (
+        <details className="agentTraceMini">
+          <summary>工具轨迹 · {trace.length}</summary>
+          {trace.map((item) => (
+            <div key={item.id}>
+              <span>{item.status}</span>
+              <p>{item.label}：{item.detail}</p>
+            </div>
+          ))}
+        </details>
+      ) : null}
+
+      {actions.length ? (
+        <div className="agentQuickActionRow">
+          {actions.map((action) => (
+            <button
+              className="miniActionButton"
+              disabled={action.disabled}
+              key={action.id}
+              onClick={() => onQuickAction(action.action)}
+              type="button"
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function StagePill({ label, value }: { label: string; value: string }) {
   return (
     <span>
@@ -723,6 +795,20 @@ function labelForSource(sourceType?: string): string {
     user_input: "用户输入"
   };
   return sourceType ? labels[sourceType] ?? sourceType : "实时";
+}
+
+function labelForAgentCard(type: string): string {
+  const labels: Record<string, string> = {
+    evidence_summary: "证据摘要",
+    viral_knowledge: "爆款库",
+    creative_brief: "CreativeBrief",
+    copy_draft: "文案草稿",
+    visual_direction: "图片方向",
+    image_prompt: "图片 Prompt",
+    publish_check: "发布检查",
+    quality_check: "质量检查"
+  };
+  return labels[type] ?? type;
 }
 
 function labelForPublishStatus(status?: string): string {

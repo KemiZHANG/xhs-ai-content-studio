@@ -151,7 +151,15 @@ export async function POST(request: Request) {
       conversationId,
       userContent: message,
       assistantContent: result.answer,
-      workflowResult: result.workflowResult
+      workflowResult: result.workflowResult,
+      assistantMeta: {
+        cards: result.cards,
+        quickActions: result.quickActions,
+        toolTrace: result.toolTrace,
+        questions: result.questions,
+        intent: result.intent,
+        stage: result.stage
+      }
     });
 
     await updateCreatorMemoryFromTurn({

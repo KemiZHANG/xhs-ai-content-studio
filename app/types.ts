@@ -269,6 +269,45 @@ export type ChatMessage = {
   content: string;
   createdAt?: string;
   workflowResult?: WorkflowResult;
+  cards?: AgentResponseCard[];
+  quickActions?: AgentQuickAction[];
+  toolTrace?: AgentToolTraceItem[];
+  questions?: string[];
+  intent?: string;
+  stage?: PostStage;
+};
+
+export type AgentResponseCardType =
+  | "evidence_summary"
+  | "viral_knowledge"
+  | "creative_brief"
+  | "copy_draft"
+  | "visual_direction"
+  | "image_prompt"
+  | "publish_check"
+  | "quality_check";
+
+export type AgentResponseCard = {
+  id: string;
+  type: AgentResponseCardType;
+  title: string;
+  summary: string;
+  data?: unknown;
+};
+
+export type AgentQuickAction = {
+  id: string;
+  label: string;
+  action: string;
+  disabled?: boolean;
+};
+
+export type AgentToolTraceItem = {
+  id: string;
+  label: string;
+  status: "planned" | "running" | "completed" | "failed";
+  detail: string;
+  createdAt: string;
 };
 
 export type ChatConversation = {

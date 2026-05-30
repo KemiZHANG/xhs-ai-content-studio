@@ -726,6 +726,12 @@ export default function Home() {
         body: JSON.stringify({ message: content, conversationId: activeConversationId, assetIds })
       })) as {
         answer: string;
+        cards?: ChatMessage["cards"];
+        quickActions?: ChatMessage["quickActions"];
+        toolTrace?: ChatMessage["toolTrace"];
+        questions?: string[];
+        intent?: string;
+        stage?: PostProject["currentStage"];
         workflowResult?: WorkflowResult;
         currentDraft?: DraftRecord;
         job?: JobRecord;
@@ -735,7 +741,13 @@ export default function Home() {
         role: "assistant",
         content: data.answer,
         createdAt: new Date().toISOString(),
-        workflowResult: data.workflowResult
+        workflowResult: data.workflowResult,
+        cards: data.cards,
+        quickActions: data.quickActions,
+        toolTrace: data.toolTrace,
+        questions: data.questions,
+        intent: data.intent,
+        stage: data.stage
       };
       setMessages((current) => [...current, assistantMessage]);
       if (data.workflowResult) {
@@ -746,9 +758,9 @@ export default function Home() {
       }
       if (data.conversation) {
         setActiveConversationId(data.conversation.id);
-        setMessages(data.conversation.messages);
+        setMessages(mergeLatestAssistantMeta(data.conversation.messages, assistantMessage));
         setChatConversations((current) => [
-          data.conversation!,
+          { ...data.conversation!, messages: mergeLatestAssistantMeta(data.conversation!.messages, assistantMessage) },
           ...current.filter((conversation) => conversation.id !== data.conversation!.id)
         ]);
       }
@@ -767,6 +779,27 @@ export default function Home() {
     } finally {
       setBusy(null);
     }
+  }
+
+  function mergeLatestAssistantMeta(conversationMessages: ChatMessage[], assistantMessage: ChatMessage): ChatMessage[] {
+    if (!conversationMessages.length) return conversationMessages;
+    const lastAssistantIndex = [...conversationMessages].reverse().findIndex((message) => message.role === "assistant");
+    if (lastAssistantIndex < 0) return conversationMessages;
+    const index = conversationMessages.length - 1 - lastAssistantIndex;
+    return conversationMessages.map((message, messageIndex) =>
+      messageIndex === index
+        ? {
+            ...message,
+            workflowResult: message.workflowResult ?? assistantMessage.workflowResult,
+            cards: message.cards ?? assistantMessage.cards,
+            quickActions: message.quickActions ?? assistantMessage.quickActions,
+            toolTrace: message.toolTrace ?? assistantMessage.toolTrace,
+            questions: message.questions ?? assistantMessage.questions,
+            intent: message.intent ?? assistantMessage.intent,
+            stage: message.stage ?? assistantMessage.stage
+          }
+        : message
+    );
   }
 
   function selectConversation(conversation: ChatConversation) {

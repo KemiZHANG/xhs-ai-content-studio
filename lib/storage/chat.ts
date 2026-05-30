@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import type { AgentQuickAction, AgentResponseCard, AgentToolTraceItem } from "@/lib/agent/types";
 import type { OneClickResult } from "@/lib/workflows/one-click";
 
 export type StoredChatMessage = {
@@ -9,6 +10,12 @@ export type StoredChatMessage = {
   content: string;
   createdAt: string;
   workflowResult?: OneClickResult;
+  cards?: AgentResponseCard[];
+  quickActions?: AgentQuickAction[];
+  toolTrace?: AgentToolTraceItem[];
+  questions?: string[];
+  intent?: string;
+  stage?: string;
 };
 
 export type ChatConversation = {
@@ -24,6 +31,7 @@ type AppendChatTurnInput = {
   userContent: string;
   assistantContent: string;
   workflowResult?: OneClickResult;
+  assistantMeta?: Pick<StoredChatMessage, "cards" | "quickActions" | "toolTrace" | "questions" | "intent" | "stage">;
 };
 
 const MAX_CONVERSATIONS = 60;
@@ -69,7 +77,8 @@ export async function appendChatTurn(input: AppendChatTurnInput): Promise<ChatCo
       role: "assistant",
       content: input.assistantContent,
       createdAt: now,
-      workflowResult: input.workflowResult
+      workflowResult: input.workflowResult,
+      ...compactMeta(input.assistantMeta)
     }
   ];
 
@@ -86,6 +95,13 @@ export async function appendChatTurn(input: AppendChatTurnInput): Promise<ChatCo
 
   await writeConversations(nextConversations);
   return nextConversation;
+}
+
+function compactMeta(meta: AppendChatTurnInput["assistantMeta"]): AppendChatTurnInput["assistantMeta"] {
+  if (!meta) return undefined;
+  return Object.fromEntries(
+    Object.entries(meta).filter(([, value]) => Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== "")
+  ) as AppendChatTurnInput["assistantMeta"];
 }
 
 async function readConversations(): Promise<ChatConversation[]> {

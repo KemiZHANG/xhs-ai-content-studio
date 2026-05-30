@@ -3166,6 +3166,22 @@ textarea {
   padding: 10px 12px;
 }
 
+.chatBubbleHeader {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.chatBubbleHeader span {
+  background: rgba(18, 118, 97, 0.09);
+  border: 1px solid rgba(18, 118, 97, 0.16);
+  border-radius: 999px;
+  color: var(--accent-strong);
+  font-size: 11px;
+  padding: 3px 8px;
+}
+
 .studioChatBubble.user {
   background: #fff2f4;
   border-color: rgba(255, 36, 66, 0.22);
@@ -3182,6 +3198,133 @@ textarea {
   line-height: 1.6;
   margin: 0;
   white-space: pre-wrap;
+}
+
+.agentMessageMeta {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.agentCardStrip {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.agentMiniCard {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px;
+}
+
+.agentMiniCard span {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.agentMiniCard strong {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.agentMiniCard p {
+  color: var(--muted);
+  display: -webkit-box;
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  white-space: normal;
+}
+
+.agentMiniCard.viral_knowledge {
+  background: rgba(190, 122, 20, 0.08);
+  border-color: rgba(190, 122, 20, 0.18);
+}
+
+.agentQuestionBox {
+  background: rgba(190, 122, 20, 0.09);
+  border: 1px solid rgba(190, 122, 20, 0.2);
+  border-radius: 10px;
+  display: grid;
+  gap: 4px;
+  padding: 9px;
+}
+
+.agentQuestionBox strong {
+  font-size: 12px;
+}
+
+.agentQuestionBox p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.agentTraceMini {
+  background: rgba(23, 24, 29, 0.05);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.agentTraceMini summary {
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.agentTraceMini div {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 2px;
+  margin-top: 7px;
+  padding-top: 7px;
+}
+
+.agentTraceMini span {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.agentTraceMini p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.agentQuickActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.miniActionButton {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 7px 10px;
+}
+
+.miniActionButton:hover {
+  border-color: rgba(18, 118, 97, 0.32);
+  color: var(--accent-strong);
 }
 
 .studioEmpty {
