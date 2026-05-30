@@ -2963,14 +2963,14 @@ textarea {
 .postStudioTop {
   align-items: start;
   display: grid;
-  gap: 16px;
-  grid-template-columns: minmax(280px, 1fr) minmax(420px, 1.1fr) minmax(240px, 0.7fr);
+  gap: 12px;
+  grid-template-columns: minmax(280px, 1fr) minmax(240px, 0.6fr);
 }
 
 .postStudioTop h2 {
-  font-size: clamp(28px, 3vw, 42px);
-  line-height: 1.05;
-  margin: 4px 0 10px;
+  font-size: clamp(26px, 2.4vw, 36px);
+  line-height: 1.08;
+  margin: 2px 0 8px;
 }
 
 .postStudioTop p {
@@ -2980,9 +2980,7 @@ textarea {
 }
 
 .postStageStrip {
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  display: none;
 }
 
 .postStageStrip span,
@@ -3010,6 +3008,7 @@ textarea {
 
 .nextActionBar {
   align-content: center;
+  align-self: stretch;
 }
 
 .nextActionBar span {
@@ -3022,10 +3021,19 @@ textarea {
   align-items: start;
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(300px, 0.82fr) minmax(440px, 1.25fr) minmax(300px, 0.82fr);
+  grid-template-columns: minmax(320px, 0.8fr) minmax(520px, 1.4fr) minmax(280px, 0.7fr);
 }
 
-.studioAgentPane,
+.studioAgentPane {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 130px);
+  min-height: calc(100vh - 150px);
+  overflow: hidden;
+  position: sticky;
+  top: 20px;
+}
+
 .studioSidePane {
   max-height: calc(100vh - 130px);
   overflow: auto;
@@ -3046,6 +3054,11 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 12px;
+}
+
+.studioAgentPane .studioResearchBox {
+  max-height: 230px;
+  overflow: auto;
 }
 
 .studioResearchBox textarea {
@@ -3069,10 +3082,12 @@ textarea {
 
 .studioChatList {
   display: grid;
+  flex: 1;
   gap: 10px;
   margin-top: 12px;
-  max-height: 340px;
+  min-height: 180px;
   overflow: auto;
+  padding-right: 4px;
 }
 
 .studioChatBubble {
@@ -3116,9 +3131,12 @@ textarea {
 }
 
 .studioComposer {
+  background: color-mix(in srgb, var(--surface) 94%, white);
   border-top: 1px solid var(--line);
   margin-top: 12px;
   padding-top: 12px;
+  position: sticky;
+  bottom: 0;
 }
 
 .studioComposer textarea {
@@ -3157,7 +3175,9 @@ textarea {
 }
 
 .postEditStack textarea {
-  min-height: 160px;
+  max-height: 220px;
+  min-height: 120px;
+  overflow: auto;
 }
 
 .postEditStack label:last-child textarea {
@@ -3165,12 +3185,16 @@ textarea {
 }
 
 .canvasActionRow {
+  background: color-mix(in srgb, var(--surface) 96%, white);
   border-top: 1px solid var(--line);
   display: grid;
   gap: 10px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 16px;
   padding-top: 16px;
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
 }
 
 .studioTabs {
@@ -3179,7 +3203,7 @@ textarea {
   border-radius: 12px;
   display: grid;
   gap: 6px;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   margin-bottom: 14px;
   padding: 5px;
 }

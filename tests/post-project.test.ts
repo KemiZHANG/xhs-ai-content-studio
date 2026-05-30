@@ -160,6 +160,42 @@ describe("post project", () => {
     expect(quality.complianceScore).toBeLessThan(100);
   });
 
+  it("refreshes stale final posts when the current draft changes", () => {
+    const project = postProjectFromWorkspace({
+      schemaVersion: 1,
+      workspaceId: "workspace-version",
+      updatedAt: "2026-05-30T00:00:00.000Z",
+      topic: "coffee",
+      evidenceSummary: { contentStrengths: ["真实标题"] },
+      selectedSamples: [{ id: "note-1" }],
+      currentDraftId: "draft-new",
+      currentDraft: {
+        id: "draft-new",
+        updatedAt: "2026-05-30T00:00:00.000Z",
+        draft: {
+          title: "新标题",
+          content: "这是一段足够具体的正文，包含真实场景、体验细节、适用人群和注意事项，方便发布前进行检查。",
+          tags: ["咖啡"],
+          structure: [],
+          imagePrompt: "新图片方向"
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      },
+      selectedImageIds: ["asset-new"],
+      productImageIds: [],
+      publishPlan: null,
+      lastUserIntent: "revise",
+      recentJobIds: [],
+      recentRunIds: [],
+      recentConversationIds: []
+    });
+
+    expect(project.finalPost?.title).toBe("新标题");
+    expect(project.finalPost?.imageIds).toEqual(["asset-new"]);
+    expect(project.finalPost?.copyVersionId).toBe("copy-draft-new");
+  });
+
   it("persists post project patches without removing existing context", async () => {
     await resetPostProject({ topic: "coffee", targetAudience: "office workers" });
     const next = await updatePostProject({

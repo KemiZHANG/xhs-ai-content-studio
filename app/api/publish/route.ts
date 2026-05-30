@@ -6,7 +6,9 @@ import {
   type GuardedPublishArgs
 } from "@/lib/agent/publishing";
 import { createPublishIntent, validatePublishIntent } from "@/lib/agent/guardrails";
-import { createXhsMcpClient } from "@/lib/mcp/xhs";
+import { updateWorkspaceState } from "@/lib/agent/state";
+import { createXhsMcpClient, readMcpText } from "@/lib/mcp/xhs";
+import { runPostQualityGate } from "@/lib/post-project/quality";
 import { readPostProject } from "@/lib/post-project/store";
 import { buildPublishContentArgs, parseTagsText } from "@/lib/publishing/assembly";
 import { requireLocalActionToken } from "@/lib/security/action-token";
@@ -51,7 +53,7 @@ export async function POST(request: Request) {
       visibility: isPublishVisibility(body.visibility) ? body.visibility : settings.defaultVisibility,
       scheduleAt: body.scheduleAt
     });
-    const qualityBlockReasons = await getQualityGateBlockReasons(publishArgs);
+    const qualityBlockReasons = await getQualityGateBlockReasons(publishArgs, body.assetIds ?? []);
 
     if (body.dryRun) {
       const publishIntent = createPublishIntent({
@@ -125,6 +127,18 @@ export async function POST(request: Request) {
       }
     });
 
+    const mcpClient = createXhsMcpClient(settings);
+    const loginError = await verifyActiveXhsLogin(mcpClient);
+    if (loginError) {
+      return NextResponse.json(
+        {
+          error: loginError,
+          requiresConfirmation: false
+        },
+        { status: 400 }
+      );
+    }
+
     const guardedPublish = await executeGuardedPublish({
       args: publishArgs,
       requestedBy: "manual",
@@ -136,7 +150,7 @@ export async function POST(request: Request) {
         accountId: settings.activeAccountId,
         mcpUrl: settings.mcpUrl
       },
-      publish: (args) => createXhsMcpClient(settings).publishContent(args)
+      publish: (args) => mcpClient.publishContent(args)
     });
 
     if (guardedPublish.status === "awaiting_approval") {
@@ -182,6 +196,12 @@ export async function POST(request: Request) {
         visibility: publishArgs.visibility
       })
     );
+    await updateWorkspaceState({
+      currentDraftId: currentDraft?.id,
+      currentDraft,
+      selectedImageIds: body.assetIds ?? [],
+      publishPlan: guardedPublish.publishIntent
+    });
 
     return NextResponse.json({
       status: publishArgs.scheduleAt ? "scheduled" : "published",
@@ -196,37 +216,49 @@ export async function POST(request: Request) {
   }
 }
 
-async function getQualityGateBlockReasons(publishArgs: GuardedPublishArgs): Promise<string[]> {
+async function getQualityGateBlockReasons(publishArgs: GuardedPublishArgs, assetIds: string[]): Promise<string[]> {
   try {
     const project = await readPostProject();
-    if (!project.qualityCheck || project.auditStatus !== "blocked") {
-      return [];
-    }
-    if (!project.finalPost || !samePublishCopy(project.finalPost, publishArgs)) {
+    const imageIds = assetIds.length ? assetIds : publishArgs.images;
+    const qualityCheck = runPostQualityGate({
+      ...project,
+      finalPost: {
+        title: publishArgs.title,
+        content: publishArgs.content,
+        tags: publishArgs.tags,
+        imageIds,
+        coverImageId: imageIds[0],
+        copyVersionId: project.copyDraft ? `copy-${project.copyDraft.id}` : undefined,
+        imagePromptVersionIds: (project.imagePrompts ?? []).map((prompt) => prompt.id)
+      },
+      selectedImages: imageIds
+    });
+    if (qualityCheck.canPublish) {
       return [];
     }
     return [
-      "当前 PostProject 未通过 Quality Gate",
-      ...project.qualityCheck.issues.slice(0, 5)
+      "当前发布内容未通过 Quality Gate",
+      ...qualityCheck.issues.slice(0, 5)
     ];
   } catch {
     return [];
   }
 }
 
-function samePublishCopy(
-  finalPost: { title: string; content: string; tags: string[] },
-  publishArgs: GuardedPublishArgs
-): boolean {
-  return (
-    finalPost.title.trim() === publishArgs.title.trim() &&
-    finalPost.content.trim() === publishArgs.content.trim() &&
-    normalizeTags(finalPost.tags).join("|") === normalizeTags(publishArgs.tags).join("|")
-  );
-}
-
-function normalizeTags(tags: string[]): string[] {
-  return tags.map((tag) => tag.replace(/^#/, "").trim()).filter(Boolean).sort();
+async function verifyActiveXhsLogin(client: ReturnType<typeof createXhsMcpClient>): Promise<string | null> {
+  if (typeof client.checkLoginStatus !== "function") {
+    return null;
+  }
+  try {
+    const result = await client.checkLoginStatus();
+    const text = readMcpText(result);
+    if (/未登录|not\s*login|logged\s*out/i.test(text)) {
+      return "当前小红书 MCP 未登录，请先完成登录后再发布。";
+    }
+    return null;
+  } catch (error) {
+    return error instanceof Error ? `无法确认小红书登录状态：${error.message}` : "无法确认小红书登录状态";
+  }
 }
 
 async function resolvePublishConfirmation({

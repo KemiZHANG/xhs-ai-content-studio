@@ -356,6 +356,64 @@ export default function Home() {
     setPublishVisibility(visibility);
   }
 
+  function handlePublishDraftChange(next: PublishDraftState) {
+    setPendingPublish(null);
+    setPublishDraft(next);
+  }
+
+  async function commitCanvasToProject(overrides: Partial<PublishDraftState> = {}, selectedImageIds = publishAssetIds) {
+    const draftState = { ...publishDraft, ...overrides };
+    const data = (await clientApi("/api/post-project", {
+      method: "PATCH",
+      body: JSON.stringify({
+        action: "commit_canvas",
+        draft: {
+          title: draftState.title,
+          content: draftState.content,
+          tags: parseTagsText(draftState.tagsText),
+          structure: [],
+          imagePrompt: draftState.imagePrompt
+        },
+        selectedImageIds,
+        visibility: publishVisibility
+      })
+    })) as { project: PostProject; currentDraft?: DraftRecord | null };
+    setPostProject(data.project);
+    if (data.currentDraft) {
+      applyCurrentDraft(data.currentDraft);
+    }
+    await loadWorkspace();
+    return data.project;
+  }
+
+  async function selectCopyVersion(versionId: string) {
+    setPendingPublish(null);
+    const data = (await clientApi("/api/post-project", {
+      method: "PATCH",
+      body: JSON.stringify({ action: "select_copy_version", versionId })
+    })) as { project: PostProject; currentDraft?: DraftRecord | null };
+    setPostProject(data.project);
+    if (data.currentDraft) {
+      applyCurrentDraft(data.currentDraft);
+    }
+    await loadWorkspace();
+    setNotice("已切换文案版本，并同步到当前帖子项目。");
+  }
+
+  async function selectImagePromptVersion(versionId: string) {
+    setPendingPublish(null);
+    const data = (await clientApi("/api/post-project", {
+      method: "PATCH",
+      body: JSON.stringify({ action: "select_image_prompt_version", versionId })
+    })) as { project: PostProject; currentDraft?: DraftRecord | null };
+    setPostProject(data.project);
+    if (data.currentDraft) {
+      applyCurrentDraft(data.currentDraft);
+    }
+    await loadWorkspace();
+    setNotice("已切换图片 Prompt，并同步到当前帖子项目。");
+  }
+
   async function loadChatHistory() {
     const data = (await clientApi("/api/chat/history")) as { conversations: ChatConversation[] };
     setChatConversations(data.conversations);
@@ -695,22 +753,42 @@ export default function Home() {
     setNotice("已带入图片创作简报，只包含图片风格和生成要求。");
   }
 
-  function openPublishAssembly(draft?: NonNullable<WorkflowResult["draft"]>) {
+  async function openPublishAssembly(draft?: NonNullable<WorkflowResult["draft"]>) {
     if (draft) {
       applyDraftToPublish(draft, publishVisibility);
+      await commitCanvasToProject({
+        title: draft.title,
+        content: draft.content,
+        tagsText: draft.tags.map((tag) => `#${tag}`).join(" "),
+        imagePrompt: draft.imagePrompt
+      });
+    } else {
+      await commitCanvasToProject();
     }
     setSection("publish");
     setNotice("请在发布装配台确认文案、图片、可见范围和发布时间。");
   }
 
-  function openPublishAssemblyFromWorkspace() {
+  async function openPublishAssemblyFromWorkspace() {
     const draftRecord = workspace?.currentDraft ?? currentDraft;
+    const selectedImageIds = workspace?.selectedImageIds?.length ? workspace.selectedImageIds : publishAssetIds;
     if (draftRecord) {
       applyDraftToPublish(draftRecord.draft, draftRecord.visibility);
     }
     if (workspace?.selectedImageIds?.length) {
       setPublishAssetIds(workspace.selectedImageIds);
     }
+    await commitCanvasToProject(
+      draftRecord
+        ? {
+            title: draftRecord.draft.title,
+            content: draftRecord.draft.content,
+            tagsText: draftRecord.draft.tags.map((tag) => `#${tag}`).join(" "),
+            imagePrompt: draftRecord.draft.imagePrompt
+          }
+        : {},
+      selectedImageIds
+    );
     setSection("publish");
     setNotice("已把当前草稿和已选图片带到发布装配台。");
   }
@@ -720,6 +798,7 @@ export default function Home() {
     setPublishStatus("");
     setPendingPublish(null);
     try {
+      await commitCanvasToProject();
       const publishPayload: PublishPayload = {
         title: publishDraft.title,
         content: publishDraft.content,
@@ -777,6 +856,7 @@ export default function Home() {
     setBusy("publish");
     setPublishStatus("");
     try {
+      await commitCanvasToProject();
       const data = (await clientApi("/api/publish", {
         method: "POST",
         body: JSON.stringify({
@@ -940,11 +1020,13 @@ export default function Home() {
             onRunResearch={(event) => void runWorkflow(event)}
             onChatInput={setChatInput}
             onChatSubmit={(event) => void sendChat(event)}
-            onDraftChange={setPublishDraft}
+            onDraftChange={handlePublishDraftChange}
             onNewProject={() => void startNewProject()}
             onGenerateCopy={(message) => void submitChatMessage(message, true)}
+            onSelectCopyVersion={(versionId) => void selectCopyVersion(versionId)}
+            onSelectImagePromptVersion={(versionId) => void selectImagePromptVersion(versionId)}
             onOpenImageStudio={() => setSection("imageStudio")}
-            onOpenPublish={() => openPublishAssemblyFromWorkspace()}
+            onOpenPublish={() => void openPublishAssemblyFromWorkspace()}
             onNavigate={setSection}
           />
         ) : null}
@@ -970,7 +1052,7 @@ export default function Home() {
             onDraftCommand={(message) => void submitChatMessage(message, true)}
             onCopyStudio={(brief) => openCopyWorkspaceFromEvidence(brief)}
             onImageStudio={(brief) => openImageStudioFromEvidence(brief)}
-            onOpenPublish={(draft) => openPublishAssembly(draft)}
+            onOpenPublish={(draft) => void openPublishAssembly(draft)}
           />
         ) : null}
 
@@ -1038,7 +1120,7 @@ export default function Home() {
               }))
             }
             onGoChat={() => setSection("chat")}
-            onOpenPublish={() => openPublishAssembly()}
+            onOpenPublish={() => void openPublishAssembly()}
           />
         ) : null}
 
@@ -1069,8 +1151,8 @@ export default function Home() {
             onDraftCommand={(message) => void submitChatMessage(message, true)}
             onOpenCopyWorkspace={(brief) => openCopyWorkspaceFromEvidence(brief)}
             onOpenImageStudio={() => openImageStudioFromEvidence()}
-            onOpenPublish={(draft) => openPublishAssembly(draft)}
-            onOpenPublishFromWorkspace={openPublishAssemblyFromWorkspace}
+            onOpenPublish={(draft) => void openPublishAssembly(draft)}
+            onOpenPublishFromWorkspace={() => void openPublishAssemblyFromWorkspace()}
           />
         ) : null}
 
@@ -1086,10 +1168,7 @@ export default function Home() {
             status={publishStatus}
             pendingPublish={pendingPublish}
             busy={busy === "publish"}
-            onDraftChange={(draft) => {
-              setPendingPublish(null);
-              setPublishDraft(draft);
-            }}
+            onDraftChange={handlePublishDraftChange}
             onToggleAsset={(id) =>
               {
                 setPendingPublish(null);

@@ -400,7 +400,19 @@ describe("API route contracts", () => {
       createdAt: "2026-05-21T00:00:00.000Z"
     };
     const publishContent = vi.fn(async () => ({ ok: true }));
-    const currentDraft = { id: "draft-1" };
+    const currentDraft = {
+      id: "draft-1",
+      updatedAt: "2026-05-30T00:00:00.000Z",
+      draft: {
+        title: "title",
+        content: "content",
+        tags: ["tag"],
+        structure: [],
+        imagePrompt: ""
+      },
+      images: [],
+      visibility: defaultSettings.defaultVisibility
+    };
 
     vi.doMock("@/lib/storage/settings", () => ({
       readSettings: async () => defaultSettings,
@@ -700,7 +712,7 @@ describe("API route contracts", () => {
 
     expect(response.status).toBe(400);
     expect(payload.error).toContain("Quality Gate");
-    expect(payload.error).toContain("标题存在夸张词");
+    expect(payload.error).toContain("夸张词");
     expect(publishContent).not.toHaveBeenCalled();
   });
 

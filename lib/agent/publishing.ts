@@ -277,7 +277,7 @@ async function auditPublishIntent(
     idempotencyKeySuffix: intent.idempotencyKey.slice(-6),
     reasons: intent.guardrailResults,
     resultSummary: summarizeAuditResult(result ?? intent.mcpResult)
-  }).catch(() => undefined);
+  });
 }
 
 function summarizeAuditResult(value: unknown): string | undefined {

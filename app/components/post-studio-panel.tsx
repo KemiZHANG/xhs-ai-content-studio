@@ -60,6 +60,8 @@ export function PostStudioPanel({
   onNavigate,
   onNewProject,
   onGenerateCopy,
+  onSelectCopyVersion,
+  onSelectImagePromptVersion,
   onOpenImageStudio,
   onOpenPublish
 }: {
@@ -83,6 +85,8 @@ export function PostStudioPanel({
   onNavigate: (section: Section) => void;
   onNewProject: () => void;
   onGenerateCopy: (message: string) => void;
+  onSelectCopyVersion: (versionId: string) => void;
+  onSelectImagePromptVersion: (versionId: string) => void;
   onOpenImageStudio: () => void;
   onOpenPublish: () => void;
 }) {
@@ -94,7 +98,7 @@ export function PostStudioPanel({
   const nextActions = project?.allowedActions.slice(0, 3) ?? ["search_research"];
   const projectTitle = project?.topic || workspace?.topic || researchForm.topic || "未命名帖子项目";
   const canGenerateCopy = Boolean(insights.length || workflowResult?.researchSummary || workspace?.evidenceSummary);
-  const latestImagePrompt = project?.imagePrompts.at(-1)?.value.prompt ?? publishDraft.imagePrompt;
+  const latestImagePrompt = publishDraft.imagePrompt || project?.imagePrompts.at(-1)?.value.prompt || "";
   const quality = project?.qualityCheck;
   const brief = project?.creativeBrief;
   const copyVersions = project?.copyVersions ?? [];
@@ -245,14 +249,15 @@ export function PostStudioPanel({
                       <button
                         key={version.id}
                         type="button"
-                        onClick={() =>
+                        onClick={() => {
                           onDraftChange({
                             title: version.value.title,
                             content: version.value.content,
                             tagsText: version.value.tags.map((tag) => `#${tag}`).join(" "),
                             imagePrompt: version.value.imagePrompt || publishDraft.imagePrompt
-                          })
-                        }
+                          });
+                          onSelectCopyVersion(version.id);
+                        }}
                       >
                         {version.label || `版本 ${index + 1}`}
                       </button>
@@ -291,7 +296,10 @@ export function PostStudioPanel({
                       <button
                         key={version.id}
                         type="button"
-                        onClick={() => onDraftChange({ ...publishDraft, imagePrompt: version.value.prompt })}
+                        onClick={() => {
+                          onDraftChange({ ...publishDraft, imagePrompt: version.value.prompt });
+                          onSelectImagePromptVersion(version.id);
+                        }}
                       >
                         {version.label || `Prompt ${index + 1}`}
                       </button>

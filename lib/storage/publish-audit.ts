@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { PublishIntentStatus } from "@/lib/agent/types";
 
@@ -28,8 +28,15 @@ export type PublishAuditInput = Omit<PublishAuditRecord, "id" | "createdAt" | "c
 };
 
 const auditPath = () => path.join(process.cwd(), "data", "publish-audit.json");
+const globalForPublishAudit = globalThis as typeof globalThis & {
+  xhsPublishAuditWriteQueue?: Promise<unknown>;
+};
 
 export async function appendPublishAudit(input: PublishAuditInput): Promise<PublishAuditRecord> {
+  return queuePublishAuditWrite(async () => appendPublishAuditNow(input));
+}
+
+async function appendPublishAuditNow(input: PublishAuditInput): Promise<PublishAuditRecord> {
   const { content, ...safeInput } = input;
   const record: PublishAuditRecord = {
     ...safeInput,
@@ -43,8 +50,17 @@ export async function appendPublishAudit(input: PublishAuditInput): Promise<Publ
   const next = [record, ...current].slice(0, 500);
   const filePath = auditPath();
   await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, `${JSON.stringify(next, null, 2)}\n`, "utf8");
+  const tempPath = `${filePath}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
+  await writeFile(tempPath, `${JSON.stringify(next, null, 2)}\n`, "utf8");
+  await rename(tempPath, filePath);
   return record;
+}
+
+async function queuePublishAuditWrite<T>(operation: () => Promise<T>): Promise<T> {
+  const previous = globalForPublishAudit.xhsPublishAuditWriteQueue ?? Promise.resolve();
+  const next = previous.then(operation, operation);
+  globalForPublishAudit.xhsPublishAuditWriteQueue = next.catch(() => undefined);
+  return next;
 }
 
 export async function listPublishAudit(): Promise<PublishAuditRecord[]> {

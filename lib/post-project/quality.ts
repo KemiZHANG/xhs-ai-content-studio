@@ -49,7 +49,15 @@ export function runPostQualityGate(project: Pick<
   const visualConsistencyScore = scoreFromIssues([!finalPost?.imageIds.length, !project.visualDirection]);
   const platformFitScore = scoreFromIssues([(finalPost?.tags.length ?? 0) === 0, (finalPost?.tags.length ?? 0) > 10]);
   const complianceScore = scoreFromIssues([risky.length > 0, exaggerated.length > 1]);
-  const canPublish = Boolean(finalPost?.title && finalPost.content && finalPost.tags.length && finalPost.imageIds.length) && complianceScore >= 70;
+  const hasCriticalPublishRisk = Boolean(
+    !finalPost?.title ||
+      !finalPost.content ||
+      !finalPost.tags.length ||
+      !finalPost.imageIds.length ||
+      exaggerated.length ||
+      risky.length
+  );
+  const canPublish = !hasCriticalPublishRisk && complianceScore >= 70;
 
   if (canPublish && !suggestions.length) {
     suggestions.push("发布前仍需人工确认账号、可见范围、图片版本和定时时区。");

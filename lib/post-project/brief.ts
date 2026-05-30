@@ -92,7 +92,7 @@ export function deriveImagePromptVersion(
 }
 
 export function deriveFinalPost(project: Pick<PostProject, "copyDraft" | "selectedImages" | "imagePrompts" | "finalPost">): FinalPost | undefined {
-  if (project.finalPost) {
+  if (project.finalPost && finalPostStillMatchesProject(project.finalPost, project)) {
     return project.finalPost;
   }
   const draft = project.copyDraft;
@@ -108,6 +108,28 @@ export function deriveFinalPost(project: Pick<PostProject, "copyDraft" | "select
     copyVersionId: `copy-${draft.id}`,
     imagePromptVersionIds: project.imagePrompts.map((prompt) => prompt.id)
   };
+}
+
+function finalPostStillMatchesProject(
+  finalPost: FinalPost,
+  project: Pick<PostProject, "copyDraft" | "selectedImages" | "imagePrompts">
+): boolean {
+  if (!project.copyDraft) {
+    return false;
+  }
+  const copyVersionId = `copy-${project.copyDraft.id}`;
+  const imageIds = [...project.selectedImages].sort().join("|");
+  const finalImageIds = [...finalPost.imageIds].sort().join("|");
+  const promptIds = project.imagePrompts.map((prompt) => prompt.id).sort().join("|");
+  const finalPromptIds = [...finalPost.imagePromptVersionIds].sort().join("|");
+  return (
+    finalPost.copyVersionId === copyVersionId &&
+    finalPost.title === project.copyDraft.draft.title &&
+    finalPost.content === project.copyDraft.draft.content &&
+    finalPost.tags.join("|") === project.copyDraft.draft.tags.join("|") &&
+    imageIds === finalImageIds &&
+    promptIds === finalPromptIds
+  );
 }
 
 export function copyVersionFromDraft(draft: DraftRecord, basedOnEvidenceIds: string[]) {
