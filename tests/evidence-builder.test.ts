@@ -58,6 +58,7 @@ function pack(overrides: Partial<ViralKnowledgePack> = {}): ViralKnowledgePack {
         case: {
           id: "viral-case-1",
           platform: "xiaohongshu",
+          sourceSampleId: "viral-case-1",
           topic: "Guangzhou cafe",
           category: "local guide",
           title: "High collect cafe guide",
@@ -90,6 +91,11 @@ function pack(overrides: Partial<ViralKnowledgePack> = {}): ViralKnowledgePack {
             reusablePatterns: ["audience / scene / reminder"],
             doNotCopy: ["do not copy title wording"],
             transformationGuidance: ["replace with your own scene and proof"]
+          },
+          extraction: {
+            sourceSampleId: "viral-case-1",
+            method: "heuristic",
+            extractedAt: now
           }
         }
       }

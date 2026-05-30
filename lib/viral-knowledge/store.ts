@@ -7,6 +7,7 @@ import type {
   ViralCase,
   ViralCaseFilters,
   ViralCreativeSafety,
+  ViralExtractionProvenance,
   ViralExtractedInsights,
   ViralSearchInput,
   ViralSearchResult
@@ -99,9 +100,8 @@ export async function createViralCaseFromEvidence({
   category: string;
   model?: ModelProvider;
 }): Promise<ViralCase> {
-  const extractedInsights = model
-    ? await extractViralInsightsWithModel({ sample, topic, category, model }).catch(() => extractViralInsightsHeuristically(sample))
-    : extractViralInsightsHeuristically(sample);
+  const extracted = await extractViralInsights({ sample, topic, category, model });
+  const extractedInsights = extracted.insights;
   const hookType = first(extractedInsights.titleHooks) || inferHookType(sample.title);
   const bodyExcerpt = summarizeBody(sample.detailText);
   const contentStructure = extractedInsights.copyStructures.length
@@ -117,6 +117,7 @@ export async function createViralCaseFromEvidence({
   return normalizeViralCase({
     id: `viral-${Date.now()}-${randomUUID().slice(0, 8)}`,
     platform: "xiaohongshu",
+    sourceSampleId: sample.id,
     topic,
     category,
     title: sample.title,
@@ -139,7 +140,13 @@ export async function createViralCaseFromEvidence({
     createdAt: new Date().toISOString(),
     embedding: createLocalEmbedding(`${sample.title}\n${bodyExcerpt}\n${creativeSafety.summary}\n${extractedInsights.reusableRules.join("\n")}`),
     extractedInsights,
-    creativeSafety
+    creativeSafety,
+    extraction: {
+      sourceSampleId: sample.id,
+      method: extracted.method,
+      extractedAt: new Date().toISOString(),
+      fallbackReason: extracted.fallbackReason
+    }
   });
 }
 
@@ -202,6 +209,38 @@ ${sample.commentSnippets.slice(0, 6).join("\n") || "无"}
   return normalizeExtractedInsights(parsed);
 }
 
+async function extractViralInsights({
+  sample,
+  topic,
+  category,
+  model
+}: {
+  sample: SampleEvidence;
+  topic: string;
+  category: string;
+  model?: ModelProvider;
+}): Promise<{ insights: ViralExtractedInsights; method: ViralExtractionProvenance["method"]; fallbackReason?: string }> {
+  if (!model) {
+    return {
+      insights: extractViralInsightsHeuristically(sample),
+      method: "heuristic"
+    };
+  }
+
+  try {
+    return {
+      insights: await extractViralInsightsWithModel({ sample, topic, category, model }),
+      method: "model"
+    };
+  } catch (error) {
+    return {
+      insights: extractViralInsightsHeuristically(sample),
+      method: "heuristic",
+      fallbackReason: error instanceof Error ? error.message : "model extraction failed"
+    };
+  }
+}
+
 function normalizeViralCase(item: ViralCase): ViralCase {
   const extractedInsights = normalizeExtractedInsights(item.extractedInsights);
   const contentStructure = uniqueStrings(item.contentStructure).slice(0, 8);
@@ -215,6 +254,7 @@ function normalizeViralCase(item: ViralCase): ViralCase {
   return {
     ...item,
     platform: "xiaohongshu",
+    sourceSampleId: typeof item.sourceSampleId === "string" && item.sourceSampleId.trim() ? item.sourceSampleId : inferSourceSampleId(item),
     tags: uniqueStrings(item.tags).slice(0, 12),
     imageStyle,
     contentStructure,
@@ -222,8 +262,29 @@ function normalizeViralCase(item: ViralCase): ViralCase {
       ? item.embedding
       : createLocalEmbedding(`${item.title}\n${item.bodyExcerpt}\n${creativeSafety.summary}`),
     extractedInsights,
-    creativeSafety
+    creativeSafety,
+    extraction: normalizeExtractionProvenance(item.extraction, item)
   };
+}
+
+function normalizeExtractionProvenance(value: ViralExtractionProvenance | undefined, item: ViralCase): ViralExtractionProvenance {
+  const record: Record<string, unknown> = isRecord(value) ? value : {};
+  const method = record.method === "model" || record.method === "heuristic" ? record.method : "heuristic";
+  const sourceSampleId = typeof record.sourceSampleId === "string" && record.sourceSampleId.trim()
+    ? record.sourceSampleId.trim()
+    : inferSourceSampleId(item);
+  return {
+    sourceSampleId,
+    method,
+    extractedAt: typeof record.extractedAt === "string" && record.extractedAt.trim() ? record.extractedAt.trim() : item.createdAt,
+    fallbackReason: typeof record.fallbackReason === "string" && record.fallbackReason.trim() ? record.fallbackReason.trim() : undefined
+  };
+}
+
+function inferSourceSampleId(item: Pick<ViralCase, "sourceSampleId" | "sourceUrl" | "id">): string {
+  if (typeof item.sourceSampleId === "string" && item.sourceSampleId.trim()) return item.sourceSampleId.trim();
+  const match = item.sourceUrl?.match(/\/explore\/([^/?#]+)/);
+  return match?.[1] || item.id;
 }
 
 function normalizeCreativeSafety(

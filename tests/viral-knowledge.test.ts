@@ -61,12 +61,71 @@ describe("viral knowledge base", () => {
     });
 
     expect(results[0].case.title).toBe(sample.title);
+    expect(results[0].case.sourceSampleId).toBe(sample.id);
+    expect(results[0].case.extraction).toMatchObject({
+      sourceSampleId: sample.id,
+      method: "heuristic"
+    });
     expect(results[0].case.bodyExcerpt.length).toBeLessThanOrEqual(240);
     expect(results[0].case.extractedInsights.reusableRules.length).toBeGreaterThan(0);
     expect(results[0].case.creativeSafety?.summary).toContain("只能作为创作规律来源");
     expect(results[0].case.creativeSafety?.doNotCopy.join(" ")).toContain("不要复制");
     expect(results[0].case.creativeSafety?.transformationGuidance.join(" ")).toContain("自己的");
     expect(results[0].score).toBeGreaterThan(0);
+  });
+
+  it("records model extraction provenance when AI extracts reusable viral patterns", async () => {
+    const viralCase = await createViralCaseFromEvidence({
+      sample,
+      topic: "Guangzhou coffee",
+      category: "Cafe review",
+      model: {
+        generateStructuredText: async () => JSON.stringify({
+          titleHooks: ["Lead with a concrete save-worthy cafe scenario"],
+          copyStructures: ["Queue time -> average spend -> photo spot -> weekend warning"],
+          tagPatterns: ["topic tag + city tag + use-case tag"],
+          visualPatterns: ["Natural light cover with clear cafe subject"],
+          audienceSignals: ["weekend cafe reviewers"],
+          painPoints: ["afraid of wasting time in crowded cafes"],
+          emotionalTriggers: ["honest avoidance guidance"],
+          commentConcerns: ["average spend", "weekend crowd"],
+          reusableRules: ["Turn interaction questions into decision criteria"],
+          avoidCopying: ["do not copy the original title or review wording"]
+        }),
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(viralCase.extraction).toMatchObject({
+      sourceSampleId: sample.id,
+      method: "model"
+    });
+    expect(viralCase.extraction.extractedAt).toBeTruthy();
+    expect(viralCase.extractedInsights.titleHooks).toEqual(["Lead with a concrete save-worthy cafe scenario"]);
+    expect(viralCase.creativeSafety?.reusablePatterns.join(" ")).toContain("Turn interaction questions into decision criteria");
+  });
+
+  it("keeps a fallback reason when model extraction fails", async () => {
+    const viralCase = await createViralCaseFromEvidence({
+      sample,
+      topic: "Guangzhou coffee",
+      category: "Cafe review",
+      model: {
+        generateStructuredText: async () => {
+          throw new Error("model unavailable");
+        },
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(viralCase.extraction.method).toBe("heuristic");
+    expect(viralCase.extraction.sourceSampleId).toBe(sample.id);
+    expect(viralCase.extraction.fallbackReason).toBe("model unavailable");
+    expect(viralCase.extractedInsights.reusableRules.length).toBeGreaterThan(0);
   });
 
   it("converts viral cases into source-tagged evidence insights", async () => {

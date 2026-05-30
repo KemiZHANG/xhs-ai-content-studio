@@ -163,6 +163,7 @@ export type ResearchSummary = {
 export type ViralCase = {
   id: string;
   platform: "xiaohongshu";
+  sourceSampleId: string;
   topic: string;
   category: string;
   title: string;
@@ -201,6 +202,12 @@ export type ViralCase = {
     reusablePatterns: string[];
     doNotCopy: string[];
     transformationGuidance: string[];
+  };
+  extraction: {
+    sourceSampleId: string;
+    method: "model" | "heuristic";
+    extractedAt: string;
+    fallbackReason?: string;
   };
 };
 

@@ -1151,6 +1151,11 @@ function ViralCaseDrawer({ viralCase, onClose }: { viralCase: ViralCase; onClose
             <span>Viral Knowledge Detail</span>
             <h3>{viralCase.hookType || viralCase.title}</h3>
             <p>{viralCase.topic} · {viralCase.category} · 赞 {viralCase.metrics.likes} · 藏 {viralCase.metrics.collects} · 评 {viralCase.metrics.comments}</p>
+            <p className="muted">
+              Extraction: {viralCase.extraction.method === "model" ? "AI model" : "local heuristic"}
+              {" · "}Source: {viralCase.extraction.sourceSampleId || viralCase.sourceSampleId}
+              {viralCase.extraction.fallbackReason ? ` · fallback: ${viralCase.extraction.fallbackReason}` : ""}
+            </p>
           </div>
           <button type="button" onClick={onClose}>关闭</button>
         </header>

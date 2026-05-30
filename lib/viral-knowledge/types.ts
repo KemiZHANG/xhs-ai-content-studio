@@ -28,9 +28,17 @@ export type ViralCreativeSafety = {
   transformationGuidance: string[];
 };
 
+export type ViralExtractionProvenance = {
+  sourceSampleId: string;
+  method: "model" | "heuristic";
+  extractedAt: string;
+  fallbackReason?: string;
+};
+
 export type ViralCase = {
   id: string;
   platform: ViralPlatform;
+  sourceSampleId: string;
   topic: string;
   category: string;
   title: string;
@@ -48,6 +56,7 @@ export type ViralCase = {
   embedding: number[];
   extractedInsights: ViralExtractedInsights;
   creativeSafety?: ViralCreativeSafety;
+  extraction: ViralExtractionProvenance;
 };
 
 export type ViralCaseFilters = {
