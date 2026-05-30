@@ -63,6 +63,7 @@ export function PostStudioPanel({
   publishAssetIds,
   publishVisibility,
   publishScheduleAt,
+  canvasDirty,
   pendingPublish,
   settings,
   health,
@@ -73,6 +74,7 @@ export function PostStudioPanel({
   onChatInput,
   onChatSubmit,
   onDraftChange,
+  onCommitCanvas,
   onNavigate,
   onNewProject,
   onGenerateCopy,
@@ -100,6 +102,7 @@ export function PostStudioPanel({
   publishAssetIds: string[];
   publishVisibility: RedactedSettings["defaultVisibility"];
   publishScheduleAt: string;
+  canvasDirty: boolean;
   pendingPublish: PendingPublishConfirmation | null;
   settings: RedactedSettings;
   health: Health | null;
@@ -110,6 +113,7 @@ export function PostStudioPanel({
   onChatInput: (value: string) => void;
   onChatSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onDraftChange: (next: PublishDraftState) => void;
+  onCommitCanvas: () => void;
   onNavigate: (section: Section) => void;
   onNewProject: () => void;
   onGenerateCopy: (message: string) => void;
@@ -210,6 +214,7 @@ export function PostStudioPanel({
       selectedAssets.length &&
       hasVisualDirection &&
       accountReady &&
+      !canvasDirty &&
       quality?.canPublish === true &&
       versionStatus?.qualityGateFresh === true
   );
@@ -489,8 +494,8 @@ export function PostStudioPanel({
               ) : null}
               {versionStatus ? (
                 <section className={versionStatus.qualityGateFresh ? "versionIntegrity ok" : "versionIntegrity warn"} aria-label="版本与发布检查状态">
-                  <strong>{versionStatus.qualityGateFresh ? "版本已确认" : "版本需要复核"}</strong>
-                  <p>{versionStatus.summary}</p>
+                  <strong>{canvasDirty ? "画布有未保存修改" : versionStatus.qualityGateFresh ? "版本已确认" : "版本需要复核"}</strong>
+                  <p>{canvasDirty ? "请先保存画布到当前 PostProject，再运行发布检查，避免误用旧草稿或旧图片。" : versionStatus.summary}</p>
                   {versionDiff?.hasChanges ? (
                     <div className="versionDiffList" aria-label="版本差异">
                       {versionDiff.changes
@@ -522,6 +527,10 @@ export function PostStudioPanel({
           </div>
 
           <div className="canvasActionRow">
+            <button className={canvasDirty ? "primaryButton" : "secondaryButton"} disabled={!publishDraft.title && !publishDraft.content} onClick={onCommitCanvas} type="button">
+              <FileText size={16} />
+              {canvasDirty ? "保存画布" : "画布已同步"}
+            </button>
             <button className="secondaryButton" onClick={() => onQuickAction("plan_visuals")} type="button">
               <Sparkles size={16} />
               规划图片方向
@@ -534,9 +543,9 @@ export function PostStudioPanel({
               <ImagePlus size={16} />
               生成图文卡片
             </button>
-            <button className="primaryButton" onClick={() => onQuickAction("run_quality_gate")} disabled={!publishDraft.title || !publishDraft.content} type="button">
+            <button className="primaryButton" onClick={() => onQuickAction("run_quality_gate")} disabled={!publishDraft.title || !publishDraft.content || canvasDirty} type="button">
               <ShieldCheck size={16} />
-              发布检查
+              {canvasDirty ? "先保存再检查" : "发布检查"}
             </button>
           </div>
         </section>

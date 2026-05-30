@@ -127,6 +127,7 @@ export default function Home() {
     tagsText: "",
     imagePrompt: ""
   });
+  const [canvasDirty, setCanvasDirty] = useState(false);
   const [publishAssetIds, setPublishAssetIds] = useState<string[]>([]);
   const [publishVisibility, setPublishVisibility] = useState<RedactedSettings["defaultVisibility"]>("仅自己可见");
   const [publishScheduleAt, setPublishScheduleAt] = useState("");
@@ -365,11 +366,13 @@ export default function Home() {
       imagePrompt: draft.imagePrompt
     });
     setPublishVisibility(visibility);
+    setCanvasDirty(false);
   }
 
   function handlePublishDraftChange(next: PublishDraftState) {
     setPendingPublish(null);
     setPublishDraft(next);
+    setCanvasDirty(true);
   }
 
   async function commitCanvasToProject(overrides: Partial<PublishDraftState> = {}, selectedImageIds = publishAssetIds) {
@@ -394,6 +397,7 @@ export default function Home() {
       applyCurrentDraft(data.currentDraft);
     }
     await loadWorkspace();
+    setCanvasDirty(false);
     return data.project;
   }
 
@@ -434,6 +438,7 @@ export default function Home() {
     })) as { project: PostProject; currentDraft?: DraftRecord | null };
     setPostProject(data.project);
     setPublishAssetIds(uniqueSelected);
+    setCanvasDirty(false);
     await loadWorkspace();
     setNotice(uniqueSelected.length ? `已选择 ${uniqueSelected.length} 张发布图片。` : "已清空发布图片选择。");
   }
@@ -848,6 +853,7 @@ export default function Home() {
     setResearchResult(null);
     setCurrentDraft(null);
     setPublishDraft({ title: "", content: "", tagsText: "", imagePrompt: "" });
+    setCanvasDirty(false);
     setPublishAssetIds([]);
     setPublishScheduleAt("");
     setPublishStatus("");
@@ -1181,6 +1187,7 @@ export default function Home() {
             publishAssetIds={publishAssetIds}
             publishVisibility={publishVisibility}
             publishScheduleAt={publishScheduleAt}
+            canvasDirty={canvasDirty}
             pendingPublish={pendingPublish}
             settings={settings}
             health={health}
@@ -1191,6 +1198,7 @@ export default function Home() {
             onChatInput={setChatInput}
             onChatSubmit={(event) => void sendChat(event)}
             onDraftChange={handlePublishDraftChange}
+            onCommitCanvas={() => void commitCanvasToProject()}
             onNewProject={() => void startNewProject()}
             onGenerateCopy={(message) => void submitChatMessage(message, true)}
             onQuickAction={(action) => void handlePostStudioAction(action)}
@@ -1351,9 +1359,10 @@ export default function Home() {
             onToggleAsset={(id) =>
               {
                 setPendingPublish(null);
-                setPublishAssetIds((current) =>
-                  current.includes(id) ? current.filter((assetId) => assetId !== id) : [...current, id]
-                );
+                const nextIds = publishAssetIds.includes(id)
+                  ? publishAssetIds.filter((assetId) => assetId !== id)
+                  : [...publishAssetIds, id];
+                void selectPostImages(nextIds);
               }
             }
             onVisibilityChange={(value) => {
