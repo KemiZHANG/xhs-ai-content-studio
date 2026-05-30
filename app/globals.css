@@ -3265,11 +3265,21 @@ textarea {
   padding: 12px;
 }
 
+.postReadinessPanel:not([open]) {
+  padding-bottom: 12px;
+}
+
 .postReadinessHeader {
   align-items: center;
+  cursor: pointer;
   display: flex;
   gap: 12px;
   justify-content: space-between;
+  list-style: none;
+}
+
+.postReadinessHeader::-webkit-details-marker {
+  display: none;
 }
 
 .postReadinessHeader span {
@@ -3415,13 +3425,53 @@ textarea {
 .studioResearchBox {
   background: var(--surface-subtle);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 0 0 12px 12px;
+  border-top: 0;
   padding: 12px;
 }
 
 .studioAgentPane .studioResearchBox {
-  max-height: 230px;
+  max-height: 250px;
   overflow: auto;
+}
+
+.studioResearchDetails {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-top: 2px;
+  overflow: hidden;
+}
+
+.studioResearchDetails summary {
+  align-items: center;
+  background: color-mix(in srgb, var(--surface-subtle) 84%, white);
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  list-style: none;
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.studioResearchDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.studioResearchDetails summary span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.studioResearchDetails summary strong {
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.studioResearchDetails:not([open]) .studioResearchBox {
+  display: none;
 }
 
 .studioResearchBox textarea {

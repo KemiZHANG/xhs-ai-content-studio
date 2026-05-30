@@ -255,14 +255,14 @@ export function PostStudioPanel({
           <button className="secondaryButton" onClick={onNewProject} type="button">新建项目</button>
         </div>
         {readiness ? (
-          <div className="postReadinessPanel" aria-label="发布准备度">
-            <div className="postReadinessHeader">
+          <details className="postReadinessPanel" aria-label="发布准备度">
+            <summary className="postReadinessHeader">
               <div>
                 <span>发布准备度</span>
                 <strong>{readiness.summary}</strong>
               </div>
               <em>{readiness.progress}%</em>
-            </div>
+            </summary>
             <div className="postReadinessTrack" aria-hidden="true">
               <span style={{ width: `${readiness.progress}%` }} />
             </div>
@@ -279,7 +279,7 @@ export function PostStudioPanel({
                 </button>
               ) : null}
             </div>
-          </div>
+          </details>
         ) : null}
       </section>
 
@@ -292,39 +292,45 @@ export function PostStudioPanel({
             </div>
           </div>
 
-          <form className="studioResearchBox" onSubmit={onRunResearch}>
-            <label>
-              <span>主题</span>
-              <input value={researchForm.topic} onChange={(event) => onResearchFormChange({ ...researchForm, topic: event.target.value })} />
-            </label>
-            <div className="formRow">
+          <details className="studioResearchDetails" open={!samples.length}>
+            <summary>
+              <span>真实笔记研究</span>
+              <strong>{samples.length ? `${samples.length} 条证据已绑定` : "先搜索证据"}</strong>
+            </summary>
+            <form className="studioResearchBox" onSubmit={onRunResearch}>
               <label>
-                <span>时间</span>
-                <select value={researchForm.timeRange} onChange={(event) => onResearchFormChange({ ...researchForm, timeRange: event.target.value })}>
-                  <option>一天内</option>
-                  <option>一周内</option>
-                  <option>两周内</option>
-                  <option>半年内</option>
-                </select>
+                <span>主题</span>
+                <input value={researchForm.topic} onChange={(event) => onResearchFormChange({ ...researchForm, topic: event.target.value })} />
               </label>
+              <div className="formRow">
+                <label>
+                  <span>时间</span>
+                  <select value={researchForm.timeRange} onChange={(event) => onResearchFormChange({ ...researchForm, timeRange: event.target.value })}>
+                    <option>一天内</option>
+                    <option>一周内</option>
+                    <option>两周内</option>
+                    <option>半年内</option>
+                  </select>
+                </label>
+                <label>
+                  <span>样本</span>
+                  <input min={3} max={20} type="number" value={researchForm.sampleCount} onChange={(event) => onResearchFormChange({ ...researchForm, sampleCount: Number(event.target.value) })} />
+                </label>
+              </div>
               <label>
-                <span>样本</span>
-                <input min={3} max={20} type="number" value={researchForm.sampleCount} onChange={(event) => onResearchFormChange({ ...researchForm, sampleCount: Number(event.target.value) })} />
+                <span>创作要求</span>
+                <textarea
+                  placeholder="目标人群、语气、卖点、禁忌词、产品信息等。"
+                  value={researchForm.requirements}
+                  onChange={(event) => onResearchFormChange({ ...researchForm, requirements: event.target.value })}
+                />
               </label>
-            </div>
-            <label>
-              <span>创作要求</span>
-              <textarea
-                placeholder="目标人群、语气、卖点、禁忌词、产品信息等。"
-                value={researchForm.requirements}
-                onChange={(event) => onResearchFormChange({ ...researchForm, requirements: event.target.value })}
-              />
-            </label>
-            <button className="primaryButton fullWidth" disabled={busy} type="submit">
-              <Search size={16} />
-              搜索并提炼证据
-            </button>
-          </form>
+              <button className="primaryButton fullWidth" disabled={busy} type="submit">
+                <Search size={16} />
+                搜索并提炼证据
+              </button>
+            </form>
+          </details>
 
           {runningJob ? (
             <div className="studioToolTrace">
