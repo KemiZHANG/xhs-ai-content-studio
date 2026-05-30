@@ -490,6 +490,7 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
 
     let postProject = await readPostProject();
     if (plan.steps.some((step) => step.action === "retrieveViralKnowledge")) {
+      const ragFilterSummary = formatRagFiltersSummary(plan.ragFilters);
       postProject = await ensureViralEvidenceForProject(postProject, {
         force: Boolean(plan.ragFilters),
         filters: plan.ragFilters
@@ -497,7 +498,10 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
       trace = addTraceEvent(trace, {
         type: "tool_called",
         label: "knowledge.retrieveViralPatterns",
-        detail: "Refreshed viral-library RAG evidence after the legacy research workflow.",
+        detail: [
+          "Refreshed viral-library RAG evidence after the legacy research workflow.",
+          ragFilterSummary ? `Filters: ${ragFilterSummary}` : ""
+        ].filter(Boolean).join(" "),
         metadata: {
           filters: plan.ragFilters,
           viralInsightCount: postProject.evidencePack.insights.filter((insight) => insight.sourceType === "viral_library").length
@@ -515,7 +519,7 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
     return {
       ...legacyResult,
       ...buildAgentTurnResult({
-        answer: legacyResult.answer,
+        answer: appendRagFilterSummaryToAnswer(legacyResult.answer, plan.ragFilters),
         plan,
         workspace,
         currentDraft: legacyResult.currentDraft ?? input.currentDraft ?? undefined,
@@ -952,6 +956,7 @@ async function maybeHandleViralKnowledgeTurn(
   return {
     answer: [
       `已基于「${topic}」刷新爆款库 RAG 证据，并合入当前 PostProject。`,
+      plan.ragFilters ? `本次筛选条件：${formatRagFiltersSummary(plan.ragFilters)}` : "",
       viralInsights.length
         ? `当前共有 ${viralInsights.length} 条爆款库规律，可用于 CreativeBrief、文案和图片方向。`
         : "暂时没有检索到足够匹配的历史爆款规律，可以继续做实时小红书研究，或先把优秀样本保存进爆款库。",
@@ -961,6 +966,42 @@ async function maybeHandleViralKnowledgeTurn(
     workspace,
     postProject: updatedProject
   };
+}
+
+function appendRagFilterSummaryToAnswer(answer: string, filters: ReturnType<typeof createAgentPlan>["ragFilters"]): string {
+  const summary = formatRagFiltersSummary(filters);
+  if (!summary || answer.includes("爆款库筛选条件")) {
+    return answer;
+  }
+  return `${answer}\n\n爆款库筛选条件：${summary}`;
+}
+
+function formatRagFiltersSummary(filters: ReturnType<typeof createAgentPlan>["ragFilters"]): string {
+  if (!filters) return "";
+  const items = [
+    filters.createdAfter ? `入库时间 ≥ ${filters.createdAfter.slice(0, 10)}` : "",
+    filters.createdBefore ? `入库时间 ≤ ${filters.createdBefore.slice(0, 10)}` : "",
+    filters.minLikes !== undefined ? `点赞 ≥ ${filters.minLikes}` : "",
+    filters.minCollects !== undefined ? `收藏 ≥ ${filters.minCollects}` : "",
+    filters.minComments !== undefined ? `评论 ≥ ${filters.minComments}` : "",
+    filters.minShares !== undefined ? `分享 ≥ ${filters.minShares}` : "",
+    filters.minScore !== undefined ? `综合分 ≥ ${filters.minScore}` : "",
+    filters.tags?.length ? `标签包含 ${filters.tags.join("、")}` : "",
+    filters.sortBy ? `按${ragSortLabel(filters.sortBy)}${filters.sortOrder === "asc" ? "升序" : "降序"}排序` : ""
+  ].filter(Boolean);
+  return items.join("；");
+}
+
+function ragSortLabel(sortBy: NonNullable<NonNullable<ReturnType<typeof createAgentPlan>["ragFilters"]>["sortBy"]>): string {
+  const labels = {
+    createdAt: "入库时间",
+    likes: "点赞",
+    collects: "收藏",
+    comments: "评论",
+    shares: "分享",
+    score: "综合分"
+  };
+  return labels[sortBy];
 }
 
 function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecord | null, postProject?: PostProject | null): AgentResponseCard[] {

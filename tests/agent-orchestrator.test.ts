@@ -549,6 +549,10 @@ describe("agent orchestrator", () => {
     expect(runChatAgent).toHaveBeenCalled();
     expect(result.intent).toBe("research_to_draft");
     expect(result.trace.events.some((event) => event.label === "knowledge.retrieveViralPatterns")).toBe(true);
+    expect(result.trace.events.find((event) => event.label === "knowledge.retrieveViralPatterns")?.detail).toContain("收藏");
+    expect(result.answer).toContain("爆款库筛选条件");
+    expect(result.answer).toContain("收藏 ≥ 1000");
+    expect(result.answer).toContain("分享 ≥ 20");
     expect(viralSourceIds).toContain(highCase.id);
     expect(viralSourceIds).not.toContain(lowCase.id);
   });
@@ -614,6 +618,65 @@ describe("agent orchestrator", () => {
     expect(result.toolTrace.some((item) => item.label === "knowledge.retrieveViralPatterns" && item.status === "completed")).toBe(true);
     expect(result.trace.events.some((event) => event.type === "tool_completed" && event.label === "knowledge.retrieveViralPatterns")).toBe(true);
     expect(result.answer).toContain("爆款库");
+  });
+
+  it("explains explicit viral-library retrieval filters in the agent answer", async () => {
+    const viralSample: SampleEvidence = {
+      id: "note-viral-filtered-bag",
+      title: "通勤包高收藏真实测评",
+      author: "author",
+      likes: 1200,
+      collects: 2200,
+      comments: 90,
+      shares: 30,
+      score: 3600,
+      url: "https://www.xiaohongshu.com/explore/note-viral-filtered-bag",
+      imageUrls: ["https://example.com/bag.jpg"],
+      cachedImageUrls: [],
+      detailText: "先讲适合人群，再拆容量、肩带、分区和通勤场景，最后给避坑建议。",
+      commentSnippets: ["电脑能不能装", "肩带勒不勒"],
+      reasonHighlights: []
+    };
+    await upsertViralCases([
+      await createViralCaseFromEvidence({
+        sample: viralSample,
+        topic: "通勤包",
+        category: "产品测评"
+      })
+    ]);
+    await resetPostProject({
+      topic: "通勤包",
+      targetAudience: "上班族",
+      goal: "生成真实通勤包种草笔记",
+      currentStage: "brief_ready"
+    });
+
+    const result = await runAgentTurn({
+      message: "检索爆款库里通勤包 #测评 收藏超过1000 分享20以上的高收藏案例",
+      conversationId: "chat-viral-filter-summary",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: vi.fn(async () => []),
+        getFeedDetail: vi.fn(async () => null),
+        publishContent: vi.fn(async () => ({ ok: true }))
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      },
+      runChatAgentImpl: vi.fn(async () => ({ answer: "legacy answer" }))
+    });
+
+    expect(result.intent).toBe("retrieve_viral_knowledge");
+    expect(result.answer).toContain("本次筛选条件");
+    expect(result.answer).toContain("收藏 ≥ 1000");
+    expect(result.answer).toContain("分享 ≥ 20");
+    expect(result.answer).toContain("标签包含 测评");
   });
 
   it("uses the selected image index when preparing a scheduled publish intent", async () => {
