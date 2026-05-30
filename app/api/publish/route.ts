@@ -13,7 +13,7 @@ import { runPostQualityGate } from "@/lib/post-project/quality";
 import { readPostProject, updatePostProject } from "@/lib/post-project/store";
 import { buildPublishVersionSnapshot } from "@/lib/post-project/versioning";
 import type { PublishEvidenceCitationSummary, PublishVersionSnapshot } from "@/lib/agent/types";
-import type { QualityCheck } from "@/lib/post-project/types";
+import type { PostProject, QualityCheck } from "@/lib/post-project/types";
 import { buildPublishContentArgs, parseTagsText } from "@/lib/publishing/assembly";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { getAsset, type AssetRecord } from "@/lib/storage/assets";
@@ -268,27 +268,14 @@ async function getQualityGateReview(
     const project = await readPostProject();
     const evidenceCitationSummary = buildPublishEvidenceCitationSummary(project);
     const versionSnapshot = buildPublishVersionSnapshot(project);
+    if (!hasPostProjectPublishContext(project)) {
+      return { reasons: [], evidenceCitationSummary, versionSnapshot };
+    }
     const snapshotMismatchReasons = getProjectSnapshotMismatchReasons(project, publishArgs, assetIds);
     if (snapshotMismatchReasons.length) {
       return { reasons: snapshotMismatchReasons, evidenceCitationSummary, versionSnapshot };
     }
-    if (!shouldRunProjectQualityGate(project, publishArgs, assetIds)) {
-      return { reasons: [], evidenceCitationSummary, versionSnapshot };
-    }
-    const imageIds = assetIds.length ? assetIds : publishArgs.images;
-    const qualityCheck = runPostQualityGate({
-      ...project,
-      finalPost: {
-        title: publishArgs.title,
-        content: publishArgs.content,
-        tags: publishArgs.tags,
-        imageIds,
-        coverImageId: imageIds[0],
-        copyVersionId: project.copyDraft ? `copy-${project.copyDraft.id}` : undefined,
-        imagePromptVersionIds: (project.imagePrompts ?? []).map((prompt) => prompt.id)
-      },
-      selectedImages: imageIds
-    });
+    const qualityCheck = runPostQualityGate(buildProjectForPublishQualityGate(project, publishArgs, assetIds));
     if (qualityCheck.canPublish) {
       return { qualityCheck, reasons: [], evidenceCitationSummary, versionSnapshot };
     }
@@ -301,9 +288,63 @@ async function getQualityGateReview(
       ...qualityCheck.issues.slice(0, 5)
       ]
     };
-  } catch {
-    return { reasons: [] };
+  } catch (error) {
+    return {
+      reasons: [
+        error instanceof Error
+          ? `无法完成 Quality Gate：${error.message}`
+          : "无法完成 Quality Gate"
+      ]
+    };
   }
+}
+
+function buildProjectForPublishQualityGate(
+  project: Awaited<ReturnType<typeof readPostProject>>,
+  publishArgs: GuardedPublishArgs,
+  assetIds: string[]
+): Pick<PostProject, "finalPost" | "copyDraft" | "selectedImages" | "creativeBrief" | "visualDirection"> &
+  Partial<Pick<PostProject, "selectedSamples" | "evidencePack" | "imagePrompts">> {
+  const imageIds = assetIds.length ? assetIds : publishArgs.images;
+  const evidenceIds = getPublishPayloadEvidenceIds(project);
+  const now = new Date().toISOString();
+  return {
+    ...project,
+    copyDraft: {
+      id: project.copyDraft?.id ?? "publish-payload",
+      updatedAt: project.copyDraft?.updatedAt ?? now,
+      source: project.copyDraft?.source,
+      draft: {
+        title: publishArgs.title,
+        content: publishArgs.content,
+        tags: publishArgs.tags,
+        structure: project.copyDraft?.draft.structure ?? [],
+        imagePrompt: project.copyDraft?.draft.imagePrompt ?? project.imagePrompts?.at(-1)?.value.prompt ?? "",
+        basedOnEvidenceIds: evidenceIds.length ? evidenceIds : undefined,
+        evidenceReferences: project.copyDraft?.draft.evidenceReferences
+      },
+      images: project.copyDraft?.images ?? [],
+      visibility: project.copyDraft?.visibility ?? publishArgs.visibility
+    },
+    finalPost: {
+      title: publishArgs.title,
+      content: publishArgs.content,
+      tags: publishArgs.tags,
+      imageIds,
+      coverImageId: imageIds[0],
+      copyVersionId: project.copyDraft ? `copy-${project.copyDraft.id}` : "copy-publish-payload",
+      imagePromptVersionIds: (project.imagePrompts ?? []).map((prompt) => prompt.id)
+    },
+    selectedImages: imageIds
+  };
+}
+
+function getPublishPayloadEvidenceIds(project: Awaited<ReturnType<typeof readPostProject>>): string[] {
+  return uniqueStrings([
+    ...(project.copyDraft?.draft.basedOnEvidenceIds ?? []),
+    ...(project.creativeBrief?.basedOnEvidenceIds ?? []),
+    ...(project.evidencePack?.insights ?? []).map((insight) => insight.id)
+  ]).slice(0, 12);
 }
 
 function buildPublishEvidenceCitationSummary(
@@ -338,6 +379,9 @@ function getProjectSnapshotMismatchReasons(
   }
   const reasons: string[] = [];
   const hasTextSnapshot = Boolean(project.copyDraft || project.finalPost);
+  if (!hasTextSnapshot && (project.creativeBrief || project.evidencePack?.insights?.length)) {
+    reasons.push("当前 PostProject 还没有保存的文案版本或最终帖子，请先在 Post Studio 保存画布并运行发布检查");
+  }
   const matchesDraft = Boolean(
     project.copyDraft &&
       project.copyDraft.draft.title === publishArgs.title &&
@@ -361,26 +405,6 @@ function getProjectSnapshotMismatchReasons(
   return reasons;
 }
 
-function shouldRunProjectQualityGate(
-  project: Awaited<ReturnType<typeof readPostProject>>,
-  publishArgs: GuardedPublishArgs,
-  assetIds: string[]
-): boolean {
-  if (!hasPostProjectPublishContext(project)) return false;
-  const matchesDraft = Boolean(
-    project.copyDraft &&
-      project.copyDraft.draft.title === publishArgs.title &&
-      project.copyDraft.draft.content === publishArgs.content
-  );
-  const matchesFinalPost = Boolean(
-    project.finalPost &&
-      project.finalPost.title === publishArgs.title &&
-      project.finalPost.content === publishArgs.content
-  );
-  const matchesSelectedImages = !assetIds.length || !project.selectedImages?.length || assetIds.some((id) => project.selectedImages.includes(id));
-  return (matchesDraft || matchesFinalPost) && matchesSelectedImages;
-}
-
 function hasPostProjectPublishContext(project: Awaited<ReturnType<typeof readPostProject>>): boolean {
   return Boolean(
     project.creativeBrief ||
@@ -397,6 +421,10 @@ function sameStringSet(left: string[], right: string[]): boolean {
   const leftSet = new Set(left.map(String).filter(Boolean));
   const rightSet = new Set(right.map(String).filter(Boolean));
   return leftSet.size === rightSet.size && [...leftSet].every((item) => rightSet.has(item));
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values.map(String).map((value) => value.trim()).filter(Boolean))];
 }
 
 async function verifyActiveXhsLogin(client: ReturnType<typeof createXhsMcpClient>): Promise<string | null> {

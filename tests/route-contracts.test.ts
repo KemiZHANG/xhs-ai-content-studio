@@ -788,12 +788,35 @@ describe("API route contracts", () => {
     }));
     vi.doMock("@/lib/post-project/store", () => ({
       readPostProject: async () => ({
-        evidencePack: { insights: [{ id: "insight-1" }] },
+        evidencePack: {
+          insights: [{
+            id: "insight-1",
+            type: "copy",
+            insight: "写清真实体验和适用人群",
+            sourceSampleIds: ["sample-1"],
+            confidence: 0.9,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }]
+        },
         selectedSamples: [],
         creativeBrief: { basedOnEvidenceIds: ["insight-1"] },
-        visualDirection: { mood: "真实" },
-        copyDraft: null,
-        imagePrompts: []
+        visualDirection: { mood: "真实", basedOnEvidenceIds: ["insight-1"] },
+        copyDraft: {
+          id: "draft-current",
+          updatedAt: "now",
+          draft: {
+            title: "title",
+            content: "content content content content content content content content content content content content",
+            tags: ["tag"],
+            structure: [],
+            imagePrompt: "真实场景图",
+            basedOnEvidenceIds: ["insight-1"]
+          },
+          images: [],
+          visibility: defaultSettings.defaultVisibility
+        },
+        selectedImages: ["asset-1"],
+        imagePrompts: [{ id: "prompt-1", value: { prompt: "真实场景图" }, basedOnEvidenceIds: ["insight-1"] }]
       }),
       updatePostProject
     }));
@@ -806,7 +829,7 @@ describe("API route contracts", () => {
     const response = await POST(
       jsonRequest({
         title: "title",
-        content: "content",
+        content: "content content content content content content content content content content content content",
         tags: ["tag"],
         assetIds: ["asset-1"],
         confirmed: true
@@ -1098,6 +1121,171 @@ describe("API route contracts", () => {
     expect(publishContent).not.toHaveBeenCalled();
   });
 
+  it("forces Quality Gate on matching publish payloads instead of trusting stale project status", async () => {
+    const asset = {
+      id: "asset-1",
+      kind: "upload",
+      name: "image",
+      originalName: "image.png",
+      absolutePath: "C:\\xhs\\generated-assets\\uploads\\image.png",
+      mimeType: "image/png",
+      size: 10,
+      createdAt: "2026-05-21T00:00:00.000Z"
+    };
+    const executeGuardedPublish = vi.fn();
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings,
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: async () => asset
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({ publishContent: vi.fn() })
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => ({
+        creativeBrief: {
+          audience: "探店人群",
+          painPoint: "不知道去哪",
+          contentAngle: "真实体验",
+          emotionalHook: "周末可去",
+          proofPoints: ["环境", "位置"],
+          tone: "真实",
+          visualMood: "自然光",
+          imageMustHave: ["咖啡"],
+          imageMustAvoid: [],
+          platformStyle: "小红书",
+          tabooWords: [],
+          complianceNotes: [],
+          basedOnEvidenceIds: ["insight-1"]
+        },
+        visualDirection: {
+          mood: "真实自然",
+          composition: "桌面近景",
+          colorPalette: "暖色",
+          mustHave: ["咖啡"],
+          mustAvoid: [],
+          basedOnEvidenceIds: ["insight-1"]
+        },
+        copyDraft: {
+          id: "draft-current",
+          updatedAt: "now",
+          draft: {
+            title: "全网第一咖啡馆",
+            content: "这里适合周末下午来坐一会儿，有自然光、安静座位和清晰的点单建议。适合想找地方聊天、办公或短暂停留的人。",
+            tags: ["咖啡", "探店"],
+            structure: [],
+            imagePrompt: "自然光咖啡馆桌面",
+            basedOnEvidenceIds: ["insight-1"]
+          },
+          images: [],
+          visibility: defaultSettings.defaultVisibility
+        },
+        selectedImages: ["asset-1"],
+        evidencePack: {
+          insights: [{
+            id: "insight-1",
+            type: "copy",
+            insight: "用真实场景和适用人群增强可信度",
+            sourceSampleIds: ["sample-1"],
+            confidence: 0.9,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }]
+        },
+        selectedSamples: [],
+        imagePrompts: [{
+          id: "prompt-1",
+          value: { prompt: "自然光咖啡馆桌面" },
+          basedOnEvidenceIds: ["insight-1"]
+        }]
+      }),
+      updatePostProject: vi.fn(async () => ({}))
+    }));
+    vi.doMock("@/lib/agent/publishing", () => ({
+      getPublishIntent: vi.fn(),
+      publishIntentMatchesArgs: vi.fn(() => false),
+      executeGuardedPublish
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(),
+      writeCurrentDraft: vi.fn()
+    }));
+
+    const { POST } = await import("@/app/api/publish/route");
+    const response = await POST(jsonRequest({
+      title: "全网第一咖啡馆",
+      content: "这里适合周末下午来坐一会儿，有自然光、安静座位和清晰的点单建议。适合想找地方聊天、办公或短暂停留的人。",
+      tags: ["咖啡", "探店"],
+      assetIds: ["asset-1"],
+      confirmed: true
+    }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload.error).toContain("Quality Gate");
+    expect(payload.error).toContain("夸张词");
+    expect(executeGuardedPublish).not.toHaveBeenCalled();
+  });
+
+  it("blocks publish when a project has evidence but no committed draft or final post", async () => {
+    const asset = {
+      id: "asset-1",
+      kind: "upload",
+      name: "image",
+      originalName: "image.png",
+      absolutePath: "C:\\xhs\\generated-assets\\uploads\\image.png",
+      mimeType: "image/png",
+      size: 10,
+      createdAt: "2026-05-21T00:00:00.000Z"
+    };
+    const executeGuardedPublish = vi.fn();
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings,
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: async () => asset
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({ publishContent: vi.fn() })
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => ({
+        creativeBrief: { basedOnEvidenceIds: ["insight-1"] },
+        evidencePack: { insights: [{ id: "insight-1" }] },
+        selectedImages: ["asset-1"],
+        imagePrompts: []
+      }),
+      updatePostProject: vi.fn(async () => ({}))
+    }));
+    vi.doMock("@/lib/agent/publishing", () => ({
+      getPublishIntent: vi.fn(),
+      publishIntentMatchesArgs: vi.fn(() => false),
+      executeGuardedPublish
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(),
+      writeCurrentDraft: vi.fn()
+    }));
+
+    const { POST } = await import("@/app/api/publish/route");
+    const response = await POST(jsonRequest({
+      title: "标题",
+      content: "正文内容足够长，描述真实体验、场景、人群和注意事项，避免空泛表达。",
+      tags: ["咖啡"],
+      assetIds: ["asset-1"],
+      confirmed: true
+    }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload.error).toContain("还没有保存的文案版本");
+    expect(executeGuardedPublish).not.toHaveBeenCalled();
+  });
+
   it("preserves evidence references when committing the Post Studio canvas", async () => {
     const writeCurrentDraft = vi.fn(async (draft) => ({ id: "draft-committed", updatedAt: "now", ...draft }));
     const updateWorkspaceState = vi.fn();
@@ -1206,6 +1394,30 @@ describe("API route contracts", () => {
       qualityCheck: undefined,
       auditStatus: "unchecked"
     }));
+  });
+
+  it("ignores externally patched PostProject safety fields", async () => {
+    const updatePostProject = vi.fn(async (patch) => ({ id: "post-1", ...patch }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => ({ id: "post-1", evidencePack: { insights: [] } }),
+      updatePostProject
+    }));
+
+    const { PATCH } = await import("@/app/api/post-project/route");
+    const response = await PATCH(jsonRequest({
+      topic: "广州咖啡馆",
+      auditStatus: "passed",
+      qualityCheck: { canPublish: true },
+      finalPost: { title: "绕过", content: "绕过", tags: [], imageIds: [] },
+      publishPlan: { status: "approved" },
+      currentStage: "published",
+      allowedActions: ["publish_now"],
+      id: "post-hacked"
+    }));
+
+    expect(response.status).toBe(200);
+    expect(updatePostProject).toHaveBeenCalledWith({ topic: "广州咖啡馆" });
+    vi.doUnmock("@/lib/post-project/store");
   });
 
   it("switches copy versions through PostProject and invalidates stale publish checks", async () => {

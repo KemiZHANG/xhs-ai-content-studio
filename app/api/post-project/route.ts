@@ -223,6 +223,8 @@ function sanitizeExternalPatch(value: unknown): Partial<PostProject> {
     auditStatus: _auditStatus,
     qualityCheck: _qualityCheck,
     finalPost: _finalPost,
+    publishPlan: _publishPlan,
+    currentStage: _currentStage,
     allowedActions: _allowedActions,
     schemaVersion: _schemaVersion,
     id: _id,
