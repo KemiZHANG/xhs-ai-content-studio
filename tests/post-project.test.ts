@@ -267,6 +267,121 @@ describe("post project", () => {
     expect(quality.issues.join(" ")).toContain("疑似过度仿写样本");
   });
 
+  it("blocks publish when the active draft lacks traceable evidence ids", () => {
+    const quality = runPostQualityGate({
+      creativeBrief: {
+        audience: "广州咖啡爱好者",
+        painPoint: "不知道周末是否值得去",
+        contentAngle: "真实避坑",
+        emotionalHook: "先说结论",
+        proofPoints: ["排队", "人均"],
+        tone: "真实",
+        visualMood: "自然光",
+        imageMustHave: ["门头"],
+        imageMustAvoid: [],
+        platformStyle: "小红书",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      visualDirection: {
+        mood: "自然光",
+        composition: "门头+饮品",
+        colorPalette: "暖色",
+        mustHave: ["门头"],
+        mustAvoid: [],
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      selectedImages: ["asset-1"],
+      evidencePack: {
+        insights: [{
+          id: "insight-1",
+          sourceType: "realtime",
+          type: "copy",
+          insight: "真实写排队、人均和适合人群",
+          sourceSampleIds: ["note-1"],
+          confidence: 0.8,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }],
+        sampleIds: ["note-1"]
+      },
+      copyDraft: {
+        id: "draft-no-evidence",
+        updatedAt: "2026-05-30T00:00:00.000Z",
+        visibility: defaultSettings.defaultVisibility,
+        images: [],
+        draft: {
+          title: "广州咖啡周末指南",
+          content: "这篇适合想周末找安静咖啡馆的人。先看人均和排队，再看座位光线，最后给适合人群和避峰建议。",
+          tags: ["广州咖啡馆", "探店"],
+          structure: ["适合谁", "体验", "避坑"],
+          imagePrompt: "自然光咖啡馆"
+        }
+      }
+    });
+
+    expect(quality.canPublish).toBe(false);
+    expect(quality.issues.join(" ")).toContain("缺少 basedOnEvidenceIds");
+  });
+
+  it("blocks publish when draft evidence ids are not in the current evidence pack", () => {
+    const quality = runPostQualityGate({
+      creativeBrief: {
+        audience: "广州咖啡爱好者",
+        painPoint: "不知道周末是否值得去",
+        contentAngle: "真实避坑",
+        emotionalHook: "先说结论",
+        proofPoints: ["排队", "人均"],
+        tone: "真实",
+        visualMood: "自然光",
+        imageMustHave: ["门头"],
+        imageMustAvoid: [],
+        platformStyle: "小红书",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      visualDirection: {
+        mood: "自然光",
+        composition: "门头+饮品",
+        colorPalette: "暖色",
+        mustHave: ["门头"],
+        mustAvoid: [],
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      selectedImages: ["asset-1"],
+      evidencePack: {
+        insights: [{
+          id: "insight-1",
+          sourceType: "realtime",
+          type: "copy",
+          insight: "真实写排队、人均和适合人群",
+          sourceSampleIds: ["note-1"],
+          confidence: 0.8,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }],
+        sampleIds: ["note-1"]
+      },
+      copyDraft: {
+        id: "draft-stale-evidence",
+        updatedAt: "2026-05-30T00:00:00.000Z",
+        visibility: defaultSettings.defaultVisibility,
+        images: [],
+        draft: {
+          title: "广州咖啡周末指南",
+          content: "这篇适合想周末找安静咖啡馆的人。先看人均和排队，再看座位光线，最后给适合人群和避峰建议。",
+          tags: ["广州咖啡馆", "探店"],
+          structure: ["适合谁", "体验", "避坑"],
+          imagePrompt: "自然光咖啡馆",
+          basedOnEvidenceIds: ["old-insight"]
+        }
+      }
+    });
+
+    expect(quality.canPublish).toBe(false);
+    expect(quality.issues.join(" ")).toContain("引用了不存在的证据 ID");
+  });
+
   it("refreshes stale final posts when the current draft changes", () => {
     const project = postProjectFromWorkspace({
       schemaVersion: 1,

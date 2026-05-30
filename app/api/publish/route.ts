@@ -199,6 +199,11 @@ export async function POST(request: Request) {
       );
     }
 
+    const projectForDraft = await readPostProject().catch(() => null);
+    const draftEvidenceIds =
+      projectForDraft?.copyDraft?.draft.basedOnEvidenceIds?.length
+        ? projectForDraft.copyDraft.draft.basedOnEvidenceIds
+        : projectForDraft?.creativeBrief?.basedOnEvidenceIds ?? projectForDraft?.evidencePack.insights.map((insight) => insight.id) ?? [];
     const currentDraft = await writeCurrentDraft(
       createDraftRecord({
         draft: {
@@ -206,7 +211,8 @@ export async function POST(request: Request) {
           content: publishArgs.content,
           tags: publishArgs.tags,
           structure: [],
-          imagePrompt: body.imagePrompt ?? ""
+          imagePrompt: body.imagePrompt ?? "",
+          basedOnEvidenceIds: draftEvidenceIds.length ? draftEvidenceIds.slice(0, 8) : undefined
         },
         images: publishArgs.images.map((imagePath) => ({ path: imagePath })),
         visibility: publishArgs.visibility
@@ -244,6 +250,9 @@ async function getQualityGateReview(
 ): Promise<{ qualityCheck?: QualityCheck; reasons: string[] }> {
   try {
     const project = await readPostProject();
+    if (!shouldRunProjectQualityGate(project, publishArgs, assetIds)) {
+      return { reasons: [] };
+    }
     const imageIds = assetIds.length ? assetIds : publishArgs.images;
     const qualityCheck = runPostQualityGate({
       ...project,
@@ -271,6 +280,35 @@ async function getQualityGateReview(
   } catch {
     return { reasons: [] };
   }
+}
+
+function shouldRunProjectQualityGate(
+  project: Awaited<ReturnType<typeof readPostProject>>,
+  publishArgs: GuardedPublishArgs,
+  assetIds: string[]
+): boolean {
+  const hasProjectContext = Boolean(
+    project.creativeBrief ||
+      project.copyDraft ||
+      project.finalPost ||
+      project.evidencePack?.insights?.length ||
+      project.selectedSamples?.length ||
+      project.selectedImages?.length ||
+      project.imagePrompts?.length
+  );
+  if (!hasProjectContext) return false;
+  const matchesDraft = Boolean(
+    project.copyDraft &&
+      project.copyDraft.draft.title === publishArgs.title &&
+      project.copyDraft.draft.content === publishArgs.content
+  );
+  const matchesFinalPost = Boolean(
+    project.finalPost &&
+      project.finalPost.title === publishArgs.title &&
+      project.finalPost.content === publishArgs.content
+  );
+  const matchesSelectedImages = !assetIds.length || !project.selectedImages?.length || assetIds.some((id) => project.selectedImages.includes(id));
+  return (matchesDraft || matchesFinalPost) && matchesSelectedImages;
 }
 
 async function verifyActiveXhsLogin(client: ReturnType<typeof createXhsMcpClient>): Promise<string | null> {

@@ -108,7 +108,8 @@ export function postProjectFromWorkspace(workspace: WorkspaceState): PostProject
     ...viralCasesToEvidenceInsights(viralCases)
   ];
   const evidenceIds = insights.map((insight) => insight.id);
-  const copyVersions = workspace.currentDraft ? [copyVersionFromDraft(workspace.currentDraft, evidenceIds)] : [];
+  const currentDraft = workspace.currentDraft ? withDraftEvidenceIds(workspace.currentDraft, evidenceIds) : null;
+  const copyVersions = currentDraft ? [copyVersionFromDraft(currentDraft, evidenceIds)] : [];
 
   const base = normalizePostProject({
     schemaVersion: POST_PROJECT_SCHEMA_VERSION,
@@ -125,7 +126,7 @@ export function postProjectFromWorkspace(workspace: WorkspaceState): PostProject
       updatedAt: workspace.updatedAt
     },
     selectedSamples: samples as SampleEvidence[] | unknown[],
-    copyDraft: workspace.currentDraft ?? null,
+    copyDraft: currentDraft,
     copyVersions,
     imagePrompts: [],
     generatedImages: workspace.selectedImageIds.map((id) => ({
@@ -309,6 +310,26 @@ function mergePostProjects(existing: PostProject, migrated: PostProject): PostPr
     updatedAt: migrated.updatedAt
   });
   return enrichPostProject(merged);
+}
+
+function withDraftEvidenceIds(draft: WorkspaceState["currentDraft"], evidenceIds: string[]): NonNullable<WorkspaceState["currentDraft"]> | null {
+  if (!draft) return null;
+  if (Array.isArray(draft.draft.basedOnEvidenceIds) && draft.draft.basedOnEvidenceIds.length) {
+    return draft;
+  }
+  return {
+    ...draft,
+    draft: {
+      ...draft.draft,
+      basedOnEvidenceIds: evidenceIds.slice(0, 8),
+      evidenceReferences: {
+        title: evidenceIds.slice(0, 3),
+        content: evidenceIds.slice(0, 5),
+        tags: evidenceIds.slice(0, 5),
+        imagePrompt: evidenceIds.slice(0, 5)
+      }
+    }
+  };
 }
 
 async function writePostProjectNow(project: PostProject): Promise<PostProject> {

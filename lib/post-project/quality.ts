@@ -17,6 +17,17 @@ export function runPostQualityGate(project: Pick<
   if (!finalPost?.imageIds.length) issues.push("未选择发布图片");
   if (!project.creativeBrief) issues.push("缺少 CreativeBrief，文案和图片可能没有共享创作依据");
   if (!project.evidencePack?.insights.length) issues.push("缺少可追溯证据，不能把生成结果伪装成研究结论");
+  const evidenceIds = new Set((project.evidencePack?.insights ?? []).map((insight) => insight.id));
+  const draftEvidenceIds = project.copyDraft?.draft.basedOnEvidenceIds ?? [];
+  if (project.copyDraft && !draftEvidenceIds.length) {
+    issues.push("当前草稿缺少 basedOnEvidenceIds，无法证明标题、正文和标签来自 evidencePack 规律");
+    suggestions.push("请重新基于当前证据生成文案，或补充草稿引用的证据 ID。");
+  }
+  const invalidEvidenceIds = draftEvidenceIds.filter((id) => !evidenceIds.has(id));
+  if (invalidEvidenceIds.length) {
+    issues.push(`当前草稿引用了不存在的证据 ID：${invalidEvidenceIds.slice(0, 3).join("、")}`);
+    suggestions.push("请从当前 evidencePack 重新生成文案，保证所有引用可追溯。");
+  }
 
   const titleText = finalPost?.title ?? "";
   const bodyText = finalPost?.content ?? "";
@@ -55,7 +66,13 @@ export function runPostQualityGate(project: Pick<
   }
 
   const titleScore = scoreFromIssues([!titleText.trim(), exaggerated.length > 0]);
-  const copyScore = scoreFromIssues([!bodyText.trim(), bodyText.length < 80, risky.length > 0, Boolean(copiedSampleTitle)]);
+  const copyScore = scoreFromIssues([
+    !bodyText.trim(),
+    bodyText.length < 80,
+    risky.length > 0,
+    Boolean(copiedSampleTitle),
+    project.copyDraft ? !draftEvidenceIds.length || invalidEvidenceIds.length > 0 : false
+  ]);
   const visualConsistencyScore = scoreFromIssues([!finalPost?.imageIds.length, !project.visualDirection]);
   const platformFitScore = scoreFromIssues([(finalPost?.tags.length ?? 0) === 0, (finalPost?.tags.length ?? 0) > 10]);
   const complianceScore = scoreFromIssues([risky.length > 0, exaggerated.length > 1, Boolean(copiedSampleTitle)]);
@@ -66,7 +83,8 @@ export function runPostQualityGate(project: Pick<
       !finalPost.imageIds.length ||
       exaggerated.length ||
       risky.length ||
-      copiedSampleTitle
+      copiedSampleTitle ||
+      (project.copyDraft ? !draftEvidenceIds.length || invalidEvidenceIds.length > 0 : false)
   );
   const canPublish = !hasCriticalPublishRisk && complianceScore >= 70;
 
