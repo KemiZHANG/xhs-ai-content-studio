@@ -63,6 +63,36 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
   });
 
   try {
+    const clarifyingTurn = await maybeHandleClarifyingTurn(input, plan);
+    if (clarifyingTurn) {
+      trace = addTraceEvent(trace, {
+        type: "tool_completed",
+        label: "agent.askClarifyingQuestion",
+        detail: "Stopped before tool execution because the request needs clearer project input.",
+        metadata: {
+          questions: clarifyingTurn.questions
+        }
+      });
+      agentRun = completeRun(agentRun);
+      trace = addTraceEvent(trace, {
+        type: "run_completed",
+        label: "Agent run completed",
+        detail: "Agent turn completed after asking clarifying questions."
+      });
+      await persistAgentTrace(trace);
+      const postProject = await readPostProject();
+
+      return buildAgentTurnResult({
+        answer: clarifyingTurn.answer,
+        plan,
+        workspace: clarifyingTurn.workspace,
+        currentDraft: input.currentDraft ?? undefined,
+        agentRun,
+        trace,
+        postProject
+      });
+    }
+
     const cardGenerationTurn = await maybeHandleCardGenerationTurn(input, plan);
     if (cardGenerationTurn) {
       trace = addTraceEvent(trace, {
@@ -361,9 +391,7 @@ function buildStructuredAgentResponse({
   "answer" | "reply" | "stage" | "intent" | "intentConfidence" | "needsUserInput" | "questions" | "workspacePatch" | "cards" | "quickActions" | "toolTrace"
 > {
   const needsUserInput = plan.intent === "ask" || plan.steps.some((step) => step.action === "askClarifyingQuestion");
-  const questions = needsUserInput
-    ? ["请补充产品图、目标人群、语气、发布时间等缺失信息。"]
-    : [];
+  const questions = needsUserInput ? buildClarifyingQuestions(plan, workspace, postProject) : [];
 
   return {
     answer,
@@ -384,6 +412,51 @@ function buildStructuredAgentResponse({
     quickActions: buildQuickActions(plan, workspace),
     toolTrace: traceItems
   };
+}
+
+async function maybeHandleClarifyingTurn(
+  input: RunAgentTurnInput,
+  plan: ReturnType<typeof createAgentPlan>
+): Promise<{ answer: string; questions: string[]; workspace: WorkspaceState } | null> {
+  if (plan.intent !== "ask" && !plan.steps.some((step) => step.action === "askClarifyingQuestion")) {
+    return null;
+  }
+
+  const workspace = await updateWorkspaceState({
+    topic: plan.topic,
+    lastUserIntent: plan.intent
+  });
+  const postProject = await readPostProject();
+  const questions = buildClarifyingQuestions(plan, workspace, postProject);
+  return {
+    answer: [
+      "我先不急着执行工具，当前信息还不够明确。",
+      "为了避免搜错主题、生成跑偏，先补充下面这些信息即可：",
+      ...questions.map((question, index) => `${index + 1}. ${question}`)
+    ].join("\n"),
+    questions,
+    workspace
+  };
+}
+
+function buildClarifyingQuestions(plan: AgentPlan, workspace: WorkspaceState, postProject?: PostProject | null): string[] {
+  const questions: string[] = [];
+  if (plan.requiresAssets) {
+    questions.push("请先上传产品图/参考图，或说明可以不基于图片直接生成。");
+  }
+  if (!plan.topic && !workspace.topic && !postProject?.topic) {
+    questions.push("这次要研究或创作的具体主题是什么？例如：广州咖啡馆、通勤包、护肤新品。");
+  }
+  if (!postProject?.targetAudience && !workspace.currentDraft) {
+    questions.push("目标人群是谁？例如：探店账号粉丝、上班族、新手妈妈、学生党。");
+  }
+  if (!postProject?.goal && !workspace.currentDraft) {
+    questions.push("这篇笔记的目标是什么？例如：探店种草、产品介绍、避坑清单、引导咨询。");
+  }
+  if (!questions.length) {
+    questions.push("你希望我下一步做什么：继续研究、生成文案、规划图片，还是进入发布检查？");
+  }
+  return questions.slice(0, 4);
 }
 
 function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecord | null, postProject?: PostProject | null): AgentResponseCard[] {
