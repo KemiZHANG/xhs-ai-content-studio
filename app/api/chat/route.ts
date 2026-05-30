@@ -236,6 +236,8 @@ export async function POST(request: Request) {
         toolTrace: result.toolTrace,
         questions: result.questions,
         intent: result.intent,
+        intentConfidence: result.intentConfidence,
+        needsUserInput: result.needsUserInput,
         stage: result.stage
       }
     });

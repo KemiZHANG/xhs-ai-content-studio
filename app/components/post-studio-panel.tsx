@@ -392,7 +392,14 @@ export function PostStudioPanel({
               <article className={message.role === "user" ? "studioChatBubble user" : "studioChatBubble"} key={message.id ?? `${message.role}-${index}`}>
                 <div className="chatBubbleHeader">
                   <strong>{message.role === "user" ? "你" : "AI Agent"}</strong>
-                  {message.role === "assistant" && message.intent ? <span>{message.intent}</span> : null}
+                  {message.role === "assistant" ? (
+                    <AgentIntentBadge
+                      confidence={message.intentConfidence}
+                      intent={message.intent}
+                      needsUserInput={message.needsUserInput}
+                      stage={message.stage}
+                    />
+                  ) : null}
                 </div>
                 <p>{message.content}</p>
                 {message.role === "assistant" ? (
@@ -1277,6 +1284,28 @@ function AgentStructuredMessage({
         </div>
       ) : null}
     </div>
+  );
+}
+
+function AgentIntentBadge({
+  intent,
+  confidence,
+  needsUserInput,
+  stage
+}: {
+  intent?: string;
+  confidence?: number;
+  needsUserInput?: boolean;
+  stage?: PostProject["currentStage"];
+}) {
+  if (!intent && confidence === undefined && !needsUserInput && !stage) return null;
+  const confidenceLabel = confidence === undefined ? "" : `${Math.round(confidence * 100)}%`;
+  return (
+    <span className={needsUserInput ? "agentIntentBadge ask" : "agentIntentBadge"}>
+      {needsUserInput ? "需补充" : intent || "Agent"}
+      {confidenceLabel ? ` · ${confidenceLabel}` : ""}
+      {stage ? ` · ${labelForStage(stage)}` : ""}
+    </span>
   );
 }
 

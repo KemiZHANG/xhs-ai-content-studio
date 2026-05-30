@@ -15,6 +15,8 @@ export type StoredChatMessage = {
   toolTrace?: AgentToolTraceItem[];
   questions?: string[];
   intent?: string;
+  intentConfidence?: number;
+  needsUserInput?: boolean;
   stage?: string;
 };
 
@@ -31,7 +33,7 @@ type AppendChatTurnInput = {
   userContent: string;
   assistantContent: string;
   workflowResult?: OneClickResult;
-  assistantMeta?: Pick<StoredChatMessage, "cards" | "quickActions" | "toolTrace" | "questions" | "intent" | "stage">;
+  assistantMeta?: Pick<StoredChatMessage, "cards" | "quickActions" | "toolTrace" | "questions" | "intent" | "intentConfidence" | "needsUserInput" | "stage">;
 };
 
 const MAX_CONVERSATIONS = 60;

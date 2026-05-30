@@ -312,6 +312,8 @@ export type ChatMessage = {
   toolTrace?: AgentToolTraceItem[];
   questions?: string[];
   intent?: string;
+  intentConfidence?: number;
+  needsUserInput?: boolean;
   stage?: PostStage;
 };
 

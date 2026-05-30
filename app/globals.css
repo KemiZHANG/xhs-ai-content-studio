@@ -3519,13 +3519,20 @@ textarea {
   justify-content: space-between;
 }
 
-.chatBubbleHeader span {
+.chatBubbleHeader > span,
+.agentIntentBadge {
   background: rgba(18, 118, 97, 0.09);
   border: 1px solid rgba(18, 118, 97, 0.16);
   border-radius: 999px;
   color: var(--accent-strong);
   font-size: 11px;
   padding: 3px 8px;
+}
+
+.agentIntentBadge.ask {
+  background: rgba(190, 122, 20, 0.11);
+  border-color: rgba(190, 122, 20, 0.22);
+  color: #9a5b00;
 }
 
 .studioChatBubble.user {

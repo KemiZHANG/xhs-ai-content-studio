@@ -820,6 +820,8 @@ export default function Home() {
         toolTrace?: ChatMessage["toolTrace"];
         questions?: string[];
         intent?: string;
+        intentConfidence?: number;
+        needsUserInput?: boolean;
         stage?: PostProject["currentStage"];
         workflowResult?: WorkflowResult;
         currentDraft?: DraftRecord;
@@ -836,6 +838,8 @@ export default function Home() {
         toolTrace: data.toolTrace,
         questions: data.questions,
         intent: data.intent,
+        intentConfidence: data.intentConfidence,
+        needsUserInput: data.needsUserInput,
         stage: data.stage
       };
       setMessages((current) => [...current, assistantMessage]);
@@ -885,6 +889,8 @@ export default function Home() {
             toolTrace: message.toolTrace ?? assistantMessage.toolTrace,
             questions: message.questions ?? assistantMessage.questions,
             intent: message.intent ?? assistantMessage.intent,
+            intentConfidence: message.intentConfidence ?? assistantMessage.intentConfidence,
+            needsUserInput: message.needsUserInput ?? assistantMessage.needsUserInput,
             stage: message.stage ?? assistantMessage.stage
           }
         : message
