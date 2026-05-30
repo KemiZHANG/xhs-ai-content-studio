@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
-import type { PublishDecision, PublishIntent, PublishPolicy } from "@/lib/agent/types";
+import type { PublishConfirmationItem, PublishDecision, PublishIntent, PublishPolicy } from "@/lib/agent/types";
 import { isPublishVisibility, type AppSettings } from "@/lib/storage/settings";
 
 export type CreatePublishIntentInput = {
@@ -46,8 +46,86 @@ export function createPublishIntent(input: CreatePublishIntentInput): PublishInt
     requestedAt,
     scheduleAt: input.scheduleAt,
     idempotencyKey: createHash("sha256").update(idempotencySource).digest("hex"),
+    confirmationChecklist: buildPublishConfirmationChecklist({
+      title: input.title,
+      content: input.content,
+      images: input.images,
+      visibility: input.visibility,
+      accountId: input.accountId,
+      mcpUrl: input.mcpUrl,
+      mode,
+      scheduleAt: input.scheduleAt,
+      confirmed: false
+    }),
     guardrailResults: []
   };
+}
+
+export function buildPublishConfirmationChecklist({
+  title,
+  content,
+  images,
+  visibility,
+  accountId,
+  mcpUrl,
+  mode,
+  scheduleAt,
+  confirmed
+}: {
+  title: string;
+  content: string;
+  images: string[];
+  visibility: AppSettings["defaultVisibility"];
+  accountId?: string;
+  mcpUrl?: string;
+  mode: PublishIntent["mode"];
+  scheduleAt?: string;
+  confirmed: boolean;
+}): PublishConfirmationItem[] {
+  return [
+    {
+      id: "copy",
+      label: "最终文案版本",
+      required: true,
+      confirmed,
+      detail: `${title.trim().length} 字标题，正文 ${content.trim().length} 字`
+    },
+    {
+      id: "images",
+      label: "最终图片版本",
+      required: true,
+      confirmed,
+      detail: `${images.length} 张图片`
+    },
+    {
+      id: "account",
+      label: "发布账号",
+      required: true,
+      confirmed,
+      detail: accountId || mcpUrl || "使用当前 MCP 账号"
+    },
+    {
+      id: "visibility",
+      label: "可见范围",
+      required: true,
+      confirmed,
+      detail: visibility
+    },
+    {
+      id: "schedule",
+      label: "发布时间与时区",
+      required: mode === "scheduled",
+      confirmed: mode === "scheduled" ? confirmed : true,
+      detail: scheduleAt || "立即发布"
+    },
+    {
+      id: "quality",
+      label: "Quality Gate",
+      required: true,
+      confirmed,
+      detail: "发布前质量检查已通过后才允许确认"
+    }
+  ];
 }
 
 export function validatePublishIntent(

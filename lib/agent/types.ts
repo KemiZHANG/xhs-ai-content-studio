@@ -128,8 +128,17 @@ export type PublishIntent = {
   requestedAt: string;
   scheduleAt?: string;
   idempotencyKey: string;
+  confirmationChecklist?: PublishConfirmationItem[];
   guardrailResults: string[];
   mcpResult?: unknown;
+};
+
+export type PublishConfirmationItem = {
+  id: "copy" | "images" | "account" | "visibility" | "schedule" | "quality";
+  label: string;
+  required: boolean;
+  confirmed: boolean;
+  detail: string;
 };
 
 export type PublishDecision = {

@@ -52,6 +52,7 @@ describe("agent guarded publishing", () => {
     expect(calls).toBe(0);
     expect(result.status).toBe("awaiting_approval");
     expect(result.publishIntent.status).toBe("awaiting_approval");
+    expect((result.publishIntent.confirmationChecklist ?? []).filter((item) => item.required).every((item) => item.confirmed === false)).toBe(true);
     expect(await getPublishIntent(result.publishIntent.id)).toEqual(result.publishIntent);
     expect(publishIntentMatchesArgs(result.publishIntent, publishArgs())).toBe(true);
     expect(workspace.publishPlan?.status).toBe("awaiting_approval");
@@ -82,6 +83,7 @@ describe("agent guarded publishing", () => {
 
     expect(first.status).toBe("published");
     expect(first.publishResult).toEqual({ ok: true });
+    expect((first.publishIntent.confirmationChecklist ?? []).filter((item) => item.required).every((item) => item.confirmed === true)).toBe(true);
     expect(duplicate.status).toBe("blocked");
     expect(duplicate.reasons.join(" ")).toContain("duplicate");
     expect(calls).toBe(1);

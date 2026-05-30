@@ -248,6 +248,12 @@ export function WorkspaceCanvas({
             可见范围：{publishPlan.visibility}；图片 {publishPlan.images?.length ?? 0} 张；来源：{publishPlan.requestedBy ?? "-"}
           </p>
         ) : null}
+        {publishPlan?.confirmationChecklist?.length ? (
+          <p>
+            人工确认：{publishPlan.confirmationChecklist.filter((item) => item.required && item.confirmed).length}/
+            {publishPlan.confirmationChecklist.filter((item) => item.required).length} 项
+          </p>
+        ) : null}
         <button className="primaryButton fullWidth" disabled={!draft} onClick={onOpenPublish} type="button">
           发布装配台
         </button>

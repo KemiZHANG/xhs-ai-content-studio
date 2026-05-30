@@ -258,6 +258,13 @@ export function PublishAssemblyPanel({
             <p className="muted">
               这张确认单绑定账号 {pendingPublish.accountDisplayName}（{formatMcpEndpoint(pendingPublish.mcpUrl)}）。如果切换账号，需要重新生成确认单。
             </p>
+            {postPlan?.confirmationChecklist?.length ? (
+              <ul className="publishIssueList">
+                {postPlan.confirmationChecklist.filter((item) => item.required).map((item) => (
+                  <li key={item.id}>{item.confirmed ? "已确认" : "待确认"}：{item.label} · {item.detail}</li>
+                ))}
+              </ul>
+            ) : null}
             <div className="actionRow">
               <button className="secondaryButton" disabled={busy} onClick={onCancelPublish} type="button">
                 取消确认

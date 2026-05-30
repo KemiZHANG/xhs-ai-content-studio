@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { authorizePublishIntent, createPublishIntent } from "@/lib/agent/guardrails";
+import { authorizePublishIntent, buildPublishConfirmationChecklist, createPublishIntent } from "@/lib/agent/guardrails";
 import { updateWorkspaceState } from "@/lib/agent/state";
 import type { PublishIntent, PublishIntentStatus, PublishPolicy } from "@/lib/agent/types";
 import { appendPublishAudit } from "@/lib/storage/publish-audit";
@@ -75,6 +75,10 @@ export async function executeGuardedPublish({
     publishIntent = {
       ...publishIntent,
       status: decision.status,
+      confirmationChecklist: buildPublishConfirmationChecklist({
+        ...publishIntent,
+        confirmed: false
+      }),
       guardrailResults: decision.reasons
     };
     await savePublishIntent(publishIntent);
@@ -106,6 +110,10 @@ export async function executeGuardedPublish({
   publishIntent = {
     ...publishIntent,
     status: "publishing",
+    confirmationChecklist: buildPublishConfirmationChecklist({
+      ...publishIntent,
+      confirmed: true
+    }),
     guardrailResults: decision.reasons
   };
   markPublishInFlight(publishIntent.idempotencyKey);

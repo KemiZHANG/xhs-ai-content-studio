@@ -28,10 +28,12 @@ describe("agent publish guardrails", () => {
   });
 
   it("requires approval in review-required mode", () => {
-    const decision = authorizePublishIntent(baseIntent(), { mode: "review_required" });
+    const intent = baseIntent();
+    const decision = authorizePublishIntent(intent, { mode: "review_required" });
 
     expect(decision.allowed).toBe(false);
     expect(decision.status).toBe("awaiting_approval");
+    expect((intent.confirmationChecklist ?? []).filter((item) => item.required).every((item) => item.confirmed === false)).toBe(true);
   });
 
   it("still requires a one-time approval in auto-publish mode", () => {
@@ -42,10 +44,26 @@ describe("agent publish guardrails", () => {
   });
 
   it("allows publish-ready content after explicit confirmation", () => {
-    const decision = authorizePublishIntent(baseIntent(), { mode: "auto_publish_allowed", confirmed: true });
+    const intent = baseIntent();
+    const decision = authorizePublishIntent(intent, { mode: "auto_publish_allowed", confirmed: true });
 
     expect(decision.allowed).toBe(true);
     expect(decision.status).toBe("approved");
+    expect((intent.confirmationChecklist ?? []).map((item) => item.label)).toEqual(
+      expect.arrayContaining(["最终文案版本", "最终图片版本", "发布账号", "可见范围", "Quality Gate"])
+    );
+  });
+
+  it("marks schedule confirmation as required only for scheduled publish intents", () => {
+    const manual = baseIntent();
+    const scheduled = createPublishIntent({
+      ...baseIntent(),
+      mode: "scheduled",
+      scheduleAt: "2099-05-21T12:00:00+08:00"
+    });
+
+    expect((manual.confirmationChecklist ?? []).find((item) => item.id === "schedule")?.required).toBe(false);
+    expect((scheduled.confirmationChecklist ?? []).find((item) => item.id === "schedule")?.required).toBe(true);
   });
 
   it("rejects scheduled publishing without a future schedule time", () => {

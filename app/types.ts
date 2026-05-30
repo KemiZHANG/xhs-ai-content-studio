@@ -337,6 +337,13 @@ export type WorkspacePublishPlan = {
   scheduleAt?: string;
   requestedAt?: string;
   requestedBy?: string;
+  confirmationChecklist?: Array<{
+    id: string;
+    label: string;
+    required: boolean;
+    confirmed: boolean;
+    detail: string;
+  }>;
 };
 
 export type WorkspaceState = {
