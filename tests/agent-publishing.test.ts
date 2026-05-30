@@ -19,6 +19,16 @@ const citationSummary = {
   sourceCounts: { realtime: 1, viral_library: 0, user_input: 0 },
   fieldCounts: { title: 1, content: 1, tags: 1, imagePrompt: 1 }
 };
+const versionSnapshot = {
+  copyVersionId: "copy-draft-1",
+  imagePromptVersionIds: ["prompt-1"],
+  selectedImageIds: ["asset-1"],
+  qualityGateFresh: true,
+  qualityCanPublish: true,
+  finalPostMatchesCanvas: true,
+  summary: "当前最终帖子和 Quality Gate 与画布一致",
+  warnings: []
+};
 
 describe("agent guarded publishing", () => {
   let tempDir: string;
@@ -49,7 +59,8 @@ describe("agent guarded publishing", () => {
       requestedBy: "chat",
       policy: { mode: "review_required" },
       publishContext: {
-        evidenceCitationSummary: citationSummary
+        evidenceCitationSummary: citationSummary,
+        versionSnapshot
       },
       publish: async () => {
         calls += 1;
@@ -63,6 +74,10 @@ describe("agent guarded publishing", () => {
     expect(result.status).toBe("awaiting_approval");
     expect(result.publishIntent.status).toBe("awaiting_approval");
     expect(result.publishIntent.evidenceCitationSummary?.fieldCounts.title).toBe(1);
+    expect(result.publishIntent.versionSnapshot).toMatchObject({
+      copyVersionId: "copy-draft-1",
+      qualityGateFresh: true
+    });
     expect((result.publishIntent.confirmationChecklist ?? []).filter((item) => item.required).every((item) => item.confirmed === false)).toBe(true);
     expect(await getPublishIntent(result.publishIntent.id)).toEqual(result.publishIntent);
     expect(publishIntentMatchesArgs(result.publishIntent, publishArgs())).toBe(true);

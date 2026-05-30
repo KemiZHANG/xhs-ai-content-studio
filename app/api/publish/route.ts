@@ -11,7 +11,8 @@ import { createXhsMcpClient, readMcpText } from "@/lib/mcp/xhs";
 import { buildEvidenceCitationReport } from "@/lib/post-project/citations";
 import { runPostQualityGate } from "@/lib/post-project/quality";
 import { readPostProject, updatePostProject } from "@/lib/post-project/store";
-import type { PublishEvidenceCitationSummary } from "@/lib/agent/types";
+import { buildPublishVersionSnapshot } from "@/lib/post-project/versioning";
+import type { PublishEvidenceCitationSummary, PublishVersionSnapshot } from "@/lib/agent/types";
 import type { QualityCheck } from "@/lib/post-project/types";
 import { buildPublishContentArgs, parseTagsText } from "@/lib/publishing/assembly";
 import { requireLocalActionToken } from "@/lib/security/action-token";
@@ -65,7 +66,8 @@ export async function POST(request: Request) {
         mode: publishArgs.scheduleAt ? "scheduled" : "manual",
         accountId: settings.activeAccountId,
         mcpUrl: settings.mcpUrl,
-        evidenceCitationSummary: qualityReview.evidenceCitationSummary
+        evidenceCitationSummary: qualityReview.evidenceCitationSummary,
+        versionSnapshot: qualityReview.versionSnapshot
       });
       const validationErrors = [...validatePublishIntent(publishIntent), ...qualityReview.reasons];
       await appendPublishAudit({
@@ -164,7 +166,8 @@ export async function POST(request: Request) {
         mcpUrl: settings.mcpUrl
       },
       publishContext: {
-        evidenceCitationSummary: qualityReview.evidenceCitationSummary
+        evidenceCitationSummary: qualityReview.evidenceCitationSummary,
+        versionSnapshot: qualityReview.versionSnapshot
       },
       publish: (args) => mcpClient.publishContent(args)
     });
@@ -255,16 +258,22 @@ export async function POST(request: Request) {
 async function getQualityGateReview(
   publishArgs: GuardedPublishArgs,
   assetIds: string[]
-): Promise<{ qualityCheck?: QualityCheck; reasons: string[]; evidenceCitationSummary?: PublishEvidenceCitationSummary }> {
+): Promise<{
+  qualityCheck?: QualityCheck;
+  reasons: string[];
+  evidenceCitationSummary?: PublishEvidenceCitationSummary;
+  versionSnapshot?: PublishVersionSnapshot;
+}> {
   try {
     const project = await readPostProject();
     const evidenceCitationSummary = buildPublishEvidenceCitationSummary(project);
+    const versionSnapshot = buildPublishVersionSnapshot(project);
     const snapshotMismatchReasons = getProjectSnapshotMismatchReasons(project, publishArgs, assetIds);
     if (snapshotMismatchReasons.length) {
-      return { reasons: snapshotMismatchReasons, evidenceCitationSummary };
+      return { reasons: snapshotMismatchReasons, evidenceCitationSummary, versionSnapshot };
     }
     if (!shouldRunProjectQualityGate(project, publishArgs, assetIds)) {
-      return { reasons: [], evidenceCitationSummary };
+      return { reasons: [], evidenceCitationSummary, versionSnapshot };
     }
     const imageIds = assetIds.length ? assetIds : publishArgs.images;
     const qualityCheck = runPostQualityGate({
@@ -281,11 +290,12 @@ async function getQualityGateReview(
       selectedImages: imageIds
     });
     if (qualityCheck.canPublish) {
-      return { qualityCheck, reasons: [], evidenceCitationSummary };
+      return { qualityCheck, reasons: [], evidenceCitationSummary, versionSnapshot };
     }
     return {
       qualityCheck,
       evidenceCitationSummary,
+      versionSnapshot,
       reasons: [
       "当前发布内容未通过 Quality Gate",
       ...qualityCheck.issues.slice(0, 5)

@@ -22,6 +22,7 @@ import { insightsFromUserBriefInput, mergeEvidenceInsights } from "@/lib/post-pr
 import { getPostStageGuidance } from "@/lib/post-project/guidance";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { runPostQualityGate } from "@/lib/post-project/quality";
+import { buildPublishVersionSnapshot } from "@/lib/post-project/versioning";
 import type { PostAction, PostProject, ProductInfo } from "@/lib/post-project/types";
 import { renderXhsCardSet } from "@/lib/cards/renderer";
 import type { ModelProvider } from "@/lib/models/provider";
@@ -1960,6 +1961,9 @@ async function maybeHandleGuardedPublishTurn(
     auditContext: {
       accountId: input.settings.activeAccountId,
       mcpUrl: input.settings.mcpUrl
+    },
+    publishContext: {
+      versionSnapshot: buildPublishVersionSnapshot(activeProject)
     },
     publish: (args) => input.mcp.publishContent(args)
   });

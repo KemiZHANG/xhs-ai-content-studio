@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareTextVersion, getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
+import { buildPublishVersionSnapshot, compareTextVersion, getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 import type { PostProject } from "@/lib/post-project/types";
 
 const baseProject = {
@@ -76,6 +76,18 @@ describe("post versioning status", () => {
     expect(status.needsQualityGate).toBe(true);
     expect(status.warnings.join(" ")).toContain("最终帖子快照已落后");
   });
+  it("builds a publish confirmation snapshot from the current canvas versions", () => {
+    const snapshot = buildPublishVersionSnapshot(baseProject);
+
+    expect(snapshot.copyVersionId).toBe("copy-draft-1");
+    expect(snapshot.imagePromptVersionIds).toEqual(["prompt-1"]);
+    expect(snapshot.selectedImageIds).toEqual(["asset-1"]);
+    expect(snapshot.qualityGateFresh).toBe(true);
+    expect(snapshot.qualityCanPublish).toBe(true);
+    expect(snapshot.finalPostMatchesCanvas).toBe(true);
+    expect(snapshot.summary).toContain("Quality Gate");
+  });
+
   it("summarizes differences between the final post snapshot and current canvas", () => {
     const report = getPostVersionDiffReport({
       ...baseProject,

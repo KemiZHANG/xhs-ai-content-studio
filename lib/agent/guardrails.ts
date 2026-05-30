@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
-import type { PublishConfirmationItem, PublishDecision, PublishEvidenceCitationSummary, PublishIntent, PublishPolicy } from "@/lib/agent/types";
+import type { PublishConfirmationItem, PublishDecision, PublishEvidenceCitationSummary, PublishIntent, PublishPolicy, PublishVersionSnapshot } from "@/lib/agent/types";
 import { isPublishVisibility, type AppSettings } from "@/lib/storage/settings";
 
 export type CreatePublishIntentInput = {
@@ -15,6 +15,7 @@ export type CreatePublishIntentInput = {
   mode?: PublishIntent["mode"];
   scheduleAt?: string;
   evidenceCitationSummary?: PublishEvidenceCitationSummary;
+  versionSnapshot?: PublishVersionSnapshot;
 };
 
 export function createPublishIntent(input: CreatePublishIntentInput): PublishIntent {
@@ -68,7 +69,8 @@ export function createPublishIntent(input: CreatePublishIntentInput): PublishInt
     idempotencyKey: createHash("sha256").update(idempotencySource).digest("hex"),
     confirmationChecklist,
     guardrailResults: [],
-    evidenceCitationSummary: input.evidenceCitationSummary
+    evidenceCitationSummary: input.evidenceCitationSummary,
+    versionSnapshot: input.versionSnapshot
   };
 }
 

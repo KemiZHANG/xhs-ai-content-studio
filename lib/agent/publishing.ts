@@ -3,7 +3,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { authorizePublishIntent, buildPublishConfirmationChecklist, createPublishIntent } from "@/lib/agent/guardrails";
 import { updateWorkspaceState } from "@/lib/agent/state";
-import type { PublishEvidenceCitationSummary, PublishIntent, PublishIntentStatus, PublishPolicy } from "@/lib/agent/types";
+import type { PublishEvidenceCitationSummary, PublishIntent, PublishIntentStatus, PublishPolicy, PublishVersionSnapshot } from "@/lib/agent/types";
 import { appendPublishAudit } from "@/lib/storage/publish-audit";
 import type { AppSettings } from "@/lib/storage/settings";
 
@@ -47,6 +47,7 @@ export async function executeGuardedPublish({
   auditContext?: PublishAccountContext;
   publishContext?: {
     evidenceCitationSummary?: PublishEvidenceCitationSummary;
+    versionSnapshot?: PublishVersionSnapshot;
   };
   publish: (args: GuardedPublishArgs) => Promise<unknown>;
 }): Promise<GuardedPublishResult> {
@@ -56,7 +57,8 @@ export async function executeGuardedPublish({
     mode: args.scheduleAt ? "scheduled" : "manual",
     accountId: auditContext?.accountId,
     mcpUrl: auditContext?.mcpUrl,
-    evidenceCitationSummary: publishContext?.evidenceCitationSummary
+    evidenceCitationSummary: publishContext?.evidenceCitationSummary,
+    versionSnapshot: publishContext?.versionSnapshot
   });
 
   if (await hasSuccessfulPublish(publishIntent.idempotencyKey)) {

@@ -162,7 +162,8 @@ export function PostStudioPanel({
         accountName: pendingPublish.accountDisplayName,
         loginName: pendingPublish.loginName,
         mcpUrl: pendingPublish.mcpUrl,
-        confirmationChecklist: project?.publishPlan?.confirmationChecklist ?? []
+        confirmationChecklist: project?.publishPlan?.confirmationChecklist ?? [],
+        versionSnapshot: project?.publishPlan?.versionSnapshot
       }
     : project?.publishPlan
       ? {
@@ -174,7 +175,8 @@ export function PostStudioPanel({
           accountName: activeAccount?.displayName,
           loginName: health?.activeAccount?.loginName,
           mcpUrl: activeAccount?.mcpUrl ?? settings.mcpUrl,
-          confirmationChecklist: project.publishPlan.confirmationChecklist ?? []
+          confirmationChecklist: project.publishPlan.confirmationChecklist ?? [],
+          versionSnapshot: project.publishPlan.versionSnapshot
         }
       : null;
   const requiredConfirmations = activePublishPlan?.confirmationChecklist.filter((item) => item.required) ?? [];
@@ -858,6 +860,20 @@ export function PostStudioPanel({
                   </div>
                   {activePublishPlan.loginName ? <p>登录名：{activePublishPlan.loginName}</p> : null}
                   {activePublishPlan.mcpUrl ? <p>MCP：{activePublishPlan.mcpUrl}</p> : null}
+                  {activePublishPlan.versionSnapshot ? (
+                    <div className={activePublishPlan.versionSnapshot.qualityGateFresh ? "publishVersionLock ok" : "publishVersionLock warn"}>
+                      <strong>{activePublishPlan.versionSnapshot.qualityGateFresh ? "版本快照已锁定" : "版本快照需复核"}</strong>
+                      <p>{activePublishPlan.versionSnapshot.summary}</p>
+                      <div>
+                        <span>文案：{activePublishPlan.versionSnapshot.copyVersionId ?? "待生成"}</span>
+                        <span>Prompt：{activePublishPlan.versionSnapshot.imagePromptVersionIds.length} 个</span>
+                        <span>图片：{activePublishPlan.versionSnapshot.selectedImageIds.length} 张</span>
+                      </div>
+                      {activePublishPlan.versionSnapshot.warnings.slice(0, 2).map((warning) => (
+                        <small key={warning}>{warning}</small>
+                      ))}
+                    </div>
+                  ) : null}
                   {requiredConfirmations.length ? (
                     <ul>
                       {requiredConfirmations.slice(0, 5).map((item) => (

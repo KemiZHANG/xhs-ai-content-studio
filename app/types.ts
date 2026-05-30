@@ -384,6 +384,16 @@ export type WorkspacePublishPlan = {
     confirmed: boolean;
     detail: string;
   }>;
+  versionSnapshot?: {
+    copyVersionId?: string;
+    imagePromptVersionIds: string[];
+    selectedImageIds: string[];
+    qualityGateFresh: boolean;
+    qualityCanPublish?: boolean;
+    finalPostMatchesCanvas: boolean;
+    summary: string;
+    warnings: string[];
+  };
 };
 
 export type WorkspaceState = {

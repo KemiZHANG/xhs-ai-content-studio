@@ -141,7 +141,19 @@ export type PublishIntent = {
   confirmationChecklist?: PublishConfirmationItem[];
   guardrailResults: string[];
   evidenceCitationSummary?: PublishEvidenceCitationSummary;
+  versionSnapshot?: PublishVersionSnapshot;
   mcpResult?: unknown;
+};
+
+export type PublishVersionSnapshot = {
+  copyVersionId?: string;
+  imagePromptVersionIds: string[];
+  selectedImageIds: string[];
+  qualityGateFresh: boolean;
+  qualityCanPublish?: boolean;
+  finalPostMatchesCanvas: boolean;
+  summary: string;
+  warnings: string[];
 };
 
 export type PublishConfirmationItem = {

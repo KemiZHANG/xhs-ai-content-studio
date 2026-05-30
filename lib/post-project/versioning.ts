@@ -1,3 +1,4 @@
+import type { PublishVersionSnapshot } from "@/lib/agent/types";
 import type { PostProject } from "@/lib/post-project/types";
 
 export type PostVersionStatus = {
@@ -31,7 +32,9 @@ export function getPostVersionStatus(project: Pick<
   "copyDraft" | "selectedImages" | "imagePrompts" | "finalPost" | "qualityCheck"
 >): PostVersionStatus {
   const activeCopyVersionId = project.copyDraft ? `copy-${project.copyDraft.id}` : undefined;
-  const activeImagePromptVersionIds = project.imagePrompts.map((prompt) => prompt.id);
+  const selectedImages = Array.isArray(project.selectedImages) ? project.selectedImages : [];
+  const imagePrompts = Array.isArray(project.imagePrompts) ? project.imagePrompts : [];
+  const activeImagePromptVersionIds = imagePrompts.map((prompt) => prompt.id);
   const finalPostMatchesCanvas = Boolean(
     project.finalPost &&
       activeCopyVersionId &&
@@ -39,13 +42,13 @@ export function getPostVersionStatus(project: Pick<
       project.finalPost.title === project.copyDraft?.draft.title &&
       project.finalPost.content === project.copyDraft?.draft.content &&
       project.finalPost.tags.join("|") === project.copyDraft?.draft.tags.join("|") &&
-      sameStringSet(project.finalPost.imageIds, project.selectedImages) &&
+      sameStringSet(project.finalPost.imageIds ?? [], selectedImages) &&
       sameStringSet(project.finalPost.imagePromptVersionIds, activeImagePromptVersionIds)
   );
   const qualityGateFresh = Boolean(project.qualityCheck && finalPostMatchesCanvas);
   const warnings = [
     !project.copyDraft ? "还没有当前文案版本" : "",
-    !project.selectedImages.length ? "还没有选中发布图片" : "",
+    !selectedImages.length ? "还没有选中发布图片" : "",
     project.finalPost && !finalPostMatchesCanvas ? "最终帖子快照已落后于当前画布" : "",
     project.qualityCheck && !qualityGateFresh ? "Quality Gate 已失效，需要重新检查" : "",
     !project.qualityCheck ? "Quality Gate 尚未运行" : ""
@@ -56,7 +59,7 @@ export function getPostVersionStatus(project: Pick<
     activeImagePromptVersionIds,
     finalPostMatchesCanvas,
     qualityGateFresh,
-    needsReassemble: Boolean(project.copyDraft && project.selectedImages.length && !finalPostMatchesCanvas),
+    needsReassemble: Boolean(project.copyDraft && selectedImages.length && !finalPostMatchesCanvas),
     needsQualityGate: !qualityGateFresh,
     summary: qualityGateFresh
       ? "当前最终帖子和 Quality Gate 与画布一致"
@@ -89,6 +92,23 @@ export function getPostVersionDiffReport(project: Pick<
     summary: changedFields.length
       ? `检测到 ${changedFields.length} 处版本差异：${changes.filter((item) => item.changed).map((item) => item.label).join("、")}`
       : "当前画布与最终发布快照一致"
+  };
+}
+
+export function buildPublishVersionSnapshot(project: Pick<
+  PostProject,
+  "copyDraft" | "selectedImages" | "imagePrompts" | "finalPost" | "qualityCheck"
+>): PublishVersionSnapshot {
+  const status = getPostVersionStatus(project);
+  return {
+    copyVersionId: status.activeCopyVersionId,
+    imagePromptVersionIds: status.activeImagePromptVersionIds,
+    selectedImageIds: Array.isArray(project.selectedImages) ? project.selectedImages : [],
+    qualityGateFresh: status.qualityGateFresh,
+    qualityCanPublish: project.qualityCheck?.canPublish,
+    finalPostMatchesCanvas: status.finalPostMatchesCanvas,
+    summary: status.summary,
+    warnings: status.warnings
   };
 }
 
