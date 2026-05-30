@@ -145,6 +145,34 @@ export function PostStudioPanel({
   const latestImagePrompt = publishDraft.imagePrompt || project?.imagePrompts.at(-1)?.value.prompt || "";
   const quality = project?.qualityCheck;
   const brief = project?.creativeBrief;
+  const activeAccount = settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
+  const activePublishPlan = pendingPublish
+    ? {
+        status: "awaiting_approval",
+        visibility: pendingPublish.payload.visibility,
+        scheduleAt: pendingPublish.payload.scheduleAt,
+        images: pendingPublish.payload.assetIds,
+        tags: pendingPublish.payload.tags,
+        accountName: pendingPublish.accountDisplayName,
+        loginName: pendingPublish.loginName,
+        mcpUrl: pendingPublish.mcpUrl,
+        confirmationChecklist: project?.publishPlan?.confirmationChecklist ?? []
+      }
+    : project?.publishPlan
+      ? {
+          status: project.publishPlan.status,
+          visibility: project.publishPlan.visibility,
+          scheduleAt: project.publishPlan.scheduleAt,
+          images: project.publishPlan.images,
+          tags: project.publishPlan.tags,
+          accountName: activeAccount?.displayName,
+          loginName: health?.activeAccount?.loginName,
+          mcpUrl: activeAccount?.mcpUrl ?? settings.mcpUrl,
+          confirmationChecklist: project.publishPlan.confirmationChecklist ?? []
+        }
+      : null;
+  const requiredConfirmations = activePublishPlan?.confirmationChecklist.filter((item) => item.required) ?? [];
+  const confirmedRequiredCount = requiredConfirmations.filter((item) => item.confirmed).length;
   const copyVersions = project?.copyVersions ?? [];
   const imagePromptVersions = project?.imagePrompts ?? [];
   const draftEvidenceIds = project?.copyDraft?.draft.basedOnEvidenceIds ?? copyVersions.at(-1)?.basedOnEvidenceIds ?? [];
@@ -160,7 +188,6 @@ export function PostStudioPanel({
       citationReport.sections.every((section) => section.insights.length)
   );
   const hasVisualDirection = Boolean(latestImagePrompt || project?.visualDirection);
-  const activeAccount = settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
   const accountReady = Boolean(health?.loggedIn);
   const publishReady = Boolean(
     publishDraft.title.trim() &&
@@ -762,6 +789,31 @@ export function PostStudioPanel({
                 <span>确认单：{pendingPublish ? `${pendingPublish.mode === "schedule" ? "定时" : "立即"} · 待人工确认` : "未生成"}</span>
                 {health?.activeAccount?.loginName ? <span>登录名：{health.activeAccount.loginName}</span> : null}
               </div>
+              {activePublishPlan ? (
+                <div className="publishIntentSummary">
+                  <strong>当前确认单</strong>
+                  <div>
+                    <span>状态：{labelForPublishStatus(activePublishPlan.status)}</span>
+                    <span>账号：{activePublishPlan.accountName ?? "未配置"}</span>
+                    <span>图片：{activePublishPlan.images?.length ?? 0} 张</span>
+                    <span>标签：{activePublishPlan.tags?.length ?? 0} 个</span>
+                    <span>可见：{activePublishPlan.visibility ?? publishVisibility}</span>
+                    <span>{activePublishPlan.scheduleAt ? `定时：${activePublishPlan.scheduleAt}` : "立即发布"}</span>
+                  </div>
+                  {activePublishPlan.loginName ? <p>登录名：{activePublishPlan.loginName}</p> : null}
+                  {activePublishPlan.mcpUrl ? <p>MCP：{activePublishPlan.mcpUrl}</p> : null}
+                  {requiredConfirmations.length ? (
+                    <ul>
+                      {requiredConfirmations.slice(0, 5).map((item) => (
+                        <li key={item.id}>
+                          {item.confirmed ? "已确认" : "待确认"}：{item.label}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  <p>人工确认：{confirmedRequiredCount}/{requiredConfirmations.length || 0} 项</p>
+                </div>
+              ) : null}
               {quality ? (
                 <div className="qualityBox">
                   <strong>{quality.canPublish ? "质量检查通过" : "质量检查需处理"}</strong>

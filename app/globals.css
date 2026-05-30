@@ -3681,6 +3681,50 @@ textarea {
   margin: 0;
 }
 
+.publishIntentSummary {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(18, 118, 97, 0.18);
+  border-radius: 12px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.publishIntentSummary strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.publishIntentSummary div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.publishIntentSummary span {
+  background: rgba(18, 118, 97, 0.08);
+  border: 1px solid rgba(18, 118, 97, 0.14);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 5px 8px;
+}
+
+.publishIntentSummary p,
+.publishIntentSummary li {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.publishIntentSummary ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 17px;
+}
+
 .evidenceActions {
   display: flex;
   flex-wrap: wrap;
