@@ -77,6 +77,13 @@ export type WorkflowResult = {
     tags: string[];
     structure: string[];
     imagePrompt: string;
+    basedOnEvidenceIds?: string[];
+    evidenceReferences?: {
+      title?: string[];
+      content?: string[];
+      tags?: string[];
+      imagePrompt?: string[];
+    };
   };
   images: Array<{ path?: string; url?: string }>;
   publishResult: unknown;
@@ -85,6 +92,7 @@ export type WorkflowResult = {
     results: Array<{
       score: number;
       reasons: string[];
+      matchedQueries?: string[];
       case: ViralCase;
     }>;
   } | null;
@@ -124,6 +132,7 @@ export type ViralCase = {
   };
   sourceUrl: string;
   createdAt: string;
+  embedding: number[];
   extractedInsights: {
     titleHooks: string[];
     copyStructures: string[];
@@ -335,7 +344,13 @@ export type PostProject = {
     basedOnEvidenceIds: string[];
   };
   copyDraft?: DraftRecord | null;
-  copyVersions: Array<{ id: string; label: string; createdAt: string; value: NonNullable<WorkflowResult["draft"]> }>;
+  copyVersions: Array<{
+    id: string;
+    label: string;
+    createdAt: string;
+    value: NonNullable<WorkflowResult["draft"]>;
+    basedOnEvidenceIds: string[];
+  }>;
   visualDirection?: {
     mood: string;
     composition: string;

@@ -160,6 +160,49 @@ describe("post project", () => {
     expect(quality.complianceScore).toBeLessThan(100);
   });
 
+  it("flags drafts that are too close to source samples", () => {
+    const sourceText = "真实探店体验先讲排队和人均再给适合拍照的位置最后提醒周末避开高峰";
+    const quality = runPostQualityGate({
+      creativeBrief: {
+        audience: "广州咖啡爱好者",
+        painPoint: "不知道周末是否值得去",
+        contentAngle: "真实避坑",
+        emotionalHook: "先说结论",
+        proofPoints: ["排队", "人均"],
+        tone: "真实",
+        visualMood: "自然光",
+        imageMustHave: ["门头"],
+        imageMustAvoid: [],
+        platformStyle: "小红书",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      visualDirection: {
+        mood: "自然光",
+        composition: "门头+饮品",
+        colorPalette: "暖色",
+        mustHave: ["门头"],
+        mustAvoid: [],
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      selectedImages: ["asset-1"],
+      selectedSamples: [{ title: "广州咖啡馆避坑清单", detailText: sourceText }],
+      evidencePack: { insights: [{ id: "insight-1", type: "copy", insight: "写真实避坑", sourceSampleIds: ["note-1"], confidence: 0.8, createdAt: "2026-05-30T00:00:00.000Z" }], sampleIds: ["note-1"] },
+      finalPost: {
+        title: "广州咖啡馆避坑清单",
+        content: sourceText,
+        tags: ["咖啡"],
+        imageIds: ["asset-1"],
+        imagePromptVersionIds: []
+      },
+      copyDraft: null
+    });
+
+    expect(quality.canPublish).toBe(false);
+    expect(quality.issues.join(" ")).toContain("疑似过度仿写样本");
+  });
+
   it("refreshes stale final posts when the current draft changes", () => {
     const project = postProjectFromWorkspace({
       schemaVersion: 1,

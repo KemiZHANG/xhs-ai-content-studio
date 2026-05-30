@@ -4,7 +4,7 @@ import { buildReferenceImagePrompt, type GeneratedImage, type ModelProvider } fr
 import { getAsset } from "@/lib/storage/assets";
 import type { AssetRecord } from "@/lib/storage/assets";
 import { cacheEvidenceImages } from "@/lib/storage/evidence-images";
-import { searchViralCases } from "@/lib/viral-knowledge/store";
+import { searchViralCasesFusion } from "@/lib/viral-knowledge/store";
 import type { ViralSearchResult } from "@/lib/viral-knowledge/types";
 import { rankFeeds, toNumber, type RankedFeed } from "@/lib/workflows/ranking";
 
@@ -50,6 +50,13 @@ export type GeneratedDraft = {
   tags: string[];
   structure: string[];
   imagePrompt: string;
+  basedOnEvidenceIds?: string[];
+  evidenceReferences?: {
+    title?: string[];
+    content?: string[];
+    tags?: string[];
+    imagePrompt?: string[];
+  };
 };
 
 export type SampleEvidence = {
@@ -78,6 +85,7 @@ export type ResearchSummary = {
   nextQuestions: string[];
   structureInsights?: string[];
   hookInsights?: string[];
+  viralKnowledge?: ViralKnowledgePack | null;
 };
 
 export type ViralKnowledgePack = {
@@ -157,6 +165,7 @@ export async function runOneClickWorkflow({
     const viralKnowledge = await maybeRetrieveViralKnowledge(input, evidence, steps);
     const imageStyleReport = await maybeAnalyzeImages(input, samples, details, model, steps);
     const research = await generateResearchSummary(input, evidence, imageStyleReport, model, steps, viralKnowledge);
+    const researchSummary = { ...research.summary, viralKnowledge };
 
     if (workflowGoal === "research") {
       steps.push({
@@ -171,7 +180,7 @@ export async function runOneClickWorkflow({
         steps,
         samples,
         evidence,
-        researchSummary: research.summary,
+        researchSummary,
         report: research.report,
         imageStyleReport,
         draft: null,
@@ -182,7 +191,7 @@ export async function runOneClickWorkflow({
     }
 
     const rawGeneration = await model.generateStructuredText(
-      buildGenerationPrompt(input, evidence, imageStyleReport, research.summary)
+      buildGenerationPrompt(input, evidence, imageStyleReport, researchSummary, viralKnowledge)
     );
     const parsed = parseGeneration(rawGeneration, input.topic);
 
@@ -213,7 +222,7 @@ export async function runOneClickWorkflow({
       steps,
       samples,
       evidence,
-      researchSummary: research.summary,
+      researchSummary,
       report: parsed.report || research.report,
       imageStyleReport,
       draft: parsed.draft,
@@ -402,7 +411,7 @@ async function maybeRetrieveViralKnowledge(
     return null;
   }
   const query = input.retrievalQuery || [input.topic, input.contentType, input.requirements].filter(Boolean).join(" ");
-  const results = await searchViralCases({
+  const results = await searchViralCasesFusion({
     query,
     topic: input.topic,
     category: input.contentType,
@@ -647,8 +656,13 @@ function buildGenerationPrompt(
   input: OneClickInput,
   evidence: SampleEvidence[],
   imageStyleReport: string,
-  researchSummary: ResearchSummary | null
+  researchSummary: ResearchSummary | null,
+  viralKnowledge: ViralKnowledgePack | null = null
 ): string {
+  const evidenceIds = [
+    ...evidence.map((item) => item.id),
+    ...(viralKnowledge?.results.map((item) => item.case.id) ?? [])
+  ];
   return `请基于以下小红书公开样本生成一篇新的原创笔记。
 
 硬性要求：
@@ -666,6 +680,27 @@ function buildGenerationPrompt(
 证据样本：
 ${JSON.stringify(evidence, null, 2)}
 
+爆款库可复用规律：
+${viralKnowledge?.results.length ? JSON.stringify(viralKnowledge.results.map((item) => ({
+  id: item.case.id,
+  sourceType: "viral_library",
+  score: item.score,
+  hookType: item.case.hookType,
+  contentStructure: item.case.contentStructure,
+  tagPatterns: item.case.extractedInsights.tagPatterns,
+  imageStyle: item.case.imageStyle,
+  audience: item.case.audience,
+  painPoint: item.case.painPoint,
+  emotionalTrigger: item.case.emotionalTrigger,
+  reusableRules: item.case.extractedInsights.reusableRules,
+  avoidCopying: item.case.extractedInsights.avoidCopying,
+  reasons: item.reasons,
+  matchedQueries: item.matchedQueries
+})), null, 2) : "无匹配爆款库规律。"}
+
+可引用证据 ID：
+${evidenceIds.join("、") || "无"}
+
 研究总结：
 ${JSON.stringify(researchSummary, null, 2)}
 
@@ -680,7 +715,14 @@ ${imageStyleReport || "未启用或未获取到图片分析。"}
     "content": "原创小红书正文，不包含#标签",
     "tags": ["标签1", "标签2"],
     "structure": ["开头钩子", "正文段落", "结尾互动"],
-    "imagePrompt": "用于图片模型的新图提示词，描述构图、场景、色调、文字排版、真实感"
+    "imagePrompt": "用于图片模型的新图提示词，描述构图、场景、色调、文字排版、真实感",
+    "basedOnEvidenceIds": ["只能填写上方可引用证据 ID"],
+    "evidenceReferences": {
+      "title": ["标题使用到的证据 ID"],
+      "content": ["正文结构/痛点使用到的证据 ID"],
+      "tags": ["标签方向使用到的证据 ID"],
+      "imagePrompt": ["图片方向使用到的证据 ID"]
+    }
   }
 }`;
 }
@@ -792,7 +834,9 @@ function parseGeneration(raw: string, topic: string): { report: string; draft: G
     content: raw || `围绕「${topic}」生成的原创笔记。`,
     tags: [topic.replace(/\s+/g, "")],
     structure: ["开头提出场景", "正文给出经验", "结尾引导互动"],
-    imagePrompt: `小红书风格原创配图，主题是${topic}，自然光，真实生活场景，干净排版`
+    imagePrompt: `小红书风格原创配图，主题是${topic}，自然光，真实生活场景，干净排版`,
+    basedOnEvidenceIds: [],
+    evidenceReferences: {}
   };
 
   const jsonText = extractJson(raw);
@@ -811,7 +855,9 @@ function parseGeneration(raw: string, topic: string): { report: string; draft: G
         ...fallback,
         ...parsed.draft,
         tags: Array.isArray(parsed.draft?.tags) ? parsed.draft.tags : fallback.tags,
-        structure: Array.isArray(parsed.draft?.structure) ? parsed.draft.structure : fallback.structure
+        structure: Array.isArray(parsed.draft?.structure) ? parsed.draft.structure : fallback.structure,
+        basedOnEvidenceIds: safeStringArray(parsed.draft?.basedOnEvidenceIds, fallback.basedOnEvidenceIds ?? []),
+        evidenceReferences: normalizeEvidenceReferences((parsed.draft as { evidenceReferences?: unknown } | undefined)?.evidenceReferences)
       }
     };
   } catch {
@@ -820,6 +866,19 @@ function parseGeneration(raw: string, topic: string): { report: string; draft: G
       draft: fallback
     };
   }
+}
+
+function normalizeEvidenceReferences(value: unknown): GeneratedDraft["evidenceReferences"] {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+  const record = value as Record<string, unknown>;
+  return {
+    title: safeStringArray(record.title, []),
+    content: safeStringArray(record.content, []),
+    tags: safeStringArray(record.tags, []),
+    imagePrompt: safeStringArray(record.imagePrompt, [])
+  };
 }
 
 function extractJson(raw: string): string | null {

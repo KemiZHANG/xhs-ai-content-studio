@@ -266,8 +266,9 @@ function buildAgentTurnResult({
   postProject?: PostProject | null;
 }): AgentTurnResult {
   const cards = buildCardsFromTurn(workspace, currentDraft, postProject);
+  const evidenceAwareAnswer = appendEvidenceReferenceNote(answer, plan, postProject);
   const structured = buildStructuredAgentResponse({
-    answer,
+    answer: evidenceAwareAnswer,
     plan,
     workspace,
     postProject,
@@ -282,6 +283,28 @@ function buildAgentTurnResult({
     workspace,
     postProject: postProject ?? undefined
   };
+}
+
+function appendEvidenceReferenceNote(answer: string, plan: AgentPlan, postProject?: PostProject | null): string {
+  if (plan.intent === "answer" || plan.intent === "ask") {
+    return answer;
+  }
+  const insights = (postProject?.evidencePack.insights ?? [])
+    .filter((insight) => insight.insight.trim())
+    .slice(0, 5);
+  if (!insights.length || answer.includes("参考证据")) {
+    return answer;
+  }
+  const note = insights
+    .map((insight) => `- ${labelForEvidenceSource(insight.sourceType)} / ${insight.type}: ${insight.insight}`)
+    .join("\n");
+  return `${answer}\n\n参考证据：\n${note}`;
+}
+
+function labelForEvidenceSource(sourceType?: string): string {
+  if (sourceType === "viral_library") return "爆款库";
+  if (sourceType === "user_input") return "用户输入";
+  return "实时研究";
 }
 
 function buildStructuredAgentResponse({

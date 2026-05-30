@@ -20,7 +20,7 @@ XHS AI Content Studio 是一个本地优先的小红书 AI 内容创作 Agent。
 - **AI Agent 调度层**：根据用户自然语言判断意图，例如研究、总结、生成文案、改写、生成图片、选图、发布检查、定时发布。
 - **PostProject 状态**：保存当前主题、证据包、样本、CreativeBrief、文案版本、图片方向、生成图片、最终帖子、发布计划和阶段。
 - **真实证据研究**：通过 Xiaohongshu MCP 搜索和读取真实笔记，再提炼标题、正文、标签、图片、评论和用户痛点。
-- **爆款库 RAG**：把高质量样本沉淀为标题钩子、正文结构、标签组合、图片风格、痛点和情绪触发点，后续创作可同时参考实时证据和历史规律。
+- **爆款库 RAG**：把高质量样本沉淀为标题钩子、正文结构、标签组合、图片风格、痛点和情绪触发点；检索时使用多 query 融合、语义匹配和多样性选择，后续创作可同时参考实时证据和历史规律。
 - **原创重写**：根据研究结论和用户需求生成新内容，避免直接复制或拼接竞品内容。
 - **图片创作台**：支持 AI 生图、产品图场景化、参考图生成和图文卡片渲染。
 - **图文卡片引擎**：本地生成小红书常用尺寸卡片，适合干货、清单、教程、避坑类内容。
@@ -186,7 +186,7 @@ It is not just an auto-posting script. It is designed as an evidence-based conte
 - **AI Agent Orchestrator**: Detects user intent such as research, summarize, draft, revise, generate images, select images, prepare publishing, and schedule publishing.
 - **PostProject State**: Stores topic, evidence pack, selected samples, CreativeBrief, copy versions, visual direction, generated images, final post, publish plan, and current stage.
 - **Evidence-Based Research**: Uses Xiaohongshu MCP to search and read real notes before generating content.
-- **Viral Knowledge RAG**: Saves strong samples as reusable creative patterns, including title hooks, copy structures, tag patterns, image style, pain points, and emotional triggers.
+- **Viral Knowledge RAG**: Saves strong samples as reusable creative patterns, including title hooks, copy structures, tag patterns, image style, pain points, and emotional triggers. Retrieval uses multi-query fusion, semantic matching, and diversity selection.
 - **Original Rewriting**: Generates new Xiaohongshu content from extracted patterns and user requirements.
 - **Image Studio**: Supports AI image generation, product-scene generation, reference-image generation, and local image-text card rendering.
 - **Card Engine**: Renders Xiaohongshu-style card images locally for guides, lists, tutorials, and educational posts.

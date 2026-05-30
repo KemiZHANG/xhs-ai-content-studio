@@ -3313,6 +3313,26 @@ textarea {
   background: var(--surface-subtle);
 }
 
+.evidenceReferenceStrip {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px dashed rgba(18, 118, 97, 0.28);
+  border-radius: 12px;
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+}
+
+.evidenceReferenceStrip strong {
+  color: var(--accent-strong);
+  font-size: 12px;
+}
+
+.evidenceReferenceStrip span {
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
 .insightLine {
   background: var(--surface-subtle);
   border: 1px solid var(--line);

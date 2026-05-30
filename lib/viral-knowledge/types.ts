@@ -64,4 +64,5 @@ export type ViralSearchResult = {
   case: ViralCase;
   score: number;
   reasons: string[];
+  matchedQueries?: string[];
 };

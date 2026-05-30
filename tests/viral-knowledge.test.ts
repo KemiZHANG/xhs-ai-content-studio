@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   createViralCaseFromEvidence,
   searchViralCases,
+  searchViralCasesFusion,
   upsertViralCases,
   viralCasesToEvidenceInsights
 } from "@/lib/viral-knowledge/store";
@@ -71,5 +72,25 @@ describe("viral knowledge base", () => {
     expect(insights.every((item) => item.sourceType === "viral_library")).toBe(true);
     expect(insights.map((item) => item.type)).toContain("hook");
     expect(insights.map((item) => item.type)).toContain("structure");
+  });
+
+  it("uses multi-query fusion and preserves matched query reasons", async () => {
+    const viralCase = await createViralCaseFromEvidence({
+      sample,
+      topic: "广州咖啡馆",
+      category: "探店"
+    });
+    await upsertViralCases([viralCase]);
+
+    const results = await searchViralCasesFusion({
+      query: "探店账号想写真实避坑收藏帖",
+      topic: "广州咖啡馆",
+      category: "探店",
+      limit: 5
+    });
+
+    expect(results[0].case.id).toBe(viralCase.id);
+    expect(results[0].matchedQueries?.length).toBeGreaterThan(0);
+    expect(results[0].reasons.join(" ")).toContain("检索 query");
   });
 });

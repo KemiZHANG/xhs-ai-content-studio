@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createModelProvider } from "@/lib/models/provider";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { readSettings } from "@/lib/storage/settings";
-import { createViralCaseFromEvidence, listViralCases, searchViralCases, upsertViralCases } from "@/lib/viral-knowledge/store";
+import { createViralCaseFromEvidence, listViralCases, searchViralCasesFusion, upsertViralCases } from "@/lib/viral-knowledge/store";
 import type { SampleEvidence } from "@/lib/workflows/one-click";
 
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   const limit = Number(url.searchParams.get("limit") ?? 8);
 
   if (query || topic || category || audience || painPoint || tags.length) {
-    const results = await searchViralCases({
+    const results = await searchViralCasesFusion({
       query,
       topic,
       category,

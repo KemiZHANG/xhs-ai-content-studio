@@ -114,6 +114,7 @@ export function PostStudioPanel({
   const brief = project?.creativeBrief;
   const copyVersions = project?.copyVersions ?? [];
   const imagePromptVersions = project?.imagePrompts ?? [];
+  const draftEvidenceIds = project?.copyDraft?.draft.basedOnEvidenceIds ?? copyVersions.at(-1)?.basedOnEvidenceIds ?? [];
 
   const generatedCopyPrompt = useMemo(
     () =>
@@ -316,6 +317,12 @@ export function PostStudioPanel({
                       </button>
                     ))}
                   </div>
+                </section>
+              ) : null}
+              {draftEvidenceIds.length ? (
+                <section className="evidenceReferenceStrip" aria-label="文案证据引用">
+                  <strong>证据引用</strong>
+                  <span>{draftEvidenceIds.slice(0, 5).join(" / ")}</span>
                 </section>
               ) : null}
             </div>

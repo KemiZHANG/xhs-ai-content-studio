@@ -6,7 +6,7 @@ const riskyClaims = ["认证", "销量", "全网", "官方", "治愈", "疗效",
 export function runPostQualityGate(project: Pick<
   PostProject,
   "finalPost" | "copyDraft" | "selectedImages" | "creativeBrief" | "visualDirection"
->): QualityCheck {
+> & Partial<Pick<PostProject, "selectedSamples" | "evidencePack">>): QualityCheck {
   const finalPost = project.finalPost ?? finalPostFromDraft(project);
   const issues: string[] = [];
   const suggestions: string[] = [];
@@ -16,6 +16,7 @@ export function runPostQualityGate(project: Pick<
   if (!finalPost?.tags.length) issues.push("标签为空");
   if (!finalPost?.imageIds.length) issues.push("未选择发布图片");
   if (!project.creativeBrief) issues.push("缺少 CreativeBrief，文案和图片可能没有共享创作依据");
+  if (!project.evidencePack?.insights.length) issues.push("缺少可追溯证据，不能把生成结果伪装成研究结论");
 
   const titleText = finalPost?.title ?? "";
   const bodyText = finalPost?.content ?? "";
@@ -44,18 +45,25 @@ export function runPostQualityGate(project: Pick<
     suggestions.push("补充使用场景、真实细节、适用人群和注意事项。");
   }
 
+  const copiedSampleTitle = findOverCopiedSample(titleText, bodyText, project.selectedSamples ?? []);
+  if (copiedSampleTitle) {
+    issues.push(`疑似过度仿写样本：${copiedSampleTitle}`);
+    suggestions.push("保留结构规律，重写标题表达、叙述顺序和具体细节，避免贴近原帖。");
+  }
+
   const titleScore = scoreFromIssues([!titleText.trim(), exaggerated.length > 0]);
-  const copyScore = scoreFromIssues([!bodyText.trim(), bodyText.length < 80, risky.length > 0]);
+  const copyScore = scoreFromIssues([!bodyText.trim(), bodyText.length < 80, risky.length > 0, Boolean(copiedSampleTitle)]);
   const visualConsistencyScore = scoreFromIssues([!finalPost?.imageIds.length, !project.visualDirection]);
   const platformFitScore = scoreFromIssues([(finalPost?.tags.length ?? 0) === 0, (finalPost?.tags.length ?? 0) > 10]);
-  const complianceScore = scoreFromIssues([risky.length > 0, exaggerated.length > 1]);
+  const complianceScore = scoreFromIssues([risky.length > 0, exaggerated.length > 1, Boolean(copiedSampleTitle)]);
   const hasCriticalPublishRisk = Boolean(
     !finalPost?.title ||
       !finalPost.content ||
       !finalPost.tags.length ||
       !finalPost.imageIds.length ||
       exaggerated.length ||
-      risky.length
+      risky.length ||
+      copiedSampleTitle
   );
   const canPublish = !hasCriticalPublishRisk && complianceScore >= 70;
 
@@ -87,6 +95,53 @@ function finalPostFromDraft(project: Pick<PostProject, "copyDraft" | "selectedIm
     copyVersionId: `copy-${project.copyDraft.id}`,
     imagePromptVersionIds: []
   };
+}
+
+function findOverCopiedSample(title: string, body: string, samples: unknown[]): string | null {
+  const normalizedTitle = normalizeForSimilarity(title);
+  const normalizedBody = normalizeForSimilarity(body);
+  for (const sample of samples) {
+    if (!isRecord(sample)) continue;
+    const sampleTitle = typeof sample.title === "string" ? sample.title : "";
+    const sampleBody = typeof sample.detailText === "string" ? sample.detailText : "";
+    const normalizedSampleTitle = normalizeForSimilarity(sampleTitle);
+    const normalizedSampleBody = normalizeForSimilarity(sampleBody);
+    if (normalizedTitle && normalizedSampleTitle && normalizedTitle === normalizedSampleTitle) {
+      return sampleTitle;
+    }
+    if (normalizedBody && normalizedSampleBody && overlapRatio(normalizedBody, normalizedSampleBody) > 0.72) {
+      return sampleTitle || "未命名样本";
+    }
+  }
+  return null;
+}
+
+function normalizeForSimilarity(value: string): string {
+  return value.toLowerCase().replace(/[^\p{L}\p{N}\u4e00-\u9fa5]+/gu, "");
+}
+
+function overlapRatio(a: string, b: string): number {
+  if (a.length < 40 || b.length < 40) return 0;
+  const gramsA = new Set(ngrams(a, 4));
+  const gramsB = new Set(ngrams(b, 4));
+  if (!gramsA.size || !gramsB.size) return 0;
+  let overlap = 0;
+  for (const gram of gramsA) {
+    if (gramsB.has(gram)) overlap += 1;
+  }
+  return overlap / Math.min(gramsA.size, gramsB.size);
+}
+
+function ngrams(value: string, size: number): string[] {
+  const grams: string[] = [];
+  for (let index = 0; index <= value.length - size; index += 1) {
+    grams.push(value.slice(index, index + size));
+  }
+  return grams;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object";
 }
 
 function scoreFromIssues(flags: boolean[]): number {

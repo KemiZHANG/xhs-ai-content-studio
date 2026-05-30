@@ -135,12 +135,15 @@ function finalPostStillMatchesProject(
 }
 
 export function copyVersionFromDraft(draft: DraftRecord, basedOnEvidenceIds: string[]) {
+  const draftEvidenceIds = Array.isArray(draft.draft.basedOnEvidenceIds) && draft.draft.basedOnEvidenceIds.length
+    ? draft.draft.basedOnEvidenceIds
+    : basedOnEvidenceIds;
   return {
     id: `copy-${draft.id}`,
     createdAt: draft.updatedAt,
     label: "Current draft",
     value: draft.draft,
-    basedOnEvidenceIds
+    basedOnEvidenceIds: draftEvidenceIds
   };
 }
 

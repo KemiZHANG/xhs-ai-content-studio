@@ -14,7 +14,10 @@ export function buildCopyCreativeBrief(result: BriefResult | null, userRequireme
   const lines = [
     "文案创作简报：",
     formatSection("标题与选题应该学习", summary?.contentStrengths),
+    formatSection("标题钩子应该学习", summary?.hookInsights),
     formatSection("正文结构应该学习", summary?.learningsForContent),
+    formatSection("结构规律", summary?.structureInsights),
+    formatViralSection("爆款库可复用规律", summary?.viralKnowledge),
     formatSection("标签与转化前需要补充", summary?.nextQuestions),
     "要求：生成全新的原创表达，不复述、不拼接、不照抄样本标题或正文。"
   ].filter(Boolean);
@@ -32,6 +35,7 @@ export function buildImageCreativeBrief(result: BriefResult | null, userRequirem
     "图片创作简报：",
     formatSection("样本图片的优点", summary?.imageStrengths),
     formatSection("新图片应该学习", summary?.learningsForImages),
+    formatViralSection("爆款库图片/封面规律", summary?.viralKnowledge, "visual"),
     result.imageStyleReport?.trim() ? `风格总结：${clamp(result.imageStyleReport.trim(), 900)}` : "",
     "要求：生成新的原创图片，不复制样本图片，不挪用样本图片素材。"
   ].filter(Boolean);
@@ -50,6 +54,25 @@ ${copyBrief}
 function formatSection(label: string, values?: string[]): string {
   const list = compactList(values);
   return list.length ? `${label}：${list.join("；")}` : "";
+}
+
+function formatViralSection(
+  label: string,
+  viralKnowledge?: OneClickResult["viralKnowledge"],
+  focus: "copy" | "visual" = "copy"
+): string {
+  const list = (viralKnowledge?.results ?? []).slice(0, 4).flatMap((item) => {
+    const insights = focus === "visual"
+      ? [item.case.imageStyle, ...item.case.extractedInsights.visualPatterns]
+      : [
+          item.case.hookType,
+          item.case.contentStructure.join(" / "),
+          ...item.case.extractedInsights.reusableRules
+        ];
+    return insights.filter(Boolean).map((insight) => `${item.case.id}: ${insight}`);
+  });
+  const compact = compactList(list).slice(0, 5);
+  return compact.length ? `${label}：${compact.join("；")}` : "";
 }
 
 function compactList(values?: string[]): string[] {

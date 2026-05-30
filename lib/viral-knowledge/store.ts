@@ -46,6 +46,36 @@ export async function searchViralCases(input: ViralSearchInput): Promise<ViralSe
     .slice(0, limit);
 }
 
+export async function searchViralCasesFusion(input: ViralSearchInput): Promise<ViralSearchResult[]> {
+  const limit = Math.max(1, Math.min(Number(input.limit ?? 8), 30));
+  const queries = rewriteViralQueries(input);
+  const merged = new Map<string, ViralSearchResult>();
+
+  for (const query of queries) {
+    const partial = await searchViralCases({
+      ...input,
+      query,
+      limit: Math.max(limit * 2, 8)
+    });
+    for (const result of partial) {
+      const existing = merged.get(result.case.id);
+      if (!existing) {
+        merged.set(result.case.id, {
+          ...result,
+          matchedQueries: [query],
+          reasons: uniqueStrings([...result.reasons, `检索 query：${query}`])
+        });
+        continue;
+      }
+      existing.score = Number(Math.max(existing.score, result.score).toFixed(4));
+      existing.reasons = uniqueStrings([...existing.reasons, ...result.reasons, `检索 query：${query}`]).slice(0, 8);
+      existing.matchedQueries = uniqueStrings([...(existing.matchedQueries ?? []), query]).slice(0, 5);
+    }
+  }
+
+  return diversifyViralResults([...merged.values()]).slice(0, limit);
+}
+
 export async function upsertViralCases(cases: ViralCase[]): Promise<ViralCase[]> {
   return queueViralKnowledgeWrite(async () => {
     const file = await readViralKnowledgeFile();
@@ -240,6 +270,39 @@ function scoreViralCase(item: ViralCase, queryTokens: string[], input: ViralSear
       metricScore > 0.05 ? "互动数据较强" : ""
     ].filter(Boolean)
   };
+}
+
+function rewriteViralQueries(input: ViralSearchInput): string[] {
+  const base = [input.query, input.topic, input.category, input.audience, input.painPoint, ...(input.tags ?? [])]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  return uniqueStrings([
+    base,
+    [input.topic, "标题钩子", "高收藏", input.audience].filter(Boolean).join(" "),
+    [input.topic, "正文结构", "痛点", input.painPoint].filter(Boolean).join(" "),
+    [input.topic, "图片风格", "封面", input.category].filter(Boolean).join(" "),
+    [input.topic, "标签组合", "评论关注点"].filter(Boolean).join(" "),
+    `理想参考摘要：${base} 小红书高互动笔记通常具备清晰标题钩子、真实场景、可收藏结构、图片主体明确和评论问题回应`
+  ]).filter(Boolean).slice(0, 6);
+}
+
+function diversifyViralResults(results: ViralSearchResult[]): ViralSearchResult[] {
+  const sorted = results.sort((a, b) => b.score - a.score);
+  const selected: ViralSearchResult[] = [];
+  const usedAngles = new Map<string, number>();
+
+  for (const result of sorted) {
+    const angle = `${result.case.hookType}|${result.case.category}|${result.case.imageStyle}`.slice(0, 80);
+    const count = usedAngles.get(angle) ?? 0;
+    if (count >= 2 && selected.length >= 4) {
+      continue;
+    }
+    selected.push(result);
+    usedAngles.set(angle, count + 1);
+  }
+
+  return selected.length ? selected : sorted;
 }
 
 function matchesFilters(item: ViralCase, filters: ViralCaseFilters): boolean {
