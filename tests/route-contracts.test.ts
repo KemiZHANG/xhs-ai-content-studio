@@ -58,6 +58,44 @@ describe("API route contracts", () => {
     vi.doUnmock("@/lib/post-project/store");
   });
 
+  it("clears the active PostProject when the workspace reset route starts a new project", async () => {
+    const resetPostProject = vi.fn(async () => ({}));
+    const resetWorkspaceState = vi.fn(async () => ({
+      schemaVersion: 1,
+      workspaceId: "workspace-clean",
+      updatedAt: "2026-05-31T00:00:00.000Z",
+      topic: "广州咖啡馆",
+      selectedSamples: [],
+      selectedImageIds: [],
+      productImageIds: [],
+      publishPlan: null,
+      recentJobIds: []
+    }));
+    const writeCurrentDraft = vi.fn(async () => undefined);
+    vi.doMock("@/lib/agent/state", () => ({ resetWorkspaceState }));
+    vi.doMock("@/lib/post-project/store", () => ({ resetPostProject }));
+    vi.doMock("@/lib/storage/drafts", () => ({ writeCurrentDraft }));
+
+    const { POST } = await import("@/app/api/agent/workspace/reset/route");
+    const response = await POST(jsonRequest({ topic: "广州咖啡馆", lastUserIntent: "start_new_project" }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.workspace.workspaceId).toBe("workspace-clean");
+    expect(writeCurrentDraft).toHaveBeenCalledWith(null);
+    expect(resetWorkspaceState).toHaveBeenCalledWith({
+      topic: "广州咖啡馆",
+      lastUserIntent: "start_new_project"
+    });
+    expect(resetPostProject).toHaveBeenCalledWith({
+      id: "post-clean",
+      topic: "广州咖啡馆"
+    });
+    vi.doUnmock("@/lib/agent/state");
+    vi.doUnmock("@/lib/post-project/store");
+    vi.doUnmock("@/lib/storage/drafts");
+  });
+
   it("returns a stable one-click validation error shape", async () => {
     vi.doMock("@/lib/storage/settings", () => ({
       readSettings: async () => defaultSettings,
