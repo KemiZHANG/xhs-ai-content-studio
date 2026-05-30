@@ -480,6 +480,14 @@ describe("API route contracts", () => {
 
     expect(response.status).toBe(200);
     expect(payload.job).toEqual(expect.objectContaining({ id: "job-1" }));
+    expect(payload.workspace).toEqual(expect.objectContaining({
+      topic: "coffee",
+      lastUserIntent: "research_to_draft"
+    }));
+    expect(payload.postProject).toEqual(expect.objectContaining({
+      topic: "coffee",
+      currentStage: "researching"
+    }));
     expect(enqueueWorkflow).toHaveBeenCalledWith(
       expect.objectContaining({
         topic: "coffee",

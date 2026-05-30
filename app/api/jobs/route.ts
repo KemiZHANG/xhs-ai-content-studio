@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       publishPlan: null,
       lastUserIntent: input.workflowGoal === "research" ? "research_only" : "research_to_draft"
     });
-    await resetPostProject({
+    const postProject = await resetPostProject({
       id: initialWorkspace.workspaceId === "local-default"
         ? "post-local-default"
         : initialWorkspace.workspaceId.replace(/^workspace-/, "post-"),
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
     });
 
     const job = await getJobRunner().enqueueWorkflow(input);
-    return NextResponse.json({ job });
+    return NextResponse.json({ job, workspace: initialWorkspace, postProject });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "创建任务失败" },

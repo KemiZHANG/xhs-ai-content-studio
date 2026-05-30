@@ -494,7 +494,13 @@ export default function Home() {
       const data = (await clientApi("/api/jobs", {
         method: "POST",
         body: JSON.stringify(researchInput)
-      })) as { job: JobRecord };
+      })) as { job: JobRecord; workspace?: WorkspaceState; postProject?: PostProject };
+      if (data.workspace) {
+        setWorkspace(data.workspace);
+      }
+      if (data.postProject) {
+        setPostProject(data.postProject);
+      }
       setActiveJobId(data.job.id);
       setAutoReturnTarget(section === "flow" ? "flow" : "workflow");
       setAutoReturnJobId(data.job.id);
