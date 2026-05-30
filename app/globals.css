@@ -3213,6 +3213,54 @@ textarea {
   gap: 10px;
 }
 
+.versionSwitcher {
+  background: linear-gradient(135deg, rgba(18, 118, 97, 0.08), rgba(255, 255, 255, 0.72));
+  border: 1px solid rgba(18, 118, 97, 0.16);
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.versionSwitcher > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.versionSwitcher strong {
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.versionSwitcher span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.versionSwitcher > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.versionSwitcher button {
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: rgba(0, 0, 0, 0.74);
+  cursor: pointer;
+  font-weight: 800;
+  padding: 7px 10px;
+}
+
+.versionSwitcher button:hover {
+  border-color: rgba(18, 118, 97, 0.28);
+  color: var(--accent-strong);
+}
+
+.compactVersionSwitcher {
+  background: var(--surface-subtle);
+}
+
 .insightLine {
   background: var(--surface-subtle);
   border: 1px solid var(--line);

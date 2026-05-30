@@ -97,6 +97,8 @@ export function PostStudioPanel({
   const latestImagePrompt = project?.imagePrompts.at(-1)?.value.prompt ?? publishDraft.imagePrompt;
   const quality = project?.qualityCheck;
   const brief = project?.creativeBrief;
+  const copyVersions = project?.copyVersions ?? [];
+  const imagePromptVersions = project?.imagePrompts ?? [];
 
   const generatedCopyPrompt = useMemo(
     () =>
@@ -232,6 +234,32 @@ export function PostStudioPanel({
               )}
             </div>
             <div className="postEditStack">
+              {copyVersions.length ? (
+                <section className="versionSwitcher" aria-label="文案版本">
+                  <div>
+                    <strong>文案版本</strong>
+                    <span>选择一个版本会回填到画布，发布前仍需确认。</span>
+                  </div>
+                  <div>
+                    {copyVersions.slice(-4).map((version, index) => (
+                      <button
+                        key={version.id}
+                        type="button"
+                        onClick={() =>
+                          onDraftChange({
+                            title: version.value.title,
+                            content: version.value.content,
+                            tagsText: version.value.tags.map((tag) => `#${tag}`).join(" "),
+                            imagePrompt: version.value.imagePrompt || publishDraft.imagePrompt
+                          })
+                        }
+                      >
+                        {version.label || `版本 ${index + 1}`}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
               <label>
                 <span>标题</span>
                 <input value={publishDraft.title} onChange={(event) => onDraftChange({ ...publishDraft, title: event.target.value })} placeholder="生成或手动填写标题" />
@@ -252,6 +280,25 @@ export function PostStudioPanel({
                   placeholder="文案和图片共享 CreativeBrief，图片方向会沉淀在这里。"
                 />
               </label>
+              {imagePromptVersions.length ? (
+                <section className="versionSwitcher compactVersionSwitcher" aria-label="图片 Prompt 版本">
+                  <div>
+                    <strong>Prompt 版本</strong>
+                    <span>用于图片创作台继续生图。</span>
+                  </div>
+                  <div>
+                    {imagePromptVersions.slice(-3).map((version, index) => (
+                      <button
+                        key={version.id}
+                        type="button"
+                        onClick={() => onDraftChange({ ...publishDraft, imagePrompt: version.value.prompt })}
+                      >
+                        {version.label || `Prompt ${index + 1}`}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
             </div>
           </div>
 
