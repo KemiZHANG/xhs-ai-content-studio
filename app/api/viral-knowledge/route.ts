@@ -4,6 +4,7 @@ import { addViralCasesToPostProject } from "@/lib/post-project/store";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { readSettings } from "@/lib/storage/settings";
 import { createViralCaseFromEvidence, listViralCases, searchViralCasesFusion, upsertViralCases } from "@/lib/viral-knowledge/store";
+import type { ViralCaseFilters } from "@/lib/viral-knowledge/types";
 import type { SampleEvidence } from "@/lib/workflows/one-click";
 
 export const runtime = "nodejs";
@@ -20,7 +21,11 @@ export async function GET(request: Request) {
   const minLikes = parseOptionalNumber(url.searchParams.get("minLikes"));
   const minCollects = parseOptionalNumber(url.searchParams.get("minCollects"));
   const minComments = parseOptionalNumber(url.searchParams.get("minComments"));
-  const tags = url.searchParams.getAll("tag");
+  const minShares = parseOptionalNumber(url.searchParams.get("minShares"));
+  const minScore = parseOptionalNumber(url.searchParams.get("minScore"));
+  const sortBy = parseSortBy(url.searchParams.get("sortBy"));
+  const sortOrder = parseSortOrder(url.searchParams.get("sortOrder"));
+  const tags = parseTags(url.searchParams);
   const limit = Number(url.searchParams.get("limit") ?? 8);
 
   const filters = {
@@ -34,11 +39,15 @@ export async function GET(request: Request) {
     minLikes,
     minCollects,
     minComments,
+    minShares,
+    minScore,
+    sortBy,
+    sortOrder,
     tags,
     limit
   };
 
-  if (query || topic || category || audience || painPoint || createdAfter || createdBefore || minLikes !== undefined || minCollects !== undefined || minComments !== undefined || tags.length) {
+  if (query || topic || category || audience || painPoint || createdAfter || createdBefore || minLikes !== undefined || minCollects !== undefined || minComments !== undefined || minShares !== undefined || minScore !== undefined || tags.length) {
     const results = await searchViralCasesFusion({
       ...filters,
       tags: tags.length ? tags : undefined
@@ -88,4 +97,20 @@ function parseOptionalNumber(value: string | null): number | undefined {
   if (value === null || value.trim() === "") return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function parseTags(params: URLSearchParams): string[] {
+  return [...params.getAll("tag"), params.get("tags") ?? ""]
+    .flatMap((value) => value.split(","))
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+function parseSortBy(value: string | null): ViralCaseFilters["sortBy"] {
+  const allowed = ["createdAt", "likes", "collects", "comments", "shares", "score"] as const;
+  return allowed.find((item) => item === value);
+}
+
+function parseSortOrder(value: string | null): ViralCaseFilters["sortOrder"] {
+  return value === "asc" || value === "desc" ? value : undefined;
 }

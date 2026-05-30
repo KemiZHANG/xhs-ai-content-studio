@@ -25,7 +25,7 @@ const viralKnowledgePath = () => path.join(process.cwd(), "data", "viral-knowled
 
 export async function listViralCases(filters: ViralCaseFilters = {}): Promise<ViralCase[]> {
   const file = await readViralKnowledgeFile();
-  return file.cases.filter((item) => matchesFilters(item, filters));
+  return sortViralCases(file.cases.filter((item) => matchesFilters(item, filters)), filters);
 }
 
 export async function searchViralCases(input: ViralSearchInput): Promise<ViralSearchResult[]> {
@@ -316,7 +316,27 @@ function matchesFilters(item: ViralCase, filters: ViralCaseFilters): boolean {
   if (filters.minLikes !== undefined && item.metrics.likes < filters.minLikes) return false;
   if (filters.minCollects !== undefined && item.metrics.collects < filters.minCollects) return false;
   if (filters.minComments !== undefined && item.metrics.comments < filters.minComments) return false;
+  if (filters.minShares !== undefined && item.metrics.shares < filters.minShares) return false;
+  if (filters.minScore !== undefined && item.metrics.score < filters.minScore) return false;
   return true;
+}
+
+function sortViralCases(cases: ViralCase[], filters: ViralCaseFilters): ViralCase[] {
+  const sortBy = filters.sortBy ?? "createdAt";
+  const direction = filters.sortOrder === "asc" ? 1 : -1;
+  return [...cases].sort((left, right) => {
+    const leftValue = viralSortValue(left, sortBy);
+    const rightValue = viralSortValue(right, sortBy);
+    if (leftValue === rightValue) {
+      return right.createdAt.localeCompare(left.createdAt);
+    }
+    return (leftValue > rightValue ? 1 : -1) * direction;
+  });
+}
+
+function viralSortValue(item: ViralCase, sortBy: NonNullable<ViralCaseFilters["sortBy"]>): number | string {
+  if (sortBy === "createdAt") return item.createdAt;
+  return item.metrics[sortBy];
 }
 
 async function readViralKnowledgeFile(): Promise<ViralKnowledgeFile> {

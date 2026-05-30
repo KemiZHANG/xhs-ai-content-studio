@@ -53,6 +53,10 @@ export type ViralCaseFilters = {
   minLikes?: number;
   minCollects?: number;
   minComments?: number;
+  minShares?: number;
+  minScore?: number;
+  sortBy?: "createdAt" | "likes" | "collects" | "comments" | "shares" | "score";
+  sortOrder?: "asc" | "desc";
 };
 
 export type ViralSearchInput = ViralCaseFilters & {

@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   createViralCaseFromEvidence,
+  listViralCases,
   searchViralCases,
   searchViralCasesFusion,
   upsertViralCases,
@@ -140,5 +141,58 @@ describe("viral knowledge base", () => {
 
     expect(matched[0].case.id).toBe(enriched.id);
     expect(blocked).toEqual([]);
+  });
+
+  it("filters and sorts by shares, score, tags, and created time", async () => {
+    const coffeeCase = await createViralCaseFromEvidence({
+      sample,
+      topic: "广州咖啡馆",
+      category: "探店"
+    });
+    const bagCase = await createViralCaseFromEvidence({
+      sample: {
+        ...sample,
+        id: "note-bag",
+        title: "通勤包真实测评",
+        likes: 400,
+        collects: 320,
+        comments: 18,
+        shares: 6,
+        score: 520,
+        url: "https://www.xiaohongshu.com/explore/note-bag"
+      },
+      topic: "通勤包",
+      category: "产品测评"
+    });
+    await upsertViralCases([
+      {
+        ...coffeeCase,
+        id: "viral-coffee",
+        tags: ["广州咖啡馆", "探店", "拍照"],
+        createdAt: "2026-05-20T00:00:00.000Z",
+        metrics: { ...coffeeCase.metrics, shares: 55, score: 3300 }
+      },
+      {
+        ...bagCase,
+        id: "viral-bag",
+        tags: ["通勤包", "测评"],
+        createdAt: "2026-05-25T00:00:00.000Z",
+        metrics: { ...bagCase.metrics, shares: 8, score: 600 }
+      }
+    ]);
+
+    const filtered = await searchViralCases({
+      query: "咖啡馆 拍照",
+      tags: ["拍照"],
+      minShares: 20,
+      minScore: 3000,
+      createdAfter: "2026-05-01T00:00:00.000Z"
+    });
+    const sortedByScore = await listViralCases({ sortBy: "score", sortOrder: "desc" });
+    const sortedByCreated = await listViralCases({ sortBy: "createdAt", sortOrder: "asc" });
+
+    expect(filtered.map((item) => item.case.id)).toEqual(["viral-coffee"]);
+    expect(sortedByScore.map((item) => item.id)).toEqual(["viral-coffee", "viral-bag"]);
+    expect(sortedByCreated.map((item) => item.id)).toEqual(["viral-coffee", "viral-bag"]);
   });
 });
