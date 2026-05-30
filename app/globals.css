@@ -3326,6 +3326,37 @@ textarea {
   margin: 0;
 }
 
+.ragStatus {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  gap: 5px;
+  padding: 11px 12px;
+}
+
+.ragStatus.good {
+  background: rgba(18, 118, 97, 0.08);
+  border-color: rgba(18, 118, 97, 0.22);
+}
+
+.ragStatus.warn {
+  background: rgba(190, 122, 20, 0.1);
+  border-color: rgba(190, 122, 20, 0.28);
+}
+
+.ragStatus strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.ragStatus p,
+.ragStatus small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
 .evidenceActions {
   display: flex;
   flex-wrap: wrap;

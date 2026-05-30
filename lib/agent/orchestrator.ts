@@ -331,7 +331,7 @@ function appendEvidenceReferenceNote(answer: string, plan: AgentPlan, postProjec
     return answer;
   }
   const note = insights
-    .map((insight) => `- ${labelForEvidenceSource(insight.sourceType)} / ${insight.type}: ${insight.insight}`)
+    .map((insight) => `- ${insight.id}｜${labelForEvidenceSource(insight.sourceType)}｜${insight.type}: ${insight.insight}`)
     .join("\n");
   return `${answer}\n\n参考证据：\n${note}`;
 }

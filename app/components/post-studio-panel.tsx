@@ -112,6 +112,7 @@ export function PostStudioPanel({
   const insights = project?.evidencePack.insights ?? [];
   const viralInsights = insights.filter((insight) => insight.sourceType === "viral_library");
   const realtimeInsights = insights.filter((insight) => insight.sourceType !== "viral_library");
+  const viralPack = workflowResult?.viralKnowledge ?? workflowResult?.researchSummary?.viralKnowledge ?? null;
   const samples = project?.selectedSamples ?? workflowResult?.evidence ?? workspace?.selectedSamples ?? [];
   const saveableSamples = samples.filter(isSampleEvidence).slice(0, 3);
   const nextActions = project?.allowedActions.slice(0, 3) ?? ["search_research"];
@@ -436,6 +437,15 @@ export function PostStudioPanel({
             <SideSection icon={Library} title="爆款库证据">
               <strong>{viralCases.length} 条历史爆款规律</strong>
               <p className="muted">这里长期沉淀标题钩子、正文结构、标签组合、图片风格和评论关注点。默认只显示关键规律，不保存原文合集。</p>
+              {viralPack?.sufficiency ? (
+                <div className={viralPack.sufficiency.isEnough ? "ragStatus good" : "ragStatus warn"}>
+                  <strong>{viralPack.sufficiency.isEnough ? "RAG 证据充足" : "RAG 证据还不够"}</strong>
+                  <p>{viralPack.sufficiency.recommendation}</p>
+                  {viralPack.rewrittenQueries?.length ? (
+                    <small>检索扩展：{viralPack.rewrittenQueries.slice(0, 3).join(" / ")}</small>
+                  ) : null}
+                </div>
+              ) : null}
               {viralInsights.length ? (
                 <div className="miniEvidenceList">
                   {viralInsights.slice(0, 5).map((insight) => (

@@ -45,7 +45,10 @@ export function runPostQualityGate(project: Pick<
     suggestions.push("补充使用场景、真实细节、适用人群和注意事项。");
   }
 
-  const copiedSampleTitle = findOverCopiedSample(titleText, bodyText, project.selectedSamples ?? []);
+  const copiedSampleTitle = findOverCopiedSample(titleText, bodyText, [
+    ...(project.selectedSamples ?? []),
+    ...extractViralSourceSamples(project.evidencePack?.summary)
+  ]);
   if (copiedSampleTitle) {
     issues.push(`疑似过度仿写样本：${copiedSampleTitle}`);
     suggestions.push("保留结构规律，重写标题表达、叙述顺序和具体细节，避免贴近原帖。");
@@ -114,6 +117,22 @@ function findOverCopiedSample(title: string, body: string, samples: unknown[]): 
     }
   }
   return null;
+}
+
+function extractViralSourceSamples(summary: unknown): unknown[] {
+  if (!isRecord(summary)) return [];
+  const viralKnowledge = summary.viralKnowledge;
+  if (!isRecord(viralKnowledge) || !Array.isArray(viralKnowledge.results)) return [];
+  return viralKnowledge.results
+    .map((item) => {
+      if (!isRecord(item) || !isRecord(item.case)) return null;
+      return {
+        title: typeof item.case.title === "string" ? item.case.title : "",
+        detailText: typeof item.case.bodyExcerpt === "string" ? item.case.bodyExcerpt : "",
+        sourceType: "viral_library"
+      };
+    })
+    .filter(Boolean);
 }
 
 function normalizeForSimilarity(value: string): string {

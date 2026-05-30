@@ -63,6 +63,17 @@ export type WorkflowStep = {
   detail: string;
 };
 
+export type EvidenceInsightType =
+  | "title"
+  | "copy"
+  | "tag"
+  | "visual"
+  | "comment"
+  | "audience"
+  | "pain_point"
+  | "structure"
+  | "hook";
+
 export type WorkflowResult = {
   status: string;
   steps: WorkflowStep[];
@@ -89,6 +100,23 @@ export type WorkflowResult = {
   publishResult: unknown;
   viralKnowledge?: {
     query: string;
+    rewrittenQueries: string[];
+    sufficiency: {
+      isEnough: boolean;
+      realtimeCount: number;
+      viralCount: number;
+      missing: string[];
+      recommendation: string;
+    };
+    insights: Array<{
+      id: string;
+      sourceType?: "realtime" | "viral_library" | "user_input";
+      type: EvidenceInsightType;
+      insight: string;
+      sourceSampleIds: string[];
+      confidence: number;
+      createdAt: string;
+    }>;
     results: Array<{
       score: number;
       reasons: string[];
@@ -320,7 +348,7 @@ export type PostProject = {
     insights: Array<{
       id: string;
       sourceType?: "realtime" | "viral_library" | "user_input";
-      type: string;
+      type: EvidenceInsightType;
       insight: string;
       sourceSampleIds: string[];
       confidence: number;

@@ -4,8 +4,7 @@ import { buildReferenceImagePrompt, type GeneratedImage, type ModelProvider } fr
 import { getAsset } from "@/lib/storage/assets";
 import type { AssetRecord } from "@/lib/storage/assets";
 import { cacheEvidenceImages } from "@/lib/storage/evidence-images";
-import { searchViralCasesFusion } from "@/lib/viral-knowledge/store";
-import type { ViralSearchResult } from "@/lib/viral-knowledge/types";
+import { retrieveViralKnowledge, type ViralKnowledgePack } from "@/lib/rag/viral";
 import { rankFeeds, toNumber, type RankedFeed } from "@/lib/workflows/ranking";
 
 export type PublishMode = "draft" | "material" | "publish" | "schedule";
@@ -86,11 +85,6 @@ export type ResearchSummary = {
   structureInsights?: string[];
   hookInsights?: string[];
   viralKnowledge?: ViralKnowledgePack | null;
-};
-
-export type ViralKnowledgePack = {
-  query: string;
-  results: ViralSearchResult[];
 };
 
 export type OneClickResult = {
@@ -411,24 +405,23 @@ async function maybeRetrieveViralKnowledge(
     return null;
   }
   const query = input.retrievalQuery || [input.topic, input.contentType, input.requirements].filter(Boolean).join(" ");
-  const results = await searchViralCasesFusion({
+  const viralKnowledge = await retrieveViralKnowledge({
     query,
     topic: input.topic,
     category: input.contentType,
-    limit: input.retrievalLimit ?? Math.max(4, Math.min(8, input.sampleCount))
+    limit: input.retrievalLimit ?? Math.max(4, Math.min(8, input.sampleCount)),
+    realtimeEvidenceCount: evidence.length
   });
+  const results = viralKnowledge.results;
   steps.push({
     id: "viral-knowledge",
     label: "爆款库检索",
     status: results.length ? "done" : "skipped",
     detail: results.length
-      ? `已从历史爆款库检索 ${results.length} 条可复用创作规律。`
+      ? `已从历史爆款库检索 ${results.length} 条可复用创作规律。${viralKnowledge.sufficiency.isEnough ? "" : viralKnowledge.sufficiency.recommendation}`
       : "爆款库暂无匹配样本，本次只使用实时小红书证据。"
   });
-  return {
-    query,
-    results
-  };
+  return viralKnowledge;
 }
 
 function skipImageGeneration(steps: WorkflowStep[]): GeneratedImage[] {
@@ -671,6 +664,7 @@ function buildGenerationPrompt(
 3. 标签使用 tags 字段，不要在正文里写 #标签。
 4. 图片提示词必须生成新的原创画面，不引用或复刻样本图片。
 5. 分析报告必须引用“证据样本”里的标题、互动数据、评论或图片观察，说明为什么这样写；证据不足时要明确写“证据不足”。
+6. 如果 RAG sufficiency.isEnough=false，必须在 report 里说明还缺哪些证据，不能把无证据内容写成研究结论。
 
 主题：${input.topic}
 类型：${input.contentType}
@@ -697,6 +691,14 @@ ${viralKnowledge?.results.length ? JSON.stringify(viralKnowledge.results.map((it
   reasons: item.reasons,
   matchedQueries: item.matchedQueries
 })), null, 2) : "无匹配爆款库规律。"}
+
+RAG 检索信息：
+${viralKnowledge ? JSON.stringify({
+  query: viralKnowledge.query,
+  rewrittenQueries: viralKnowledge.rewrittenQueries,
+  sufficiency: viralKnowledge.sufficiency,
+  insights: viralKnowledge.insights.slice(0, 10)
+}, null, 2) : "未启用爆款库 RAG。"}
 
 可引用证据 ID：
 ${evidenceIds.join("、") || "无"}
@@ -758,6 +760,14 @@ ${viralKnowledge?.results.length ? JSON.stringify(viralKnowledge.results.map((it
   reasons: item.reasons
 })), null, 2) : "爆款库暂无匹配结果。"}
 
+RAG 检索信息：
+${viralKnowledge ? JSON.stringify({
+  query: viralKnowledge.query,
+  rewrittenQueries: viralKnowledge.rewrittenQueries,
+  sufficiency: viralKnowledge.sufficiency,
+  insights: viralKnowledge.insights.slice(0, 10)
+}, null, 2) : "未启用爆款库 RAG。"}
+
 图片风格分析：
 ${imageStyleReport || "未启用或未获取到图片分析。"}
 
@@ -767,6 +777,7 @@ ${imageStyleReport || "未启用或未获取到图片分析。"}
 3. 如果我们下一步也做同主题内容，正文应该学习什么。
 4. 图片应该学习什么，不要复制原图。
 5. 在真正生成前，还需要用户补充哪些需求，例如产品名、卖点、店铺名、场景、目标人群、是否要上传产品图。
+6. 如果 RAG sufficiency.isEnough=false，要明确建议继续搜索或让用户补充参考样本。
 
 只返回 JSON：
 {
