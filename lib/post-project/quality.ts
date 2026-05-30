@@ -78,6 +78,17 @@ export function runPostQualityGate(project: Pick<
   const bodyText = finalPost?.content ?? "";
   const tagText = finalPost?.tags.join(" ") ?? "";
   const combined = `${titleText}\n${bodyText}\n${tagText}`;
+  const originalityReview = buildOriginalityReview(project, combined, [
+    ...draftEvidenceIds,
+    ...visualEvidenceIds,
+    ...(project.creativeBrief?.basedOnEvidenceIds ?? [])
+  ]);
+  if (!originalityReview.isSafe) {
+    issues.push(`爆款库原创边界风险：${originalityReview.riskSamples.slice(0, 3).join("、")}`);
+    suggestions.push("请保留创作规律，但重写标题表达、正文顺序、具体细节和图片构图，避免贴近历史爆款样本。");
+  } else if (originalityReview.rules.length && originalityReview.sourceSampleIds.length) {
+    suggestions.push(`爆款库原创边界：${originalityReview.rules.slice(0, 2).join("；")}`);
+  }
 
   const exaggerated = exaggeratedWords.filter((word) => combined.includes(word));
   if (exaggerated.length) {
@@ -116,6 +127,7 @@ export function runPostQualityGate(project: Pick<
     bodyText.length < 80,
     risky.length > 0,
     Boolean(copiedSampleTitle),
+    !originalityReview.isSafe,
     project.copyDraft ? !draftEvidenceIds.length || invalidEvidenceIds.length > 0 || Boolean(citationReport?.missingEvidenceIds.length) : false
   ]);
   const visualConsistencyScore = scoreFromIssues([
@@ -126,7 +138,7 @@ export function runPostQualityGate(project: Pick<
     hasVisualEvidenceMismatch
   ]);
   const platformFitScore = scoreFromIssues([(finalPost?.tags.length ?? 0) === 0, (finalPost?.tags.length ?? 0) > 10]);
-  const complianceScore = scoreFromIssues([risky.length > 0, exaggerated.length > 1, Boolean(copiedSampleTitle)]);
+  const complianceScore = scoreFromIssues([risky.length > 0, exaggerated.length > 1, Boolean(copiedSampleTitle), !originalityReview.isSafe]);
   const hasCriticalPublishRisk = Boolean(
     !finalPost?.title ||
       !finalPost.content ||
@@ -138,6 +150,7 @@ export function runPostQualityGate(project: Pick<
       exaggerated.length ||
       risky.length ||
       copiedSampleTitle ||
+      !originalityReview.isSafe ||
       (project.copyDraft ? !draftEvidenceIds.length || invalidEvidenceIds.length > 0 || Boolean(citationReport?.missingEvidenceIds.length) : false)
   );
   const canPublish = !hasCriticalPublishRisk && complianceScore >= 70;
@@ -157,6 +170,7 @@ export function runPostQualityGate(project: Pick<
     suggestions,
     evidenceReview,
     evidenceAlignment,
+    originalityReview,
     checkedAt: new Date().toISOString()
   };
 }
@@ -300,6 +314,60 @@ function extractViralSourceSamples(summary: unknown): unknown[] {
       };
     })
     .filter(Boolean);
+}
+
+function buildOriginalityReview(
+  project: Partial<Pick<PostProject, "evidencePack">>,
+  combinedText: string,
+  referencedEvidenceIds: string[]
+): NonNullable<QualityCheck["originalityReview"]> {
+  const viralKnowledge = isRecord(project.evidencePack?.summary) ? project.evidencePack.summary.viralKnowledge : undefined;
+  const strategyReport = isRecord(viralKnowledge) ? viralKnowledge.strategyReport : undefined;
+  const results = isRecord(viralKnowledge) && Array.isArray(viralKnowledge.results) ? viralKnowledge.results : [];
+  const insights = project.evidencePack?.insights ?? [];
+  const referenced = new Set(referencedEvidenceIds);
+  const usesViralEvidence = insights.some((insight) =>
+    insight.sourceType === "viral_library" && referenced.has(insight.id)
+  );
+  const rules = uniqueStrings([
+    ...(isRecord(strategyReport) ? stringArray(strategyReport.originalityRules) : []),
+    ...results.flatMap((item) => {
+      if (!isRecord(item) || !isRecord(item.case)) return [];
+      const extractedInsights = isRecord(item.case.extractedInsights) ? item.case.extractedInsights : {};
+      const creativeSafety = isRecord(item.case.creativeSafety) ? item.case.creativeSafety : {};
+      return [
+        ...stringArray(extractedInsights.avoidCopying),
+        ...stringArray(creativeSafety.doNotCopy),
+        ...stringArray(creativeSafety.transformationGuidance)
+      ];
+    }),
+    usesViralEvidence ? "只学习爆款库的结构、钩子、节奏和视觉规律，不复制原文、原图、具体数据或作者表达。" : ""
+  ]).slice(0, 8);
+  const sourceSampleIds = uniqueStrings(results.flatMap((item) => {
+    if (!isRecord(item) || !isRecord(item.case) || typeof item.case.id !== "string") return [];
+    return [item.case.id];
+  }));
+  const normalizedText = normalizeForSimilarity(combinedText);
+  const riskSamples = uniqueStrings(results.flatMap((item) => {
+    if (!isRecord(item) || !isRecord(item.case)) return [];
+    const title = typeof item.case.title === "string" ? item.case.title : "";
+    const bodyExcerpt = typeof item.case.bodyExcerpt === "string" ? item.case.bodyExcerpt : "";
+    const normalizedTitle = normalizeForSimilarity(title);
+    const normalizedBody = normalizeForSimilarity(bodyExcerpt);
+    const titleRisk = normalizedTitle.length >= 8 && normalizedText.includes(normalizedTitle);
+    const bodyRisk = normalizedBody.length >= 40 && overlapRatio(normalizedText, normalizedBody) > 0.62;
+    return titleRisk || bodyRisk ? [title || String(item.case.id ?? "viral sample")] : [];
+  }));
+
+  return {
+    rules,
+    sourceSampleIds,
+    riskSamples,
+    isSafe: riskSamples.length === 0,
+    summary: sourceSampleIds.length
+      ? `爆款原创边界 ${rules.length} 条，历史样本 ${sourceSampleIds.length} 条，${riskSamples.length ? `发现 ${riskSamples.length} 个近似风险` : "未发现近似复刻风险"}`
+      : "未使用爆款库原创边界"
+  };
 }
 
 function normalizeForSimilarity(value: string): string {

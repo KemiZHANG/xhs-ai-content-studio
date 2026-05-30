@@ -151,6 +151,13 @@ export type QualityCheck = {
     isAligned: boolean;
     summary: string;
   };
+  originalityReview?: {
+    rules: string[];
+    sourceSampleIds: string[];
+    riskSamples: string[];
+    isSafe: boolean;
+    summary: string;
+  };
   checkedAt: string;
 };
 

@@ -90,6 +90,9 @@ export function PublishAssemblyPanel({
                 ))}
               </div>
             </div>
+            {quality?.originalityReview ? (
+              <p className="muted">原创边界：{quality.originalityReview.summary}</p>
+            ) : null}
           </section>
           <section className="publishChecklist">
             <h3>发布检查</h3>

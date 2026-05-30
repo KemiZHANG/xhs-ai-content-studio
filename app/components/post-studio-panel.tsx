@@ -760,6 +760,11 @@ export function PostStudioPanel({
                   {quality.evidenceReview ? (
                     <p className="muted">证据覆盖：{quality.evidenceReview.summary}</p>
                   ) : null}
+                  {quality.originalityReview ? (
+                    <p className={quality.originalityReview.isSafe ? "muted" : "qualityWarningText"}>
+                      原创边界：{quality.originalityReview.summary}
+                    </p>
+                  ) : null}
                   {citationReport?.allEvidenceIds.length ? (
                     <div className={citationTraceReady ? "citationAudit ok" : "citationAudit warn"}>
                       <span>字段级证据追踪</span>
