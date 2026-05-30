@@ -1013,7 +1013,7 @@ function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecor
       id: "card-quality-check",
       type: "quality_check",
       title: postProject.qualityCheck.canPublish ? "质量检查通过" : "质量检查需处理",
-      summary: postProject.qualityCheck.issues.slice(0, 3).join("；") || "发布前仍需人工确认账号、可见范围、图片版本和定时时间。",
+      summary: formatQualityCardSummary(postProject.qualityCheck),
       data: postProject.qualityCheck
     });
   }
@@ -1027,6 +1027,17 @@ function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecor
     });
   }
   return cards;
+}
+
+function formatQualityCardSummary(qualityCheck: NonNullable<PostProject["qualityCheck"]>): string {
+  const alignmentSummary = qualityCheck.evidenceAlignment
+    ? `图文证据：${qualityCheck.evidenceAlignment.summary}`
+    : "";
+  const issueSummary = qualityCheck.issues.slice(0, 2).join("；");
+  return [
+    alignmentSummary,
+    issueSummary || "发布前仍需人工确认账号、可见范围、图片版本和定时时间。"
+  ].filter(Boolean).join("；");
 }
 
 const postActionLabels: Record<PostAction, string> = {
@@ -1571,6 +1582,7 @@ async function maybeHandleQualityCheckTurn(
       `图片：${selectedImages.length} 张`,
       qualityCheck.canPublish ? "结果：通过，可以进入人工发布确认。" : "结果：暂不建议发布，需要先处理风险。",
       qualityCheck.evidenceReview ? `证据覆盖：${qualityCheck.evidenceReview.summary}` : "",
+      qualityCheck.evidenceAlignment ? `图文证据：${qualityCheck.evidenceAlignment.summary}` : "",
       qualityCheck.issues.length ? `主要问题：${qualityCheck.issues.slice(0, 4).join("；")}` : "",
       qualityCheck.suggestions.length ? `建议：${qualityCheck.suggestions.slice(0, 3).join("；")}` : ""
     ].filter(Boolean).join("\n"),
