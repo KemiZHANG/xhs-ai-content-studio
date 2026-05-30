@@ -1,5 +1,5 @@
 import type { AgentToolDefinition } from "@/lib/agent/types";
-import { retrieveViralKnowledge, type ViralKnowledgePack } from "@/lib/rag/viral";
+import { retrieveViralKnowledge, type ViralKnowledgePack, type ViralRetrievalInput } from "@/lib/rag/viral";
 import { addViralCasesToPostProject } from "@/lib/post-project/store";
 import {
   createViralCaseFromEvidence,
@@ -304,6 +304,15 @@ function parseViralRetrievalToolInput(input: unknown) {
     audience: stringValue(record.audience),
     painPoint: stringValue(record.painPoint),
     tags: stringArray(record.tags),
+    createdAfter: stringValue(record.createdAfter),
+    createdBefore: stringValue(record.createdBefore),
+    minLikes: numberValue(record.minLikes),
+    minCollects: numberValue(record.minCollects),
+    minComments: numberValue(record.minComments),
+    minShares: numberValue(record.minShares),
+    minScore: numberValue(record.minScore),
+    sortBy: viralSortByValue(record.sortBy),
+    sortOrder: sortOrderValue(record.sortOrder),
     limit: numberValue(record.limit),
     realtimeEvidenceCount: numberValue(record.realtimeEvidenceCount)
   };
@@ -354,6 +363,17 @@ function stringValue(value: unknown): string | undefined {
 function numberValue(value: unknown): number | undefined {
   const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function viralSortByValue(value: unknown): ViralRetrievalInput["sortBy"] {
+  const parsed = stringValue(value);
+  const allowed = ["createdAt", "likes", "collects", "comments", "shares", "score"] as const;
+  return allowed.find((item) => item === parsed);
+}
+
+function sortOrderValue(value: unknown): ViralRetrievalInput["sortOrder"] {
+  const parsed = stringValue(value);
+  return parsed === "asc" || parsed === "desc" ? parsed : undefined;
 }
 
 function stringArray(value: unknown): string[] | undefined {

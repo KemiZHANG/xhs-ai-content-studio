@@ -9,6 +9,15 @@ export type ViralRetrievalInput = {
   audience?: string;
   painPoint?: string;
   tags?: string[];
+  createdAfter?: string;
+  createdBefore?: string;
+  minLikes?: number;
+  minCollects?: number;
+  minComments?: number;
+  minShares?: number;
+  minScore?: number;
+  sortBy?: "createdAt" | "likes" | "collects" | "comments" | "shares" | "score";
+  sortOrder?: "asc" | "desc";
   limit?: number;
   realtimeEvidenceCount?: number;
 };
@@ -75,6 +84,15 @@ async function retrieveViralCasesWithFusion(
         audience: searchInput.audience,
         painPoint: searchInput.painPoint,
         tags: searchInput.tags,
+        createdAfter: searchInput.createdAfter,
+        createdBefore: searchInput.createdBefore,
+        minLikes: searchInput.minLikes,
+        minCollects: searchInput.minCollects,
+        minComments: searchInput.minComments,
+        minShares: searchInput.minShares,
+        minScore: searchInput.minScore,
+        sortBy: searchInput.sortBy,
+        sortOrder: searchInput.sortOrder,
         limit: Math.max(limit * 2, 8)
       });
 

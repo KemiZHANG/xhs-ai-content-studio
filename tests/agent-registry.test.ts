@@ -136,4 +136,55 @@ describe("agent tool registry", () => {
     expect(result.data.sufficiency.viralCount).toBeGreaterThan(0);
     expect(result.display?.summary).toContain("可追溯");
   });
+
+  it("passes metric, tag, time, and sort filters through the viral retrieval tool", async () => {
+    const registry = createAgentToolRegistry();
+    await registry.call("knowledge.saveViralCase", {
+      sample: {
+        ...sample,
+        shares: 42,
+        score: 4200
+      },
+      topic: "广州咖啡馆",
+      category: "探店"
+    });
+    await registry.call("knowledge.saveViralCase", {
+      sample: {
+        ...sample,
+        id: "note-tool-low",
+        title: "广州咖啡馆普通记录",
+        likes: 80,
+        collects: 50,
+        comments: 4,
+        shares: 1,
+        score: 120,
+        url: "https://www.xiaohongshu.com/explore/note-tool-low"
+      },
+      topic: "广州咖啡馆",
+      category: "探店"
+    });
+
+    const result = await registry.call("knowledge.retrieveViralPatterns", {
+      query: "广州咖啡馆 高收藏 拍照",
+      topic: "广州咖啡馆",
+      category: "探店",
+      tags: ["咖啡馆"],
+      minShares: "20",
+      minScore: "3000",
+      createdAfter: "2020-01-01T00:00:00.000Z",
+      sortBy: "score",
+      sortOrder: "desc",
+      limit: 5
+    }) as {
+      ok: boolean;
+      data: {
+        results: Array<{ case: { metrics: { shares: number; score: number } } }>;
+      };
+    };
+
+    expect(result.ok).toBe(true);
+    expect(result.data.results.length).toBeGreaterThan(0);
+    expect(result.data.results.every((item) => item.case.metrics.shares >= 20)).toBe(true);
+    expect(result.data.results.every((item) => item.case.metrics.score >= 3000)).toBe(true);
+  });
 });
