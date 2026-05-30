@@ -112,7 +112,7 @@ export default function Home() {
   const [publishAudits, setPublishAudits] = useState<PublishAuditRecord[]>([]);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [autoReturnJobId, setAutoReturnJobId] = useState<string | null>(null);
-  const [autoReturnTarget, setAutoReturnTarget] = useState<"flow" | "workflow" | "chat">("workflow");
+  const [autoReturnTarget, setAutoReturnTarget] = useState<"flow" | "chat">("flow");
   const [assets, setAssets] = useState<AssetRecord[]>([]);
   const [workspace, setWorkspace] = useState<WorkspaceState | null>(null);
   const [postProject, setPostProject] = useState<PostProject | null>(null);
@@ -502,11 +502,11 @@ export default function Home() {
         setPostProject(data.postProject);
       }
       setActiveJobId(data.job.id);
-      setAutoReturnTarget(section === "flow" ? "flow" : "workflow");
+      setAutoReturnTarget("flow");
       setAutoReturnJobId(data.job.id);
       setJobs((current) => [data.job, ...current.filter((job) => job.id !== data.job.id)]);
       setSection("jobs");
-      setNotice("主题研究任务已创建，只会搜索和分析，不会生成草稿或发布。完成后会自动回到研究结果。");
+      setNotice("主题研究任务已创建，只会搜索和分析，不会生成草稿或发布。完成后会自动回到 Post Studio。");
     } finally {
       setBusy(null);
     }
