@@ -1,4 +1,12 @@
 import type { AgentToolDefinition } from "@/lib/agent/types";
+import { retrieveViralKnowledge, type ViralKnowledgePack } from "@/lib/rag/viral";
+import { addViralCasesToPostProject } from "@/lib/post-project/store";
+import {
+  createViralCaseFromEvidence,
+  upsertViralCases
+} from "@/lib/viral-knowledge/store";
+import type { ModelProvider } from "@/lib/models/provider";
+import type { SampleEvidence } from "@/lib/workflows/one-click";
 
 export type AgentToolRegistry = {
   list(): AgentToolDefinition[];
@@ -64,7 +72,22 @@ function defaultToolDefinitions(): AgentToolDefinition[] {
       requiresConfirmation: false,
       requiresModel: false,
       requiresMcp: false,
-      supportsDryRun: true
+      supportsDryRun: true,
+      call: async (input) => {
+        const request = parseViralRetrievalToolInput(input);
+        const pack = await retrieveViralKnowledge(request);
+        return {
+          ok: true,
+          data: pack,
+          warnings: pack.sufficiency.isEnough ? [] : pack.sufficiency.missing,
+          risk: "read",
+          display: {
+            title: "爆款库 RAG 检索",
+            summary: formatViralPackSummary(pack),
+            items: pack.insights.slice(0, 5)
+          }
+        };
+      }
     },
     {
       name: "knowledge.saveViralCase",
@@ -74,7 +97,24 @@ function defaultToolDefinitions(): AgentToolDefinition[] {
       requiresConfirmation: false,
       requiresModel: true,
       requiresMcp: false,
-      supportsDryRun: true
+      supportsDryRun: true,
+      call: async (input) => {
+        const request = parseSaveViralCaseToolInput(input);
+        const viralCase = await createViralCaseFromEvidence(request);
+        const [saved] = await upsertViralCases([viralCase]);
+        const project = await addViralCasesToPostProject([saved]);
+        return {
+          ok: true,
+          data: { case: saved, project },
+          warnings: request.model ? [] : ["未提供模型，已使用本地启发式提取爆款规律。"],
+          risk: "local_write",
+          display: {
+            title: "已保存爆款规律",
+            summary: `${saved.topic} · ${saved.hookType} · ${saved.extractedInsights.reusableRules.slice(0, 2).join("；")}`,
+            items: saved.extractedInsights.reusableRules
+          }
+        };
+      }
     },
     {
       name: "project.startProject",
@@ -249,4 +289,75 @@ function defaultToolDefinitions(): AgentToolDefinition[] {
       supportsDryRun: true
     }
   ];
+}
+
+function parseViralRetrievalToolInput(input: unknown) {
+  const record = isRecord(input) ? input : {};
+  const query = stringValue(record.query) || stringValue(record.topic) || "";
+  if (!query.trim()) {
+    throw new Error("检索爆款库需要 query 或 topic");
+  }
+  return {
+    query,
+    topic: stringValue(record.topic),
+    category: stringValue(record.category),
+    audience: stringValue(record.audience),
+    painPoint: stringValue(record.painPoint),
+    tags: stringArray(record.tags),
+    limit: numberValue(record.limit),
+    realtimeEvidenceCount: numberValue(record.realtimeEvidenceCount)
+  };
+}
+
+function parseSaveViralCaseToolInput(input: unknown): {
+  sample: SampleEvidence;
+  topic: string;
+  category: string;
+  model?: ModelProvider;
+} {
+  const record = isRecord(input) ? input : {};
+  const sample = record.sample;
+  if (!isSampleEvidence(sample)) {
+    throw new Error("保存爆款库需要完整研究样本 sample");
+  }
+  return {
+    sample,
+    topic: stringValue(record.topic) || "未分类主题",
+    category: stringValue(record.category) || "小红书图文",
+    model: isModelProvider(record.model) ? record.model : undefined
+  };
+}
+
+function formatViralPackSummary(pack: ViralKnowledgePack): string {
+  const status = pack.sufficiency.isEnough ? "证据充足" : "证据不足";
+  return `${status}，命中 ${pack.results.length} 条历史爆款规律，生成 ${pack.insights.length} 条可追溯 evidencePack 结论。`;
+}
+
+function isSampleEvidence(value: unknown): value is SampleEvidence {
+  if (!isRecord(value)) return false;
+  return typeof value.id === "string" && typeof value.title === "string";
+}
+
+function isModelProvider(value: unknown): value is ModelProvider {
+  if (!isRecord(value)) return false;
+  return typeof value.generateStructuredText === "function";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object";
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function numberValue(value: unknown): number | undefined {
+  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function stringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const items = value.map((item) => stringValue(item)).filter((item): item is string => Boolean(item));
+  return items.length ? items : undefined;
 }
