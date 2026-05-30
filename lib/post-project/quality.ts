@@ -1,3 +1,4 @@
+import { buildEvidenceCitationReport } from "@/lib/post-project/citations";
 import type { FinalPost, PostProject, QualityCheck } from "@/lib/post-project/types";
 
 const exaggeratedWords = ["最", "第一", "必买", "永久", "绝对", "无敌", "闭眼入", "封神"];
@@ -29,6 +30,10 @@ export function runPostQualityGate(project: Pick<
   );
   const evidenceAlignment = buildEvidenceAlignment(draftEvidenceIds, visualEvidenceIds, Boolean(project.visualDirection));
   const evidenceReview = buildEvidenceReview(project, draftEvidenceIds);
+  const evidencePack = project.evidencePack;
+  const citationReport = project.copyDraft && evidencePack?.insights.length
+    ? buildEvidenceCitationReport({ evidencePack, creativeBrief: project.creativeBrief }, draftEvidenceIds, project.copyDraft.draft.evidenceReferences)
+    : null;
   const finalImageIds = finalPost?.imageIds ?? [];
   const selectedImageIds = project.selectedImages ?? [];
   const hasStaleFinalImages = Boolean(
@@ -46,6 +51,15 @@ export function runPostQualityGate(project: Pick<
     issues.push(`当前草稿引用了不存在的证据 ID：${invalidEvidenceIds.slice(0, 3).join("、")}`);
     suggestions.push("请从当前 evidencePack 重新生成文案，保证所有引用可追溯。");
   }
+  if (citationReport?.missingEvidenceIds.length) {
+    issues.push(`标题/正文/标签/图片方向存在不可追溯证据：${citationReport.missingEvidenceIds.slice(0, 3).join("、")}`);
+    suggestions.push("请重新生成文案或图片方向，确保每个创作字段都只引用当前 evidencePack 中的证据。");
+  }
+  citationReport?.warnings
+    .filter((warning) => !warning.includes("证据 ID 不在当前 evidencePack"))
+    .slice(0, 2)
+    .forEach((warning) => suggestions.push(warning));
+
   if (hasStaleFinalImages) {
     issues.push("最终帖子图片版本与当前选中图片不一致");
     suggestions.push("请重新组装最终帖子或确认当前选中的图片版本，避免误发旧图。");
@@ -102,7 +116,7 @@ export function runPostQualityGate(project: Pick<
     bodyText.length < 80,
     risky.length > 0,
     Boolean(copiedSampleTitle),
-    project.copyDraft ? !draftEvidenceIds.length || invalidEvidenceIds.length > 0 : false
+    project.copyDraft ? !draftEvidenceIds.length || invalidEvidenceIds.length > 0 || Boolean(citationReport?.missingEvidenceIds.length) : false
   ]);
   const visualConsistencyScore = scoreFromIssues([
     !finalPost?.imageIds.length,
@@ -124,7 +138,7 @@ export function runPostQualityGate(project: Pick<
       exaggerated.length ||
       risky.length ||
       copiedSampleTitle ||
-      (project.copyDraft ? !draftEvidenceIds.length || invalidEvidenceIds.length > 0 : false)
+      (project.copyDraft ? !draftEvidenceIds.length || invalidEvidenceIds.length > 0 || Boolean(citationReport?.missingEvidenceIds.length) : false)
   );
   const canPublish = !hasCriticalPublishRisk && complianceScore >= 70;
 

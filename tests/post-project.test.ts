@@ -876,4 +876,69 @@ describe("post project", () => {
     expect(project.topic).toBe("legacy topic");
     expect(project.evidencePack.sampleIds).toEqual(["note-legacy"]);
   });
+
+  it("blocks publish when field-level evidence references are not traceable", () => {
+    const quality = runPostQualityGate({
+      creativeBrief: {
+        audience: "coffee lovers",
+        painPoint: "need a quiet weekend cafe",
+        contentAngle: "real cafe recommendation",
+        emotionalHook: "clear fit before details",
+        proofPoints: ["queue", "seat", "price"],
+        tone: "real",
+        visualMood: "natural light",
+        imageMustHave: ["window seat"],
+        imageMustAvoid: [],
+        platformStyle: "xiaohongshu real sharing",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      visualDirection: {
+        mood: "natural light",
+        composition: "window seat and drink",
+        colorPalette: "warm",
+        mustHave: ["window seat"],
+        mustAvoid: [],
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      selectedImages: ["asset-1"],
+      evidencePack: {
+        sampleIds: ["note-1"],
+        insights: [{
+          id: "insight-1",
+          sourceType: "realtime",
+          type: "copy",
+          insight: "Write a real recommendation with queue, seating, price, and who it fits.",
+          sourceSampleIds: ["note-1"],
+          confidence: 0.82,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }]
+      },
+      copyDraft: {
+        id: "draft-citation-missing",
+        updatedAt: "2026-05-31T00:00:00.000Z",
+        visibility: defaultSettings.defaultVisibility,
+        images: [],
+        draft: {
+          title: "Guangzhou quiet cafe guide",
+          content: "This post recommends a quiet weekend cafe through real details: who should go, when to avoid queues, how the seating and natural light feel, and what to check before saving it for a later visit.",
+          tags: ["GuangzhouCafe", "CafeGuide"],
+          structure: ["fit", "details", "reminder"],
+          imagePrompt: "natural light cafe window seat",
+          basedOnEvidenceIds: ["insight-1"],
+          evidenceReferences: {
+            title: ["insight-1"],
+            content: ["missing-field-insight"],
+            tags: ["insight-1"],
+            imagePrompt: ["insight-1"]
+          }
+        }
+      }
+    });
+
+    expect(quality.canPublish).toBe(false);
+    expect(quality.issues.join(" ")).toContain("不可追溯证据");
+    expect(quality.suggestions.join(" ")).toContain("当前 evidencePack");
+  });
 });
