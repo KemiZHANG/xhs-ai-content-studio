@@ -50,7 +50,13 @@ export async function writePostProject(project: PostProject): Promise<PostProjec
 export async function syncPostProjectFromWorkspace(workspace: WorkspaceState): Promise<PostProject> {
   const migrated = postProjectFromWorkspace(workspace);
   const existing = await readExistingPostProject();
-  if (!existing || existing.id !== migrated.id) {
+  if (!existing) {
+    return writePostProject(migrated);
+  }
+  if (existing.id !== migrated.id && shouldPreserveExistingProjectOnWorkspaceSync(existing, migrated)) {
+    return writePostProject(mergePostProjects(existing, migrated));
+  }
+  if (existing.id !== migrated.id) {
     return writePostProject(migrated);
   }
   return writePostProject(mergePostProjects(existing, migrated));
@@ -330,6 +336,46 @@ function stageRank(stage: PostProject["currentStage"]): number {
     failed: 15
   };
   return ranks[stage] ?? 0;
+}
+
+function shouldPreserveExistingProjectOnWorkspaceSync(existing: PostProject, migrated: PostProject): boolean {
+  return hasProjectWork(existing) && !hasWorkspaceAuthoredProjectContent(migrated);
+}
+
+function hasProjectWork(project: PostProject): boolean {
+  return Boolean(
+    project.topic ||
+      project.targetAudience ||
+      project.goal ||
+      project.tone ||
+      project.evidencePack.insights.length ||
+      project.evidencePack.sampleIds.length ||
+      project.selectedSamples.length ||
+      project.creativeBrief ||
+      project.copyDraft ||
+      project.copyVersions.length ||
+      project.visualDirection ||
+      project.imagePrompts.length ||
+      project.generatedImages.length ||
+      project.selectedImages.length ||
+      project.finalPost ||
+      project.publishPlan ||
+      project.agentMemory.length
+  );
+}
+
+function hasWorkspaceAuthoredProjectContent(project: PostProject): boolean {
+  return Boolean(
+    project.evidencePack.insights.length ||
+      project.evidencePack.sampleIds.length ||
+      project.selectedSamples.length ||
+      project.copyDraft ||
+      project.copyVersions.length ||
+      project.generatedImages.length ||
+      project.selectedImages.length ||
+      project.finalPost ||
+      project.publishPlan
+  );
 }
 
 function enrichPostProject(project: PostProject): PostProject {

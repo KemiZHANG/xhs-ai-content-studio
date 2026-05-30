@@ -141,6 +141,33 @@ describe("post project", () => {
     expect(project.allowedActions).toEqual(getAllowedPostActions(project.currentStage));
   });
 
+  it("does not erase an active post project during lightweight workspace updates", async () => {
+    await resetPostProject({
+      topic: "coffee",
+      evidencePack: {
+        sampleIds: ["sample-1"],
+        insights: [{
+          id: "insight-title-1",
+          sourceType: "realtime",
+          type: "title",
+          insight: "Use a concrete scene and save-worthy reason in the title",
+          sourceSampleIds: ["sample-1"],
+          confidence: 0.82,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }]
+      },
+      currentStage: "evidence_ready"
+    });
+
+    await updateWorkspaceState({ lastUserIntent: "ask" });
+    const project = await readPostProject();
+
+    expect(project.topic).toBe("coffee");
+    expect(project.evidencePack.sampleIds).toEqual(["sample-1"]);
+    expect(project.evidencePack.insights[0].id).toBe("insight-title-1");
+    expect(project.currentStage).not.toBe("empty");
+  });
+
   it("preserves an existing creative brief while syncing newer workspace data", async () => {
     const workspace = await resetWorkspaceState({ topic: "coffee" });
     await resetPostProject({

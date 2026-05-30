@@ -117,7 +117,6 @@ describe("agent orchestrator", () => {
   it("asks for a draft instead of researching when publish is requested without a draft", async () => {
     const runChatAgent = vi.fn(async () => ({ answer: "legacy answer" }));
     await resetPostProject({
-      id: "post-local-default",
       topic: "广州咖啡馆",
       evidencePack: {
         sampleIds: ["sample-1"],
