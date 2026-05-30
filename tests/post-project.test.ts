@@ -291,6 +291,77 @@ describe("post project", () => {
     expect(quality.issues.join(" ")).toContain("疑似过度仿写样本");
   });
 
+  it("flags drafts that copy structured viral knowledge rules", () => {
+    const copiedRule = "开头直接给适合人群和使用场景，中段拆容量肩带分区和通勤细节，结尾给避坑提醒和互动问题";
+    const quality = runPostQualityGate({
+      creativeBrief: {
+        audience: "上班族",
+        painPoint: "不知道通勤包是否真的能装又不勒肩",
+        contentAngle: "真实通勤包测评",
+        emotionalHook: "先说适合谁",
+        proofPoints: ["容量", "肩带", "分区"],
+        tone: "真实",
+        visualMood: "自然光",
+        imageMustHave: ["包身"],
+        imageMustAvoid: [],
+        platformStyle: "小红书",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["viral-insight-rule"]
+      },
+      visualDirection: {
+        mood: "自然光",
+        composition: "包身+桌面",
+        colorPalette: "中性色",
+        mustHave: ["包身"],
+        mustAvoid: [],
+        basedOnEvidenceIds: ["viral-insight-rule"]
+      },
+      selectedImages: ["asset-1"],
+      selectedSamples: [],
+      evidencePack: {
+        insights: [{
+          id: "viral-insight-rule",
+          sourceType: "viral_library",
+          type: "structure",
+          insight: copiedRule,
+          sourceSampleIds: ["viral-rule-1"],
+          confidence: 0.86,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }],
+        sampleIds: ["viral-rule-1"],
+        summary: {
+          viralKnowledge: {
+            results: [{
+              case: {
+                title: "通勤包高收藏测评",
+                bodyExcerpt: "原帖摘要不同于生成文案，主要介绍真实测评。",
+                extractedInsights: {
+                  reusableRules: [copiedRule],
+                  titleHooks: [],
+                  copyStructures: [],
+                  tagPatterns: [],
+                  visualPatterns: []
+                }
+              }
+            }]
+          }
+        }
+      },
+      finalPost: {
+        title: "通勤包真实测评",
+        content: copiedRule,
+        tags: ["通勤包"],
+        imageIds: ["asset-1"],
+        imagePromptVersionIds: []
+      },
+      copyDraft: null
+    });
+
+    expect(quality.canPublish).toBe(false);
+    expect(quality.issues.join(" ")).toContain("疑似过度仿写样本");
+  });
+
   it("blocks publish when the active draft lacks traceable evidence ids", () => {
     const quality = runPostQualityGate({
       creativeBrief: {

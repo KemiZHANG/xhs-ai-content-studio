@@ -163,9 +163,20 @@ function extractViralSourceSamples(summary: unknown): unknown[] {
   return viralKnowledge.results
     .map((item) => {
       if (!isRecord(item) || !isRecord(item.case)) return null;
+      const extractedInsights = isRecord(item.case.extractedInsights) ? item.case.extractedInsights : {};
+      const reusablePatternText = [
+        ...stringArray(extractedInsights.reusableRules),
+        ...stringArray(extractedInsights.titleHooks),
+        ...stringArray(extractedInsights.copyStructures),
+        ...stringArray(extractedInsights.tagPatterns),
+        ...stringArray(extractedInsights.visualPatterns)
+      ].join(" ");
       return {
         title: typeof item.case.title === "string" ? item.case.title : "",
-        detailText: typeof item.case.bodyExcerpt === "string" ? item.case.bodyExcerpt : "",
+        detailText: [
+          typeof item.case.bodyExcerpt === "string" ? item.case.bodyExcerpt : "",
+          reusablePatternText
+        ].filter(Boolean).join(" "),
         sourceType: "viral_library"
       };
     })
@@ -198,6 +209,10 @@ function ngrams(value: string, size: number): string[] {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object";
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
 function scoreFromIssues(flags: boolean[]): number {
