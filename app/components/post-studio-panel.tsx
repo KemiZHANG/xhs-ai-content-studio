@@ -21,6 +21,7 @@ import type {
   AssetRecord,
   AgentResponseCard,
   ChatMessage,
+  CreatorMemoryProfile,
   Health,
   JobRecord,
   PendingPublishConfirmation,
@@ -70,6 +71,7 @@ export function PostStudioPanel({
   health,
   jobs,
   viralCases,
+  creatorMemory,
   onResearchFormChange,
   onRunResearch,
   onChatInput,
@@ -113,6 +115,7 @@ export function PostStudioPanel({
   health: Health | null;
   jobs: JobRecord[];
   viralCases: ViralCase[];
+  creatorMemory: CreatorMemoryProfile | null;
   onResearchFormChange: (next: ResearchForm) => void;
   onRunResearch: (event: FormEvent<HTMLFormElement>) => void;
   onChatInput: (value: string) => void;
@@ -640,9 +643,13 @@ export function PostStudioPanel({
                     ) : null}
                   </div>
                 ) : null}
+                <CreatorMemorySummary memory={creatorMemory} projectMemory={project?.agentMemory ?? []} />
                 </>
               ) : (
-                <p className="muted">研究完成后这里只显示 3-5 条核心结论；完整样本、评论和原文放在证据详情里。</p>
+                <>
+                  <p className="muted">研究完成后这里只显示 3-5 条核心结论；完整样本、评论和原文放在证据详情里。</p>
+                  <CreatorMemorySummary memory={creatorMemory} projectMemory={project?.agentMemory ?? []} />
+                </>
               )}
             </SideSection>
           ) : null}
@@ -1270,6 +1277,38 @@ function AgentStructuredMessage({
         </div>
       ) : null}
     </div>
+  );
+}
+
+function CreatorMemorySummary({
+  memory,
+  projectMemory
+}: {
+  memory: CreatorMemoryProfile | null;
+  projectMemory: string[];
+}) {
+  const liked = (memory?.liked ?? []).slice(0, 3).map((item) => item.text);
+  const tone = (memory?.tone ?? []).slice(0, 2).map((item) => item.text);
+  const disliked = (memory?.disliked ?? []).slice(0, 2).map((item) => `避免：${item.text}`);
+  const products = (memory?.products ?? []).slice(0, 2).map((item) => item.description);
+  const tags = (memory?.tags ?? []).slice(0, 4).map((item) => `#${item.name}`);
+  const signals = uniqueText([...projectMemory.slice(0, 3), ...liked, ...tone, ...disliked, ...products, ...tags]);
+  if (!signals.length) {
+    return (
+      <details className="creatorMemorySummary">
+        <summary>创作记忆 · 等待沉淀</summary>
+        <p>当你在对话里表达“我喜欢/不要/产品是/语气希望”等偏好时，Agent 会按账号沉淀记忆，但最新指令永远优先。</p>
+      </details>
+    );
+  }
+  return (
+    <details className="creatorMemorySummary">
+      <summary>创作记忆 · {signals.length} 条偏好</summary>
+      <div>
+        {signals.slice(0, 6).map((signal) => <span key={signal}>{signal}</span>)}
+      </div>
+      <p>这些偏好只作为当前账号的创作上下文，真实发布仍以当前 PostProject、证据和人工确认为准。</p>
+    </details>
   );
 }
 

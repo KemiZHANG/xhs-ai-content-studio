@@ -1246,6 +1246,7 @@ export default function Home() {
             health={health}
             jobs={jobs}
             viralCases={viralCases}
+            creatorMemory={creatorMemory}
             onResearchFormChange={(next) => setWorkflowForm((current) => ({ ...current, ...next }))}
             onRunResearch={(event) => void runWorkflow(event)}
             onChatInput={setChatInput}

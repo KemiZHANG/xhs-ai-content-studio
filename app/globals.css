@@ -3697,6 +3697,44 @@ textarea {
   gap: 7px;
 }
 
+.creatorMemorySummary {
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(18, 118, 97, 0.12);
+  border-radius: 12px;
+  padding: 9px 10px;
+}
+
+.creatorMemorySummary summary {
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.creatorMemorySummary div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.creatorMemorySummary span {
+  background: rgba(18, 118, 97, 0.08);
+  border: 1px solid rgba(18, 118, 97, 0.12);
+  border-radius: 999px;
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 8px;
+}
+
+.creatorMemorySummary p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 8px 0 0;
+}
+
 .miniActionButton {
   background: #ffffff;
   border: 1px solid var(--line);
