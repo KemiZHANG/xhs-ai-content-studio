@@ -1242,6 +1242,7 @@ function labelForCitationField(field: string): string {
 
 function labelForAgentCard(type: string): string {
   const labels: Record<string, string> = {
+    stage_guidance: "下一步",
     evidence_summary: "证据摘要",
     viral_knowledge: "爆款库",
     evidence_citations: "证据引用",

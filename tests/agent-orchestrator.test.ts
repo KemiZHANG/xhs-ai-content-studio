@@ -53,6 +53,11 @@ describe("agent orchestrator", () => {
     expect(result.needsUserInput).toBe(true);
     expect(result.questions.join(" ")).toContain("具体主题");
     expect(result.quickActions.map((action) => action.action)).toContain("search_research");
+    expect(result.cards.find((card) => card.type === "stage_guidance")).toMatchObject({
+      id: "card-stage-guidance",
+      type: "stage_guidance"
+    });
+    expect((result.cards.find((card) => card.type === "stage_guidance")?.data as { stage?: string } | undefined)?.stage).toBe("empty");
     expect(result.toolTrace.length).toBeGreaterThan(0);
     expect(result.agentRun.id).toMatch(/^agent-run-/);
     expect(result.agentRun.plan.steps.length).toBeGreaterThan(0);

@@ -19,6 +19,7 @@ import { readPostProject, resetPostProject, updatePostProject } from "@/lib/post
 import { copyVersionFromDraft, deriveCreativeBrief, deriveFinalPost, deriveImagePromptVersion, deriveVisualDirection } from "@/lib/post-project/brief";
 import { buildEvidenceCitationReport, formatEvidenceCitationReport } from "@/lib/post-project/citations";
 import { insightsFromUserBriefInput, mergeEvidenceInsights } from "@/lib/post-project/evidence";
+import { getPostStageGuidance } from "@/lib/post-project/guidance";
 import { runPostQualityGate } from "@/lib/post-project/quality";
 import type { PostAction, PostProject, ProductInfo } from "@/lib/post-project/types";
 import { renderXhsCardSet } from "@/lib/cards/renderer";
@@ -1011,6 +1012,20 @@ function formatRagFiltersSummary(filters: ReturnType<typeof createAgentPlan>["ra
 
 function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecord | null, postProject?: PostProject | null): AgentResponseCard[] {
   const cards: AgentResponseCard[] = [];
+  if (postProject) {
+    const guidance = getPostStageGuidance(postProject.currentStage, postProject.allowedActions);
+    cards.push({
+      id: "card-stage-guidance",
+      type: "stage_guidance",
+      title: guidance.title,
+      summary: `${guidance.description} 下一步：${postProject.allowedActions.slice(0, 3).map((action) => postActionLabels[action] ?? action).join(" / ") || "等待补充信息"}`,
+      data: {
+        stage: postProject.currentStage,
+        allowedActions: postProject.allowedActions,
+        primaryAction: guidance.primaryAction
+      }
+    });
+  }
   if (workspace.evidenceSummary || workspace.selectedSamples.length) {
     const viralKnowledge = isRecord(workspace.evidenceSummary) ? workspace.evidenceSummary.viralKnowledge : undefined;
     cards.push({

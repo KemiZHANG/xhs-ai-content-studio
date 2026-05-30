@@ -72,8 +72,10 @@ const navItems: Array<{ id: Section; label: string; icon: typeof ClipboardList }
   { id: "flow", label: "Post Studio", icon: Layers3 },
   { id: "assets", label: "Assets", icon: Sparkles },
   { id: "audit", label: "Publish History", icon: ShieldCheck },
-  { id: "settings", label: "模型设置", icon: Settings }
+  { id: "settings", label: "Settings", icon: Settings }
 ];
+
+const legacyRibbonSections = new Set<Section>(["workflow", "jobs", "imageStudio", "chat", "publish", "history"]);
 
 const defaultSettings: RedactedSettings = {
   mcpUrl: "http://localhost:18060/mcp",
@@ -1118,7 +1120,7 @@ export default function Home() {
           </div>
         </header>
 
-        {section === "flow" ? null : (
+        {legacyRibbonSections.has(section) ? (
           <WorkflowRibbon
             activeSection={section}
             researchReady={Boolean(
@@ -1139,7 +1141,7 @@ export default function Home() {
             runningCount={jobs.filter((job) => job.status === "queued" || job.status === "running").length}
             onNavigate={setSection}
           />
-        )}
+        ) : null}
 
         {section === "flow" ? (
           <PostStudioPanel
