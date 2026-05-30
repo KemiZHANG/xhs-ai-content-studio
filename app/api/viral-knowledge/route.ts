@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createModelProvider } from "@/lib/models/provider";
-import { addViralCasesToPostProject } from "@/lib/post-project/store";
+import { buildPostReadinessReport } from "@/lib/post-project/readiness";
+import { addViralCasesToPostProjectWithSummary } from "@/lib/post-project/store";
 import { extractViralRetrievalFilters, summarizeViralRetrievalFilters } from "@/lib/rag/viral";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { readSettings } from "@/lib/storage/settings";
@@ -86,8 +87,15 @@ export async function POST(request: Request) {
       model
     });
     const [saved] = await upsertViralCases([viralCase]);
-    const project = await addViralCasesToPostProject([saved]);
-    return NextResponse.json({ case: saved, project });
+    const result = await addViralCasesToPostProjectWithSummary([saved]);
+    return NextResponse.json({
+      case: saved,
+      project: result.project,
+      readiness: buildPostReadinessReport(result.project),
+      addedInsightIds: result.addedInsightIds,
+      addedInsights: result.addedInsights,
+      addedSampleIds: result.addedSampleIds
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "保存爆款库失败" },

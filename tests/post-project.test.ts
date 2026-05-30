@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { resetWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
 import {
   addViralCasesToPostProject,
+  addViralCasesToPostProjectWithSummary,
   appendPostProjectMemoryFromTurn,
   getPostStageGuidance,
   getAllowedPostActions,
@@ -882,6 +883,43 @@ describe("post project", () => {
     });
     expect(updated.creativeBrief?.basedOnEvidenceIds.some((id) => id.startsWith("viral-insight-"))).toBe(true);
     expect(duplicate.evidencePack.insights.length).toBe(updated.evidencePack.insights.length);
+  });
+
+  it("summarizes which viral library evidence was added to the active post project", async () => {
+    await resetPostProject({ topic: "Guangzhou coffee" });
+    const viralCase = await createViralCaseFromEvidence({
+      sample: {
+        id: "note-viral-summary",
+        title: "Guangzhou coffee saved guide",
+        author: "author",
+        likes: 1800,
+        collects: 2400,
+        comments: 120,
+        shares: 40,
+        score: 3600,
+        url: "https://www.xiaohongshu.com/explore/note-viral-summary",
+        imageUrls: ["https://example.com/coffee.jpg"],
+        cachedImageUrls: [],
+        detailText: "Lead with who should save it, then average spend, lighting, seats, and weekend queue warnings.",
+        commentSnippets: ["average spend?", "which seat is best for photos?"],
+        reasonHighlights: []
+      },
+      topic: "Guangzhou coffee",
+      category: "Cafe review"
+    });
+
+    const first = await addViralCasesToPostProjectWithSummary([viralCase]);
+    const duplicate = await addViralCasesToPostProjectWithSummary([viralCase]);
+
+    expect(first.addedSampleIds).toEqual([viralCase.id]);
+    expect(first.addedInsightIds.length).toBeGreaterThan(0);
+    expect(first.addedInsights.every((insight) => insight.sourceType === "viral_library")).toBe(true);
+    expect(first.project.evidencePack.sampleIds).toContain(viralCase.id);
+    expect(first.project.creativeBrief?.basedOnEvidenceIds).toEqual(
+      expect.arrayContaining(first.addedInsightIds.slice(0, 1))
+    );
+    expect(duplicate.addedInsightIds).toEqual([]);
+    expect(duplicate.addedSampleIds).toEqual([]);
   });
 
   it("initializes from legacy workspace-state when post project file is missing", async () => {

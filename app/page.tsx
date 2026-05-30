@@ -449,9 +449,14 @@ export default function Home() {
           category: workflowForm.contentType,
           useModel: modelReady
         })
-      })) as { case: ViralCase };
+      })) as { case: ViralCase; project?: PostProject; addedInsightIds?: string[] };
       setViralCases((current) => [data.case, ...current.filter((item) => item.id !== data.case.id)].slice(0, 12));
-      setNotice("已保存到爆款库：系统会沉淀结构化创作规律，不会把原文当作仿写素材。");
+      if (data.project) {
+        setPostProject(data.project);
+      }
+      setNotice(data.addedInsightIds?.length
+        ? `已保存到爆款库，并为当前项目增加 ${data.addedInsightIds.length} 条可复用创作证据。`
+        : "已保存到爆款库：系统会沉淀结构化创作规律，不会把原文当作仿写素材。");
       await loadPostProject();
     } finally {
       setBusy(null);

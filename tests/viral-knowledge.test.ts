@@ -2,7 +2,8 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { GET } from "@/app/api/viral-knowledge/route";
+import { GET, POST } from "@/app/api/viral-knowledge/route";
+import { ACTION_TOKEN_HEADER, getLocalActionToken } from "@/lib/security/action-token";
 import {
   createViralCaseFromEvidence,
   listViralCases,
@@ -353,5 +354,38 @@ describe("viral knowledge base", () => {
     expect(payload.filters).toMatchObject({ minShares: 20, sortBy: "score", tags: ["cafe"] });
     expect(payload.filterSummary).toContain("20");
     expect(payload.filterSummary).toContain("排序");
+  });
+
+  it("returns added evidence and readiness metadata when saving through the API", async () => {
+    const token = await getLocalActionToken();
+    const response = await POST(new Request("http://localhost/api/viral-knowledge", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        [ACTION_TOKEN_HEADER]: token
+      },
+      body: JSON.stringify({
+        sample,
+        topic: "Guangzhou coffee",
+        category: "Cafe review",
+        useModel: false
+      })
+    }));
+    const payload = await response.json() as {
+      case: { id: string };
+      project: { evidencePack: { sampleIds: string[] } };
+      readiness: { progress: number; blockers: unknown[] };
+      addedInsightIds: string[];
+      addedInsights: Array<{ sourceType?: string }>;
+      addedSampleIds: string[];
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.project.evidencePack.sampleIds).toContain(payload.case.id);
+    expect(payload.addedSampleIds).toEqual([payload.case.id]);
+    expect(payload.addedInsightIds.length).toBeGreaterThan(0);
+    expect(payload.addedInsights.every((insight) => insight.sourceType === "viral_library")).toBe(true);
+    expect(payload.readiness.progress).toBeGreaterThan(0);
+    expect(Array.isArray(payload.readiness.blockers)).toBe(true);
   });
 });

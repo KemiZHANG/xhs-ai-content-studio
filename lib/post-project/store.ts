@@ -13,7 +13,7 @@ import {
 } from "@/lib/post-project/brief";
 import { runPostQualityGate } from "@/lib/post-project/quality";
 import { inferPostStage, withAllowedActions } from "@/lib/post-project/stage-machine";
-import type { PostProject } from "@/lib/post-project/types";
+import type { EvidenceInsight, PostProject } from "@/lib/post-project/types";
 import { viralCasesToEvidenceInsights } from "@/lib/viral-knowledge/store";
 import type { ViralCase } from "@/lib/viral-knowledge/types";
 import type { ResearchSummary, SampleEvidence } from "@/lib/workflows/one-click";
@@ -77,11 +77,28 @@ export async function resetPostProject(seed: Partial<PostProject> = {}): Promise
 }
 
 export async function addViralCasesToPostProject(cases: ViralCase[]): Promise<PostProject> {
+  const result = await addViralCasesToPostProjectWithSummary(cases);
+  return result.project;
+}
+
+export async function addViralCasesToPostProjectWithSummary(cases: ViralCase[]): Promise<{
+  project: PostProject;
+  addedInsightIds: string[];
+  addedInsights: EvidenceInsight[];
+  addedSampleIds: string[];
+}> {
   if (!cases.length) {
-    return readPostProject();
+    return {
+      project: await readPostProject(),
+      addedInsightIds: [],
+      addedInsights: [],
+      addedSampleIds: []
+    };
   }
   const current = await readPostProject();
   const existingInsightKeys = new Set(current.evidencePack.insights.map(viralInsightKey));
+  const existingInsightIds = new Set(current.evidencePack.insights.map((insight) => insight.id));
+  const existingSampleIds = new Set(current.evidencePack.sampleIds);
   const incomingInsights = viralCasesToEvidenceInsights(cases)
     .filter((insight) => {
       const key = viralInsightKey(insight);
@@ -110,7 +127,7 @@ export async function addViralCasesToPostProject(cases: ViralCase[]): Promise<Po
     auditStatus: "unchecked" as const
   };
   const creativeBrief = deriveCreativeBrief(candidate);
-  return updatePostProject({
+  const project = await updatePostProject({
     evidencePack,
     creativeBrief,
     visualDirection: undefined,
@@ -120,6 +137,15 @@ export async function addViralCasesToPostProject(cases: ViralCase[]): Promise<Po
     auditStatus: "unchecked",
     currentStage: creativeBrief ? "brief_ready" : "evidence_ready"
   });
+  const addedInsights = project.evidencePack.insights.filter(
+    (insight) => insight.sourceType === "viral_library" && !existingInsightIds.has(insight.id)
+  );
+  return {
+    project,
+    addedInsights,
+    addedInsightIds: addedInsights.map((insight) => insight.id),
+    addedSampleIds: project.evidencePack.sampleIds.filter((id) => !existingSampleIds.has(id))
+  };
 }
 
 export async function appendPostProjectMemoryFromTurn({
