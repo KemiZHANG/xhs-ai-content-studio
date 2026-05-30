@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import type { AssetRecord, CreatorMemoryProfile, DraftRecord, JobRecord, WorkspaceState } from "@/app/types";
+import type { AssetRecord, CreatorMemoryProfile, DraftRecord, JobRecord, PostProject, WorkspaceState } from "@/app/types";
 
 export function WorkspaceCanvas({
   workspace,
   currentDraft,
+  postProject,
   creatorMemory,
   assets,
   jobs,
@@ -14,6 +15,7 @@ export function WorkspaceCanvas({
 }: {
   workspace: WorkspaceState | null;
   currentDraft: DraftRecord | null;
+  postProject?: PostProject | null;
   creatorMemory: CreatorMemoryProfile | null;
   assets: AssetRecord[];
   jobs: JobRecord[];
@@ -29,6 +31,11 @@ export function WorkspaceCanvas({
   const productImageIds = workspace?.productImageIds ?? [];
   const selectedAssets = assets.filter((asset) => selectedImageIds.includes(asset.id));
   const productAssets = assets.filter((asset) => productImageIds.includes(asset.id));
+  const projectInsights = postProject?.evidencePack.insights ?? [];
+  const viralInsights = projectInsights.filter((insight) => insight.sourceType === "viral_library");
+  const realtimeInsights = projectInsights.filter((insight) => insight.sourceType !== "viral_library");
+  const keyInsights = [...viralInsights.slice(0, 2), ...realtimeInsights.slice(0, 2)].slice(0, 4);
+  const quality = postProject?.qualityCheck;
   const memorySignals = [
     ...(creatorMemory?.liked ?? []).slice(0, 2).map((item) => item.text),
     ...(creatorMemory?.tone ?? []).slice(0, 2).map((item) => item.text),
@@ -98,7 +105,14 @@ export function WorkspaceCanvas({
       <section className="canvasCard" data-canvas-card="overview">
         <span>当前项目</span>
         <strong>{workspace?.topic || draft?.draft.title || "等待任务"}</strong>
-        <p>最近意图：{workspace?.lastUserIntent || "-"}</p>
+        <p>阶段：{postProject?.currentStage ?? "empty"} · 最近意图：{workspace?.lastUserIntent || "-"}</p>
+        {postProject?.allowedActions?.length ? (
+          <div className="tagRow">
+            {postProject.allowedActions.slice(0, 3).map((action) => (
+              <em key={action}>{action}</em>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       {activeJob ? (
@@ -114,9 +128,36 @@ export function WorkspaceCanvas({
 
       <section className="canvasCard" data-canvas-card="overview">
         <span>研究证据</span>
-        <strong>{samples.length} 条样本</strong>
-        <p>{workspace?.evidenceSummary ? "已生成洞察总结" : "完成研究后会显示标题、正文、标签和图片规律。"}</p>
+        <strong>{samples.length || postProject?.selectedSamples.length || 0} 条样本 · {viralInsights.length} 条爆款库规律</strong>
+        <p>{projectInsights.length ? "已形成可追溯 evidencePack，文案和图片方向会引用这些证据 ID。" : "完成研究后会显示标题、正文、标签和图片规律。"}</p>
+        {keyInsights.length ? (
+          <div className="miniEvidenceList compact">
+            {keyInsights.map((insight) => (
+              <article key={insight.id}>
+                <span>{insight.sourceType === "viral_library" ? "爆款库" : "实时研究"} · {insight.type}</span>
+                <strong>{insight.insight}</strong>
+              </article>
+            ))}
+          </div>
+        ) : null}
       </section>
+
+      {quality ? (
+        <section className={quality.canPublish ? "canvasCard qualityGood" : "canvasCard qualityWarn"} data-canvas-card="publish">
+          <span>Quality Gate</span>
+          <strong>{quality.canPublish ? "通过，可进入人工确认" : "需处理后再发布"}</strong>
+          <p>
+            合规 {quality.complianceScore} · 图文一致 {quality.visualConsistencyScore} · 平台适配 {quality.platformFitScore}
+          </p>
+          {quality.issues.length ? (
+            <ul className="canvasIssueList">
+              {quality.issues.slice(0, 3).map((issue) => (
+                <li key={issue}>{issue}</li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="canvasCard" data-canvas-card="overview">
         <span>创作者记忆</span>

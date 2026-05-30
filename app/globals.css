@@ -1585,6 +1585,27 @@ textarea {
   margin: 0;
 }
 
+.canvasCard.qualityGood {
+  border-color: rgba(20, 143, 113, 0.26);
+  background: linear-gradient(180deg, rgba(20, 143, 113, 0.1), var(--surface-strong));
+}
+
+.canvasCard.qualityWarn {
+  border-color: rgba(191, 107, 38, 0.32);
+  background: linear-gradient(180deg, rgba(191, 107, 38, 0.12), var(--surface-strong));
+}
+
+.canvasIssueList {
+  color: var(--muted);
+  display: grid;
+  font-size: 12px;
+  gap: 5px;
+  line-height: 1.45;
+  list-style-position: inside;
+  margin: 0;
+  padding: 0;
+}
+
 .miniProgress {
   background: rgba(0, 0, 0, 0.12);
   border-radius: 999px;
@@ -3451,6 +3472,10 @@ textarea {
   gap: 10px;
 }
 
+.miniEvidenceList.compact {
+  gap: 6px;
+}
+
 .miniEvidenceList article {
   background: var(--surface-subtle);
   border: 1px solid var(--line);
@@ -3458,6 +3483,12 @@ textarea {
   display: grid;
   gap: 5px;
   padding: 10px;
+}
+
+.miniEvidenceList.compact article {
+  border-radius: 8px;
+  gap: 3px;
+  padding: 8px;
 }
 
 .miniEvidenceList strong {

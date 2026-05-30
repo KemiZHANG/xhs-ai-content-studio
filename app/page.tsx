@@ -1278,6 +1278,7 @@ export default function Home() {
             busy={busy === "chat"}
             currentDraft={currentDraft}
             workspace={workspace}
+            postProject={postProject}
             creatorMemory={creatorMemory}
             jobs={jobs}
             onInput={setChatInput}

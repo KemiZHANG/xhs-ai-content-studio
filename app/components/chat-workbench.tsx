@@ -11,6 +11,7 @@ import type {
   CreatorMemoryProfile,
   DraftRecord,
   JobRecord,
+  PostProject,
   WorkflowResult,
   WorkspaceState
 } from "@/app/types";
@@ -25,6 +26,7 @@ export function ChatPanel({
   busy,
   currentDraft,
   workspace,
+  postProject,
   creatorMemory,
   jobs,
   onInput,
@@ -49,6 +51,7 @@ export function ChatPanel({
   busy: boolean;
   currentDraft: DraftRecord | null;
   workspace: WorkspaceState | null;
+  postProject?: PostProject | null;
   creatorMemory: CreatorMemoryProfile | null;
   jobs: JobRecord[];
   onInput: (value: string) => void;
@@ -280,6 +283,7 @@ export function ChatPanel({
       <WorkspaceCanvas
         workspace={workspace}
         currentDraft={currentDraft}
+        postProject={postProject}
         creatorMemory={creatorMemory}
         assets={assets}
         jobs={jobs}
