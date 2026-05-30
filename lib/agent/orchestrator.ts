@@ -699,6 +699,11 @@ async function maybeHandleClarifyingTurn(
 
 function buildClarifyingQuestions(plan: AgentPlan, workspace: WorkspaceState, postProject?: PostProject | null): string[] {
   const questions: string[] = [];
+  if (isPublishWithoutDraftPlan(plan, workspace, postProject)) {
+    questions.push("当前还没有可发布的草稿或最终帖子。请先生成文案并选择图片，或告诉我用哪一篇草稿发布。");
+    questions.push("发布前你希望先做哪一步：生成文案、选择图片、组装最终帖子，还是重新研究主题？");
+    return questions;
+  }
   if (plan.requiresAssets) {
     questions.push("请先上传产品图/参考图，或说明可以不基于图片直接生成。");
   }
@@ -715,6 +720,14 @@ function buildClarifyingQuestions(plan: AgentPlan, workspace: WorkspaceState, po
     questions.push("你希望我下一步做什么：继续研究、生成文案、规划图片，还是进入发布检查？");
   }
   return questions.slice(0, 4);
+}
+
+function isPublishWithoutDraftPlan(plan: AgentPlan, workspace: WorkspaceState, postProject?: PostProject | null): boolean {
+  const asksPublishWithoutDraft = plan.intent === "ask" && plan.steps.some((step) =>
+    step.action === "askClarifyingQuestion" && /publish|current draft|assembled post/i.test(step.reason)
+  );
+  if (!asksPublishWithoutDraft) return false;
+  return !workspace.currentDraft && !postProject?.copyDraft && !postProject?.finalPost;
 }
 
 async function maybeHandleNewProjectTurn(

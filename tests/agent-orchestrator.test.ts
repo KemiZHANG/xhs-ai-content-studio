@@ -114,6 +114,42 @@ describe("agent orchestrator", () => {
     expect(result.trace.events.map((event) => event.type)).toContain("tool_called");
   });
 
+  it("asks for a draft instead of researching when publish is requested without a draft", async () => {
+    const runChatAgent = vi.fn(async () => ({ answer: "legacy answer" }));
+    const result = await runAgentTurn({
+      message: "帮我发布到小红书",
+      conversationId: "chat-1",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => {
+          throw new Error("should not search");
+        },
+        getFeedDetail: async () => null,
+        publishContent: async () => {
+          throw new Error("should not publish");
+        }
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      },
+      runChatAgentImpl: runChatAgent
+    });
+
+    expect(result.intent).toBe("ask");
+    expect(result.needsUserInput).toBe(true);
+    expect(result.intentConfidence).toBeLessThan(0.7);
+    expect(result.questions.join(" ")).toContain("还没有可发布的草稿");
+    expect(result.answer).toContain("还没有可发布的草稿");
+    expect(result.workspace.publishPlan).toBeNull();
+    expect(runChatAgent).not.toHaveBeenCalled();
+  });
+
   it("generates images from the current draft inside the agent turn and updates workspace state", async () => {
     const imagePath = path.join(tempDir, "generated-assets", "generated", "agent-image.png");
     let prompt = "";
