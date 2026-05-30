@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runAgentTurn } from "@/lib/agent/orchestrator";
 import { resetPostProject } from "@/lib/post-project/store";
 import { defaultSettings } from "@/lib/storage/settings";
+import { createViralCaseFromEvidence, upsertViralCases } from "@/lib/viral-knowledge/store";
+import type { SampleEvidence } from "@/lib/workflows/one-click";
 
 let originalCwd: string;
 let tempDir: string;
@@ -208,6 +210,94 @@ describe("agent orchestrator", () => {
     expect(result.postProject?.visualDirection?.mood).toContain("窗边自然光");
     expect(result.postProject?.imagePrompts.length).toBeGreaterThan(0);
     expect(result.cards.map((card) => card.type)).toContain("visual_direction");
+  });
+
+  it("generates a PostProject draft with viral RAG evidence ids before falling back to legacy chat", async () => {
+    const viralSample: SampleEvidence = {
+      id: "note-viral-coffee",
+      title: "广州咖啡馆高收藏避坑指南",
+      author: "author",
+      likes: 1200,
+      collects: 1600,
+      comments: 90,
+      shares: 20,
+      score: 2400,
+      url: "https://www.xiaohongshu.com/explore/note-viral-coffee",
+      imageUrls: ["https://example.com/coffee.jpg"],
+      cachedImageUrls: [],
+      detailText: "先讲适合人群，再写人均、排队、座位和拍照光线，最后提醒周末避峰。",
+      commentSnippets: ["想知道人均", "哪张桌子适合拍照"],
+      reasonHighlights: []
+    };
+    await upsertViralCases([
+      await createViralCaseFromEvidence({
+        sample: viralSample,
+        topic: "广州咖啡馆",
+        category: "探店"
+      })
+    ]);
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      targetAudience: "探店账号粉丝",
+      goal: "生成真实探店笔记",
+      evidencePack: {
+        sampleIds: ["note-live-1"],
+        insights: [{
+          id: "insight-live-title",
+          sourceType: "realtime",
+          type: "title",
+          insight: "标题先给适用人群和避坑收益",
+          sourceSampleIds: ["note-live-1"],
+          confidence: 0.82,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }]
+      },
+      selectedSamples: [viralSample],
+      currentStage: "evidence_ready"
+    });
+    const runChatAgent = vi.fn(async () => ({ answer: "legacy answer" }));
+
+    const result = await runAgentTurn({
+      message: "请基于当前证据和爆款库规律生成一篇原创小红书笔记",
+      conversationId: "chat-draft",
+      settings: { ...defaultSettings, textApiKey: "text-key" },
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => JSON.stringify({
+          title: "广州咖啡探店避坑",
+          content: "这篇适合想周末找安静咖啡馆的人。先看人均和排队，再看座位光线，最后给适合人群和避峰建议。",
+          tags: ["广州咖啡馆", "探店", "周末去哪"],
+          structure: ["适合谁", "核心体验", "避坑提醒"],
+          imagePrompt: "广州咖啡馆窗边自然光，桌面咖啡和座位细节，真实探店感",
+          basedOnEvidenceIds: ["insight-live-title"],
+          evidenceReferences: {
+            title: ["insight-live-title"],
+            content: ["insight-live-title"],
+            tags: ["insight-live-title"],
+            imagePrompt: ["insight-live-title"]
+          }
+        }),
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      },
+      runChatAgentImpl: runChatAgent
+    });
+
+    expect(runChatAgent).not.toHaveBeenCalled();
+    expect(result.currentDraft?.draft.title).toBe("广州咖啡探店避坑");
+    expect(result.currentDraft?.draft.basedOnEvidenceIds?.length).toBeGreaterThan(0);
+    expect(result.postProject?.evidencePack.insights.some((insight) => insight.sourceType === "viral_library")).toBe(true);
+    expect(result.postProject?.copyDraft?.id).toBe(result.currentDraft?.id);
+    expect(result.answer).toContain("爆款库");
+    expect(result.cards.map((card) => card.type)).toContain("copy_draft");
   });
 
   it("uses the selected image index when preparing a scheduled publish intent", async () => {

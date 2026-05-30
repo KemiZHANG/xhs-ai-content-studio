@@ -93,4 +93,38 @@ describe("viral knowledge base", () => {
     expect(results[0].matchedQueries?.length).toBeGreaterThan(0);
     expect(results[0].reasons.join(" ")).toContain("检索 query");
   });
+
+  it("filters by audience, pain point, created time, and interaction metrics", async () => {
+    const viralCase = await createViralCaseFromEvidence({
+      sample,
+      topic: "广州咖啡馆",
+      category: "探店"
+    });
+    const enriched = {
+      ...viralCase,
+      audience: "周末约会和探店账号粉丝",
+      painPoint: "怕踩雷、不知道人均和排队情况",
+      createdAt: "2026-05-20T12:00:00.000Z"
+    };
+    await upsertViralCases([enriched]);
+
+    const matched = await searchViralCases({
+      query: "咖啡馆 人均",
+      audience: "探店账号",
+      painPoint: "踩雷",
+      createdAfter: "2026-05-01T00:00:00.000Z",
+      createdBefore: "2026-06-01T00:00:00.000Z",
+      minLikes: 1000,
+      minCollects: 900,
+      minComments: 50
+    });
+    const blocked = await searchViralCases({
+      query: "咖啡馆 人均",
+      audience: "探店账号",
+      minCollects: 3000
+    });
+
+    expect(matched[0].case.id).toBe(enriched.id);
+    expect(blocked).toEqual([]);
+  });
 });

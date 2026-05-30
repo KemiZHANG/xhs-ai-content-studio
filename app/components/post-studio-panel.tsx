@@ -426,6 +426,10 @@ export function PostStudioPanel({
 
           {tab === "insights" ? (
             <SideSection icon={FileText} title="可学习结论">
+              <div className="evidenceSourceStrip">
+                <span>实时证据 {realtimeInsights.length}</span>
+                <span>爆款库 {viralInsights.length}</span>
+              </div>
               {realtimeInsights.length ? (
                 realtimeInsights.slice(0, 5).map((insight) => (
                   <article className="insightLine" key={insight.id}>

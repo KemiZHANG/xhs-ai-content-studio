@@ -13,13 +13,14 @@ import type {
   WorkspaceState
 } from "@/lib/agent/types";
 import { readPostProject, updatePostProject } from "@/lib/post-project/store";
-import { deriveImagePromptVersion, deriveVisualDirection } from "@/lib/post-project/brief";
+import { copyVersionFromDraft, deriveCreativeBrief, deriveImagePromptVersion, deriveVisualDirection } from "@/lib/post-project/brief";
 import type { PostProject } from "@/lib/post-project/types";
 import { renderXhsCardSet } from "@/lib/cards/renderer";
 import type { ModelProvider } from "@/lib/models/provider";
 import { createAssetRecord, saveAsset } from "@/lib/storage/assets";
-import type { DraftRecord } from "@/lib/storage/drafts";
-import type { XhsMcpWorkflowClient } from "@/lib/workflows/one-click";
+import { createDraftRecord, type DraftRecord } from "@/lib/storage/drafts";
+import { retrieveViralKnowledge } from "@/lib/rag/viral";
+import type { GeneratedDraft, XhsMcpWorkflowClient } from "@/lib/workflows/one-click";
 
 export type RunAgentTurnInput = AgentRuntimeContext & {
   message: string;
@@ -204,6 +205,43 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
         agentRun,
         trace,
         postProject
+      });
+    }
+
+    const draftFromProjectTurn = await maybeHandleDraftFromProjectTurn(input, plan, initialPostProject);
+    if (draftFromProjectTurn) {
+      trace = addTraceEvent(trace, {
+        type: "tool_called",
+        label: "draft.createFromEvidence",
+        detail: "Generated a copy draft from the active PostProject, CreativeBrief, and evidencePack.",
+        metadata: {
+          stage: draftFromProjectTurn.postProject.currentStage,
+          basedOnEvidenceIds: draftFromProjectTurn.currentDraft?.draft.basedOnEvidenceIds
+        }
+      });
+      trace = addTraceEvent(trace, {
+        type: "workspace_updated",
+        label: "Workspace updated",
+        detail: "Stored the generated draft on the active PostProject and workspace canvas.",
+        metadata: {
+          currentDraftId: draftFromProjectTurn.workspace.currentDraftId
+        }
+      });
+      agentRun = completeRun(agentRun);
+      trace = addTraceEvent(trace, {
+        type: "run_completed",
+        label: "Agent run completed",
+        detail: "Agent turn completed after generating a PostProject draft."
+      });
+      await persistAgentTrace(trace);
+      return buildAgentTurnResult({
+        answer: draftFromProjectTurn.answer,
+        plan,
+        workspace: draftFromProjectTurn.workspace,
+        currentDraft: draftFromProjectTurn.currentDraft,
+        agentRun,
+        trace,
+        postProject: draftFromProjectTurn.postProject
       });
     }
 
@@ -711,6 +749,208 @@ async function maybeHandleVisualPlanningTurn(
   };
 }
 
+async function maybeHandleDraftFromProjectTurn(
+  input: RunAgentTurnInput,
+  plan: ReturnType<typeof createAgentPlan>,
+  postProject: PostProject
+): Promise<{ answer: string; currentDraft: DraftRecord; workspace: WorkspaceState; postProject: PostProject } | null> {
+  const wantsProjectDraft =
+    plan.steps.some((step) => step.action === "generateDraft") &&
+    plan.intent !== "research_to_draft" &&
+    (postProject.evidencePack.insights.length || postProject.creativeBrief);
+  if (!wantsProjectDraft) {
+    return null;
+  }
+
+  if (!input.settings.textApiKey.trim()) {
+    const workspace = await updateWorkspaceState({ lastUserIntent: "generate_copy" });
+    const fallbackDraft = createDraftRecord({
+      draft: {
+        title: postProject.topic?.slice(0, 20) || "小红书原创笔记",
+        content: "基于当前证据生成文案需要先在设置页配置文本模型 API Key。",
+        tags: [postProject.topic?.replace(/\s+/g, "") || "小红书"],
+        structure: ["补充模型配置", "基于证据生成"],
+        imagePrompt: "请先配置文本模型后再生成完整图片方向",
+        basedOnEvidenceIds: postProject.evidencePack.insights.map((insight) => insight.id)
+      },
+      images: [],
+      visibility: input.settings.defaultVisibility
+    });
+    return {
+      answer: "基于当前 PostProject 生成原创文案需要文本模型 API Key，请先在设置页配置。",
+      currentDraft: fallbackDraft,
+      workspace,
+      postProject
+    };
+  }
+
+  const evidenceReadyProject = await ensureViralEvidenceForProject(postProject);
+  const brief = evidenceReadyProject.creativeBrief ?? deriveCreativeBrief(evidenceReadyProject);
+  if (!brief) {
+    const workspace = await updateWorkspaceState({ lastUserIntent: "generate_copy" });
+    const fallbackDraft = createDraftRecord({
+      draft: {
+        title: evidenceReadyProject.topic?.slice(0, 20) || "小红书原创笔记",
+        content: "当前项目还缺少 CreativeBrief。请先补充目标人群、内容目标、产品信息或完成主题研究。",
+        tags: [evidenceReadyProject.topic?.replace(/\s+/g, "") || "小红书"],
+        structure: ["补充 Brief", "再生成文案"],
+        imagePrompt: "等待 CreativeBrief 生成后再规划图片",
+        basedOnEvidenceIds: evidenceReadyProject.evidencePack.insights.map((insight) => insight.id)
+      },
+      images: [],
+      visibility: input.settings.defaultVisibility
+    });
+    return {
+      answer: "我还不能直接写草稿：当前项目缺少 CreativeBrief。请先补充目标人群、内容目标、产品信息，或运行一次主题研究。",
+      currentDraft: fallbackDraft,
+      workspace,
+      postProject: evidenceReadyProject
+    };
+  }
+
+  const evidenceIds = evidenceReadyProject.evidencePack.insights.map((insight) => insight.id);
+  const evidenceForPrompt = evidenceReadyProject.evidencePack.insights
+    .filter((insight) => insight.insight.trim())
+    .slice(0, 12)
+    .map((insight) => ({
+      id: insight.id,
+      sourceType: insight.sourceType ?? "realtime",
+      type: insight.type,
+      insight: insight.insight,
+      confidence: insight.confidence
+    }));
+  const selectedSamples = evidenceReadyProject.selectedSamples.slice(0, 5).map((sample) => {
+    if (!isRecord(sample)) return sample;
+    return {
+      id: typeof sample.id === "string" ? sample.id : undefined,
+      title: typeof sample.title === "string" ? sample.title : undefined,
+      metrics: {
+        likes: typeof sample.likes === "number" ? sample.likes : 0,
+        collects: typeof sample.collects === "number" ? sample.collects : 0,
+        comments: typeof sample.comments === "number" ? sample.comments : 0
+      }
+    };
+  });
+
+  const fallback: GeneratedDraft = {
+    title: evidenceReadyProject.topic?.slice(0, 20) || "小红书原创笔记",
+    content: `围绕${evidenceReadyProject.topic ?? "当前主题"}，用真实、生活化、不夸张的方式写一篇原创笔记。`,
+    tags: [evidenceReadyProject.topic?.replace(/\s+/g, "") || "小红书"],
+    structure: ["标题钩子", "场景引入", "正文价值点", "结尾互动"],
+    imagePrompt: brief.visualMood || "真实小红书风格图片，自然光，主体清晰，不复制参考图",
+    basedOnEvidenceIds: evidenceIds.slice(0, 8),
+    evidenceReferences: {
+      title: evidenceIds.slice(0, 3),
+      content: evidenceIds.slice(0, 5),
+      tags: evidenceIds.slice(0, 5),
+      imagePrompt: evidenceIds.slice(0, 5)
+    }
+  };
+
+  const raw = await input.model.generateStructuredText(
+    `你是小红书内容创作导演型 Agent 的 Writer。请基于当前 PostProject、CreativeBrief 和 evidencePack 生成原创草稿。
+
+用户最新需求：
+${input.message}
+
+PostProject：
+${JSON.stringify({
+  topic: evidenceReadyProject.topic,
+  productInfo: evidenceReadyProject.productInfo,
+  targetAudience: evidenceReadyProject.targetAudience,
+  goal: evidenceReadyProject.goal,
+  tone: evidenceReadyProject.tone,
+  currentStage: evidenceReadyProject.currentStage
+}, null, 2)}
+
+CreativeBrief：
+${JSON.stringify(brief, null, 2)}
+
+可引用证据（只能引用这些 id；sourceType=viral_library 只能学习规律，不能复制原文）：
+${JSON.stringify(evidenceForPrompt, null, 2)}
+
+实时样本摘要（仅用于理解热度和角度，不要复制标题正文）：
+${JSON.stringify(selectedSamples, null, 2)}
+
+要求：
+1. 生成原创标题、正文、标签和图片提示词，不复制任何样本标题/正文。
+2. 内容必须能追溯到 evidencePack，title/content/tags/imagePrompt 都要记录 basedOnEvidenceIds 或 evidenceReferences。
+3. 不要虚构销量、认证、功效、价格、官方背书。
+4. 风格要符合 CreativeBrief，文案和图片方向必须一致。
+
+请只返回 JSON：
+{
+  "title": "20字以内标题",
+  "content": "原创正文，不包含#标签",
+  "tags": ["标签1"],
+  "structure": ["结构步骤"],
+  "imagePrompt": "图片提示词",
+  "basedOnEvidenceIds": ["证据ID"],
+  "evidenceReferences": {
+    "title": ["证据ID"],
+    "content": ["证据ID"],
+    "tags": ["证据ID"],
+    "imagePrompt": ["证据ID"]
+  }
+}`,
+    "Generate traceable original Xiaohongshu copy from PostProject evidence. Do not copy source samples."
+  );
+  const draft = parseGeneratedDraft(raw, fallback, evidenceIds);
+  const draftRecord = createDraftRecord({
+    draft,
+    images: [],
+    visibility: input.settings.defaultVisibility,
+    input: {
+      topic: evidenceReadyProject.topic ?? draft.title,
+      contentType: "Post Studio",
+      timeRange: "当前项目",
+      sampleCount: evidenceReadyProject.selectedSamples.length,
+      visibility: input.settings.defaultVisibility,
+      workflowGoal: "draft",
+      publishMode: "draft",
+      analyzeImages: true,
+      generateImages: false,
+      requirements: input.message,
+      useViralKnowledge: true
+    }
+  });
+  const copyVersion = copyVersionFromDraft(draftRecord, draft.basedOnEvidenceIds ?? evidenceIds);
+  const updatedProject = await updatePostProject({
+    creativeBrief: brief,
+    copyDraft: draftRecord,
+    copyVersions: [
+      ...evidenceReadyProject.copyVersions.filter((version) => version.id !== copyVersion.id),
+      copyVersion
+    ],
+    currentStage: "copy_ready"
+  });
+  const workspace = await updateWorkspaceState({
+    topic: updatedProject.topic ?? draft.title,
+    evidenceSummary: updatedProject.evidencePack.summary,
+    selectedSamples: updatedProject.selectedSamples,
+    currentDraftId: draftRecord.id,
+    currentDraft: draftRecord,
+    lastUserIntent: "generate_copy"
+  });
+
+  const referenced = summarizeReferencedEvidence(updatedProject, draft.basedOnEvidenceIds ?? evidenceIds);
+  return {
+    answer: [
+      "已基于当前 PostProject、CreativeBrief、实时证据和爆款库规律生成原创草稿。",
+      `标题：${draft.title}`,
+      "",
+      draft.content,
+      "",
+      `标签：${draft.tags.map((tag) => `#${tag}`).join(" ")}`,
+      "",
+      referenced
+    ].filter(Boolean).join("\n"),
+    currentDraft: draftRecord,
+    workspace,
+    postProject: updatedProject
+  };
+}
+
 async function maybeHandleImageGenerationTurn(
   input: RunAgentTurnInput,
   plan: ReturnType<typeof createAgentPlan>
@@ -942,6 +1182,123 @@ function buildAgentImagePrompt({
   ]
     .filter(Boolean)
     .join("\n\n");
+}
+
+async function ensureViralEvidenceForProject(project: PostProject): Promise<PostProject> {
+  const hasViralEvidence = project.evidencePack.insights.some((insight) => insight.sourceType === "viral_library");
+  if (hasViralEvidence || !project.topic) {
+    return project;
+  }
+
+  const pack = await retrieveViralKnowledge({
+    query: [
+      project.topic,
+      project.productInfo.name,
+      project.targetAudience,
+      project.goal,
+      project.tone
+    ].filter(Boolean).join(" "),
+    topic: project.topic,
+    limit: 6,
+    realtimeEvidenceCount: project.selectedSamples.length
+  });
+  if (!pack.insights.length && !pack.results.length) {
+    return project;
+  }
+
+  const existingInsightIds = new Set(project.evidencePack.insights.map((insight) => insight.id));
+  const nextInsights = [
+    ...project.evidencePack.insights,
+    ...pack.insights.filter((insight) => !existingInsightIds.has(insight.id))
+  ];
+  const nextSummary = mergeViralKnowledgeSummary(project.evidencePack.summary, pack);
+  const needsBriefRefresh = !project.creativeBrief?.basedOnEvidenceIds.some((id) =>
+    nextInsights.some((insight) => insight.sourceType === "viral_library" && insight.id === id)
+  );
+  const nextProject = {
+    ...project,
+    evidencePack: {
+      ...project.evidencePack,
+      insights: nextInsights,
+      summary: nextSummary,
+      updatedAt: new Date().toISOString()
+    }
+  };
+  const refreshedBrief = needsBriefRefresh
+    ? deriveCreativeBrief({ ...nextProject, creativeBrief: undefined })
+    : project.creativeBrief;
+
+  return updatePostProject({
+    evidencePack: nextProject.evidencePack,
+    creativeBrief: refreshedBrief,
+    currentStage: refreshedBrief ? "brief_ready" : project.currentStage
+  });
+}
+
+function mergeViralKnowledgeSummary(summary: unknown, pack: Awaited<ReturnType<typeof retrieveViralKnowledge>>): unknown {
+  if (isRecord(summary)) {
+    return {
+      ...summary,
+      viralKnowledge: pack
+    };
+  }
+  return { viralKnowledge: pack };
+}
+
+function parseGeneratedDraft(raw: string, fallback: GeneratedDraft, allowedEvidenceIds: string[]): GeneratedDraft {
+  try {
+    const text = raw.trim().startsWith("{")
+      ? raw.trim()
+      : raw.trim().match(/```(?:json)?\s*([\s\S]*?)```/)?.[1]?.trim();
+    if (!text) return fallback;
+    const parsed = JSON.parse(text) as Partial<GeneratedDraft>;
+    const basedOnEvidenceIds = safeEvidenceIds(parsed.basedOnEvidenceIds, allowedEvidenceIds, fallback.basedOnEvidenceIds);
+    return {
+      ...fallback,
+      ...parsed,
+      tags: stringArray(parsed.tags, fallback.tags).slice(0, 8),
+      structure: stringArray(parsed.structure, fallback.structure).slice(0, 8),
+      basedOnEvidenceIds,
+      evidenceReferences: normalizeEvidenceReferences(parsed.evidenceReferences, allowedEvidenceIds, fallback.evidenceReferences)
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeEvidenceReferences(
+  value: GeneratedDraft["evidenceReferences"] | undefined,
+  allowedEvidenceIds: string[],
+  fallback: GeneratedDraft["evidenceReferences"]
+): GeneratedDraft["evidenceReferences"] {
+  return {
+    title: safeEvidenceIds(value?.title, allowedEvidenceIds, fallback?.title),
+    content: safeEvidenceIds(value?.content, allowedEvidenceIds, fallback?.content),
+    tags: safeEvidenceIds(value?.tags, allowedEvidenceIds, fallback?.tags),
+    imagePrompt: safeEvidenceIds(value?.imagePrompt, allowedEvidenceIds, fallback?.imagePrompt)
+  };
+}
+
+function safeEvidenceIds(value: unknown, allowedEvidenceIds: string[], fallback: string[] = []): string[] {
+  const allowed = new Set(allowedEvidenceIds);
+  const ids = Array.isArray(value) ? value.map((item) => String(item).trim()).filter(Boolean) : [];
+  const safe = ids.filter((id) => allowed.has(id));
+  return uniqueIds(safe.length ? safe : fallback.filter((id) => allowed.has(id))).slice(0, 8);
+}
+
+function stringArray(value: unknown, fallback: string[]): string[] {
+  return Array.isArray(value)
+    ? value.map((item) => String(item).trim()).filter(Boolean)
+    : fallback;
+}
+
+function summarizeReferencedEvidence(project: PostProject, evidenceIds: string[]): string {
+  const ids = new Set(evidenceIds);
+  const list = project.evidencePack.insights
+    .filter((insight) => ids.has(insight.id))
+    .slice(0, 5)
+    .map((insight) => `- ${insight.id}｜${labelForEvidenceSource(insight.sourceType)}｜${insight.type}：${insight.insight}`);
+  return list.length ? `这版主要参考了这些证据规律：\n${list.join("\n")}` : "";
 }
 
 function uniqueIds(ids: string[]): string[] {

@@ -3542,6 +3542,23 @@ textarea {
   gap: 8px;
 }
 
+.evidenceSourceStrip {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.evidenceSourceStrip span {
+  background: rgba(18, 118, 97, 0.08);
+  border: 1px solid rgba(18, 118, 97, 0.16);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 9px;
+  text-align: center;
+}
+
 .briefStack,
 .qualityBox {
   display: grid;

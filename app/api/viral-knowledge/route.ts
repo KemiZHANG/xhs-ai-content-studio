@@ -14,23 +14,38 @@ export async function GET(request: Request) {
   const category = url.searchParams.get("category") ?? undefined;
   const audience = url.searchParams.get("audience") ?? undefined;
   const painPoint = url.searchParams.get("painPoint") ?? undefined;
+  const createdAfter = url.searchParams.get("createdAfter") ?? undefined;
+  const createdBefore = url.searchParams.get("createdBefore") ?? undefined;
+  const minLikes = parseOptionalNumber(url.searchParams.get("minLikes"));
+  const minCollects = parseOptionalNumber(url.searchParams.get("minCollects"));
+  const minComments = parseOptionalNumber(url.searchParams.get("minComments"));
   const tags = url.searchParams.getAll("tag");
   const limit = Number(url.searchParams.get("limit") ?? 8);
 
-  if (query || topic || category || audience || painPoint || tags.length) {
+  const filters = {
+    query,
+    topic,
+    category,
+    audience,
+    painPoint,
+    createdAfter,
+    createdBefore,
+    minLikes,
+    minCollects,
+    minComments,
+    tags,
+    limit
+  };
+
+  if (query || topic || category || audience || painPoint || createdAfter || createdBefore || minLikes !== undefined || minCollects !== undefined || minComments !== undefined || tags.length) {
     const results = await searchViralCasesFusion({
-      query,
-      topic,
-      category,
-      audience,
-      painPoint,
-      tags,
-      limit
+      ...filters,
+      tags: tags.length ? tags : undefined
     });
     return NextResponse.json({ results, cases: results.map((item) => item.case) });
   }
 
-  const cases = await listViralCases();
+  const cases = await listViralCases(filters);
   return NextResponse.json({ cases: cases.slice(0, limit || 20) });
 }
 
@@ -65,4 +80,10 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+function parseOptionalNumber(value: string | null): number | undefined {
+  if (value === null || value.trim() === "") return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
