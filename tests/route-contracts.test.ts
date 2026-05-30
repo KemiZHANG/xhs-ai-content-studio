@@ -281,6 +281,39 @@ describe("API route contracts", () => {
       steps: []
     }));
     const appendChatTurn = vi.fn(async () => conversation);
+    const resetWorkspaceState = vi.fn(async (patch) => ({
+      schemaVersion: 1,
+      workspaceId: "workspace-test",
+      updatedAt: "",
+      selectedSamples: [],
+      selectedImageIds: [],
+      productImageIds: [],
+      recentJobIds: [],
+      recentRunIds: [],
+      recentConversationIds: [],
+      ...patch
+    }));
+    const updateWorkspaceState = vi.fn(async (patch) => ({
+      schemaVersion: 1,
+      workspaceId: "workspace-test",
+      updatedAt: "",
+      topic: "coffee",
+      selectedSamples: [],
+      selectedImageIds: [],
+      productImageIds: [],
+      recentRunIds: [],
+      ...patch
+    }));
+    const resetPostProject = vi.fn(async (seed) => ({
+      id: seed.id,
+      topic: seed.topic,
+      currentStage: seed.currentStage
+    }));
+    const updatePostProject = vi.fn(async (patch) => ({
+      id: "post-test",
+      topic: "coffee",
+      currentStage: patch.currentStage
+    }));
 
     vi.doMock("@/lib/storage/settings", () => ({
       readSettings: async () => defaultSettings,
@@ -313,6 +346,16 @@ describe("API route contracts", () => {
     vi.doMock("@/lib/agent/memory", () => ({
       readCreatorMemoryProfile: vi.fn(async () => null),
       updateCreatorMemoryFromTurn: vi.fn(async () => null)
+    }));
+    vi.doMock("@/lib/agent/state", () => ({
+      readWorkspaceState: vi.fn(),
+      resetWorkspaceState,
+      updateWorkspaceState
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      appendPostProjectMemoryFromTurn: vi.fn(),
+      resetPostProject,
+      updatePostProject
     }));
     vi.doMock("@/lib/jobs/runner", () => ({
       getJobRunner: () => ({ enqueueWorkflow })
@@ -353,9 +396,22 @@ describe("API route contracts", () => {
       toolTrace: [expect.objectContaining({ label: "workflow.runOneClick", status: "running" })],
       job: expect.objectContaining({ id: "job-1" }),
       jobId: "job-1",
+      postProject: expect.objectContaining({ currentStage: "researching" }),
       conversation
     });
     expect(enqueueWorkflow).toHaveBeenCalledWith(expect.objectContaining({ topic: "coffee" }));
+    expect(resetWorkspaceState).toHaveBeenCalledWith(expect.objectContaining({
+      topic: "coffee",
+      selectedSamples: [],
+      currentDraft: null,
+      selectedImageIds: [],
+      publishPlan: null,
+      lastUserIntent: "research_only"
+    }));
+    expect(resetPostProject).toHaveBeenCalledWith(expect.objectContaining({
+      topic: "coffee",
+      currentStage: "researching"
+    }));
   });
 
   it("does not infer job publishing from default auto-publish or legacy autoPublish flags", async () => {

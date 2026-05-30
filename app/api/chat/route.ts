@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { runAgentTurn } from "@/lib/agent/orchestrator";
 import { readCreatorMemoryProfile, updateCreatorMemoryFromTurn } from "@/lib/agent/memory";
-import { readWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
+import { readWorkspaceState, resetWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
 import { classifyChatRequest } from "@/lib/chat/router";
 import { getJobRunner } from "@/lib/jobs/runner";
 import { createModelProvider } from "@/lib/models/provider";
 import { createXhsMcpClient } from "@/lib/mcp/xhs";
-import { appendPostProjectMemoryFromTurn } from "@/lib/post-project/store";
+import { appendPostProjectMemoryFromTurn, resetPostProject, updatePostProject } from "@/lib/post-project/store";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { createDraftRecord, readCurrentDraft, writeCurrentDraft } from "@/lib/storage/drafts";
 import { appendChatTurn, getChatConversation } from "@/lib/storage/chat";
@@ -63,6 +63,30 @@ export async function POST(request: Request) {
         retrievalQuery: message,
         retrievalLimit: 8
       };
+      const intent = routeDecision.workflowGoal === "research" ? "research_only" : "research_to_draft";
+      const productImageIds = attachedAssets.map((asset) => asset.id);
+      const initialWorkspace = await resetWorkspaceState({
+        topic: routeDecision.topic,
+        selectedSamples: [],
+        evidenceSummary: undefined,
+        currentDraftId: undefined,
+        currentDraft: null,
+        selectedImageIds: [],
+        productImageIds,
+        publishPlan: null,
+        lastUserIntent: intent,
+        recentConversationIds: conversationId ? [conversationId] : []
+      });
+      await resetPostProject({
+        id: initialWorkspace.workspaceId === "local-default"
+          ? "post-local-default"
+          : initialWorkspace.workspaceId.replace(/^workspace-/, "post-"),
+        topic: routeDecision.topic,
+        productInfo: { referenceAssetIds: productImageIds },
+        auditStatus: "unchecked",
+        currentStage: "researching"
+      });
+
       const job = await getJobRunner().enqueueWorkflow(input);
       const answer = `已创建后台 Agent 任务 ${job.id}。你可以继续留在对话页，任务进度和结果会写入任务列表与成果画布。`;
       const conversation = await appendChatTurn({
@@ -78,7 +102,15 @@ export async function POST(request: Request) {
         conversationId: conversation.id
       }).catch(() => undefined);
 
-      const intent = routeDecision.workflowGoal === "research" ? "research_only" : "research_to_draft";
+      const workspace = await updateWorkspaceState({
+        recentJobIds: [job.id],
+        recentConversationIds: [conversation.id],
+        lastUserIntent: intent
+      });
+      const postProject = await updatePostProject({
+        currentStage: "researching"
+      });
+
       return NextResponse.json({
         answer,
         reply: answer,
@@ -87,11 +119,7 @@ export async function POST(request: Request) {
         intentConfidence: 0.92,
         needsUserInput: false,
         questions: [],
-        workspacePatch: {
-          topic: routeDecision.topic,
-          recentJobIds: [job.id],
-          lastUserIntent: intent
-        },
+        workspacePatch: workspace,
         cards: [],
         quickActions: [
           { id: "qa-view-job", label: "查看任务进度", action: "open_jobs" }
@@ -107,6 +135,7 @@ export async function POST(request: Request) {
         ],
         job,
         jobId: job.id,
+        postProject,
         conversation
       });
     }
