@@ -212,6 +212,42 @@ describe("agent orchestrator", () => {
     expect(result.cards.map((card) => card.type)).toContain("visual_direction");
   });
 
+  it("updates PostProject brief slots from natural-language requirements before asking more questions", async () => {
+    const runChatAgent = vi.fn(async () => ({ answer: "legacy answer" }));
+    const result = await runAgentTurn({
+      message: "主题是广州咖啡馆，目标人群是探店账号粉丝，内容目标是生成真实避坑探店笔记，语气希望生活化不广告，店铺信息是独立咖啡店合集，卖点是安静办公和自然光",
+      conversationId: "chat-brief",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      },
+      runChatAgentImpl: runChatAgent
+    });
+
+    expect(runChatAgent).not.toHaveBeenCalled();
+    expect(result.answer).toContain("写入当前 PostProject");
+    expect(result.postProject?.topic).toBe("广州咖啡馆");
+    expect(result.postProject?.targetAudience).toBe("探店账号粉丝");
+    expect(result.postProject?.goal).toBe("生成真实避坑探店笔记");
+    expect(result.postProject?.tone).toBe("生活化不广告");
+    expect(result.postProject?.productInfo.name).toBe("独立咖啡店合集");
+    expect(result.postProject?.productInfo.sellingPoints).toBe("安静办公和自然光");
+    expect(result.postProject?.creativeBrief?.audience).toBe("探店账号粉丝");
+    expect(result.stage).toBe("brief_ready");
+    expect(result.workspace.topic).toBe("广州咖啡馆");
+  });
+
   it("generates a PostProject draft with viral RAG evidence ids before falling back to legacy chat", async () => {
     const viralSample: SampleEvidence = {
       id: "note-viral-coffee",

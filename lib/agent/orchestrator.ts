@@ -14,7 +14,7 @@ import type {
 } from "@/lib/agent/types";
 import { readPostProject, updatePostProject } from "@/lib/post-project/store";
 import { copyVersionFromDraft, deriveCreativeBrief, deriveImagePromptVersion, deriveVisualDirection } from "@/lib/post-project/brief";
-import type { PostProject } from "@/lib/post-project/types";
+import type { PostProject, ProductInfo } from "@/lib/post-project/types";
 import { renderXhsCardSet } from "@/lib/cards/renderer";
 import type { ModelProvider } from "@/lib/models/provider";
 import { createAssetRecord, saveAsset } from "@/lib/storage/assets";
@@ -64,6 +64,40 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
   });
 
   try {
+    const briefUpdateTurn = await maybeHandleBriefUpdateTurn(input, plan, initialPostProject);
+    if (briefUpdateTurn) {
+      trace = addTraceEvent(trace, {
+        type: "tool_called",
+        label: "postProject.updateBriefInputs",
+        detail: "Extracted project brief fields from the user's natural-language message.",
+        metadata: {
+          stage: briefUpdateTurn.postProject.currentStage,
+          topic: briefUpdateTurn.postProject.topic
+        }
+      });
+      trace = addTraceEvent(trace, {
+        type: "workspace_updated",
+        label: "Workspace updated",
+        detail: "Updated the active PostProject brief slots and workspace topic."
+      });
+      agentRun = completeRun(agentRun);
+      trace = addTraceEvent(trace, {
+        type: "run_completed",
+        label: "Agent run completed",
+        detail: "Agent turn completed after updating project brief inputs."
+      });
+      await persistAgentTrace(trace);
+      return buildAgentTurnResult({
+        answer: briefUpdateTurn.answer,
+        plan,
+        workspace: briefUpdateTurn.workspace,
+        currentDraft: input.currentDraft ?? undefined,
+        agentRun,
+        trace,
+        postProject: briefUpdateTurn.postProject
+      });
+    }
+
     const clarifyingTurn = await maybeHandleClarifyingTurn(input, plan);
     if (clarifyingTurn) {
       trace = addTraceEvent(trace, {
@@ -495,6 +529,151 @@ function buildClarifyingQuestions(plan: AgentPlan, workspace: WorkspaceState, po
     questions.push("你希望我下一步做什么：继续研究、生成文案、规划图片，还是进入发布检查？");
   }
   return questions.slice(0, 4);
+}
+
+async function maybeHandleBriefUpdateTurn(
+  input: RunAgentTurnInput,
+  plan: ReturnType<typeof createAgentPlan>,
+  postProject: PostProject
+): Promise<{ answer: string; workspace: WorkspaceState; postProject: PostProject } | null> {
+  const patch = parseBriefPatch(input.message, postProject);
+  if (!patch.hasUpdate) {
+    return null;
+  }
+
+  const nextProjectCandidate: PostProject = {
+    ...postProject,
+    topic: patch.topic ?? postProject.topic,
+    targetAudience: patch.targetAudience ?? postProject.targetAudience,
+    goal: patch.goal ?? postProject.goal,
+    tone: patch.tone ?? postProject.tone,
+    productInfo: patch.productInfo ?? postProject.productInfo,
+    creativeBrief: undefined,
+    visualDirection: undefined,
+    qualityCheck: undefined,
+    auditStatus: "unchecked",
+    currentStage: "briefing"
+  };
+  const creativeBrief = deriveCreativeBrief(nextProjectCandidate);
+  const updatedProject = await updatePostProject({
+    topic: nextProjectCandidate.topic,
+    targetAudience: nextProjectCandidate.targetAudience,
+    goal: nextProjectCandidate.goal,
+    tone: nextProjectCandidate.tone,
+    productInfo: nextProjectCandidate.productInfo,
+    creativeBrief,
+    visualDirection: undefined,
+    imagePrompts: [],
+    finalPost: undefined,
+    qualityCheck: undefined,
+    auditStatus: "unchecked",
+    currentStage: creativeBrief ? "brief_ready" : "briefing"
+  });
+  const workspace = await updateWorkspaceState({
+    topic: updatedProject.topic,
+    productImageIds: updatedProject.productInfo.referenceAssetIds,
+    lastUserIntent: "update_brief_inputs"
+  });
+  const missing = buildMissingBriefSlots(updatedProject);
+  return {
+    answer: [
+      "已把你的补充需求写入当前 PostProject，并刷新 CreativeBrief。",
+      formatBriefPatchSummary(updatedProject),
+      missing.length ? `还建议补充：${missing.join("、")}。` : "需求信息已经足够进入研究、文案生成或图片方向规划。",
+      creativeBrief ? `当前内容角度：${creativeBrief.contentAngle}` : ""
+    ].filter(Boolean).join("\n"),
+    workspace,
+    postProject: updatedProject
+  };
+}
+
+function parseBriefPatch(message: string, current: PostProject): {
+  hasUpdate: boolean;
+  topic?: string;
+  targetAudience?: string;
+  goal?: string;
+  tone?: string;
+  productInfo?: ProductInfo;
+} {
+  const topic = cleanSlotValue(
+    extractSlot(message, ["主题", "选题", "帖子主题", "笔记主题"]) ??
+      (/新建|开始|做一个|做一篇|我要写|我想写/.test(message) ? inferLooseTopic(message) : undefined)
+  );
+  const targetAudience = cleanSlotValue(extractSlot(message, ["目标人群", "受众", "面向人群", "适合人群", "用户人群"]));
+  const goal = cleanSlotValue(extractSlot(message, ["内容目标", "目标", "目的", "创作目标", "发布目标"]));
+  const tone = cleanSlotValue(extractSlot(message, ["语气", "风格", "调性", "口吻", "表达"]));
+  const product = cleanSlotValue(extractSlot(message, ["产品", "产品信息", "店铺", "店铺信息", "品牌", "商品"]));
+  const sellingPoints = cleanSlotValue(extractSlot(message, ["卖点", "核心卖点", "优势", "亮点"]));
+  const scene = cleanSlotValue(extractSlot(message, ["场景", "使用场景", "拍摄场景", "应用场景"]));
+  const hasProductUpdate = Boolean(product || sellingPoints || scene);
+  const productInfo = hasProductUpdate
+    ? {
+        ...current.productInfo,
+        name: product ?? current.productInfo.name,
+        sellingPoints: sellingPoints ?? current.productInfo.sellingPoints,
+        scene: scene ?? current.productInfo.scene,
+        referenceAssetIds: current.productInfo.referenceAssetIds
+      }
+    : undefined;
+  const hasExplicitBriefKeyword = /主题|选题|目标人群|受众|内容目标|创作目标|语气|风格|调性|产品|店铺|卖点|场景/.test(message);
+  const hasUpdate = Boolean(hasExplicitBriefKeyword && (topic || targetAudience || goal || tone || productInfo));
+  return {
+    hasUpdate,
+    topic,
+    targetAudience,
+    goal,
+    tone,
+    productInfo
+  };
+}
+
+function extractSlot(message: string, labels: string[]): string | undefined {
+  for (const label of [...labels].sort((a, b) => b.length - a.length)) {
+    const pattern = new RegExp(`${label}\\s*(?:希望|想要|是|为|:|：)?\\s*([^。！？!?\n；;]+)`);
+    const match = message.match(pattern);
+    if (match?.[1]) {
+      return stopAtNextSlot(match[1]);
+    }
+  }
+  return undefined;
+}
+
+function stopAtNextSlot(value: string): string {
+  const nextSlot = value.search(/(?:主题|选题|目标人群|受众|内容目标|创作目标|语气|风格|调性|产品|店铺|卖点|场景)\s*(?:希望|想要|是|为|:|：)?/);
+  return (nextSlot > 0 ? value.slice(0, nextSlot) : value).trim();
+}
+
+function inferLooseTopic(message: string): string | undefined {
+  const match = message.match(/(?:我要写|我想写|新建|开始|做一个|做一篇)\s*([^，。！？!?；;\n]{2,28})(?:笔记|帖子|图文|内容|项目)?/);
+  return match?.[1];
+}
+
+function cleanSlotValue(value?: string): string | undefined {
+  const cleaned = value
+    ?.replace(/^(一个|一篇|关于|小红书|笔记|帖子|图文)/, "")
+    .replace(/[，,、]+$/, "")
+    .trim();
+  return cleaned || undefined;
+}
+
+function buildMissingBriefSlots(project: PostProject): string[] {
+  const missing: string[] = [];
+  if (!project.topic) missing.push("主题");
+  if (!project.targetAudience) missing.push("目标人群");
+  if (!project.goal) missing.push("内容目标");
+  if (!project.tone) missing.push("语气风格");
+  if (!project.productInfo.name && !project.productInfo.sellingPoints) missing.push("产品/店铺信息");
+  return missing.slice(0, 4);
+}
+
+function formatBriefPatchSummary(project: PostProject): string {
+  return [
+    `主题：${project.topic ?? "未填写"}`,
+    `人群：${project.targetAudience ?? "未填写"}`,
+    `目标：${project.goal ?? "未填写"}`,
+    `语气：${project.tone ?? "未填写"}`,
+    project.productInfo.name ? `产品/店铺：${project.productInfo.name}` : ""
+  ].filter(Boolean).join("\n");
 }
 
 function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecord | null, postProject?: PostProject | null): AgentResponseCard[] {
