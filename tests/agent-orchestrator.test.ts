@@ -116,6 +116,23 @@ describe("agent orchestrator", () => {
 
   it("asks for a draft instead of researching when publish is requested without a draft", async () => {
     const runChatAgent = vi.fn(async () => ({ answer: "legacy answer" }));
+    await resetPostProject({
+      id: "post-local-default",
+      topic: "广州咖啡馆",
+      evidencePack: {
+        sampleIds: ["sample-1"],
+        insights: [{
+          id: "insight-title-1",
+          sourceType: "realtime",
+          type: "title",
+          insight: "标题用具体地点和收藏理由提高点击",
+          sourceSampleIds: ["sample-1"],
+          confidence: 0.8,
+          createdAt: "2026-05-21T00:00:00.000Z"
+        }]
+      },
+      currentStage: "evidence_ready"
+    });
     const result = await runAgentTurn({
       message: "帮我发布到小红书",
       conversationId: "chat-1",
@@ -154,6 +171,11 @@ describe("agent orchestrator", () => {
       })
     ]));
     expect(result.workspace.publishPlan).toBeNull();
+    expect(result.quickActions.map((action) => action.action)).toEqual([
+      "generate_copy",
+      "select_images",
+      "assemble_post"
+    ]);
     expect(runChatAgent).not.toHaveBeenCalled();
   });
 

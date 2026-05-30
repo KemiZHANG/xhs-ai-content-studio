@@ -1233,6 +1233,25 @@ function buildPostProjectQuickActions(postProject?: PostProject | null): AgentQu
 
 function buildQuickActions(plan: AgentPlan, workspace: WorkspaceState, postProject?: PostProject | null) {
   const postProjectActions = buildPostProjectQuickActions(postProject);
+  if (isPublishWithoutDraftPlan(plan, workspace, postProject)) {
+    const hasEvidenceOrBrief = Boolean(
+      postProject?.creativeBrief ||
+        postProject?.evidencePack.insights.length ||
+        postProject?.selectedSamples.length ||
+        workspace.evidenceSummary ||
+        workspace.selectedSamples.length
+    );
+    return hasEvidenceOrBrief
+      ? [
+          { id: "qa-generate-copy-before-publish", label: "先生成发布文案", action: "generate_copy" },
+          { id: "qa-select-images-before-publish", label: "选择发布图片", action: "select_images" },
+          { id: "qa-assemble-before-publish", label: "组装发布稿", action: "assemble_post" }
+        ]
+      : [
+          { id: "qa-research-before-publish", label: "先搜索真实笔记", action: "search_research" },
+          { id: "qa-add-brief-before-publish", label: "补充创作需求", action: "update_brief_inputs" }
+        ];
+  }
   if (plan.intent !== "ask" && postProjectActions.length) {
     return postProjectActions;
   }
