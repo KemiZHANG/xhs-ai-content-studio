@@ -664,10 +664,10 @@ export function WorkflowRibbon({
     ready: boolean;
     icon: typeof Search;
   }> = [
-    { id: "research", label: "研究证据", detail: "找样本与洞察", section: "workflow", ready: researchReady, icon: Search },
-    { id: "draft", label: "文案草稿", detail: "标题正文标签", section: "chat", ready: draftReady, icon: Bot },
-    { id: "visual", label: "发布图片", detail: "生图或卡片", section: "imageStudio", ready: imageReady, icon: ImagePlus },
-    { id: "publish", label: "发布计划", detail: "立即或定时", section: "publish", ready: publishReady, icon: FileCheck2 }
+    { id: "research", label: "研究证据", detail: "回 Post Studio 查看", section: "flow", ready: researchReady, icon: Search },
+    { id: "draft", label: "文案草稿", detail: "回 Post Studio 编辑", section: "flow", ready: draftReady, icon: Bot },
+    { id: "visual", label: "发布图片", detail: "回 Post Studio 选图", section: "flow", ready: imageReady, icon: ImagePlus },
+    { id: "publish", label: "发布计划", detail: "回 Post Studio 确认", section: "flow", ready: publishReady, icon: FileCheck2 }
   ];
 
   return (
