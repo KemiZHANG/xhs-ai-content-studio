@@ -3,6 +3,7 @@ import { createAgentPlan } from "@/lib/agent/planner";
 import { executeGuardedPublish } from "@/lib/agent/publishing";
 import { inferAgentScheduleAt } from "@/lib/agent/schedule";
 import { readWorkspaceState, resetWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
+import { createAgentToolRegistry } from "@/lib/agent/tools/registry";
 import { addTraceEvent, createAgentRun, createTrace, persistAgentTrace } from "@/lib/agent/trace";
 import type {
   AgentPlan,
@@ -21,7 +22,7 @@ import { renderXhsCardSet } from "@/lib/cards/renderer";
 import type { ModelProvider } from "@/lib/models/provider";
 import { createAssetRecord, getAsset, saveAsset } from "@/lib/storage/assets";
 import { createDraftRecord, type DraftRecord } from "@/lib/storage/drafts";
-import { retrieveViralKnowledge } from "@/lib/rag/viral";
+import type { ViralKnowledgePack } from "@/lib/rag/viral";
 import type { GeneratedDraft, XhsMcpWorkflowClient } from "@/lib/workflows/one-click";
 
 export type RunAgentTurnInput = AgentRuntimeContext & {
@@ -172,6 +173,17 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
         detail: "Retrieved reusable viral-library patterns and merged them into the active PostProject evidencePack.",
         metadata: {
           viralInsightCount: viralKnowledgeTurn.postProject.evidencePack.insights.filter((insight) => insight.sourceType === "viral_library").length
+        }
+      });
+      trace = addTraceEvent(trace, {
+        type: "tool_completed",
+        label: "knowledge.retrieveViralPatterns",
+        detail: "Viral-library RAG retrieval completed with source-tagged evidence insights.",
+        metadata: {
+          viralInsightIds: viralKnowledgeTurn.postProject.evidencePack.insights
+            .filter((insight) => insight.sourceType === "viral_library")
+            .map((insight) => insight.id)
+            .slice(0, 8)
         }
       });
       trace = addTraceEvent(trace, {
@@ -1817,7 +1829,8 @@ async function ensureViralEvidenceForProject(project: PostProject, options: { fo
     return project;
   }
 
-  const pack = await retrieveViralKnowledge({
+  const registry = createAgentToolRegistry();
+  const toolResult = await registry.call("knowledge.retrieveViralPatterns", {
     query: [
       project.topic,
       project.productInfo.name,
@@ -1829,6 +1842,7 @@ async function ensureViralEvidenceForProject(project: PostProject, options: { fo
     limit: 6,
     realtimeEvidenceCount: project.selectedSamples.length
   });
+  const pack = parseViralKnowledgeToolPack(toolResult);
   if (!pack.insights.length && !pack.results.length) {
     return project;
   }
@@ -1862,7 +1876,14 @@ async function ensureViralEvidenceForProject(project: PostProject, options: { fo
   });
 }
 
-function mergeViralKnowledgeSummary(summary: unknown, pack: Awaited<ReturnType<typeof retrieveViralKnowledge>>): unknown {
+function parseViralKnowledgeToolPack(result: unknown): ViralKnowledgePack {
+  if (!isRecord(result) || !isRecord(result.data)) {
+    throw new Error("爆款库工具没有返回有效 RAG 结果");
+  }
+  return result.data as ViralKnowledgePack;
+}
+
+function mergeViralKnowledgeSummary(summary: unknown, pack: ViralKnowledgePack): unknown {
   if (isRecord(summary)) {
     return {
       ...summary,
