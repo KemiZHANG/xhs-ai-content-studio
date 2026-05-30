@@ -150,6 +150,12 @@ export function PostStudioPanel({
   const keyLearningInsights = pickKeyLearningInsights(insights);
   const keyViralInsights = pickKeyViralInsights(viralInsights);
   const viralCaseById = new Map(viralCases.map((item) => [item.id, item]));
+  const latestViralCases = [...viralCases].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt)).slice(0, 3);
+  const latestViralSummaries = latestViralCases.map((item) => ({
+    item,
+    learnings: pickViralLearningLines(item),
+    rewriteRules: pickViralRewriteLines(item)
+  }));
   const viralPack = workflowResult?.viralKnowledge ?? workflowResult?.researchSummary?.viralKnowledge ?? null;
   const samples = project?.selectedSamples ?? workflowResult?.evidence ?? workspace?.selectedSamples ?? [];
   const saveableSamples = samples.filter(isSampleEvidence).slice(0, 3);
@@ -702,6 +708,26 @@ export function PostStudioPanel({
                   </div>
                 </div>
               ) : null}
+              {latestViralSummaries.length ? (
+                <div className="viralRecentPanel">
+                  <strong>最近入库提炼</strong>
+                  {latestViralSummaries.map(({ item, learnings, rewriteRules }) => (
+                    <article key={item.id}>
+                      <div>
+                        <span className={item.extraction.method === "model" ? "viralExtractionBadge model" : "viralExtractionBadge"}>
+                          {labelForViralExtraction(item.extraction.method)} · {item.category}
+                        </span>
+                        <button className="textButton" type="button" onClick={() => setSelectedViralCase(item)}>查看</button>
+                      </div>
+                      <h4>{item.hookType || item.title}</h4>
+                      <p>{item.creativeSafety?.summary || learnings[0] || "已入库，等待更多样本补齐可复用规律。"}</p>
+                      <small>可学：{learnings.slice(0, 2).join(" / ") || "等待更多样本沉淀"}</small>
+                      <small>必须改写：{rewriteRules.slice(0, 2).join(" / ") || "不要复用原文表达和原图"}</small>
+                      {item.extraction.fallbackReason ? <small>提炼说明：{item.extraction.fallbackReason}</small> : null}
+                    </article>
+                  ))}
+                </div>
+              ) : null}
               {viralInsights.length ? (
                 <div className="miniEvidenceList">
                   {keyViralInsights.map((insight) => (
@@ -1233,6 +1259,43 @@ function findViralCaseForInsight(insight: ProjectInsight, viralCaseById: Map<str
     if (viralCase) return viralCase;
   }
   return undefined;
+}
+
+function pickViralLearningLines(item: ViralCase): string[] {
+  return uniqueText([
+    ...(item.creativeSafety?.reusablePatterns ?? []),
+    ...item.extractedInsights.reusableRules,
+    ...item.extractedInsights.titleHooks.map((line) => `标题：${line}`),
+    ...item.extractedInsights.copyStructures.map((line) => `结构：${line}`),
+    ...item.extractedInsights.tagPatterns.map((line) => `标签：${line}`),
+    ...item.extractedInsights.visualPatterns.map((line) => `图片：${line}`),
+    ...item.contentStructure.map((line) => `结构：${line}`)
+  ]).slice(0, 5);
+}
+
+function pickViralRewriteLines(item: ViralCase): string[] {
+  return uniqueText([
+    ...(item.creativeSafety?.transformationGuidance ?? []),
+    ...(item.creativeSafety?.doNotCopy ?? []),
+    ...item.extractedInsights.avoidCopying,
+    "不要复用原文句式、原图构图和具体个人经历"
+  ]).slice(0, 4);
+}
+
+function uniqueText(values: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    const clean = value.trim();
+    if (!clean || seen.has(clean)) continue;
+    seen.add(clean);
+    result.push(clean);
+  }
+  return result;
+}
+
+function labelForViralExtraction(method: ViralCase["extraction"]["method"]): string {
+  return method === "model" ? "AI 提炼" : "本地启发式";
 }
 
 function CheckItem({ ok, label }: { ok: boolean; label: string }) {
