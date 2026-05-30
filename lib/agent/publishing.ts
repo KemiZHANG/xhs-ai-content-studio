@@ -289,6 +289,7 @@ async function auditPublishIntent(
     publishIntentId: intent.id,
     idempotencyKeySuffix: intent.idempotencyKey.slice(-6),
     reasons: intent.guardrailResults,
+    evidenceCitationSummary: intent.evidenceCitationSummary,
     resultSummary: summarizeAuditResult(result ?? intent.mcpResult)
   });
 }

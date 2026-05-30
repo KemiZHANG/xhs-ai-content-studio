@@ -286,6 +286,12 @@ export function PublishAuditPanel({
                     {audit.scheduleAt ? ` · 定时 ${audit.scheduleAt}` : ""}
                   </p>
                   <p className="muted">内容哈希：{audit.contentHash}；确认单：{audit.publishIntentId ?? "-"}</p>
+                  {audit.evidenceCitationSummary ? (
+                    <p className="muted">
+                      证据追踪：{audit.evidenceCitationSummary.summary}
+                      {audit.evidenceCitationSummary.missingEvidenceIds.length ? `；缺失 ${audit.evidenceCitationSummary.missingEvidenceIds.length} 个` : ""}
+                    </p>
+                  ) : null}
                   {audit.reasons.length ? <p className="muted">原因：{audit.reasons.join("；")}</p> : null}
                 </div>
                 <StatusPill

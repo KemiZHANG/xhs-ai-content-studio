@@ -82,6 +82,7 @@ export async function POST(request: Request) {
         mcpUrl: settings.mcpUrl,
         publishIntentId: publishIntent.id,
         idempotencyKeySuffix: publishIntent.idempotencyKey.slice(-6),
+        evidenceCitationSummary: qualityReview.evidenceCitationSummary,
         reasons: validationErrors
       });
       return NextResponse.json({

@@ -551,5 +551,12 @@ export type PublishAuditRecord = {
   publishIntentId?: string;
   idempotencyKeySuffix?: string;
   reasons: string[];
+  evidenceCitationSummary?: {
+    summary: string;
+    missingEvidenceIds: string[];
+    warnings: string[];
+    sourceCounts: Record<string, number>;
+    fieldCounts: Record<"title" | "content" | "tags" | "imagePrompt", number>;
+  };
   resultSummary?: string;
 };

@@ -28,6 +28,13 @@ describe("publish audit storage", () => {
       tags: ["tag"],
       imageCount: 2,
       visibility: "private",
+      evidenceCitationSummary: {
+        summary: "参考证据：实时研究 1 条。",
+        missingEvidenceIds: [],
+        warnings: [],
+        sourceCounts: { realtime: 1 },
+        fieldCounts: { title: 1, content: 1, tags: 1, imagePrompt: 1 }
+      },
       reasons: []
     });
 
@@ -39,7 +46,10 @@ describe("publish audit storage", () => {
       expect.objectContaining({
         event: "preview",
         title: "A launch note",
-        contentHash: expect.any(String)
+        contentHash: expect.any(String),
+        evidenceCitationSummary: expect.objectContaining({
+          summary: "参考证据：实时研究 1 条。"
+        })
       })
     );
     expect(serialized).not.toContain("Sensitive draft body should not be stored in full");

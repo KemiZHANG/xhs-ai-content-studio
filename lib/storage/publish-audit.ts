@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { PublishIntentStatus } from "@/lib/agent/types";
+import type { PublishEvidenceCitationSummary, PublishIntentStatus } from "@/lib/agent/types";
 
 export type PublishAuditRecord = {
   id: string;
@@ -20,6 +20,7 @@ export type PublishAuditRecord = {
   publishIntentId?: string;
   idempotencyKeySuffix?: string;
   reasons: string[];
+  evidenceCitationSummary?: PublishEvidenceCitationSummary;
   resultSummary?: string;
 };
 
@@ -44,7 +45,8 @@ async function appendPublishAuditNow(input: PublishAuditInput): Promise<PublishA
     createdAt: new Date().toISOString(),
     title: input.title.slice(0, 120),
     contentHash: hashContent(content ?? ""),
-    reasons: input.reasons.slice(0, 8)
+    reasons: input.reasons.slice(0, 8),
+    evidenceCitationSummary: sanitizeCitationSummary(input.evidenceCitationSummary)
   };
   const current = await listPublishAudit();
   const next = [record, ...current].slice(0, 500);
@@ -81,8 +83,37 @@ function sanitizeAuditRecord(record: PublishAuditRecord & { content?: string }):
   return {
     ...safeRecord,
     title: safeRecord.title.slice(0, 120),
-    reasons: Array.isArray(safeRecord.reasons) ? safeRecord.reasons.slice(0, 8) : []
+    reasons: Array.isArray(safeRecord.reasons) ? safeRecord.reasons.slice(0, 8) : [],
+    evidenceCitationSummary: sanitizeCitationSummary(safeRecord.evidenceCitationSummary)
   };
+}
+
+function sanitizeCitationSummary(value: unknown): PublishEvidenceCitationSummary | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const record = value as Partial<PublishEvidenceCitationSummary>;
+  return {
+    summary: String(record.summary ?? "").slice(0, 240),
+    missingEvidenceIds: Array.isArray(record.missingEvidenceIds)
+      ? record.missingEvidenceIds.map(String).slice(0, 8)
+      : [],
+    warnings: Array.isArray(record.warnings) ? record.warnings.map(String).slice(0, 8) : [],
+    sourceCounts: sanitizeNumberRecord(record.sourceCounts),
+    fieldCounts: {
+      title: Number(record.fieldCounts?.title ?? 0),
+      content: Number(record.fieldCounts?.content ?? 0),
+      tags: Number(record.fieldCounts?.tags ?? 0),
+      imagePrompt: Number(record.fieldCounts?.imagePrompt ?? 0)
+    }
+  };
+}
+
+function sanitizeNumberRecord(value: unknown): Record<string, number> {
+  if (!value || typeof value !== "object") return {};
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .map(([key, item]) => [key, Number(item)])
+      .filter(([, item]) => Number.isFinite(item))
+  );
 }
 
 function hashContent(content: string): string {
