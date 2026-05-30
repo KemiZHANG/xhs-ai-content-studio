@@ -391,8 +391,14 @@ describe("API route contracts", () => {
       needsUserInput: false,
       questions: [],
       workspacePatch: expect.objectContaining({ topic: "coffee", recentJobIds: ["job-1"] }),
-      cards: [],
-      quickActions: [expect.objectContaining({ action: "open_jobs" })],
+      cards: [
+        expect.objectContaining({ type: "stage_guidance", title: "后台研究已启动" }),
+        expect.objectContaining({ type: "evidence_summary", title: "证据等待生成" })
+      ],
+      quickActions: [
+        expect.objectContaining({ action: "open_jobs" }),
+        expect.objectContaining({ action: "recover" })
+      ],
       toolTrace: [expect.objectContaining({ label: "workflow.runOneClick", status: "running" })],
       job: expect.objectContaining({ id: "job-1" }),
       jobId: "job-1",

@@ -517,6 +517,10 @@ export default function Home() {
       case "summarize_evidence":
         await startResearchJob();
         return;
+      case "open_jobs":
+        setSection("jobs");
+        setNotice("已打开任务进度，后台研究完成后会同步回 Post Studio。");
+        return;
       case "create_creative_brief":
         await submitChatMessage("请基于当前研究证据和爆款库规律，生成/刷新这个 PostProject 的 CreativeBrief，并说明参考了哪些证据。", false);
         return;

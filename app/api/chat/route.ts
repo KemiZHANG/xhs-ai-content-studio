@@ -120,9 +120,32 @@ export async function POST(request: Request) {
         needsUserInput: false,
         questions: [],
         workspacePatch: workspace,
-        cards: [],
+        cards: [
+          {
+            id: `card-job-${job.id}`,
+            type: "stage_guidance",
+            title: "后台研究已启动",
+            summary: `正在围绕「${routeDecision.topic}」搜索真实小红书笔记，完成后会写入当前 PostProject。`,
+            data: {
+              jobId: job.id,
+              stage: "researching",
+              topic: routeDecision.topic
+            }
+          },
+          {
+            id: `card-evidence-pending-${job.id}`,
+            type: "evidence_summary",
+            title: "证据等待生成",
+            summary: "任务完成前先清空旧证据和旧草稿，避免新项目被上一轮内容干扰。",
+            data: {
+              sourceType: "realtime",
+              status: "pending"
+            }
+          }
+        ],
         quickActions: [
-          { id: "qa-view-job", label: "查看任务进度", action: "open_jobs" }
+          { id: "qa-view-job", label: "查看任务进度", action: "open_jobs" },
+          { id: "qa-refresh-project", label: "刷新项目画布", action: "recover" }
         ],
         toolTrace: [
           {
