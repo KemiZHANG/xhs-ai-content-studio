@@ -11,7 +11,7 @@ export function inferAgentScheduleAt(
   }
 
   const relative = message.match(
-    /(今晚|今天|明天|后天)?\s*([0-9]{1,2}|[一二三四五六七八九十两]+)\s*点\s*(半|[0-9]{1,2}\s*分?)?/
+    /(今晚|今天|明天|后天)?\s*([0-9]{1,2}|[一二三四五六七八九十两]+)\s*点\s*(半|[0-9]{1,2}\s*分)?/
   );
   if (!relative) {
     return undefined;

@@ -21,7 +21,7 @@ describe("agent planner", () => {
       "workflow.generateDraft"
     ]);
     expect(plan.topic).toContain("广州咖啡馆");
-    expect(plan.timeRange).toContain("一周");
+    expect(plan.timeRange).toBe("一周内");
   });
 
   it("plans product image generation when the user refers to uploaded product images", () => {

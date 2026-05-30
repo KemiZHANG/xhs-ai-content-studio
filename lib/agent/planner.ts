@@ -38,7 +38,7 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
         intent: "ask",
         topic: inferTopic(message),
         requiresAssets: true,
-      steps: [step("askClarifyingQuestion", "The user needs product-image generation but no image is attached.")]
+        steps: [step("askClarifyingQuestion", "The user needs product-image generation but no image is attached.")]
       });
     }
 
@@ -77,7 +77,7 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
     });
   }
 
-  if ((/发布|发出去|发笔记/.test(message) || lower.includes("publish")) && input.hasCurrentDraft) {
+  if ((/发布|发出去|发笔记|发送/.test(message) || lower.includes("publish")) && input.hasCurrentDraft) {
     return buildPlan({
       intent: "prepare_publish",
       topic: inferTopic(message),
@@ -104,7 +104,7 @@ function step(action: AgentPlanStep["action"], reason: string, toolName?: string
 }
 
 function isResearchRequest(message: string, lower: string): boolean {
-  return /搜索|查找|找|分析|高收藏|高赞|爆款|小红书|笔记|竞品/.test(message) || lower.includes("research");
+  return /搜索|查找|找|分析|高收藏|高赞|爆款|小红书|笔记|竞品|研究/.test(message) || lower.includes("research");
 }
 
 function isImageGenerationRequest(message: string, lower: string): boolean {
@@ -116,30 +116,35 @@ function isCardGenerationRequest(message: string, lower: string): boolean {
 }
 
 function isDraftRevisionRequest(message: string, lower: string): boolean {
-  return /修改|改|优化|生活化|重写|调整|标题/.test(message) || lower.includes("revise");
+  return /修改|改得|优化|生活化|重写|调整|标题|正文|标签/.test(message) || lower.includes("revise");
 }
 
 function isScheduledPublishRequest(message: string, lower: string): boolean {
-  return (/发|发布|定时/.test(message) && /今晚|明天|后天|\d+\s*点|[一二三四五六七八九十]\s*点/.test(message)) || lower.includes("schedule");
+  return (/发布|发|定时/.test(message) && /今晚|今天|明天|后天|\d+\s*点|[一二三四五六七八九十两]\s*点/.test(message)) || lower.includes("schedule");
 }
 
 function inferTimeRange(message: string): string | undefined {
-  if (/最近一周|一周/.test(message)) return "一周内";
+  if (/最近一周|一周内|一周/.test(message)) return "一周内";
   if (/两周|二周/.test(message)) return "两周内";
-  if (/今天|一天/.test(message)) return "一天内";
+  if (/今天|一天|一天内/.test(message)) return "一天内";
   if (/半年|六个月/.test(message)) return "半年内";
   return undefined;
 }
 
 function inferTopic(message: string): string | undefined {
-  const direct = message.match(/(?:找|搜索|查找|分析)(?:最近一周|一周内|两周内|两周|今天|一天内|半年内|半年)?\s*([^，。,.\n]+?)(?:高收藏|高赞|爆款|相关|的|笔记|，|。|,|$)/);
+  const quoted = message.match(/[「《“"']([^」》”"']+)[」》”"']/);
+  if (quoted?.[1]?.trim()) {
+    return cleanupTopic(quoted[1]);
+  }
+
+  const direct = message.match(/(?:帮我|请)?(?:找|搜索|查找|分析)(?:最近一周|一周内|两周内|两周|今天|一天内|半年内|半年)?\s*([^，。！？!?、\n]+?)(?:高收藏|高赞|爆款|相关|的?笔记|，|。|、|$)/);
   if (direct?.[1]?.trim()) {
     return cleanupTopic(direct[1]);
   }
 
-  const quoted = message.match(/[「《“"]([^」》”"]+)[」》”"]/);
-  if (quoted?.[1]?.trim()) {
-    return cleanupTopic(quoted[1]);
+  const write = message.match(/(?:写|生成|做)(?:一篇|一个)?\s*([^，。！？!?、\n]+?)(?:笔记|文案|帖子|图文|内容|，|。|$)/);
+  if (write?.[1]?.trim()) {
+    return cleanupTopic(write[1]);
   }
 
   return undefined;
@@ -175,12 +180,27 @@ function inferSelectedImageIndex(message: string): number | undefined {
   const englishWord = message.toLowerCase().match(/\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth)\b/);
   if (englishWord?.[1]) return englishWords[englishWord[1]];
 
-  const chinese = message.match(/第?\s*([一二三四五六七八九十])\s*张/);
-  if (!chinese) return undefined;
-  return "一二三四五六七八九十".indexOf(chinese[1]) + 1;
+  const chinese = message.match(/第?\s*([一二三四五六七八九十两])\s*张/);
+  if (!chinese?.[1]) return undefined;
+  const values: Record<string, number> = {
+    一: 1,
+    二: 2,
+    两: 2,
+    三: 3,
+    四: 4,
+    五: 5,
+    六: 6,
+    七: 7,
+    八: 8,
+    九: 9,
+    十: 10
+  };
+  return values[chinese[1]];
 }
 
 function inferScheduleText(message: string): string | undefined {
-  const match = message.match(/(今晚|明天|后天)?\s*([一二三四五六七八九十\d]+)\s*点/);
+  const iso = message.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:[zZ]|[+-]\d{2}:\d{2})?/);
+  if (iso?.[0]) return iso[0];
+  const match = message.match(/(今晚|今天|明天|后天)?\s*([一二三四五六七八九十两\d]+)\s*点(?:\s*半)?/);
   return match?.[0]?.trim();
 }

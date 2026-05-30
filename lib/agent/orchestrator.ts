@@ -13,6 +13,7 @@ import type {
   WorkspaceState
 } from "@/lib/agent/types";
 import { readPostProject } from "@/lib/post-project/store";
+import type { PostProject } from "@/lib/post-project/types";
 import { renderXhsCardSet } from "@/lib/cards/renderer";
 import type { ModelProvider } from "@/lib/models/provider";
 import { createAssetRecord, saveAsset } from "@/lib/storage/assets";
@@ -73,32 +74,24 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
           selectedImageIds: cardGenerationTurn.workspace.selectedImageIds
         }
       });
-      agentRun = {
-        ...agentRun,
-        status: "completed",
-        updatedAt: new Date().toISOString()
-      };
+      agentRun = completeRun(agentRun);
       trace = addTraceEvent(trace, {
         type: "run_completed",
         label: "Agent run completed",
         detail: "Agent turn completed after rendering card images."
       });
       await persistAgentTrace(trace);
+      const postProject = await readPostProject();
 
-      return {
-        ...buildStructuredAgentResponse({
-          answer: cardGenerationTurn.answer,
-          plan,
-          workspace: cardGenerationTurn.workspace,
-          cards: buildCardsFromTurn(cardGenerationTurn.workspace, cardGenerationTurn.currentDraft),
-          traceItems: buildToolTraceItems(trace)
-        }),
+      return buildAgentTurnResult({
+        answer: cardGenerationTurn.answer,
+        plan,
+        workspace: cardGenerationTurn.workspace,
         currentDraft: cardGenerationTurn.currentDraft,
         agentRun,
         trace,
-        workspace: cardGenerationTurn.workspace,
-        postProject: await readPostProject()
-      };
+        postProject
+      });
     }
 
     const imageGenerationTurn = await maybeHandleImageGenerationTurn(input, plan);
@@ -119,32 +112,24 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
           selectedImageIds: imageGenerationTurn.workspace.selectedImageIds
         }
       });
-      agentRun = {
-        ...agentRun,
-        status: "completed",
-        updatedAt: new Date().toISOString()
-      };
+      agentRun = completeRun(agentRun);
       trace = addTraceEvent(trace, {
         type: "run_completed",
         label: "Agent run completed",
         detail: "Agent turn completed after generating images."
       });
       await persistAgentTrace(trace);
+      const postProject = await readPostProject();
 
-      return {
-        ...buildStructuredAgentResponse({
-          answer: imageGenerationTurn.answer,
-          plan,
-          workspace: imageGenerationTurn.workspace,
-          cards: buildCardsFromTurn(imageGenerationTurn.workspace, imageGenerationTurn.currentDraft),
-          traceItems: buildToolTraceItems(trace)
-        }),
+      return buildAgentTurnResult({
+        answer: imageGenerationTurn.answer,
+        plan,
+        workspace: imageGenerationTurn.workspace,
         currentDraft: imageGenerationTurn.currentDraft,
         agentRun,
         trace,
-        workspace: imageGenerationTurn.workspace,
-        postProject: await readPostProject()
-      };
+        postProject
+      });
     }
 
     const guardedPublishTurn = await maybeHandleGuardedPublishTurn(input, plan);
@@ -165,32 +150,24 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
           publishStatus: guardedPublishTurn.workspace.publishPlan?.status
         }
       });
-      agentRun = {
-        ...agentRun,
-        status: "completed",
-        updatedAt: new Date().toISOString()
-      };
+      agentRun = completeRun(agentRun);
       trace = addTraceEvent(trace, {
         type: "run_completed",
         label: "Agent run completed",
         detail: "Agent turn completed after preparing a publish intent."
       });
       await persistAgentTrace(trace);
+      const postProject = await readPostProject();
 
-      return {
-        ...buildStructuredAgentResponse({
-          answer: guardedPublishTurn.answer,
-          plan,
-          workspace: guardedPublishTurn.workspace,
-          cards: buildCardsFromTurn(guardedPublishTurn.workspace, guardedPublishTurn.currentDraft),
-          traceItems: buildToolTraceItems(trace)
-        }),
+      return buildAgentTurnResult({
+        answer: guardedPublishTurn.answer,
+        plan,
+        workspace: guardedPublishTurn.workspace,
         currentDraft: guardedPublishTurn.currentDraft,
         agentRun,
         trace,
-        workspace: guardedPublishTurn.workspace,
-        postProject: await readPostProject()
-      };
+        postProject
+      });
     }
 
     const legacyAgent = input.runChatAgentImpl ?? runChatAgent;
@@ -226,31 +203,26 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
       }
     });
 
-    agentRun = {
-      ...agentRun,
-      status: "completed",
-      updatedAt: new Date().toISOString()
-    };
+    agentRun = completeRun(agentRun);
     trace = addTraceEvent(trace, {
       type: "run_completed",
       label: "Agent run completed",
       detail: "Agent turn completed successfully."
     });
     await persistAgentTrace(trace);
+    const postProject = await readPostProject();
 
     return {
       ...legacyResult,
-      ...buildStructuredAgentResponse({
+      ...buildAgentTurnResult({
         answer: legacyResult.answer,
         plan,
         workspace,
-        cards: buildCardsFromTurn(workspace, legacyResult.currentDraft ?? input.currentDraft ?? undefined),
-        traceItems: buildToolTraceItems(trace)
-      }),
-      agentRun,
-      trace,
-      workspace,
-      postProject: await readPostProject()
+        currentDraft: legacyResult.currentDraft ?? input.currentDraft ?? undefined,
+        agentRun,
+        trace,
+        postProject
+      })
     };
   } catch (error) {
     agentRun = {
@@ -268,16 +240,62 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
   }
 }
 
+function completeRun<T extends { status: string; updatedAt: string }>(run: T): T {
+  return {
+    ...run,
+    status: "completed",
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function buildAgentTurnResult({
+  answer,
+  plan,
+  workspace,
+  currentDraft,
+  agentRun,
+  trace,
+  postProject
+}: {
+  answer: string;
+  plan: AgentPlan;
+  workspace: WorkspaceState;
+  currentDraft?: DraftRecord | null;
+  agentRun: AgentTurnResult["agentRun"];
+  trace: AgentTurnResult["trace"];
+  postProject?: PostProject | null;
+}): AgentTurnResult {
+  const cards = buildCardsFromTurn(workspace, currentDraft, postProject);
+  const structured = buildStructuredAgentResponse({
+    answer,
+    plan,
+    workspace,
+    postProject,
+    cards,
+    traceItems: buildToolTraceItems(trace)
+  });
+  return {
+    ...structured,
+    currentDraft: currentDraft ?? undefined,
+    agentRun,
+    trace,
+    workspace,
+    postProject: postProject ?? undefined
+  };
+}
+
 function buildStructuredAgentResponse({
   answer,
   plan,
   workspace,
+  postProject,
   cards,
   traceItems
 }: {
   answer: string;
   plan: AgentPlan;
   workspace: WorkspaceState;
+  postProject?: PostProject | null;
   cards: AgentResponseCard[];
   traceItems: AgentToolTraceItem[];
 }): Pick<
@@ -286,13 +304,13 @@ function buildStructuredAgentResponse({
 > {
   const needsUserInput = plan.intent === "ask" || plan.steps.some((step) => step.action === "askClarifyingQuestion");
   const questions = needsUserInput
-    ? ["请补充产品图、目标人群、语气或发布时间等缺失信息。"]
+    ? ["请补充产品图、目标人群、语气、发布时间等缺失信息。"]
     : [];
 
   return {
     answer,
     reply: answer,
-    stage: inferStageFromWorkspace(workspace),
+    stage: workspace.publishPlan ? inferStageFromWorkspace(workspace) : postProject?.currentStage ?? inferStageFromWorkspace(workspace),
     intent: plan.intent,
     intentConfidence: inferIntentConfidence(plan, workspace),
     needsUserInput,
@@ -310,7 +328,7 @@ function buildStructuredAgentResponse({
   };
 }
 
-function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecord | null): AgentResponseCard[] {
+function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecord | null, postProject?: PostProject | null): AgentResponseCard[] {
   const cards: AgentResponseCard[] = [];
   if (workspace.evidenceSummary || workspace.selectedSamples.length) {
     cards.push({
@@ -321,6 +339,16 @@ function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecor
       data: workspace.evidenceSummary
     });
   }
+  if (postProject?.creativeBrief) {
+    cards.push({
+      id: "card-creative-brief",
+      type: "creative_brief",
+      title: "CreativeBrief",
+      summary: `${postProject.creativeBrief.contentAngle} · ${postProject.creativeBrief.tone}`,
+      data: postProject.creativeBrief
+    });
+  }
+
   const draft = currentDraft ?? workspace.currentDraft;
   if (draft) {
     cards.push({
@@ -330,15 +358,34 @@ function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecor
       summary: draft.draft.content.slice(0, 160),
       data: draft.draft
     });
-    if (draft.draft.imagePrompt) {
+    const imagePrompt = postProject?.imagePrompts.at(-1)?.value.prompt ?? draft.draft.imagePrompt;
+    if (imagePrompt) {
       cards.push({
         id: "card-image-prompt",
         type: "image_prompt",
         title: "图片提示词",
-        summary: draft.draft.imagePrompt,
-        data: { imagePrompt: draft.draft.imagePrompt }
+        summary: imagePrompt,
+        data: { imagePrompt }
       });
     }
+  }
+  if (postProject?.visualDirection) {
+    cards.push({
+      id: "card-visual-direction",
+      type: "visual_direction",
+      title: "视觉方向",
+      summary: `${postProject.visualDirection.mood} · ${postProject.visualDirection.composition}`,
+      data: postProject.visualDirection
+    });
+  }
+  if (postProject?.qualityCheck) {
+    cards.push({
+      id: "card-quality-check",
+      type: "quality_check",
+      title: postProject.qualityCheck.canPublish ? "质量检查通过" : "质量检查需处理",
+      summary: postProject.qualityCheck.issues.slice(0, 3).join("；") || "发布前仍需人工确认账号、可见范围、图片版本和定时时间。",
+      data: postProject.qualityCheck
+    });
   }
   if (workspace.publishPlan) {
     cards.push({
@@ -649,7 +696,7 @@ async function maybeHandleGuardedPublishTurn(
           ? `已完成发布。\n标题：${currentDraft.draft.title}`
           : guardedPublish.status === "scheduled"
             ? `已提交定时发布。\n标题：${currentDraft.draft.title}\n时间：${scheduleAt}`
-        : `发布准备未通过安全检查。\n标题：${currentDraft.draft.title}\n原因：${guardedPublish.reasons.join("；")}`,
+            : `发布准备未通过安全检查。\n标题：${currentDraft.draft.title}\n原因：${guardedPublish.reasons.join("；")}`,
     currentDraft,
     workspace
   };

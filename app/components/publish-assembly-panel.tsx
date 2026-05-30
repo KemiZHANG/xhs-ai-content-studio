@@ -62,9 +62,9 @@ export function PublishAssemblyPanel({
         <div className="panelHeader">
           <div>
             <h2>发布装配台</h2>
-            <p>这里是最终发布前的整合页：确认文案、标签、图片、可见范围和发布时间。</p>
+            <p>这里是最终发布前的确认页：核对文案、标签、图片、可见范围、账号和发布时间。</p>
           </div>
-          <StatusPill ok={ready} label={ready ? "可以发布" : "缺少内容"} />
+          <StatusPill ok={ready} label={ready ? "内容完整" : "缺少内容"} />
         </div>
 
         <div className="publishReadinessGrid">
@@ -78,7 +78,7 @@ export function PublishAssemblyPanel({
             </div>
             <div className="phonePreviewText">
               <strong>{draft.title || "标题会显示在这里"}</strong>
-              <p>{draft.content ? `${draft.content.slice(0, 120)}${draft.content.length > 120 ? "..." : ""}` : "正文预览会在这里显示，发布前先确认读起来像真实笔记。"}</p>
+              <p>{draft.content ? `${draft.content.slice(0, 120)}${draft.content.length > 120 ? "..." : ""}` : "正文预览会显示在这里。发布前请确认读起来像真实笔记，而不是硬广。"}</p>
               <div className="tagRow">
                 {parseTagsText(draft.tagsText).slice(0, 5).map((tag) => (
                   <em key={tag}>#{tag}</em>
