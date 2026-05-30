@@ -250,6 +250,10 @@ async function getQualityGateReview(
 ): Promise<{ qualityCheck?: QualityCheck; reasons: string[] }> {
   try {
     const project = await readPostProject();
+    const snapshotMismatchReasons = getProjectSnapshotMismatchReasons(project, publishArgs, assetIds);
+    if (snapshotMismatchReasons.length) {
+      return { reasons: snapshotMismatchReasons };
+    }
     if (!shouldRunProjectQualityGate(project, publishArgs, assetIds)) {
       return { reasons: [] };
     }
@@ -282,21 +286,45 @@ async function getQualityGateReview(
   }
 }
 
+function getProjectSnapshotMismatchReasons(
+  project: Awaited<ReturnType<typeof readPostProject>>,
+  publishArgs: GuardedPublishArgs,
+  assetIds: string[]
+): string[] {
+  if (!hasPostProjectPublishContext(project)) {
+    return [];
+  }
+  const reasons: string[] = [];
+  const hasTextSnapshot = Boolean(project.copyDraft || project.finalPost);
+  const matchesDraft = Boolean(
+    project.copyDraft &&
+      project.copyDraft.draft.title === publishArgs.title &&
+      project.copyDraft.draft.content === publishArgs.content &&
+      project.copyDraft.draft.tags.join("|") === publishArgs.tags.join("|")
+  );
+  const matchesFinalPost = Boolean(
+    project.finalPost &&
+      project.finalPost.title === publishArgs.title &&
+      project.finalPost.content === publishArgs.content &&
+      project.finalPost.tags.join("|") === publishArgs.tags.join("|")
+  );
+  if (hasTextSnapshot && !matchesDraft && !matchesFinalPost) {
+    reasons.push("发布内容与当前 PostProject 草稿/最终帖子不一致，请先在 Post Studio 保存画布并重新运行 Quality Gate");
+  }
+
+  if (project.selectedImages?.length && assetIds.length && !sameStringSet(project.selectedImages, assetIds)) {
+    reasons.push("发布图片与当前 PostProject 选中图片版本不一致，请重新选择图片并运行发布检查");
+  }
+
+  return reasons;
+}
+
 function shouldRunProjectQualityGate(
   project: Awaited<ReturnType<typeof readPostProject>>,
   publishArgs: GuardedPublishArgs,
   assetIds: string[]
 ): boolean {
-  const hasProjectContext = Boolean(
-    project.creativeBrief ||
-      project.copyDraft ||
-      project.finalPost ||
-      project.evidencePack?.insights?.length ||
-      project.selectedSamples?.length ||
-      project.selectedImages?.length ||
-      project.imagePrompts?.length
-  );
-  if (!hasProjectContext) return false;
+  if (!hasPostProjectPublishContext(project)) return false;
   const matchesDraft = Boolean(
     project.copyDraft &&
       project.copyDraft.draft.title === publishArgs.title &&
@@ -309,6 +337,24 @@ function shouldRunProjectQualityGate(
   );
   const matchesSelectedImages = !assetIds.length || !project.selectedImages?.length || assetIds.some((id) => project.selectedImages.includes(id));
   return (matchesDraft || matchesFinalPost) && matchesSelectedImages;
+}
+
+function hasPostProjectPublishContext(project: Awaited<ReturnType<typeof readPostProject>>): boolean {
+  return Boolean(
+    project.creativeBrief ||
+      project.copyDraft ||
+      project.finalPost ||
+      project.evidencePack?.insights?.length ||
+      project.selectedSamples?.length ||
+      project.selectedImages?.length ||
+      project.imagePrompts?.length
+  );
+}
+
+function sameStringSet(left: string[], right: string[]): boolean {
+  const leftSet = new Set(left.map(String).filter(Boolean));
+  const rightSet = new Set(right.map(String).filter(Boolean));
+  return leftSet.size === rightSet.size && [...leftSet].every((item) => rightSet.has(item));
 }
 
 async function verifyActiveXhsLogin(client: ReturnType<typeof createXhsMcpClient>): Promise<string | null> {

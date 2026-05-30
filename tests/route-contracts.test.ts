@@ -434,6 +434,18 @@ describe("API route contracts", () => {
         publishResult: await publish(args)
       }))
     }));
+    vi.doMock("@/lib/agent/state", () => ({
+      updateWorkspaceState: vi.fn(async () => ({}))
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => ({
+        evidencePack: { insights: [] },
+        selectedSamples: [],
+        selectedImages: [],
+        imagePrompts: []
+      }),
+      updatePostProject: vi.fn(async () => ({}))
+    }));
     vi.doMock("@/lib/storage/drafts", () => ({
       createDraftRecord: vi.fn(() => currentDraft),
       writeCurrentDraft: vi.fn(async (draft) => draft)
@@ -495,6 +507,15 @@ describe("API route contracts", () => {
         executeGuardedPublish
       };
     });
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => ({
+        evidencePack: { insights: [] },
+        selectedSamples: [],
+        selectedImages: [],
+        imagePrompts: []
+      }),
+      updatePostProject: vi.fn(async () => ({}))
+    }));
     vi.doMock("@/lib/storage/drafts", () => ({
       createDraftRecord: vi.fn(),
       writeCurrentDraft
@@ -640,6 +661,15 @@ describe("API route contracts", () => {
         publishIntent: { status: "blocked" }
       }))
     }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => ({
+        evidencePack: { insights: [] },
+        selectedSamples: [],
+        selectedImages: [],
+        imagePrompts: []
+      }),
+      updatePostProject: vi.fn(async () => ({}))
+    }));
     vi.doMock("@/lib/storage/drafts", () => ({
       createDraftRecord: vi.fn(),
       writeCurrentDraft: vi.fn()
@@ -729,6 +759,143 @@ describe("API route contracts", () => {
     expect(response.status).toBe(400);
     expect(payload.error).toContain("Quality Gate");
     expect(payload.error).toContain("夸张词");
+    expect(publishContent).not.toHaveBeenCalled();
+  });
+
+  it("blocks publish when the publish payload no longer matches the active PostProject draft", async () => {
+    const asset = {
+      id: "asset-1",
+      kind: "upload",
+      name: "image",
+      originalName: "image.png",
+      absolutePath: "C:\\xhs\\generated-assets\\uploads\\image.png",
+      mimeType: "image/png",
+      size: 10,
+      createdAt: "2026-05-21T00:00:00.000Z"
+    };
+    const publishContent = vi.fn(async () => ({ ok: true }));
+    const executeGuardedPublish = vi.fn();
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings,
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: async () => asset
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({ publishContent })
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => ({
+        copyDraft: {
+          id: "draft-current",
+          draft: {
+            title: "当前标题",
+            content: "当前正文",
+            tags: ["当前标签"]
+          }
+        },
+        selectedImages: ["asset-1"],
+        evidencePack: { insights: [{ id: "insight-1" }] },
+        imagePrompts: []
+      }),
+      updatePostProject: vi.fn(async () => ({}))
+    }));
+    vi.doMock("@/lib/agent/publishing", () => ({
+      getPublishIntent: vi.fn(),
+      publishIntentMatchesArgs: vi.fn(() => false),
+      executeGuardedPublish
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(),
+      writeCurrentDraft: vi.fn()
+    }));
+
+    const { POST } = await import("@/app/api/publish/route");
+    const response = await POST(
+      jsonRequest({
+        title: "旧标题",
+        content: "旧正文",
+        tags: ["旧标签"],
+        assetIds: ["asset-1"],
+        confirmed: true
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload.error).toContain("PostProject");
+    expect(payload.error).toContain("Quality Gate");
+    expect(executeGuardedPublish).not.toHaveBeenCalled();
+    expect(publishContent).not.toHaveBeenCalled();
+  });
+
+  it("blocks publish when selected asset ids differ from the active PostProject image version", async () => {
+    const asset = {
+      id: "asset-2",
+      kind: "upload",
+      name: "image",
+      originalName: "image.png",
+      absolutePath: "C:\\xhs\\generated-assets\\uploads\\image.png",
+      mimeType: "image/png",
+      size: 10,
+      createdAt: "2026-05-21T00:00:00.000Z"
+    };
+    const publishContent = vi.fn(async () => ({ ok: true }));
+    const executeGuardedPublish = vi.fn();
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings,
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: async () => asset
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({ publishContent })
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => ({
+        copyDraft: {
+          id: "draft-current",
+          draft: {
+            title: "当前标题",
+            content: "当前正文",
+            tags: ["当前标签"]
+          }
+        },
+        selectedImages: ["asset-1"],
+        evidencePack: { insights: [{ id: "insight-1" }] },
+        imagePrompts: []
+      }),
+      updatePostProject: vi.fn(async () => ({}))
+    }));
+    vi.doMock("@/lib/agent/publishing", () => ({
+      getPublishIntent: vi.fn(),
+      publishIntentMatchesArgs: vi.fn(() => false),
+      executeGuardedPublish
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(),
+      writeCurrentDraft: vi.fn()
+    }));
+
+    const { POST } = await import("@/app/api/publish/route");
+    const response = await POST(
+      jsonRequest({
+        title: "当前标题",
+        content: "当前正文",
+        tags: ["当前标签"],
+        assetIds: ["asset-2"],
+        confirmed: true
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload.error).toContain("发布图片与当前 PostProject");
+    expect(executeGuardedPublish).not.toHaveBeenCalled();
     expect(publishContent).not.toHaveBeenCalled();
   });
 
