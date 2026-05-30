@@ -339,8 +339,18 @@ describe("API route contracts", () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
-    expect(payload).toEqual({
+    expect(payload).toMatchObject({
       answer: expect.stringContaining("job-1"),
+      reply: expect.stringContaining("job-1"),
+      stage: "researching",
+      intent: "research_only",
+      intentConfidence: expect.any(Number),
+      needsUserInput: false,
+      questions: [],
+      workspacePatch: expect.objectContaining({ topic: "coffee", recentJobIds: ["job-1"] }),
+      cards: [],
+      quickActions: [expect.objectContaining({ action: "open_jobs" })],
+      toolTrace: [expect.objectContaining({ label: "workflow.runOneClick", status: "running" })],
       job: expect.objectContaining({ id: "job-1" }),
       jobId: "job-1",
       conversation

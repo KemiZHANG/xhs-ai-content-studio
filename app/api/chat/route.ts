@@ -78,8 +78,33 @@ export async function POST(request: Request) {
         conversationId: conversation.id
       }).catch(() => undefined);
 
+      const intent = routeDecision.workflowGoal === "research" ? "research_only" : "research_to_draft";
       return NextResponse.json({
         answer,
+        reply: answer,
+        stage: "researching",
+        intent,
+        intentConfidence: 0.92,
+        needsUserInput: false,
+        questions: [],
+        workspacePatch: {
+          topic: routeDecision.topic,
+          recentJobIds: [job.id],
+          lastUserIntent: intent
+        },
+        cards: [],
+        quickActions: [
+          { id: "qa-view-job", label: "查看任务进度", action: "open_jobs" }
+        ],
+        toolTrace: [
+          {
+            id: `tool-${job.id}`,
+            label: "workflow.runOneClick",
+            status: "running",
+            detail: "已进入后台任务队列，完成后会写入成果画布。",
+            createdAt: new Date().toISOString()
+          }
+        ],
         job,
         jobId: job.id,
         conversation
