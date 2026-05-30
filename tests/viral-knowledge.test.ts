@@ -196,6 +196,8 @@ describe("viral knowledge base", () => {
     expect(results[0].case.id).toBe(viralCase.id);
     expect(results[0].matchedQueries?.length).toBeGreaterThan(0);
     expect(results[0].reasons.join(" ")).toContain("query");
+    expect(results[0].diversityKey).toContain("cafe review");
+    expect(results[0].angleSummary).toContain("Cafe review");
   });
 
   it("diversifies fused retrieval so one creative angle does not fill the first results", async () => {
@@ -237,6 +239,8 @@ describe("viral knowledge base", () => {
     expect(results).toHaveLength(3);
     expect(results.map((item) => item.case.id)).toContain("different-angle");
     expect(results.filter((item) => item.case.hookType === "scenario hook")).toHaveLength(2);
+    expect(new Set(results.map((item) => item.diversityKey)).size).toBeGreaterThan(1);
+    expect(results.find((item) => item.case.id === "different-angle")?.angleSummary).toContain("Work cafe");
   });
 
   it("filters by audience, pain point, created time, and interaction metrics", async () => {

@@ -419,6 +419,8 @@ function scoreViralCase(item: ViralCase, queryTokens: string[], input: ViralSear
   return {
     case: item,
     score: Number(score.toFixed(4)),
+    diversityKey: viralDiversityKey(item),
+    angleSummary: summarizeViralAngle(item),
     reasons: [
       tokenHits.length ? `命中关键词：${tokenHits.slice(0, 5).join("、")}` : "",
       semanticScore > 0.1 ? "语义相似" : "",
@@ -471,6 +473,14 @@ function viralDiversityKey(item: ViralCase): string {
     normalizeDiversityField(item.category),
     normalizeDiversityField(item.imageStyle)
   ].join("|");
+}
+
+function summarizeViralAngle(item: ViralCase): string {
+  return [
+    item.hookType,
+    item.category,
+    item.imageStyle
+  ].map((value) => value.trim()).filter(Boolean).join(" · ");
 }
 
 function normalizeDiversityField(value: string): string {
