@@ -215,6 +215,8 @@ describe("agent orchestrator", () => {
     expect(result.postProject?.visualDirection?.mood).toContain("窗边自然光");
     expect(result.postProject?.imagePrompts.length).toBeGreaterThan(0);
     expect(result.cards.map((card) => card.type)).toContain("visual_direction");
+    expect(result.stage).toBe("image_prompt_ready");
+    expect(result.quickActions.map((action) => action.action)).toContain("generate_images");
   });
 
   it("updates PostProject brief slots from natural-language requirements before asking more questions", async () => {

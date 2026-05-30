@@ -6,6 +6,7 @@ import { readWorkspaceState, resetWorkspaceState, updateWorkspaceState } from "@
 import { addTraceEvent, createAgentRun, createTrace, persistAgentTrace } from "@/lib/agent/trace";
 import type {
   AgentPlan,
+  AgentQuickAction,
   AgentResponseCard,
   AgentRuntimeContext,
   AgentToolTraceItem,
@@ -15,7 +16,7 @@ import type {
 import { readPostProject, resetPostProject, updatePostProject } from "@/lib/post-project/store";
 import { copyVersionFromDraft, deriveCreativeBrief, deriveFinalPost, deriveImagePromptVersion, deriveVisualDirection } from "@/lib/post-project/brief";
 import { runPostQualityGate } from "@/lib/post-project/quality";
-import type { PostProject, ProductInfo } from "@/lib/post-project/types";
+import type { PostAction, PostProject, ProductInfo } from "@/lib/post-project/types";
 import { renderXhsCardSet } from "@/lib/cards/renderer";
 import type { ModelProvider } from "@/lib/models/provider";
 import { createAssetRecord, getAsset, saveAsset } from "@/lib/storage/assets";
@@ -583,7 +584,7 @@ function buildStructuredAgentResponse({
       lastUserIntent: plan.intent
     },
     cards,
-    quickActions: buildQuickActions(plan, workspace),
+    quickActions: buildQuickActions(plan, workspace, postProject),
     toolTrace: traceItems
   };
 }
@@ -925,7 +926,48 @@ function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecor
   return cards;
 }
 
-function buildQuickActions(plan: AgentPlan, workspace: WorkspaceState) {
+const postActionLabels: Record<PostAction, string> = {
+  start_brief: "补充创作信息",
+  update_brief_inputs: "补充/修改需求",
+  search_research: "搜索真实笔记",
+  summarize_evidence: "总结证据优点",
+  create_creative_brief: "生成创作 Brief",
+  generate_copy: "生成文案",
+  revise_copy: "修改当前文案",
+  plan_visuals: "规划图片方向",
+  generate_image_prompts: "生成图片提示词",
+  generate_images: "生成配图",
+  select_images: "选择发布图片",
+  assemble_post: "组装发布稿",
+  run_quality_gate: "发布前检查",
+  request_publish_confirmation: "确认发布",
+  schedule_publish: "定时发布",
+  publish_now: "立即发布",
+  recover: "修复当前项目"
+};
+
+function actionToQuickAction(action: PostAction): AgentQuickAction {
+  return {
+    id: `qa-${action.replace(/_/g, "-")}`,
+    label: postActionLabels[action],
+    action
+  };
+}
+
+function buildPostProjectQuickActions(postProject?: PostProject | null): AgentQuickAction[] {
+  if (!postProject || postProject.currentStage === "empty") {
+    return [];
+  }
+  const preferred = postProject.allowedActions.filter((action) => action !== "recover");
+  const actions = preferred.length ? preferred : postProject.allowedActions;
+  return actions.slice(0, 4).map(actionToQuickAction);
+}
+
+function buildQuickActions(plan: AgentPlan, workspace: WorkspaceState, postProject?: PostProject | null) {
+  const postProjectActions = buildPostProjectQuickActions(postProject);
+  if (plan.intent !== "ask" && postProjectActions.length) {
+    return postProjectActions;
+  }
   if (plan.intent === "research_only" || workspace.selectedSamples.length) {
     return [
       { id: "qa-generate-copy", label: "基于证据生成文案", action: "generate_copy" },
