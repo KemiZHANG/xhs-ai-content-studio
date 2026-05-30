@@ -70,6 +70,52 @@ export async function resetPostProject(seed: Partial<PostProject> = {}): Promise
   return writePostProject(createBlankPostProject(seed));
 }
 
+export async function addViralCasesToPostProject(cases: ViralCase[]): Promise<PostProject> {
+  if (!cases.length) {
+    return readPostProject();
+  }
+  const current = await readPostProject();
+  const existingInsightKeys = new Set(current.evidencePack.insights.map(viralInsightKey));
+  const incomingInsights = viralCasesToEvidenceInsights(cases)
+    .filter((insight) => {
+      const key = viralInsightKey(insight);
+      if (existingInsightKeys.has(key)) return false;
+      existingInsightKeys.add(key);
+      return true;
+    });
+  const sampleIds = uniqueIds([
+    ...current.evidencePack.sampleIds,
+    ...cases.map((item) => item.id)
+  ]);
+  const evidencePack = {
+    ...current.evidencePack,
+    sampleIds,
+    insights: [...current.evidencePack.insights, ...incomingInsights],
+    summary: mergeSavedViralCasesSummary(current.evidencePack.summary, cases),
+    updatedAt: new Date().toISOString()
+  };
+  const candidate = {
+    ...current,
+    evidencePack,
+    selectedSamples: current.selectedSamples,
+    creativeBrief: undefined,
+    visualDirection: undefined,
+    qualityCheck: undefined,
+    auditStatus: "unchecked" as const
+  };
+  const creativeBrief = deriveCreativeBrief(candidate);
+  return updatePostProject({
+    evidencePack,
+    creativeBrief,
+    visualDirection: undefined,
+    imagePrompts: [],
+    finalPost: undefined,
+    qualityCheck: undefined,
+    auditStatus: "unchecked",
+    currentStage: creativeBrief ? "brief_ready" : "evidence_ready"
+  });
+}
+
 export function createBlankPostProject(seed: Partial<PostProject> = {}): PostProject {
   return normalizePostProject({
     schemaVersion: POST_PROJECT_SCHEMA_VERSION,
@@ -310,6 +356,48 @@ function mergePostProjects(existing: PostProject, migrated: PostProject): PostPr
     updatedAt: migrated.updatedAt
   });
   return enrichPostProject(merged);
+}
+
+function viralInsightKey(insight: { type: string; sourceSampleIds: string[]; insight: string }): string {
+  return `${insight.type}|${insight.sourceSampleIds.join(",")}|${insight.insight}`;
+}
+
+function mergeSavedViralCasesSummary(summary: unknown, cases: ViralCase[]): unknown {
+  const existingSummary = isRecord(summary) ? summary : {};
+  const existingViral = isRecord(existingSummary.viralKnowledge) ? existingSummary.viralKnowledge : {};
+  const existingResults = Array.isArray(existingViral.results) ? existingViral.results : [];
+  const existingIds = new Set(
+    existingResults
+      .map((item) => (isRecord(item) && isRecord(item.case) && typeof item.case.id === "string" ? item.case.id : undefined))
+      .filter(Boolean)
+  );
+  const savedResults = cases
+    .filter((item) => !existingIds.has(item.id))
+    .map((item) => ({
+      case: item,
+      score: 1,
+      reasons: ["手动保存到爆款库"],
+      matchedQueries: ["manual-save"]
+    }));
+  return {
+    ...existingSummary,
+    viralKnowledge: {
+      ...existingViral,
+      results: [...savedResults, ...existingResults].slice(0, 20),
+      insights: [
+        ...(Array.isArray(existingViral.insights) ? existingViral.insights : []),
+        ...viralCasesToEvidenceInsights(cases)
+      ].slice(0, 80),
+      sufficiency: isRecord(existingViral.sufficiency)
+        ? existingViral.sufficiency
+        : {
+            isEnough: cases.length >= 2,
+            missing: cases.length >= 2 ? [] : ["爆款库匹配样本不足 2 条"],
+            recommendation: cases.length >= 2 ? "已保存多个历史爆款规律，可辅助创作。" : "建议继续保存更多高质量样本，提升 RAG 参考多样性。",
+            viralCount: cases.length
+          }
+    }
+  };
 }
 
 function withDraftEvidenceIds(draft: WorkspaceState["currentDraft"], evidenceIds: string[]): NonNullable<WorkspaceState["currentDraft"]> | null {

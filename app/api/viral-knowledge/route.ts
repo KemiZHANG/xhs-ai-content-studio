@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createModelProvider } from "@/lib/models/provider";
+import { addViralCasesToPostProject } from "@/lib/post-project/store";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { readSettings } from "@/lib/storage/settings";
 import { createViralCaseFromEvidence, listViralCases, searchViralCasesFusion, upsertViralCases } from "@/lib/viral-knowledge/store";
@@ -73,7 +74,8 @@ export async function POST(request: Request) {
       model
     });
     const [saved] = await upsertViralCases([viralCase]);
-    return NextResponse.json({ case: saved });
+    const project = await addViralCasesToPostProject([saved]);
+    return NextResponse.json({ case: saved, project });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "保存爆款库失败" },

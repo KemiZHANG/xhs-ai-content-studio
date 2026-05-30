@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { resetWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
 import {
+  addViralCasesToPostProject,
   getAllowedPostActions,
   postProjectFromWorkspace,
   readPostProject,
@@ -12,6 +13,7 @@ import {
 } from "@/lib/post-project";
 import { runPostQualityGate } from "@/lib/post-project/quality";
 import { defaultSettings } from "@/lib/storage/settings";
+import { createViralCaseFromEvidence } from "@/lib/viral-knowledge/store";
 
 let originalCwd: string;
 let tempDir: string;
@@ -431,6 +433,60 @@ describe("post project", () => {
     expect(next.tone).toBe("真实分享");
     expect(next.agentMemory).toEqual(["少一点广告感"]);
     expect(next.allowedActions).toContain("search_research");
+  });
+
+  it("adds saved viral cases to the active evidence pack and refreshes CreativeBrief", async () => {
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      targetAudience: "探店账号粉丝",
+      goal: "生成真实避坑探店笔记",
+      evidencePack: {
+        sampleIds: ["note-live"],
+        insights: [{
+          id: "insight-live-title",
+          sourceType: "realtime",
+          type: "title",
+          insight: "标题先给适用人群和避坑收益",
+          sourceSampleIds: ["note-live"],
+          confidence: 0.82,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }]
+      },
+      currentStage: "evidence_ready"
+    });
+    const viralCase = await createViralCaseFromEvidence({
+      sample: {
+        id: "note-viral",
+        title: "广州咖啡馆高收藏拍照避坑",
+        author: "author",
+        likes: 1800,
+        collects: 2400,
+        comments: 120,
+        shares: 40,
+        score: 3600,
+        url: "https://www.xiaohongshu.com/explore/note-viral",
+        imageUrls: ["https://example.com/coffee.jpg"],
+        cachedImageUrls: [],
+        detailText: "先说明适合谁，再写人均、光线、座位和周末排队情况，最后提醒避开高峰。",
+        commentSnippets: ["想知道人均", "哪张桌子适合拍照"],
+        reasonHighlights: []
+      },
+      topic: "广州咖啡馆",
+      category: "探店"
+    });
+
+    const updated = await addViralCasesToPostProject([viralCase]);
+    const duplicate = await addViralCasesToPostProject([viralCase]);
+
+    expect(updated.evidencePack.sampleIds).toContain(viralCase.id);
+    expect(updated.evidencePack.insights.some((insight) => insight.sourceType === "viral_library")).toBe(true);
+    expect(updated.evidencePack.summary).toMatchObject({
+      viralKnowledge: {
+        results: [expect.objectContaining({ case: expect.objectContaining({ id: viralCase.id }) })]
+      }
+    });
+    expect(updated.creativeBrief?.basedOnEvidenceIds.some((id) => id.startsWith("viral-insight-"))).toBe(true);
+    expect(duplicate.evidencePack.insights.length).toBe(updated.evidencePack.insights.length);
   });
 
   it("initializes from legacy workspace-state when post project file is missing", async () => {
