@@ -6,6 +6,7 @@ import { classifyChatRequest } from "@/lib/chat/router";
 import { getJobRunner } from "@/lib/jobs/runner";
 import { createModelProvider } from "@/lib/models/provider";
 import { createXhsMcpClient } from "@/lib/mcp/xhs";
+import { appendPostProjectMemoryFromTurn } from "@/lib/post-project/store";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { createDraftRecord, readCurrentDraft, writeCurrentDraft } from "@/lib/storage/drafts";
 import { appendChatTurn, getChatConversation } from "@/lib/storage/chat";
@@ -171,6 +172,13 @@ export async function POST(request: Request) {
       attachedAssets,
       conversationId: conversation.id
     }).catch(() => undefined);
+    const shouldReturnPostProject = Boolean(result.postProject || result.currentDraft || result.workflowResult);
+    const postProjectWithMemory = shouldReturnPostProject
+      ? await appendPostProjectMemoryFromTurn({
+          message,
+          currentDraft: result.currentDraft
+        }).catch(() => result.postProject)
+      : undefined;
 
     return NextResponse.json({
       answer: result.answer,
@@ -186,7 +194,7 @@ export async function POST(request: Request) {
       toolTrace: result.toolTrace,
       workflowResult: result.workflowResult,
       currentDraft: result.currentDraft,
-      postProject: result.postProject,
+      postProject: postProjectWithMemory ?? result.postProject,
       conversation
     });
   } catch (error) {

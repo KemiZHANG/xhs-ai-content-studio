@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { resetWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
 import {
   addViralCasesToPostProject,
+  appendPostProjectMemoryFromTurn,
   getAllowedPostActions,
   postProjectFromWorkspace,
   readPostProject,
@@ -498,6 +499,27 @@ describe("post project", () => {
     expect(next.tone).toBe("真实分享");
     expect(next.agentMemory).toEqual(["少一点广告感"]);
     expect(next.allowedActions).toContain("search_research");
+  });
+
+  it("stores project-scoped memory from explicit user preferences", async () => {
+    await resetPostProject({ topic: "广州咖啡馆" });
+
+    const first = await appendPostProjectMemoryFromTurn({
+      message: "我喜欢真实探店感，保持生活化语气，不要再写得太像广告。",
+      currentDraft: {
+        draft: {
+          title: "广州咖啡馆周末指南"
+        }
+      }
+    });
+    const duplicate = await appendPostProjectMemoryFromTurn({
+      message: "我喜欢真实探店感，保持生活化语气，不要再写得太像广告。",
+      currentDraft: null
+    });
+
+    expect(first.agentMemory.join("\n")).toContain("我喜欢真实探店感");
+    expect(first.agentMemory.join("\n")).toContain("不要再写得太像广告");
+    expect(duplicate.agentMemory).toEqual(first.agentMemory);
   });
 
   it("adds saved viral cases to the active evidence pack and refreshes CreativeBrief", async () => {

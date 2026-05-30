@@ -116,6 +116,33 @@ export async function addViralCasesToPostProject(cases: ViralCase[]): Promise<Po
   });
 }
 
+export async function appendPostProjectMemoryFromTurn({
+  message,
+  currentDraft
+}: {
+  message: string;
+  currentDraft?: { draft?: { title?: string } } | null;
+}): Promise<PostProject> {
+  const current = await readPostProject();
+  const items = extractProjectMemoryItems(message, currentDraft);
+  if (!items.length) {
+    return current;
+  }
+  const existing = new Set(current.agentMemory.map(normalizeMemoryText));
+  const nextItems = items.filter((item) => {
+    const key = normalizeMemoryText(item);
+    if (!key || existing.has(key)) return false;
+    existing.add(key);
+    return true;
+  });
+  if (!nextItems.length) {
+    return current;
+  }
+  return updatePostProject({
+    agentMemory: [...nextItems, ...current.agentMemory].slice(0, 20)
+  });
+}
+
 export function createBlankPostProject(seed: Partial<PostProject> = {}): PostProject {
   return normalizePostProject({
     schemaVersion: POST_PROJECT_SCHEMA_VERSION,
@@ -143,6 +170,28 @@ export function createBlankPostProject(seed: Partial<PostProject> = {}): PostPro
     allowedActions: [],
     updatedAt: seed.updatedAt ?? new Date().toISOString()
   });
+}
+
+function extractProjectMemoryItems(message: string, currentDraft?: { draft?: { title?: string } } | null): string[] {
+  const text = message.replace(/\s+/g, " ").trim();
+  if (!text) return [];
+  const matches = [
+    ...matchMemory(text, /(我喜欢|更喜欢|满意|保持|就要这种)([^。！？!?]{2,80})/g),
+    ...matchMemory(text, /(不喜欢|不要再|避免|别再|太像广告|太营销|太夸张|这个不对)([^。！？!?]{2,80})/g),
+    ...matchMemory(text, /(语气|口吻|风格|调性|目标人群|产品|卖点|禁忌词)([^。！？!?]{2,100})/g)
+  ];
+  if (currentDraft?.draft?.title && /(满意|就用|可以|定稿|保持)/.test(text)) {
+    matches.push(`用户认可当前草稿：${currentDraft.draft.title}`);
+  }
+  return uniqueIds(matches.map((item) => item.slice(0, 120))).slice(0, 5);
+}
+
+function matchMemory(text: string, pattern: RegExp): string[] {
+  return [...text.matchAll(pattern)].map((match) => match[0].trim()).filter(Boolean);
+}
+
+function normalizeMemoryText(text: string): string {
+  return text.replace(/\s+/g, "").toLowerCase();
 }
 
 export function postProjectFromWorkspace(workspace: WorkspaceState): PostProject {

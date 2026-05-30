@@ -37,6 +37,7 @@ export function WorkspaceCanvas({
   const keyInsights = [...viralInsights.slice(0, 2), ...realtimeInsights.slice(0, 2)].slice(0, 4);
   const quality = postProject?.qualityCheck;
   const memorySignals = [
+    ...(postProject?.agentMemory ?? []).slice(0, 2),
     ...(creatorMemory?.liked ?? []).slice(0, 2).map((item) => item.text),
     ...(creatorMemory?.tone ?? []).slice(0, 2).map((item) => item.text),
     ...(creatorMemory?.disliked ?? []).slice(0, 1).map((item) => `避免：${item.text}`)
@@ -165,8 +166,15 @@ export function WorkspaceCanvas({
         <p>
           {memorySignals.length
             ? memorySignals.slice(0, 2).join("；")
-            : "你明确说喜欢/不喜欢的风格、产品信息和常用标签会自动沉淀到这里。"}
+            : "你明确说喜欢/不喜欢的风格、产品信息和常用标签会自动沉淀到这里，并同步到当前帖子项目。"}
         </p>
+        {postProject?.agentMemory?.length ? (
+          <div className="tagRow">
+            {postProject.agentMemory.slice(0, 3).map((item) => (
+              <em key={item}>{item}</em>
+            ))}
+          </div>
+        ) : null}
         {creatorMemory?.tags?.length ? (
           <div className="tagRow">
             {creatorMemory.tags.slice(0, 4).map((tag) => (

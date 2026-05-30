@@ -448,6 +448,7 @@ export type PostProject = {
     imagePromptVersionIds: string[];
   };
   publishPlan?: WorkspacePublishPlan | null;
+  agentMemory: string[];
   qualityCheck?: {
     titleScore: number;
     copyScore: number;
