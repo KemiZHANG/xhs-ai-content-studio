@@ -40,6 +40,21 @@ describe("agent planner", () => {
     expect(plan.timeRange).toBe("一周内");
   });
 
+  it("plans a viral-library refresh without realtime research", () => {
+    const plan = createAgentPlan({
+      message: "请刷新当前项目的爆款库 RAG 证据，不要重新搜索小红书",
+      hasCurrentDraft: false,
+      attachedAssetCount: 0,
+      postStage: "brief_ready",
+      hasEvidence: true,
+      hasCreativeBrief: true
+    });
+
+    expect(plan.intent).toBe("retrieve_viral_knowledge");
+    expect(plan.steps.map((step) => step.action)).toEqual(["retrieveViralKnowledge"]);
+    expect(plan.steps[0].toolName).toBe("knowledge.retrieveViralPatterns");
+  });
+
   it("plans product image generation when the user refers to uploaded product images", () => {
     const plan = createAgentPlan({
       message: "用我上传的产品图生成小红书场景图",

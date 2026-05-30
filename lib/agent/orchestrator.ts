@@ -164,6 +164,39 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
       });
     }
 
+    const viralKnowledgeTurn = await maybeHandleViralKnowledgeTurn(input, plan, initialPostProject);
+    if (viralKnowledgeTurn) {
+      trace = addTraceEvent(trace, {
+        type: "tool_called",
+        label: "knowledge.retrieveViralPatterns",
+        detail: "Retrieved reusable viral-library patterns and merged them into the active PostProject evidencePack.",
+        metadata: {
+          viralInsightCount: viralKnowledgeTurn.postProject.evidencePack.insights.filter((insight) => insight.sourceType === "viral_library").length
+        }
+      });
+      trace = addTraceEvent(trace, {
+        type: "workspace_updated",
+        label: "Workspace updated",
+        detail: "Stored viral-library RAG evidence on the active workspace canvas."
+      });
+      agentRun = completeRun(agentRun);
+      trace = addTraceEvent(trace, {
+        type: "run_completed",
+        label: "Agent run completed",
+        detail: "Agent turn completed after refreshing viral-library evidence."
+      });
+      await persistAgentTrace(trace);
+      return buildAgentTurnResult({
+        answer: viralKnowledgeTurn.answer,
+        plan,
+        workspace: viralKnowledgeTurn.workspace,
+        currentDraft: input.currentDraft ?? undefined,
+        agentRun,
+        trace,
+        postProject: viralKnowledgeTurn.postProject
+      });
+    }
+
     const cardGenerationTurn = await maybeHandleCardGenerationTurn(input, plan);
     if (cardGenerationTurn) {
       trace = addTraceEvent(trace, {
@@ -858,6 +891,49 @@ function formatBriefPatchSummary(project: PostProject): string {
     `语气：${project.tone ?? "未填写"}`,
     project.productInfo.name ? `产品/店铺：${project.productInfo.name}` : ""
   ].filter(Boolean).join("\n");
+}
+
+async function maybeHandleViralKnowledgeTurn(
+  input: RunAgentTurnInput,
+  plan: ReturnType<typeof createAgentPlan>,
+  postProject: PostProject
+): Promise<{ answer: string; workspace: WorkspaceState; postProject: PostProject } | null> {
+  if (plan.intent !== "retrieve_viral_knowledge") {
+    return null;
+  }
+  const topic = postProject.topic ?? plan.topic;
+  if (!topic) {
+    const workspace = await updateWorkspaceState({ lastUserIntent: "retrieve_viral_knowledge" });
+    return {
+      answer: "我可以检索爆款库，但当前 PostProject 还没有主题。请先告诉我这篇笔记的主题、产品或目标人群，再刷新爆款库证据。",
+      workspace,
+      postProject
+    };
+  }
+
+  const seededProject = postProject.topic ? postProject : await updatePostProject({ topic });
+  const updatedProject = await ensureViralEvidenceForProject(seededProject, { force: true });
+  const viralInsights = updatedProject.evidencePack.insights.filter((insight) => insight.sourceType === "viral_library");
+  const topInsights = viralInsights.slice(0, 5);
+  const workspace = await updateWorkspaceState({
+    topic: updatedProject.topic,
+    evidenceSummary: updatedProject.evidencePack.summary,
+    selectedSamples: updatedProject.selectedSamples,
+    lastUserIntent: "retrieve_viral_knowledge"
+  });
+
+  return {
+    answer: [
+      `已基于「${topic}」刷新爆款库 RAG 证据，并合入当前 PostProject。`,
+      viralInsights.length
+        ? `当前共有 ${viralInsights.length} 条爆款库规律，可用于 CreativeBrief、文案和图片方向。`
+        : "暂时没有检索到足够匹配的历史爆款规律，可以继续做实时小红书研究，或先把优秀样本保存进爆款库。",
+      ...topInsights.map((insight, index) => `${index + 1}. ${insight.type}｜${insight.insight}（${insight.id}）`),
+      updatedProject.creativeBrief ? `CreativeBrief 已同步参考这些证据：${updatedProject.creativeBrief.basedOnEvidenceIds.slice(0, 5).join("、")}` : ""
+    ].filter(Boolean).join("\n"),
+    workspace,
+    postProject: updatedProject
+  };
 }
 
 function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecord | null, postProject?: PostProject | null): AgentResponseCard[] {
@@ -1735,9 +1811,9 @@ function buildAgentImagePrompt({
     .join("\n\n");
 }
 
-async function ensureViralEvidenceForProject(project: PostProject): Promise<PostProject> {
+async function ensureViralEvidenceForProject(project: PostProject, options: { force?: boolean } = {}): Promise<PostProject> {
   const hasViralEvidence = project.evidencePack.insights.some((insight) => insight.sourceType === "viral_library");
-  if (hasViralEvidence || !project.topic) {
+  if ((hasViralEvidence && !options.force) || !project.topic) {
     return project;
   }
 

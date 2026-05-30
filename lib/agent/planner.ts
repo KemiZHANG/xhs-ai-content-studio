@@ -108,6 +108,14 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
     });
   }
 
+  if (isViralKnowledgeRequest(message, lower)) {
+    return buildPlan({
+      intent: "retrieve_viral_knowledge",
+      topic: inferTopic(message),
+      steps: [step("retrieveViralKnowledge", "Refresh reusable patterns from the viral knowledge base without running realtime Xiaohongshu search.", "knowledge.retrieveViralPatterns")]
+    });
+  }
+
   if (isResearchRequest(message, lower)) {
     const wantsDraft = /生成|写|文案|笔记|标题|正文|标签|草稿|图文/.test(message);
     return buildPlan({
@@ -179,6 +187,10 @@ function inferNewProjectTopic(message: string): string | undefined {
 
 function isResearchRequest(message: string, lower: string): boolean {
   return /搜索|查找|找|分析|高收藏|高赞|爆款|小红书|笔记|竞品|研究/.test(message) || lower.includes("research");
+}
+
+function isViralKnowledgeRequest(message: string, lower: string): boolean {
+  return /爆款库|RAG|历史爆款|爆款规律|可复用规律|刷新爆款|检索爆款库/.test(message) || lower.includes("viral knowledge") || lower.includes("rag");
 }
 
 function isImageGenerationRequest(message: string, lower: string): boolean {

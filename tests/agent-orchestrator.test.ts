@@ -456,6 +456,67 @@ describe("agent orchestrator", () => {
     expect(result.cards.map((card) => card.type)).toContain("copy_draft");
   });
 
+  it("refreshes viral-library evidence on the active PostProject without realtime research", async () => {
+    const viralSample: SampleEvidence = {
+      id: "note-viral-bag",
+      title: "通勤包高收藏真实测评",
+      author: "author",
+      likes: 900,
+      collects: 1300,
+      comments: 80,
+      shares: 12,
+      score: 1900,
+      url: "https://www.xiaohongshu.com/explore/note-viral-bag",
+      imageUrls: ["https://example.com/bag.jpg"],
+      cachedImageUrls: [],
+      detailText: "先讲容量痛点，再拆分电脑位、肩带、通勤场景，最后给适合人群和避坑提醒。",
+      commentSnippets: ["能不能放电脑", "肩带勒不勒"],
+      reasonHighlights: []
+    };
+    await upsertViralCases([
+      await createViralCaseFromEvidence({
+        sample: viralSample,
+        topic: "通勤包",
+        category: "好物"
+      })
+    ]);
+    await resetPostProject({
+      topic: "通勤包",
+      targetAudience: "上班族",
+      goal: "生成真实通勤包种草笔记",
+      currentStage: "brief_ready"
+    });
+    const runChatAgent = vi.fn(async () => ({ answer: "legacy answer" }));
+
+    const result = await runAgentTurn({
+      message: "请刷新当前项目的爆款库 RAG 证据，不要重新搜索小红书",
+      conversationId: "chat-viral-refresh",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: vi.fn(async () => []),
+        getFeedDetail: vi.fn(async () => null),
+        publishContent: vi.fn(async () => ({ ok: true }))
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      },
+      runChatAgentImpl: runChatAgent
+    });
+
+    expect(runChatAgent).not.toHaveBeenCalled();
+    expect(result.intent).toBe("retrieve_viral_knowledge");
+    expect(result.postProject?.evidencePack.insights.some((insight) => insight.sourceType === "viral_library")).toBe(true);
+    expect(result.postProject?.creativeBrief?.basedOnEvidenceIds.some((id) => id.startsWith("viral-insight-"))).toBe(true);
+    expect(result.cards.map((card) => card.type)).toContain("viral_knowledge");
+    expect(result.answer).toContain("爆款库");
+  });
+
   it("uses the selected image index when preparing a scheduled publish intent", async () => {
     const firstImage = path.join(tempDir, "generated-assets", "generated", "one.png");
     const secondImage = path.join(tempDir, "generated-assets", "generated", "two.png");

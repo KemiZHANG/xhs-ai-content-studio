@@ -29,6 +29,7 @@ export type AgentIntent =
   | "start_project"
   | "research_to_draft"
   | "research_only"
+  | "retrieve_viral_knowledge"
   | "revise_draft"
   | "generate_images"
   | "generate_cards"
