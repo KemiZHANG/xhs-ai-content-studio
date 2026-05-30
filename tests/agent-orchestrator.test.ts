@@ -76,6 +76,35 @@ describe("agent orchestrator", () => {
     expect(runChatAgent).not.toHaveBeenCalled();
   });
 
+  it("asks stage-aware questions before drafting without evidence or CreativeBrief", async () => {
+    await resetPostProject({ topic: "通勤包" });
+    const result = await runAgentTurn({
+      message: "帮我写一篇小红书笔记",
+      conversationId: "chat-clarify-draft",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(result.intent).toBe("ask");
+    expect(result.needsUserInput).toBe(true);
+    expect(result.questions.join(" ")).toContain("真实笔记研究");
+    expect(result.questions.join(" ")).toContain("CreativeBrief");
+    expect(result.questions.join(" ")).toContain("目标人群");
+  });
+
   it("turns publish requests into guarded publish intents before MCP is called", async () => {
     let publishCalls = 0;
     const result = await runAgentTurn({

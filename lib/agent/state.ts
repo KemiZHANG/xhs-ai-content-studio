@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import type { WorkspaceState } from "@/lib/agent/types";
 import { syncPostProjectFromWorkspace } from "@/lib/post-project/store";
 import { listAssets } from "@/lib/storage/assets";
@@ -51,8 +52,24 @@ async function writeWorkspaceStateNow(state: WorkspaceState): Promise<WorkspaceS
   await mkdir(path.dirname(filePath), { recursive: true });
   const tempPath = `${filePath}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`;
   await writeFile(tempPath, `${JSON.stringify(normalized, null, 2)}\n`, "utf8");
-  await rename(tempPath, filePath);
+  await renameWithRetry(tempPath, filePath);
   return normalized;
+}
+
+async function renameWithRetry(source: string, destination: string): Promise<void> {
+  const attempts = 6;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      await rename(source, destination);
+      return;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (!["EPERM", "EBUSY", "EACCES"].includes(code ?? "") || attempt === attempts) {
+        throw error;
+      }
+      await delay(25 * attempt);
+    }
+  }
 }
 
 async function queueWorkspaceWrite<T>(operation: () => Promise<T>): Promise<T> {

@@ -709,6 +709,21 @@ function buildClarifyingQuestions(plan: AgentPlan, workspace: WorkspaceState, po
   if (plan.requiresAssets) {
     questions.push("请先上传产品图/参考图，或说明可以不基于图片直接生成。");
   }
+  if (isDraftRequestWithoutEvidence(plan, postProject)) {
+    const evidenceCount = (postProject?.evidencePack?.insights?.length ?? 0) + (postProject?.selectedSamples?.length ?? 0);
+    const hasBriefInputs = Boolean(
+      postProject?.targetAudience ||
+      postProject?.goal ||
+      postProject?.tone ||
+      postProject?.productInfo?.name
+    );
+    if (!evidenceCount) {
+      questions.push("要先基于真实笔记研究，还是直接用你补充的产品/账号信息写？如果要研究，请告诉我主题、时间范围和样本数量。");
+    }
+    if (!postProject?.creativeBrief || (!evidenceCount && !hasBriefInputs)) {
+      questions.push("这篇内容的目标人群、核心卖点/体验点、语气和禁忌点分别是什么？我会先整理 CreativeBrief 再写。");
+    }
+  }
   if (!plan.topic && !workspace.topic && !postProject?.topic) {
     questions.push("这次要研究或创作的具体主题是什么？例如：广州咖啡馆、通勤包、护肤新品。");
   }
@@ -722,6 +737,12 @@ function buildClarifyingQuestions(plan: AgentPlan, workspace: WorkspaceState, po
     questions.push("你希望我下一步做什么：继续研究、生成文案、规划图片，还是进入发布检查？");
   }
   return questions.slice(0, 4);
+}
+
+function isDraftRequestWithoutEvidence(plan: AgentPlan, postProject?: PostProject | null): boolean {
+  return plan.intent === "ask" && plan.steps.some((step) =>
+    step.action === "askClarifyingQuestion" && /draft creation|evidence|CreativeBrief/i.test(step.reason)
+  ) && !postProject?.copyDraft;
 }
 
 function isPublishWithoutDraftPlan(plan: AgentPlan, workspace: WorkspaceState, postProject?: PostProject | null): boolean {
