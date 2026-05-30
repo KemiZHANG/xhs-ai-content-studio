@@ -3538,6 +3538,34 @@ textarea {
   width: 100%;
 }
 
+.studioAssetGrid.selectable {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.studioAssetPick {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  display: grid;
+  gap: 6px;
+  padding: 6px;
+  text-align: left;
+}
+
+.studioAssetPick.selected {
+  border-color: rgba(18, 118, 97, 0.42);
+  box-shadow: 0 0 0 3px rgba(18, 118, 97, 0.1);
+  color: var(--accent-strong);
+}
+
+.studioAssetPick span {
+  font-size: 12px;
+  font-weight: 900;
+  padding: 0 2px 2px;
+}
+
 .checkItem {
   background: var(--surface-subtle);
   border: 1px solid var(--line);

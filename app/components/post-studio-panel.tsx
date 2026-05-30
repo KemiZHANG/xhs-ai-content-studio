@@ -67,6 +67,7 @@ export function PostStudioPanel({
   onQuickAction,
   onSelectCopyVersion,
   onSelectImagePromptVersion,
+  onSelectPostImages,
   onSaveToViralLibrary,
   onReloadViralLibrary,
   onOpenImageStudio,
@@ -96,6 +97,7 @@ export function PostStudioPanel({
   onQuickAction: (action: string) => void;
   onSelectCopyVersion: (versionId: string) => void;
   onSelectImagePromptVersion: (versionId: string) => void;
+  onSelectPostImages: (assetIds: string[]) => void;
   onSaveToViralLibrary: (sample: SampleEvidence) => void;
   onReloadViralLibrary: () => void;
   onOpenImageStudio: () => void;
@@ -104,6 +106,8 @@ export function PostStudioPanel({
   const [tab, setTab] = useState<StudioTab>("insights");
   const [selectedEvidence, setSelectedEvidence] = useState<SampleEvidence | null>(null);
   const selectedAssets = assets.filter((asset) => publishAssetIds.includes(asset.id));
+  const generatedAssets = assets.filter((asset) => asset.kind === "generated");
+  const imageCandidates = uniqueAssets([...selectedAssets, ...generatedAssets, ...assets]).slice(0, 8);
   const runningJob = jobs.find((job) => job.status === "queued" || job.status === "running") ?? null;
   const insights = project?.evidencePack.insights ?? [];
   const viralInsights = insights.filter((insight) => insight.sourceType === "viral_library");
@@ -460,15 +464,36 @@ export function PostStudioPanel({
 
           {tab === "assets" ? (
             <SideSection icon={ImagePlus} title="图片与素材">
-              {selectedAssets.length ? (
-                <div className="studioAssetGrid">
-                  {selectedAssets.slice(0, 4).map((asset) => (
-                    <img alt={asset.name} key={asset.id} src={`/api/assets/file/${asset.id}`} />
-                  ))}
+              <strong>{selectedAssets.length ? `已选 ${selectedAssets.length} 张发布图片` : "还没有选中发布图片"}</strong>
+              {imageCandidates.length ? (
+                <div className="studioAssetGrid selectable">
+                  {imageCandidates.map((asset) => {
+                    const selected = publishAssetIds.includes(asset.id);
+                    return (
+                      <button
+                        className={selected ? "studioAssetPick selected" : "studioAssetPick"}
+                        key={asset.id}
+                        type="button"
+                        onClick={() =>
+                          onSelectPostImages(
+                            selected
+                              ? publishAssetIds.filter((id) => id !== asset.id)
+                              : [...publishAssetIds, asset.id]
+                          )
+                        }
+                      >
+                        <img alt={asset.name} src={`/api/assets/file/${asset.id}`} />
+                        <span>{selected ? "已选" : asset.kind === "generated" ? "生成图" : "素材"}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="muted">还没有选中发布图片。可以上传产品图、生成场景图，或生成图文卡片。</p>
               )}
+              {project?.finalPost?.imageIds.length ? (
+                <p className="muted">最终帖子图片：{project.finalPost.imageIds.slice(0, 4).join(" / ")}</p>
+              ) : null}
               <button className="secondaryButton fullWidth" onClick={onOpenImageStudio} type="button">打开图片创作台</button>
             </SideSection>
           ) : null}
@@ -723,4 +748,13 @@ function summarizeDraftDiff(current: PublishDraftState, version: NonNullable<Wor
 
 function parseTags(value: string): string[] {
   return value.split(/[\s#，,、]+/).map((item) => item.trim()).filter(Boolean);
+}
+
+function uniqueAssets(assets: AssetRecord[]): AssetRecord[] {
+  const seen = new Set<string>();
+  return assets.filter((asset) => {
+    if (seen.has(asset.id)) return false;
+    seen.add(asset.id);
+    return true;
+  });
 }

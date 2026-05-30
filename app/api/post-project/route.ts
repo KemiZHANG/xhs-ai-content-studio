@@ -22,6 +22,10 @@ type PostProjectActionBody =
   | {
       action: "select_image_prompt_version";
       versionId: string;
+    }
+  | {
+      action: "select_images";
+      selectedImageIds: string[];
     };
 
 export async function GET() {
@@ -67,6 +71,23 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
   }
 
   const project = await readPostProject();
+  if (body.action === "select_images") {
+    const selectedImageIds = body.selectedImageIds.map(String).filter(Boolean);
+    await updateWorkspaceState({ selectedImageIds });
+    const nextProject = await updatePostProject({
+      selectedImages: selectedImageIds,
+      generatedImages: selectedImageIds.map((id) => ({
+        id,
+        assetId: id,
+        createdAt: new Date().toISOString(),
+        selected: true
+      })),
+      finalPost: undefined,
+      publishPlan: null
+    });
+    return { project: nextProject };
+  }
+
   if (body.action === "select_copy_version") {
     const version = project.copyVersions.find((item) => item.id === body.versionId);
     if (!version) {

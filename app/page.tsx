@@ -423,6 +423,19 @@ export default function Home() {
     setNotice("已切换图片 Prompt，并同步到当前帖子项目。");
   }
 
+  async function selectPostImages(selectedImageIds: string[]) {
+    setPendingPublish(null);
+    const uniqueSelected = uniqueIds(selectedImageIds);
+    const data = (await clientApi("/api/post-project", {
+      method: "PATCH",
+      body: JSON.stringify({ action: "select_images", selectedImageIds: uniqueSelected })
+    })) as { project: PostProject; currentDraft?: DraftRecord | null };
+    setPostProject(data.project);
+    setPublishAssetIds(uniqueSelected);
+    await loadWorkspace();
+    setNotice(uniqueSelected.length ? `已选择 ${uniqueSelected.length} 张发布图片。` : "已清空发布图片选择。");
+  }
+
   async function saveSampleToViralLibrary(sample: SampleEvidence) {
     setBusy("viral");
     try {
@@ -1109,6 +1122,7 @@ export default function Home() {
             onQuickAction={(action) => void handlePostStudioAction(action)}
             onSelectCopyVersion={(versionId) => void selectCopyVersion(versionId)}
             onSelectImagePromptVersion={(versionId) => void selectImagePromptVersion(versionId)}
+            onSelectPostImages={(ids) => void selectPostImages(ids)}
             onSaveToViralLibrary={(sample) => void saveSampleToViralLibrary(sample)}
             onReloadViralLibrary={() => void loadViralKnowledge()}
             onOpenImageStudio={() => setSection("imageStudio")}

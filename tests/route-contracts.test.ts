@@ -786,6 +786,44 @@ describe("API route contracts", () => {
     }));
   });
 
+  it("syncs selected images from Post Studio into PostProject and workspace", async () => {
+    const updateWorkspaceState = vi.fn();
+    const updatePostProject = vi.fn(async (patch) => ({ id: "post-1", ...patch }));
+
+    vi.doMock("@/lib/agent/state", () => ({
+      updateWorkspaceState
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => ({
+        selectedImages: [],
+        generatedImages: [],
+        imagePrompts: [],
+        evidencePack: { insights: [] }
+      }),
+      updatePostProject
+    }));
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(),
+      writeCurrentDraft: vi.fn()
+    }));
+
+    const { PATCH } = await import("@/app/api/post-project/route");
+    const response = await PATCH(jsonRequest({
+      action: "select_images",
+      selectedImageIds: ["asset-1", "asset-2"]
+    }));
+
+    expect(response.status).toBe(200);
+    expect(updateWorkspaceState).toHaveBeenCalledWith({ selectedImageIds: ["asset-1", "asset-2"] });
+    expect(updatePostProject).toHaveBeenCalledWith(expect.objectContaining({
+      selectedImages: ["asset-1", "asset-2"],
+      publishPlan: null
+    }));
+  });
+
   it("blocks asset file reads outside workspace asset folders", async () => {
     vi.doMock("@/lib/storage/assets", () => ({
       getAsset: async () => ({
