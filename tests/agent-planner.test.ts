@@ -99,4 +99,19 @@ describe("agent planner", () => {
     expect(plan.selectedImageIndex).toBe(2);
     expect(plan.scheduleText).toContain("今晚 8 点");
   });
+
+  it("plans standalone image selection from conversational context", () => {
+    const plan = createAgentPlan({
+      message: "就用第二张图",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      hasSelectedImages: true,
+      postStage: "image_ready",
+      allowedActions: ["select_images"]
+    });
+
+    expect(plan.intent).toBe("select_images");
+    expect(plan.selectedImageIndex).toBe(2);
+    expect(plan.steps.map((step) => step.action)).toEqual(["selectImages"]);
+  });
 });

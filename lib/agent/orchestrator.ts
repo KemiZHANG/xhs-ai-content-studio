@@ -242,6 +242,39 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
       });
     }
 
+    const imageSelectionTurn = await maybeHandleImageSelectionTurn(input, plan, initialPostProject);
+    if (imageSelectionTurn) {
+      trace = addTraceEvent(trace, {
+        type: "tool_called",
+        label: "project.selectImages",
+        detail: "Selected image candidates on the active PostProject canvas.",
+        metadata: {
+          selectedImageIds: imageSelectionTurn.workspace.selectedImageIds
+        }
+      });
+      trace = addTraceEvent(trace, {
+        type: "workspace_updated",
+        label: "Workspace updated",
+        detail: "Stored selected image ids on workspace and PostProject."
+      });
+      agentRun = completeRun(agentRun);
+      trace = addTraceEvent(trace, {
+        type: "run_completed",
+        label: "Agent run completed",
+        detail: "Agent turn completed after selecting images."
+      });
+      await persistAgentTrace(trace);
+      return buildAgentTurnResult({
+        answer: imageSelectionTurn.answer,
+        plan,
+        workspace: imageSelectionTurn.workspace,
+        currentDraft: input.currentDraft ?? imageSelectionTurn.workspace.currentDraft ?? undefined,
+        agentRun,
+        trace,
+        postProject: imageSelectionTurn.postProject
+      });
+    }
+
     const draftFromProjectTurn = await maybeHandleDraftFromProjectTurn(input, plan, initialPostProject);
     if (draftFromProjectTurn) {
       trace = addTraceEvent(trace, {
@@ -1130,6 +1163,62 @@ ${JSON.stringify(selectedSamples, null, 2)}
   };
 }
 
+async function maybeHandleImageSelectionTurn(
+  input: RunAgentTurnInput,
+  plan: ReturnType<typeof createAgentPlan>,
+  postProject: PostProject
+): Promise<{ answer: string; workspace: WorkspaceState; postProject: PostProject } | null> {
+  if (plan.intent !== "select_images") {
+    return null;
+  }
+
+  const existing = await readWorkspaceState();
+  const candidates = uniqueIds([
+    ...existing.selectedImageIds,
+    ...postProject.selectedImages,
+    ...postProject.generatedImages.flatMap((image) => [image.assetId, image.id].filter(Boolean) as string[])
+  ]);
+  if (!candidates.length) {
+    const workspace = await updateWorkspaceState({ lastUserIntent: plan.intent });
+    return {
+      answer: "当前成果画布里还没有可选择的图片。请先上传图片、生成配图或生成图文卡片。",
+      workspace,
+      postProject
+    };
+  }
+
+  const selectedIndex = plan.selectedImageIndex && plan.selectedImageIndex > 0 ? plan.selectedImageIndex - 1 : 0;
+  const selected = candidates[selectedIndex];
+  if (!selected) {
+    const workspace = await updateWorkspaceState({ lastUserIntent: plan.intent });
+    return {
+      answer: `当前只有 ${candidates.length} 张候选图，找不到第 ${plan.selectedImageIndex} 张。你可以说“用第一张图”。`,
+      workspace,
+      postProject
+    };
+  }
+
+  const selectedImageIds = [selected];
+  const updatedProject = await updatePostProject({
+    selectedImages: selectedImageIds,
+    generatedImages: mergeSelectedGeneratedImages(postProject, candidates, selected),
+    finalPost: undefined,
+    qualityCheck: undefined,
+    auditStatus: "unchecked",
+    currentStage: "image_ready"
+  });
+  const workspace = await updateWorkspaceState({
+    selectedImageIds,
+    lastUserIntent: plan.intent
+  });
+
+  return {
+    answer: `已选择第 ${selectedIndex + 1} 张图作为当前发布图片。下一步可以继续生成/修改文案，或进入发布检查。`,
+    workspace,
+    postProject: updatedProject
+  };
+}
+
 async function maybeHandleImageGenerationTurn(
   input: RunAgentTurnInput,
   plan: ReturnType<typeof createAgentPlan>
@@ -1478,6 +1567,24 @@ function summarizeReferencedEvidence(project: PostProject, evidenceIds: string[]
     .slice(0, 5)
     .map((insight) => `- ${insight.id}｜${labelForEvidenceSource(insight.sourceType)}｜${insight.type}：${insight.insight}`);
   return list.length ? `这版主要参考了这些证据规律：\n${list.join("\n")}` : "";
+}
+
+function mergeSelectedGeneratedImages(project: PostProject, candidates: string[], selected: string) {
+  const existingIds = new Set(project.generatedImages.map((image) => image.assetId ?? image.id));
+  const synthetic = candidates
+    .filter((id) => !existingIds.has(id))
+    .map((id) => ({
+      id,
+      assetId: id,
+      createdAt: new Date().toISOString()
+    }));
+  return [...project.generatedImages, ...synthetic].map((image) => {
+    const identity = image.assetId ?? image.id;
+    return {
+      ...image,
+      selected: identity === selected
+    };
+  });
 }
 
 function uniqueIds(ids: string[]): string[] {

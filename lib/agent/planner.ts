@@ -30,6 +30,15 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
     });
   }
 
+  if (isImageSelectionRequest(message, lower) && (input.hasSelectedImages || input.hasCurrentDraft)) {
+    return buildPlan({
+      intent: "select_images",
+      topic: inferTopic(message),
+      selectedImageIndex: inferSelectedImageIndex(message),
+      steps: [step("selectImages", "Select an image from the current PostProject canvas.", "project.selectImages")]
+    });
+  }
+
   if (isCardGenerationRequest(message, lower) && input.hasCurrentDraft) {
     return buildPlan({
       intent: "generate_cards",
@@ -139,6 +148,10 @@ function isImageGenerationRequest(message: string, lower: string): boolean {
 
 function isCardGenerationRequest(message: string, lower: string): boolean {
   return /图文卡片|卡片图|干货图|封面卡|正文卡|卡片/.test(message) || lower.includes("card");
+}
+
+function isImageSelectionRequest(message: string, lower: string): boolean {
+  return /(?:用|选|选择|设为|就用|使用).{0,8}(?:第?\s*\d+\s*张|第?\s*[一二三四五六七八九十两]\s*张|这张|当前图|封面图|配图)/.test(message) || lower.includes("select image");
 }
 
 function isDraftRevisionRequest(message: string, lower: string): boolean {

@@ -429,6 +429,58 @@ describe("agent orchestrator", () => {
     expect(publish.workspace.publishPlan?.images).toEqual([secondImage]);
   });
 
+  it("stores standalone image selection on workspace and PostProject", async () => {
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      generatedImages: [
+        { id: "asset-1", assetId: "asset-1", createdAt: "2026-05-30T00:00:00.000Z" },
+        { id: "asset-2", assetId: "asset-2", createdAt: "2026-05-30T00:00:00.000Z" }
+      ],
+      selectedImages: ["asset-1"],
+      currentStage: "image_ready"
+    });
+    const { updateWorkspaceState } = await import("@/lib/agent/state");
+    await updateWorkspaceState({ selectedImageIds: ["asset-1", "asset-2"] });
+
+    const result = await runAgentTurn({
+      message: "就用第二张图",
+      conversationId: "chat-select-image",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: {
+        id: "draft-1",
+        updatedAt: "2026-05-30T00:00:00.000Z",
+        draft: {
+          title: "A useful title",
+          content: "Original body content",
+          tags: ["tag"],
+          structure: [],
+          imagePrompt: ""
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      },
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(result.intent).toBe("select_images");
+    expect(result.workspace.selectedImageIds).toEqual(["asset-2"]);
+    expect(result.postProject?.selectedImages).toEqual(["asset-2"]);
+    expect(result.postProject?.generatedImages.find((image) => image.assetId === "asset-2")?.selected).toBe(true);
+    expect(result.answer).toContain("已选择第 2 张图");
+  });
+
   it("requires a confirmation intent even when auto publish policy is enabled", async () => {
     let publishCalls = 0;
     const result = await runAgentTurn({
