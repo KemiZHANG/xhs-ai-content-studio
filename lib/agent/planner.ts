@@ -117,6 +117,21 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
     });
   }
 
+  if (isPublishRequest(message, lower)) {
+    if (!input.hasCurrentDraft) {
+      return buildPlan({
+        intent: "ask",
+        topic: inferTopic(message),
+        steps: [step("askClarifyingQuestion", "The user wants to publish, but there is no current draft or assembled post to publish.")]
+      });
+    }
+    return buildPlan({
+      intent: "prepare_publish",
+      topic: inferTopic(message),
+      steps: [step("preparePublish", "Prepare a guarded publish intent for the current draft.", "publish.prepare")]
+    });
+  }
+
   if (isResearchRequest(message, lower)) {
     const wantsDraft = /生成|写|文案|笔记|标题|正文|标签|草稿|图文/.test(message);
     return buildPlan({
@@ -136,14 +151,6 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
             step("retrieveViralKnowledge", "Retrieve reusable patterns from the viral knowledge base.", "knowledge.retrieveViralPatterns"),
             step("summarizeEvidence", "Summarize evidence for the user.", "workflow.summarizeEvidence")
           ]
-    });
-  }
-
-  if ((/发布|发出去|发笔记|发送/.test(message) || lower.includes("publish")) && input.hasCurrentDraft) {
-    return buildPlan({
-      intent: "prepare_publish",
-      topic: inferTopic(message),
-      steps: [step("preparePublish", "Prepare a guarded publish intent for the current draft.", "publish.prepare")]
     });
   }
 
@@ -221,6 +228,10 @@ function isDraftCreationFromProjectRequest(message: string, lower: string): bool
 
 function isScheduledPublishRequest(message: string, lower: string): boolean {
   return (/发布|发|定时/.test(message) && /今晚|今天|明天|后天|\d+\s*点|[一二三四五六七八九十两]\s*点/.test(message)) || lower.includes("schedule");
+}
+
+function isPublishRequest(message: string, lower: string): boolean {
+  return /发布|发出去|发笔记|发送|发到小红书|帮我发|立即发|确认发布/.test(message) || lower.includes("publish");
 }
 
 function inferTimeRange(message: string): string | undefined {

@@ -153,6 +153,21 @@ describe("agent planner", () => {
     expect(plan.scheduleText).toContain("今晚 8 点");
   });
 
+  it("asks for a draft before preparing a publish intent", () => {
+    const plan = createAgentPlan({
+      message: "帮我发布到小红书",
+      hasCurrentDraft: false,
+      attachedAssetCount: 0,
+      postStage: "brief_ready",
+      hasEvidence: true,
+      hasCreativeBrief: true
+    });
+
+    expect(plan.intent).toBe("ask");
+    expect(plan.steps[0].action).toBe("askClarifyingQuestion");
+    expect(plan.steps[0].reason).toContain("no current draft");
+  });
+
   it("plans standalone image selection from conversational context", () => {
     const plan = createAgentPlan({
       message: "就用第二张图",
