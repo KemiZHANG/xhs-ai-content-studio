@@ -1148,7 +1148,11 @@ export default function Home() {
             assets={assets}
             publishDraft={publishDraft}
             publishAssetIds={publishAssetIds}
+            publishVisibility={publishVisibility}
+            publishScheduleAt={publishScheduleAt}
+            pendingPublish={pendingPublish}
             settings={settings}
+            health={health}
             jobs={jobs}
             viralCases={viralCases}
             onResearchFormChange={(next) => setWorkflowForm((current) => ({ ...current, ...next }))}

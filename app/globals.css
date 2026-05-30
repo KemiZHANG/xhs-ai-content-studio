@@ -3505,6 +3505,37 @@ textarea {
   margin: 0;
 }
 
+.publishConfirmMini {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.publishConfirmMini.ready {
+  background: linear-gradient(135deg, rgba(18, 118, 97, 0.1), rgba(255, 255, 255, 0.82));
+  border-color: rgba(18, 118, 97, 0.24);
+}
+
+.publishConfirmMini.warn {
+  background: linear-gradient(135deg, rgba(190, 122, 20, 0.12), rgba(255, 255, 255, 0.82));
+  border-color: rgba(190, 122, 20, 0.3);
+}
+
+.publishConfirmMini strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.publishConfirmMini p,
+.publishConfirmMini span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
 .evidenceActions {
   display: flex;
   flex-wrap: wrap;

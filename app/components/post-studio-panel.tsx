@@ -20,7 +20,9 @@ import type { LucideIcon } from "lucide-react";
 import type {
   AssetRecord,
   ChatMessage,
+  Health,
   JobRecord,
+  PendingPublishConfirmation,
   PostProject,
   PublishDraftState,
   RedactedSettings,
@@ -53,7 +55,11 @@ export function PostStudioPanel({
   assets,
   publishDraft,
   publishAssetIds,
+  publishVisibility,
+  publishScheduleAt,
+  pendingPublish,
   settings,
+  health,
   jobs,
   viralCases,
   onResearchFormChange,
@@ -83,7 +89,11 @@ export function PostStudioPanel({
   assets: AssetRecord[];
   publishDraft: PublishDraftState;
   publishAssetIds: string[];
+  publishVisibility: RedactedSettings["defaultVisibility"];
+  publishScheduleAt: string;
+  pendingPublish: PendingPublishConfirmation | null;
   settings: RedactedSettings;
+  health: Health | null;
   jobs: JobRecord[];
   viralCases: ViralCase[];
   onResearchFormChange: (next: ResearchForm) => void;
@@ -121,6 +131,16 @@ export function PostStudioPanel({
   const latestImagePrompt = publishDraft.imagePrompt || project?.imagePrompts.at(-1)?.value.prompt || "";
   const quality = project?.qualityCheck;
   const brief = project?.creativeBrief;
+  const activeAccount = settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
+  const accountReady = Boolean(health?.loggedIn);
+  const publishReady = Boolean(
+    publishDraft.title.trim() &&
+      publishDraft.content.trim() &&
+      publishDraft.tagsText.trim() &&
+      selectedAssets.length &&
+      accountReady &&
+      quality?.canPublish !== false
+  );
   const copyVersions = project?.copyVersions ?? [];
   const imagePromptVersions = project?.imagePrompts ?? [];
   const draftEvidenceIds = project?.copyDraft?.draft.basedOnEvidenceIds ?? copyVersions.at(-1)?.basedOnEvidenceIds ?? [];
@@ -548,7 +568,20 @@ export function PostStudioPanel({
               <CheckItem ok={Boolean(publishDraft.content)} label="正文已填写" />
               <CheckItem ok={Boolean(publishDraft.tagsText)} label="标签已填写" />
               <CheckItem ok={Boolean(selectedAssets.length)} label="已选择图片" />
+              <CheckItem ok={accountReady} label={`账号：${activeAccount?.displayName ?? "未配置"}`} />
+              <CheckItem ok={publishVisibility === "仅自己可见"} label={`可见范围：${publishVisibility}`} />
+              <CheckItem ok={!publishScheduleAt || Date.parse(publishScheduleAt) > Date.now()} label={publishScheduleAt ? `定时：${publishScheduleAt}（本地时区）` : "发布时间：立即"} />
               <CheckItem ok={settings.defaultAutoPublish === false} label="自动发布默认关闭" />
+              <div className={publishReady ? "publishConfirmMini ready" : "publishConfirmMini warn"}>
+                <strong>{publishReady ? "可以生成发布确认单" : "发布前还需要处理"}</strong>
+                <p>
+                  {publishReady
+                    ? "下一步会进入人工确认页，确认账号、可见范围、图片版本和时间后才会调用小红书发布。"
+                    : buildPublishReadinessHint({ title: publishDraft.title, content: publishDraft.content, tagsText: publishDraft.tagsText, imageCount: selectedAssets.length, accountReady, quality })}
+                </p>
+                <span>确认单：{pendingPublish ? `${pendingPublish.mode === "schedule" ? "定时" : "立即"} · 待人工确认` : "未生成"}</span>
+                {health?.activeAccount?.loginName ? <span>登录名：{health.activeAccount.loginName}</span> : null}
+              </div>
               {quality ? (
                 <div className="qualityBox">
                   <strong>{quality.canPublish ? "质量检查通过" : "质量检查需处理"}</strong>
@@ -566,7 +599,7 @@ export function PostStudioPanel({
               ) : null}
               <div className="inlineActionGrid">
                 <button className="secondaryButton fullWidth" onClick={() => onQuickAction("run_quality_gate")} type="button">刷新质量检查</button>
-                <button className="primaryButton fullWidth" onClick={onOpenPublish} type="button">进入发布确认</button>
+                <button className="primaryButton fullWidth" disabled={!publishReady} onClick={onOpenPublish} type="button">进入发布确认</button>
               </div>
             </SideSection>
           ) : null}
@@ -855,6 +888,34 @@ function labelForPublishStatus(status?: string): string {
     cancelled: "已取消"
   };
   return status ? labels[status] ?? status : "待检查";
+}
+
+function buildPublishReadinessHint({
+  title,
+  content,
+  tagsText,
+  imageCount,
+  accountReady,
+  quality
+}: {
+  title: string;
+  content: string;
+  tagsText: string;
+  imageCount: number;
+  accountReady: boolean;
+  quality?: PostProject["qualityCheck"];
+}): string {
+  const missing: string[] = [];
+  if (!title.trim()) missing.push("标题");
+  if (!content.trim()) missing.push("正文");
+  if (!tagsText.trim()) missing.push("标签");
+  if (!imageCount) missing.push("发布图片");
+  if (!accountReady) missing.push("小红书登录账号");
+  if (quality?.canPublish === false) {
+    const issueText = quality.issues.slice(0, 2).join("；") || "需要处理质量检查问题";
+    missing.push(`Quality Gate：${issueText}`);
+  }
+  return missing.length ? `还缺：${missing.join("、")}。` : "请先刷新质量检查，再进入人工发布确认。";
 }
 
 function isSampleEvidence(value: unknown): value is SampleEvidence {
