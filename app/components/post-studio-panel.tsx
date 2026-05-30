@@ -82,7 +82,9 @@ export function PostStudioPanel({
   onReloadViralLibrary,
   onRefreshViralEvidence,
   onOpenImageStudio,
-  onOpenPublish
+  onOpenPublish,
+  onConfirmPublish,
+  onCancelPublish
 }: {
   project: PostProject | null;
   workspace: WorkspaceState | null;
@@ -118,6 +120,8 @@ export function PostStudioPanel({
   onRefreshViralEvidence: () => void;
   onOpenImageStudio: () => void;
   onOpenPublish: () => void;
+  onConfirmPublish: () => void;
+  onCancelPublish: () => void;
 }) {
   const [tab, setTab] = useState<StudioTab>("insights");
   const [selectedEvidence, setSelectedEvidence] = useState<SampleEvidence | null>(null);
@@ -812,6 +816,16 @@ export function PostStudioPanel({
                     </ul>
                   ) : null}
                   <p>人工确认：{confirmedRequiredCount}/{requiredConfirmations.length || 0} 项</p>
+                  {pendingPublish ? (
+                    <div className="publishIntentActions">
+                      <button className="secondaryButton" disabled={busy} onClick={onCancelPublish} type="button">
+                        取消确认单
+                      </button>
+                      <button className="primaryButton dangerAction" disabled={busy || !accountReady} onClick={onConfirmPublish} type="button">
+                        {pendingPublish.mode === "schedule" ? "确认定时发布" : "确认立即发布"}
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
               {quality ? (

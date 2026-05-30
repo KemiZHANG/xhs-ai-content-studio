@@ -3725,6 +3725,23 @@ textarea {
   padding-left: 17px;
 }
 
+.publishIntentActions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 2px;
+}
+
+.publishIntentSummary .publishIntentActions button {
+  min-height: 38px;
+}
+
+@media (max-width: 720px) {
+  .publishIntentActions {
+    grid-template-columns: 1fr;
+  }
+}
+
 .evidenceActions {
   display: flex;
   flex-wrap: wrap;

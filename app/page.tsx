@@ -1181,6 +1181,8 @@ export default function Home() {
             onRefreshViralEvidence={() => void handlePostStudioAction("retrieve_viral_knowledge")}
             onOpenImageStudio={() => setSection("imageStudio")}
             onOpenPublish={() => void openPublishAssemblyFromWorkspace()}
+            onConfirmPublish={() => void confirmPendingPublish()}
+            onCancelPublish={() => cancelPendingPublish()}
             onNavigate={setSection}
           />
         ) : null}
