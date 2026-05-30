@@ -67,7 +67,8 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
     await updateWorkspaceState({
       currentDraftId: currentDraft?.id,
       currentDraft,
-      selectedImageIds: Array.isArray(body.selectedImageIds) ? body.selectedImageIds : []
+      selectedImageIds: Array.isArray(body.selectedImageIds) ? body.selectedImageIds : [],
+      publishPlan: null
     });
     if (!currentDraft) {
       throw new Error("保存画布草稿失败");
@@ -94,7 +95,7 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
   const project = await readPostProject();
   if (body.action === "select_images") {
     const selectedImageIds = body.selectedImageIds.map(String).filter(Boolean);
-    await updateWorkspaceState({ selectedImageIds });
+    await updateWorkspaceState({ selectedImageIds, publishPlan: null });
     const nextProject = await updatePostProject({
       selectedImages: selectedImageIds,
       generatedImages: selectedImageIds.map((id) => ({
@@ -127,7 +128,8 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
     await updateWorkspaceState({
       currentDraftId: currentDraft?.id,
       currentDraft,
-      selectedImageIds: project.selectedImages
+      selectedImageIds: project.selectedImages,
+      publishPlan: null
     });
     if (!currentDraft) {
       throw new Error("切换文案版本失败");
@@ -167,7 +169,8 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
   await updateWorkspaceState({
     currentDraftId: currentDraft?.id,
     currentDraft,
-    selectedImageIds: project.selectedImages
+    selectedImageIds: project.selectedImages,
+    publishPlan: null
   });
   if (!currentDraft) {
     throw new Error("切换图片 Prompt 版本失败");

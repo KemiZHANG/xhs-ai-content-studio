@@ -950,7 +950,8 @@ describe("API route contracts", () => {
       })
     }));
     expect(updateWorkspaceState).toHaveBeenCalledWith(expect.objectContaining({
-      selectedImageIds: ["asset-1"]
+      selectedImageIds: ["asset-1"],
+      publishPlan: null
     }));
     expect(updatePostProject).toHaveBeenCalledWith(expect.objectContaining({
       copyDraft: expect.objectContaining({ id: "draft-created" }),
@@ -998,7 +999,7 @@ describe("API route contracts", () => {
     }));
 
     expect(response.status).toBe(200);
-    expect(updateWorkspaceState).toHaveBeenCalledWith({ selectedImageIds: ["asset-1", "asset-2"] });
+    expect(updateWorkspaceState).toHaveBeenCalledWith({ selectedImageIds: ["asset-1", "asset-2"], publishPlan: null });
     expect(updatePostProject).toHaveBeenCalledWith(expect.objectContaining({
       selectedImages: ["asset-1", "asset-2"],
       publishPlan: null,
@@ -1061,7 +1062,8 @@ describe("API route contracts", () => {
     expect(response.status).toBe(200);
     expect(updateWorkspaceState).toHaveBeenCalledWith(expect.objectContaining({
       currentDraftId: "draft-switched",
-      selectedImageIds: ["asset-1"]
+      selectedImageIds: ["asset-1"],
+      publishPlan: null
     }));
     expect(updatePostProject).toHaveBeenCalledWith(expect.objectContaining({
       copyDraft: expect.objectContaining({ id: "draft-switched" }),
@@ -1127,7 +1129,8 @@ describe("API route contracts", () => {
       currentDraft: expect.objectContaining({
         draft: expect.objectContaining({ imagePrompt: "新图提示词" })
       }),
-      selectedImageIds: ["asset-1"]
+      selectedImageIds: ["asset-1"],
+      publishPlan: null
     }));
     expect(updatePostProject).toHaveBeenCalledWith(expect.objectContaining({
       copyDraft: expect.objectContaining({
