@@ -71,6 +71,7 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
   const hasImages = selectedImages.length > 0;
   const hasFinalPost = Boolean(project.finalPost);
   const qualityFreshEnough = Boolean(project.qualityCheck?.canPublish);
+  const canRequestPublish = qualityFreshEnough && hasFinalPost && hasImages && hasCopy;
   const hasPublishConfirmation = Boolean(
     project.publishPlan?.status === "awaiting_approval" ||
       project.publishPlan?.status === "approved" ||
@@ -138,14 +139,14 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
       detail: qualityFreshEnough
         ? "质量门通过"
         : project.qualityCheck?.issues.slice(0, 2).join("；") || "运行证据、原创性和发布风险检查",
-      action: actionSet.has("run_quality_gate") ? "run_quality_gate" : undefined
+      action: qualityFreshEnough ? undefined : "run_quality_gate"
     },
     {
       id: "confirmation",
       label: "发布确认",
       ready: hasPublishConfirmation,
       detail: hasPublishConfirmation ? "已有待确认或已执行的发布计划" : "生成发布确认单后才能真实发布",
-      action: actionSet.has("request_publish_confirmation") ? "request_publish_confirmation" : undefined
+      action: canRequestPublish && actionSet.has("request_publish_confirmation") ? "request_publish_confirmation" : undefined
     }
   ];
 
@@ -163,6 +164,6 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
     nextAction,
     progress,
     summary,
-    canRequestPublish: qualityFreshEnough && hasFinalPost && hasImages && hasCopy
+    canRequestPublish
   };
 }

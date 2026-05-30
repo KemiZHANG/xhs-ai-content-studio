@@ -1229,9 +1229,21 @@ function buildPostProjectQuickActions(postProject?: PostProject | null): AgentQu
   if (!postProject || postProject.currentStage === "empty") {
     return [];
   }
-  const preferred = postProject.allowedActions.filter((action) => action !== "recover");
-  const actions = preferred.length ? preferred : postProject.allowedActions;
+  const readiness = buildPostReadinessReport(postProject);
+  const readinessActions = [
+    readiness.nextAction,
+    ...readiness.blockers.map((item) => item.action)
+  ].filter((action): action is PostAction => Boolean(action));
+  const preferred = [
+    ...readinessActions,
+    ...postProject.allowedActions.filter((action) => action !== "recover")
+  ];
+  const actions = uniquePostActions(preferred.length ? preferred : postProject.allowedActions);
   return actions.slice(0, 4).map(actionToQuickAction);
+}
+
+function uniquePostActions(actions: PostAction[]): PostAction[] {
+  return [...new Set(actions)];
 }
 
 function buildQuickActions(plan: AgentPlan, workspace: WorkspaceState, postProject?: PostProject | null) {

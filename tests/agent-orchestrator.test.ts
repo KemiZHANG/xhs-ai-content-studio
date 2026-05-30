@@ -235,6 +235,89 @@ describe("agent orchestrator", () => {
     expect(result.postProject?.publishPlan).toBeNull();
   });
 
+  it("prioritizes quick actions from PostProject readiness gaps", async () => {
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: {
+        sampleIds: ["sample-1"],
+        insights: [
+          {
+            id: "insight-title",
+            sourceType: "realtime",
+            type: "title",
+            insight: "标题先给真实场景再给收藏理由",
+            sourceSampleIds: ["sample-1"],
+            confidence: 0.82,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }
+        ]
+      },
+      selectedSamples: [{ id: "sample-1", title: "sample" }],
+      creativeBrief: {
+        audience: "周末探店用户",
+        painPoint: "不知道去哪坐一下午",
+        contentAngle: "安静咖啡馆清单",
+        emotionalHook: "周末慢下来",
+        proofPoints: ["真实体验"],
+        tone: "生活化",
+        visualMood: "自然光",
+        imageMustHave: ["咖啡杯"],
+        imageMustAvoid: ["夸张广告"],
+        platformStyle: "小红书探店",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-title"]
+      },
+      copyDraft: {
+        id: "draft-1",
+        updatedAt: "2026-05-31T00:00:00.000Z",
+        draft: {
+          title: "广州周末安静咖啡馆",
+          content: "适合坐一下午的真实探店清单。",
+          tags: ["广州咖啡"],
+          structure: [],
+          imagePrompt: "",
+          basedOnEvidenceIds: ["insight-title"]
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      },
+      currentStage: "copy_ready"
+    });
+
+    const result = await runAgentTurn({
+      message: "继续下一步",
+      conversationId: "chat-readiness-actions",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      },
+      runChatAgentImpl: vi.fn(async () => ({ answer: "legacy answer" }))
+    });
+
+    expect(result.quickActions.map((action) => action.action).slice(0, 3)).toEqual([
+      "select_images",
+      "run_quality_gate",
+      "request_publish_confirmation"
+    ]);
+    const stageCardData = result.cards.find((card) => card.type === "stage_guidance")?.data as
+      | { readiness?: { nextAction?: string; blockers?: Array<{ id: string }> } }
+      | undefined;
+    expect(stageCardData?.readiness?.nextAction).toBe("select_images");
+    expect(stageCardData?.readiness?.blockers?.map((item) => item.id)).toContain("images");
+  });
+
   it("plans visual direction from the active PostProject before image generation", async () => {
     await resetPostProject({
       topic: "广州咖啡馆",
