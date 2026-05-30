@@ -2955,6 +2955,322 @@ textarea {
   padding-top: 14px;
 }
 
+.postStudio {
+  display: grid;
+  gap: 16px;
+}
+
+.postStudioTop {
+  align-items: start;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(280px, 1fr) minmax(420px, 1.1fr) minmax(240px, 0.7fr);
+}
+
+.postStudioTop h2 {
+  font-size: clamp(28px, 3vw, 42px);
+  line-height: 1.05;
+  margin: 4px 0 10px;
+}
+
+.postStudioTop p {
+  color: rgba(0, 0, 0, 0.72);
+  line-height: 1.65;
+  margin: 0;
+}
+
+.postStageStrip {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.postStageStrip span,
+.nextActionBar {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  gap: 4px;
+  min-height: 64px;
+  padding: 10px 12px;
+}
+
+.postStageStrip em {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.postStageStrip strong,
+.nextActionBar strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.nextActionBar {
+  align-content: center;
+}
+
+.nextActionBar span {
+  color: rgba(0, 0, 0, 0.72);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.postStudioGrid {
+  align-items: start;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(300px, 0.82fr) minmax(440px, 1.25fr) minmax(300px, 0.82fr);
+}
+
+.studioAgentPane,
+.studioSidePane {
+  max-height: calc(100vh - 130px);
+  overflow: auto;
+  position: sticky;
+  top: 20px;
+}
+
+.studioResearchBox,
+.postEditStack,
+.studioComposer,
+.studioSideSection {
+  display: grid;
+  gap: 12px;
+}
+
+.studioResearchBox {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.studioResearchBox textarea {
+  min-height: 86px;
+}
+
+.studioToolTrace {
+  background: #17181d;
+  border-radius: 12px;
+  color: #fff;
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+}
+
+.studioToolTrace span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+}
+
+.studioChatList {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  max-height: 340px;
+  overflow: auto;
+}
+
+.studioChatBubble {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+}
+
+.studioChatBubble.user {
+  background: #fff2f4;
+  border-color: rgba(255, 36, 66, 0.22);
+}
+
+.studioChatBubble strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.studioChatBubble p,
+.studioEmpty p {
+  color: rgba(0, 0, 0, 0.72);
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.studioEmpty {
+  align-items: center;
+  background: var(--surface-subtle);
+  border: 1px dashed var(--line-strong);
+  border-radius: 12px;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  min-height: 150px;
+  padding: 16px;
+  text-align: center;
+}
+
+.studioComposer {
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.studioComposer textarea {
+  min-height: 86px;
+}
+
+.postPreviewShell {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1fr);
+}
+
+.postCoverPreview {
+  align-items: center;
+  aspect-ratio: 3 / 4;
+  background: linear-gradient(180deg, #fff4f6, #f7f7f8);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.postCoverPreview img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.postCoverPreview div {
+  align-items: center;
+  color: var(--muted);
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+}
+
+.postEditStack textarea {
+  min-height: 160px;
+}
+
+.postEditStack label:last-child textarea {
+  min-height: 92px;
+}
+
+.canvasActionRow {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+.studioTabs {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 14px;
+  padding: 5px;
+}
+
+.studioTabs button {
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  min-height: 34px;
+}
+
+.studioTabs button.active {
+  background: #fff;
+  border: 1px solid rgba(255, 36, 66, 0.2);
+  color: var(--accent-strong);
+}
+
+.studioSideSection h3 {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin: 0;
+}
+
+.insightLine {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.insightLine span {
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.insightLine p {
+  color: rgba(0, 0, 0, 0.76);
+  line-height: 1.6;
+  margin: 5px 0 0;
+}
+
+.studioAssetGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.studioAssetGrid img {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.checkItem {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  min-height: 34px;
+  padding: 8px 10px;
+}
+
+.checkItem.ok {
+  background: rgba(23, 150, 112, 0.08);
+  border-color: rgba(23, 150, 112, 0.22);
+  color: #167a5d;
+}
+
+.advancedEntry {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.advancedEntry button {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  font-weight: 800;
+  min-height: 36px;
+}
+
 .advancedShortcutGrid {
   display: grid;
   gap: 8px;

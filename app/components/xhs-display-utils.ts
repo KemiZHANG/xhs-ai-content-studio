@@ -3,7 +3,7 @@ import type { ResearchSummary, SampleEvidence, Section, WorkflowResult, Workflow
 
 export function titleForSection(section: Section): string {
   const titles: Record<Section, string> = {
-    flow: "创作流水线",
+    flow: "Post Studio",
     dashboard: "控制台",
     workflow: "主题研究台",
     jobs: "任务进度",
@@ -20,7 +20,7 @@ export function titleForSection(section: Section): string {
 
 export function subtitleForSection(section: Section): string {
   const subtitles: Record<Section, string> = {
-    flow: "从真实笔记研究到 AI 追问创作、图片生成、记忆沉淀和发布确认的一站式主入口。",
+    flow: "围绕一个帖子项目完成研究、文案、图片、发布检查和确认。",
     dashboard: "查看 MCP、模型、任务和发布安全状态。",
     workflow: "按主题、类型、时间和样本数搜索真实笔记，只做研究分析，不生成、不发布。",
     jobs: "追踪搜索、分析、生成图片和发布任务的后台进度。",

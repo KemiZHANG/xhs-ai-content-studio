@@ -269,6 +269,7 @@ export type PostProject = {
       createdAt: string;
     }>;
   };
+  selectedSamples: SampleEvidence[] | unknown[];
   creativeBrief?: unknown;
   copyDraft?: DraftRecord | null;
   copyVersions: Array<{ id: string; label: string; createdAt: string; value: NonNullable<WorkflowResult["draft"]> }>;

@@ -26,7 +26,7 @@ import {
   WorkflowRibbon
 } from "@/app/components/xhs-panels";
 import { AccountStatusCard } from "@/app/components/account-status-card";
-import { AgentFlowPanel } from "@/app/components/agent-flow-panel";
+import { PostStudioPanel } from "@/app/components/post-studio-panel";
 import { ChatPanel } from "@/app/components/chat-workbench";
 import { StatusPill } from "@/app/components/status-badges";
 import { SettingsPanel } from "@/app/components/settings-panel";
@@ -67,13 +67,9 @@ import type {
 } from "@/app/types";
 
 const navItems: Array<{ id: Section; label: string; icon: typeof ClipboardList }> = [
-  { id: "flow", label: "创作流水线", icon: Layers3 },
-  { id: "chat", label: "AI 工作台", icon: MessageSquareText },
-  { id: "workflow", label: "主题研究台", icon: Rocket },
-  { id: "imageStudio", label: "图片创作台", icon: Sparkles },
-  { id: "publish", label: "发布装配台", icon: FileCheck2 },
-  { id: "audit", label: "发布审计", icon: ShieldCheck },
-  { id: "jobs", label: "任务进度", icon: Database },
+  { id: "flow", label: "Post Studio", icon: Layers3 },
+  { id: "assets", label: "Assets", icon: Sparkles },
+  { id: "audit", label: "Publish History", icon: ShieldCheck },
   { id: "settings", label: "模型设置", icon: Settings }
 ];
 
@@ -903,46 +899,52 @@ export default function Home() {
           </div>
         </header>
 
-        <WorkflowRibbon
-          activeSection={section}
-          researchReady={Boolean(
-            researchResult?.evidence?.length ||
-              workflowResult?.evidence?.length ||
-              (Array.isArray(workspace?.selectedSamples) && workspace.selectedSamples.length)
-          )}
-          draftReady={Boolean(currentDraft || workflowResult?.draft)}
-          imageReady={Boolean(
-            publishAssetIds.length ||
-              workflowForm.assetIds.length ||
-              workspace?.selectedImageIds.length ||
-              currentDraft?.images?.length
-          )}
-          publishReady={Boolean(
-            workspace?.publishPlan && !["blocked", "failed"].includes(workspace.publishPlan.status ?? "")
-          )}
-          runningCount={jobs.filter((job) => job.status === "queued" || job.status === "running").length}
-          onNavigate={setSection}
-        />
+        {section === "flow" ? null : (
+          <WorkflowRibbon
+            activeSection={section}
+            researchReady={Boolean(
+              researchResult?.evidence?.length ||
+                workflowResult?.evidence?.length ||
+                (Array.isArray(workspace?.selectedSamples) && workspace.selectedSamples.length)
+            )}
+            draftReady={Boolean(currentDraft || workflowResult?.draft)}
+            imageReady={Boolean(
+              publishAssetIds.length ||
+                workflowForm.assetIds.length ||
+                workspace?.selectedImageIds.length ||
+                currentDraft?.images?.length
+            )}
+            publishReady={Boolean(
+              workspace?.publishPlan && !["blocked", "failed"].includes(workspace.publishPlan.status ?? "")
+            )}
+            runningCount={jobs.filter((job) => job.status === "queued" || job.status === "running").length}
+            onNavigate={setSection}
+          />
+        )}
 
         {section === "flow" ? (
-          <AgentFlowPanel
-            form={workflowForm}
-            busy={busy === "workflow"}
-            result={workflowResultForDisplay}
+          <PostStudioPanel
+            project={postProject}
             workspace={workspace}
-            postProject={postProject}
-            currentDraft={currentDraft}
-            creatorMemory={creatorMemory}
+            workflowResult={workflowResultForDisplay}
+            researchForm={workflowForm}
+            messages={messages}
+            chatInput={chatInput}
+            busy={busy === "workflow"}
             assets={assets}
-            selectedImageIds={publishAssetIds}
-            jobs={jobs}
+            publishDraft={publishDraft}
+            publishAssetIds={publishAssetIds}
             settings={settings}
-            health={health}
-            onChange={(next) => setWorkflowForm((current) => ({ ...current, ...next }))}
-            onSubmitResearch={(event) => void runWorkflow(event)}
-            onSendDraftPrompt={(message) => void submitChatMessage(message, true)}
-            onRememberPreference={(text) => void rememberCurrentPreference(text)}
-            onResetProject={() => void startNewProject()}
+            jobs={jobs}
+            onResearchFormChange={(next) => setWorkflowForm((current) => ({ ...current, ...next }))}
+            onRunResearch={(event) => void runWorkflow(event)}
+            onChatInput={setChatInput}
+            onChatSubmit={(event) => void sendChat(event)}
+            onDraftChange={setPublishDraft}
+            onNewProject={() => void startNewProject()}
+            onGenerateCopy={(message) => void submitChatMessage(message, true)}
+            onOpenImageStudio={() => setSection("imageStudio")}
+            onOpenPublish={() => openPublishAssemblyFromWorkspace()}
             onNavigate={setSection}
           />
         ) : null}
