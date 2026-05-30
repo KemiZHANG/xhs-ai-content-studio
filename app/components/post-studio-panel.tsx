@@ -455,6 +455,10 @@ export function PostStudioPanel({
               <ImagePlus size={16} />
               Agent 生图
             </button>
+            <button className="secondaryButton" onClick={() => onQuickAction("generate_cards")} disabled={!publishDraft.title || !publishDraft.content} type="button">
+              <ImagePlus size={16} />
+              生成图文卡片
+            </button>
             <button className="primaryButton" onClick={() => onQuickAction("run_quality_gate")} disabled={!publishDraft.title || !publishDraft.content} type="button">
               <ShieldCheck size={16} />
               发布检查
@@ -720,6 +724,7 @@ export function PostStudioPanel({
               )}
               <div className="inlineActionGrid">
                 <button className="secondaryButton fullWidth" onClick={() => onQuickAction("generate_images")} type="button">Agent 生成配图</button>
+                <button className="secondaryButton fullWidth" onClick={() => onQuickAction("generate_cards")} type="button">生成图文卡片</button>
                 <button className="secondaryButton fullWidth" onClick={onOpenImageStudio} type="button">打开图片创作台</button>
               </div>
             </SideSection>
@@ -1195,6 +1200,7 @@ function labelForAction(action: string): string {
     plan_visuals: "规划图片",
     generate_image_prompts: "生成图片 Prompt",
     generate_images: "生成图片",
+    generate_cards: "生成卡片",
     select_images: "选图",
     assemble_post: "组装帖子",
     run_quality_gate: "质量检查",

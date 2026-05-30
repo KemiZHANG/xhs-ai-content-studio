@@ -31,6 +31,7 @@ export type PostAction =
   | "plan_visuals"
   | "generate_image_prompts"
   | "generate_images"
+  | "generate_cards"
   | "select_images"
   | "assemble_post"
   | "run_quality_gate"

@@ -539,6 +539,9 @@ export default function Home() {
       case "generate_images":
         await submitChatMessage("请基于当前草稿、CreativeBrief 和图片提示词生成小红书配图。", false, chatAssetIds);
         return;
+      case "generate_cards":
+        await submitChatMessage("请把当前草稿生成小红书图文卡片：封面 + 多张正文卡片，默认 1080×1440，内容要清晰、有收藏价值。", false);
+        return;
       case "select_images":
         setSection("imageStudio");
         setNotice("请在图片创作台选择或生成要进入发布画布的图片。");

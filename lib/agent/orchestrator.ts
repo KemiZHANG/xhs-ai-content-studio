@@ -1173,6 +1173,7 @@ const postActionLabels: Record<PostAction, string> = {
   plan_visuals: "规划图片方向",
   generate_image_prompts: "生成图片提示词",
   generate_images: "生成配图",
+  generate_cards: "生成图文卡片",
   select_images: "选择发布图片",
   assemble_post: "组装发布稿",
   run_quality_gate: "发布前检查",

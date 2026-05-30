@@ -54,6 +54,12 @@ describe("post project", () => {
     expect(reviewGuidance.primaryAction).toBe("request_publish_confirmation");
   });
 
+  it("allows card rendering directly from the main Post Studio flow", () => {
+    expect(getAllowedPostActions("copy_ready")).toContain("generate_cards");
+    expect(getAllowedPostActions("image_prompt_ready")).toContain("generate_cards");
+    expect(getAllowedPostActions("image_ready")).toContain("generate_cards");
+  });
+
   it("migrates workspace evidence and draft into one post project", async () => {
     const workspace = await resetWorkspaceState({
       topic: "coffee",
