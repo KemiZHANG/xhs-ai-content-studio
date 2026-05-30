@@ -3207,6 +3207,12 @@ textarea {
   margin: 0;
 }
 
+.briefStack,
+.qualityBox {
+  display: grid;
+  gap: 10px;
+}
+
 .insightLine {
   background: var(--surface-subtle);
   border: 1px solid var(--line);
@@ -3252,6 +3258,30 @@ textarea {
   background: rgba(23, 150, 112, 0.08);
   border-color: rgba(23, 150, 112, 0.22);
   color: #167a5d;
+}
+
+.qualityBox {
+  background: linear-gradient(135deg, rgba(23, 150, 112, 0.08), rgba(255, 255, 255, 0.7));
+  border: 1px solid rgba(23, 150, 112, 0.16);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.qualityScores {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.qualityScores span {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: rgba(0, 0, 0, 0.72);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 8px;
+  text-align: center;
 }
 
 .advancedEntry {

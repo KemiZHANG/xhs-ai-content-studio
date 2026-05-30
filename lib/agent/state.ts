@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { WorkspaceState } from "@/lib/agent/types";
-import { postProjectFromWorkspace, writePostProject } from "@/lib/post-project/store";
+import { syncPostProjectFromWorkspace } from "@/lib/post-project/store";
 import { listAssets } from "@/lib/storage/assets";
 import { listChatConversations } from "@/lib/storage/chat";
 import { readCurrentDraft } from "@/lib/storage/drafts";
@@ -37,7 +37,7 @@ export async function readWorkspaceState(): Promise<WorkspaceState> {
 export async function writeWorkspaceState(state: WorkspaceState): Promise<WorkspaceState> {
   return queueWorkspaceWrite(async () => {
     const workspace = await writeWorkspaceStateNow(state);
-    await writePostProject(postProjectFromWorkspace(workspace));
+    await syncPostProjectFromWorkspace(workspace);
     return workspace;
   });
 }

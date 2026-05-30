@@ -270,16 +270,64 @@ export type PostProject = {
     }>;
   };
   selectedSamples: SampleEvidence[] | unknown[];
-  creativeBrief?: unknown;
+  creativeBrief?: {
+    audience: string;
+    painPoint: string;
+    contentAngle: string;
+    emotionalHook: string;
+    proofPoints: string[];
+    tone: string;
+    visualMood: string;
+    imageMustHave: string[];
+    imageMustAvoid: string[];
+    platformStyle: string;
+    tabooWords: string[];
+    complianceNotes: string[];
+    basedOnEvidenceIds: string[];
+  };
   copyDraft?: DraftRecord | null;
   copyVersions: Array<{ id: string; label: string; createdAt: string; value: NonNullable<WorkflowResult["draft"]> }>;
-  visualDirection?: unknown;
-  imagePrompts: unknown[];
+  visualDirection?: {
+    mood: string;
+    composition: string;
+    colorPalette: string;
+    mustHave: string[];
+    mustAvoid: string[];
+    basedOnEvidenceIds: string[];
+  };
+  imagePrompts: Array<{
+    id: string;
+    label: string;
+    createdAt: string;
+    value: {
+      prompt: string;
+      negativePrompt?: string;
+    };
+    basedOnEvidenceIds: string[];
+  }>;
   generatedImages: Array<{ id: string; assetId?: string; path?: string; url?: string; selected?: boolean }>;
   selectedImages: string[];
-  finalPost?: unknown;
+  finalPost?: {
+    title: string;
+    content: string;
+    tags: string[];
+    imageIds: string[];
+    coverImageId?: string;
+    copyVersionId?: string;
+    imagePromptVersionIds: string[];
+  };
   publishPlan?: WorkspacePublishPlan | null;
-  qualityCheck?: unknown;
+  qualityCheck?: {
+    titleScore: number;
+    copyScore: number;
+    visualConsistencyScore: number;
+    platformFitScore: number;
+    complianceScore: number;
+    canPublish: boolean;
+    issues: string[];
+    suggestions: string[];
+    checkedAt: string;
+  };
   updatedAt: string;
 };
 

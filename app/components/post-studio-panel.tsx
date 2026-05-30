@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import type { FormEvent, ReactNode } from "react";
+import { useMemo, useState } from "react";
 import {
   Bot,
   CheckCircle2,
@@ -11,8 +12,10 @@ import {
   Rocket,
   Search,
   Send,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type {
   AssetRecord,
   ChatMessage,
@@ -25,7 +28,7 @@ import type {
   WorkspaceState
 } from "@/app/types";
 
-type StudioTab = "insights" | "evidence" | "assets" | "publish";
+type StudioTab = "insights" | "brief" | "evidence" | "assets" | "publish";
 
 type ResearchForm = {
   topic: string;
@@ -91,14 +94,17 @@ export function PostStudioPanel({
   const nextActions = project?.allowedActions.slice(0, 3) ?? ["search_research"];
   const projectTitle = project?.topic || workspace?.topic || researchForm.topic || "未命名帖子项目";
   const canGenerateCopy = Boolean(insights.length || workflowResult?.researchSummary || workspace?.evidenceSummary);
+  const latestImagePrompt = project?.imagePrompts.at(-1)?.value.prompt ?? publishDraft.imagePrompt;
+  const quality = project?.qualityCheck;
+  const brief = project?.creativeBrief;
 
   const generatedCopyPrompt = useMemo(
     () =>
       [
-        "请基于当前 PostProject 的证据和创作简报生成一篇原创小红书图文笔记，不要重新搜索。",
+        "请基于当前 PostProject 的证据和 CreativeBrief 生成一篇原创小红书图文笔记，不要重新搜索。",
         `主题：${projectTitle}`,
         `内容类型：${researchForm.contentType}`,
-        `补充要求：${researchForm.requirements || "真实分享，不广告，结构清楚，有可收藏价值。"}`,
+        `补充要求：${researchForm.requirements || "真实分享，不硬广，结构清楚，有收藏价值。"}`,
         "请输出：标题候选、最终标题、正文、标签、图片方向和发布前风险提醒。"
       ].join("\n"),
     [projectTitle, researchForm.contentType, researchForm.requirements]
@@ -110,7 +116,7 @@ export function PostStudioPanel({
         <div>
           <span className="flowKicker">Post Studio</span>
           <h2>{projectTitle}</h2>
-          <p>围绕一个帖子项目推进：研究证据、生成文案、规划图片、组装发布都在这里完成。</p>
+          <p>围绕一篇帖子推进：先研究真实笔记，再生成文案、图片方向、发布预览和安全检查。</p>
         </div>
         <div className="postStageStrip">
           <StagePill label="阶段" value={labelForStage(project?.currentStage ?? "empty")} />
@@ -131,7 +137,7 @@ export function PostStudioPanel({
           <div className="panelHeader compact">
             <div>
               <h2>AI Agent</h2>
-              <p>自然对话 + 工具进度。信息不足时先补充需求，再执行。</p>
+              <p>像内容导演一样工作：先判断阶段和信息是否足够，再搜索、总结、生成或追问。</p>
             </div>
           </div>
 
@@ -188,7 +194,7 @@ export function PostStudioPanel({
               <div className="studioEmpty">
                 <MessageSquareText size={22} />
                 <strong>告诉 Agent 你要做什么</strong>
-                <p>例如：找最近一周高收藏笔记，生成一篇适合探店账号的图文笔记。</p>
+                <p>例如：找最近一周高收藏笔记，分析标题和图片风格，再生成一篇适合探店账号的图文笔记。</p>
               </div>
             ) : null}
           </div>
@@ -206,7 +212,7 @@ export function PostStudioPanel({
           <div className="panelHeader compact">
             <div>
               <h2>Post Canvas</h2>
-              <p>最终帖子画布。标题、正文、标签和图片在这里合并。</p>
+              <p>最终帖子画布。标题、正文、标签、图片和预览在这里合并。</p>
             </div>
             <button className="secondaryButton" disabled={!canGenerateCopy} onClick={() => onGenerateCopy(generatedCopyPrompt)} type="button">
               <Bot size={16} />
@@ -240,7 +246,11 @@ export function PostStudioPanel({
               </label>
               <label>
                 <span>图片方向 / Prompt</span>
-                <textarea value={publishDraft.imagePrompt} onChange={(event) => onDraftChange({ ...publishDraft, imagePrompt: event.target.value })} placeholder="文案和图片共享 CreativeBrief，图片方向会沉淀在这里。" />
+                <textarea
+                  value={latestImagePrompt}
+                  onChange={(event) => onDraftChange({ ...publishDraft, imagePrompt: event.target.value })}
+                  placeholder="文案和图片共享 CreativeBrief，图片方向会沉淀在这里。"
+                />
               </label>
             </div>
           </div>
@@ -261,6 +271,7 @@ export function PostStudioPanel({
           <div className="studioTabs" role="tablist">
             {[
               { id: "insights", label: "结论" },
+              { id: "brief", label: "Brief" },
               { id: "evidence", label: "证据" },
               { id: "assets", label: "素材" },
               { id: "publish", label: "检查" }
@@ -281,7 +292,26 @@ export function PostStudioPanel({
                   </article>
                 ))
               ) : (
-                <p className="muted">研究完成后这里只显示 3-5 条核心结论，完整样本放到证据详情里。</p>
+                <p className="muted">研究完成后这里只显示 3-5 条核心结论；完整样本、评论和原文放在证据详情里。</p>
+              )}
+            </SideSection>
+          ) : null}
+
+          {tab === "brief" ? (
+            <SideSection icon={Sparkles} title="CreativeBrief">
+              {brief ? (
+                <div className="briefStack">
+                  <BriefLine label="人群" value={brief.audience} />
+                  <BriefLine label="痛点" value={brief.painPoint} />
+                  <BriefLine label="角度" value={brief.contentAngle} />
+                  <BriefLine label="语气" value={brief.tone} />
+                  <BriefLine label="视觉" value={brief.visualMood} />
+                  <ChipList title="证明点" items={brief.proofPoints} />
+                  <ChipList title="图片必须有" items={brief.imageMustHave} />
+                  <ChipList title="图片避免" items={brief.imageMustAvoid} />
+                </div>
+              ) : (
+                <p className="muted">完成研究后，系统会把标题、正文、标签和图片规律压缩成统一 Brief，文案和图片都从这里出发。</p>
               )}
             </SideSection>
           ) : null}
@@ -303,7 +333,7 @@ export function PostStudioPanel({
                   ))}
                 </div>
               ) : (
-                <p className="muted">还没有选中发布图片。可以上传产品图、生成场景图或生成图文卡片。</p>
+                <p className="muted">还没有选中发布图片。可以上传产品图、生成场景图，或生成图文卡片。</p>
               )}
               <button className="secondaryButton fullWidth" onClick={onOpenImageStudio} type="button">打开图片创作台</button>
             </SideSection>
@@ -316,6 +346,21 @@ export function PostStudioPanel({
               <CheckItem ok={Boolean(publishDraft.tagsText)} label="标签已填写" />
               <CheckItem ok={Boolean(selectedAssets.length)} label="已选择图片" />
               <CheckItem ok={settings.defaultAutoPublish === false} label="自动发布默认关闭" />
+              {quality ? (
+                <div className="qualityBox">
+                  <strong>{quality.canPublish ? "质量检查通过" : "质量检查需处理"}</strong>
+                  <div className="qualityScores">
+                    <span>标题 {quality.titleScore}</span>
+                    <span>正文 {quality.copyScore}</span>
+                    <span>图文 {quality.visualConsistencyScore}</span>
+                    <span>平台 {quality.platformFitScore}</span>
+                    <span>合规 {quality.complianceScore}</span>
+                  </div>
+                  {quality.issues.slice(0, 3).map((issue) => (
+                    <p className="muted" key={issue}>- {issue}</p>
+                  ))}
+                </div>
+              ) : null}
               <button className="primaryButton fullWidth" onClick={onOpenPublish} type="button">进入发布确认</button>
             </SideSection>
           ) : null}
@@ -341,12 +386,35 @@ function StagePill({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SideSection({ icon: Icon, title, children }: { icon: typeof FileText; title: string; children: React.ReactNode }) {
+function SideSection({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: ReactNode }) {
   return (
     <section className="studioSideSection">
       <h3><Icon size={16} />{title}</h3>
       {children}
     </section>
+  );
+}
+
+function BriefLine({ label, value }: { label: string; value?: string }) {
+  return (
+    <article className="insightLine">
+      <span>{label}</span>
+      <p>{value || "待补充"}</p>
+    </article>
+  );
+}
+
+function ChipList({ title, items }: { title: string; items: string[] }) {
+  if (!items.length) return null;
+  return (
+    <div>
+      <p className="muted">{title}</p>
+      <div className="tagRow">
+        {items.slice(0, 5).map((item) => (
+          <em key={item}>{item}</em>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -359,14 +427,14 @@ function labelForStage(stage: PostProject["currentStage"]): string {
     empty: "空项目",
     briefing: "补充需求",
     researching: "研究中",
-    evidence_ready: "证据已就绪",
-    brief_ready: "创作简报",
+    evidence_ready: "证据就绪",
+    brief_ready: "Brief 就绪",
     copy_drafting: "文案生成中",
-    copy_ready: "文案已就绪",
-    visual_planning: "图片方向",
-    image_prompt_ready: "图片提示词",
+    copy_ready: "文案就绪",
+    visual_planning: "规划图片",
+    image_prompt_ready: "Prompt 就绪",
     image_generating: "图片生成中",
-    image_ready: "图片已就绪",
+    image_ready: "图片就绪",
     assembling: "组装帖子",
     reviewing: "发布检查",
     scheduled: "已定时",
@@ -379,18 +447,18 @@ function labelForStage(stage: PostProject["currentStage"]): string {
 function labelForAction(action: string): string {
   const labels: Record<string, string> = {
     start_brief: "补充需求",
-    update_brief_inputs: "完善简报",
+    update_brief_inputs: "完善 Brief",
     search_research: "搜索笔记",
     summarize_evidence: "总结证据",
-    create_creative_brief: "生成创作简报",
+    create_creative_brief: "生成 Brief",
     generate_copy: "生成文案",
     revise_copy: "修改文案",
     plan_visuals: "规划图片",
-    generate_image_prompts: "生成图片提示词",
+    generate_image_prompts: "生成图片 Prompt",
     generate_images: "生成图片",
     select_images: "选图",
     assemble_post: "组装帖子",
-    run_quality_gate: "发布检查",
+    run_quality_gate: "质量检查",
     request_publish_confirmation: "发布确认",
     schedule_publish: "定时发布",
     publish_now: "立即发布",

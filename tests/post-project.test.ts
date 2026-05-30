@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { resetWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
 import {
   getAllowedPostActions,
   postProjectFromWorkspace,
@@ -9,7 +10,7 @@ import {
   resetPostProject,
   updatePostProject
 } from "@/lib/post-project";
-import { resetWorkspaceState } from "@/lib/agent/state";
+import { runPostQualityGate } from "@/lib/post-project/quality";
 import { defaultSettings } from "@/lib/storage/settings";
 
 let originalCwd: string;
@@ -74,6 +75,11 @@ describe("post project", () => {
     expect(project.copyDraft?.id).toBe("draft-1");
     expect(project.copyVersions[0].basedOnEvidenceIds.length).toBeGreaterThan(0);
     expect(project.selectedImages).toEqual(["asset-1"]);
+    expect(project.creativeBrief?.basedOnEvidenceIds.length).toBeGreaterThan(0);
+    expect(project.visualDirection?.basedOnEvidenceIds).toEqual(project.creativeBrief?.basedOnEvidenceIds);
+    expect(project.imagePrompts[0].basedOnEvidenceIds).toEqual(project.creativeBrief?.basedOnEvidenceIds);
+    expect(project.finalPost?.title).toBe("Draft");
+    expect(project.qualityCheck?.canPublish).toBe(true);
     expect(project.currentStage).toBe("image_ready");
   });
 
@@ -88,7 +94,70 @@ describe("post project", () => {
 
     expect(project.topic).toBe("fresh");
     expect(project.evidencePack.insights[0].insight).toBe("hook");
+    expect(project.creativeBrief?.emotionalHook).toBe("hook");
     expect(project.allowedActions).toEqual(getAllowedPostActions(project.currentStage));
+  });
+
+  it("preserves an existing creative brief while syncing newer workspace data", async () => {
+    const workspace = await resetWorkspaceState({ topic: "coffee" });
+    await resetPostProject({
+      id: workspace.workspaceId.replace(/^workspace-/, "post-"),
+      topic: "coffee",
+      creativeBrief: {
+        audience: "自定义人群",
+        painPoint: "自定义痛点",
+        contentAngle: "自定义角度",
+        emotionalHook: "自定义钩子",
+        proofPoints: ["自定义证明"],
+        tone: "自定义语气",
+        visualMood: "自定义视觉",
+        imageMustHave: ["产品主体"],
+        imageMustAvoid: ["错误文字"],
+        platformStyle: "自定义平台风格",
+        tabooWords: ["绝对"],
+        complianceNotes: ["不要夸大"],
+        basedOnEvidenceIds: ["manual-insight"]
+      }
+    });
+
+    await updateWorkspaceState({
+      topic: "coffee updated",
+      evidenceSummary: {
+        contentStrengths: ["新标题证据"],
+        learningsForContent: ["新正文证据"],
+        imageStrengths: [],
+        learningsForImages: [],
+        nextQuestions: []
+      },
+      selectedSamples: [{ id: "note-1" }]
+    });
+
+    const project = await readPostProject();
+
+    expect(project.topic).toBe("coffee updated");
+    expect(project.creativeBrief?.audience).toBe("自定义人群");
+    expect(project.evidencePack.insights.map((insight) => insight.insight)).toContain("新标题证据");
+  });
+
+  it("blocks publish quality when claims are exaggerated or images are missing", () => {
+    const quality = runPostQualityGate({
+      creativeBrief: undefined,
+      visualDirection: undefined,
+      selectedImages: [],
+      finalPost: {
+        title: "全网第一必买神器",
+        content: "保证治愈，官方认证销量第一。",
+        tags: ["tag"],
+        imageIds: [],
+        imagePromptVersionIds: []
+      },
+      copyDraft: null
+    });
+
+    expect(quality.canPublish).toBe(false);
+    expect(quality.issues.join(" ")).toContain("未选择发布图片");
+    expect(quality.issues.join(" ")).toContain("夸张词");
+    expect(quality.complianceScore).toBeLessThan(100);
   });
 
   it("persists post project patches without removing existing context", async () => {

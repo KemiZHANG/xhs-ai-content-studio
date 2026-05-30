@@ -4,6 +4,14 @@ import path from "node:path";
 import type { WorkspaceState } from "@/lib/agent/types";
 import { readWorkspaceState } from "@/lib/agent/state";
 import { insightsFromResearchSummary } from "@/lib/post-project/evidence";
+import {
+  copyVersionFromDraft,
+  deriveCreativeBrief,
+  deriveFinalPost,
+  deriveImagePromptVersion,
+  deriveVisualDirection
+} from "@/lib/post-project/brief";
+import { runPostQualityGate } from "@/lib/post-project/quality";
 import { inferPostStage, withAllowedActions } from "@/lib/post-project/stage-machine";
 import type { PostProject } from "@/lib/post-project/types";
 import type { ResearchSummary, SampleEvidence } from "@/lib/workflows/one-click";
@@ -35,6 +43,15 @@ export async function readPostProject(): Promise<PostProject> {
 
 export async function writePostProject(project: PostProject): Promise<PostProject> {
   return queuePostProjectWrite(async () => writePostProjectNow(project));
+}
+
+export async function syncPostProjectFromWorkspace(workspace: WorkspaceState): Promise<PostProject> {
+  const migrated = postProjectFromWorkspace(workspace);
+  const existing = await readExistingPostProject();
+  if (!existing || existing.id !== migrated.id) {
+    return writePostProject(migrated);
+  }
+  return writePostProject(mergePostProjects(existing, migrated));
 }
 
 export async function updatePostProject(
@@ -84,19 +101,10 @@ export function postProjectFromWorkspace(workspace: WorkspaceState): PostProject
   const samples = Array.isArray(workspace.selectedSamples) ? workspace.selectedSamples : [];
   const summary = workspace.evidenceSummary as ResearchSummary | null | undefined;
   const insights = insightsFromResearchSummary(summary, samples);
-  const copyVersions = workspace.currentDraft
-    ? [
-        {
-          id: `copy-${workspace.currentDraft.id}`,
-          createdAt: workspace.currentDraft.updatedAt,
-          label: "Current draft",
-          value: workspace.currentDraft.draft,
-          basedOnEvidenceIds: insights.map((insight) => insight.id)
-        }
-      ]
-    : [];
+  const evidenceIds = insights.map((insight) => insight.id);
+  const copyVersions = workspace.currentDraft ? [copyVersionFromDraft(workspace.currentDraft, evidenceIds)] : [];
 
-  return normalizePostProject({
+  const base = normalizePostProject({
     schemaVersion: POST_PROJECT_SCHEMA_VERSION,
     id: workspace.workspaceId === "local-default" ? "post-local-default" : workspace.workspaceId.replace(/^workspace-/, "post-"),
     topic: workspace.topic,
@@ -136,6 +144,7 @@ export function postProjectFromWorkspace(workspace: WorkspaceState): PostProject
     allowedActions: [],
     updatedAt: workspace.updatedAt
   });
+  return enrichPostProject(base);
 }
 
 function normalizePostProject(project: PostProject): PostProject {
@@ -186,6 +195,81 @@ function normalizePostProject(project: PostProject): PostProject {
   };
 }
 
+function enrichPostProject(project: PostProject): PostProject {
+  const creativeBrief = deriveCreativeBrief(project);
+  const withBrief = {
+    ...project,
+    creativeBrief
+  };
+  const visualDirection = deriveVisualDirection(withBrief);
+  const imagePrompt = deriveImagePromptVersion({
+    ...withBrief,
+    visualDirection,
+    imagePrompts: project.imagePrompts
+  });
+  const imagePrompts = imagePrompt ? [...project.imagePrompts, imagePrompt] : project.imagePrompts;
+  const finalPost = deriveFinalPost({
+    copyDraft: withBrief.copyDraft,
+    selectedImages: withBrief.selectedImages,
+    imagePrompts,
+    finalPost: project.finalPost
+  });
+  const qualityCheck = finalPost
+    ? runPostQualityGate({
+        ...withBrief,
+        visualDirection,
+        finalPost,
+        selectedImages: project.selectedImages
+      })
+    : project.qualityCheck;
+
+  return normalizePostProject({
+    ...withBrief,
+    visualDirection,
+    imagePrompts,
+    finalPost,
+    qualityCheck,
+    auditStatus: qualityCheck ? (qualityCheck.canPublish ? "passed" : "blocked") : project.auditStatus
+  });
+}
+
+function mergePostProjects(existing: PostProject, migrated: PostProject): PostProject {
+  const migratedCopyIds = new Set(migrated.copyVersions.map((version) => version.id));
+  const migratedPromptIds = new Set(migrated.imagePrompts.map((version) => version.id));
+  const merged = normalizePostProject({
+    ...existing,
+    topic: migrated.topic ?? existing.topic,
+    productInfo: {
+      ...existing.productInfo,
+      ...migrated.productInfo,
+      referenceAssetIds: uniqueIds([
+        ...existing.productInfo.referenceAssetIds,
+        ...migrated.productInfo.referenceAssetIds
+      ])
+    },
+    evidencePack: migrated.evidencePack.insights.length || migrated.evidencePack.sampleIds.length ? migrated.evidencePack : existing.evidencePack,
+    selectedSamples: migrated.selectedSamples.length ? migrated.selectedSamples : existing.selectedSamples,
+    creativeBrief: existing.creativeBrief ?? migrated.creativeBrief,
+    copyDraft: migrated.copyDraft ?? existing.copyDraft,
+    copyVersions: [
+      ...existing.copyVersions.filter((version) => !migratedCopyIds.has(version.id)),
+      ...migrated.copyVersions
+    ],
+    visualDirection: existing.visualDirection ?? migrated.visualDirection,
+    imagePrompts: [
+      ...existing.imagePrompts.filter((version) => !migratedPromptIds.has(version.id)),
+      ...migrated.imagePrompts
+    ],
+    generatedImages: mergeImages(existing.generatedImages, migrated.generatedImages),
+    selectedImages: migrated.selectedImages.length ? migrated.selectedImages : existing.selectedImages,
+    finalPost: migrated.copyDraft || migrated.selectedImages.length ? undefined : existing.finalPost,
+    publishPlan: migrated.publishPlan ?? existing.publishPlan,
+    currentStage: migrated.currentStage,
+    updatedAt: migrated.updatedAt
+  });
+  return enrichPostProject(merged);
+}
+
 async function writePostProjectNow(project: PostProject): Promise<PostProject> {
   const normalized = normalizePostProject({
     ...project,
@@ -197,6 +281,19 @@ async function writePostProjectNow(project: PostProject): Promise<PostProject> {
   await writeFile(tempPath, `${JSON.stringify(normalized, null, 2)}\n`, "utf8");
   await rename(tempPath, filePath);
   return normalized;
+}
+
+async function readExistingPostProject(): Promise<PostProject | null> {
+  try {
+    const raw = await readFile(postProjectPath(), "utf8");
+    const parsed = JSON.parse(raw.replace(/^\uFEFF/, "")) as PostProject;
+    return parsed?.schemaVersion === POST_PROJECT_SCHEMA_VERSION ? normalizePostProject(parsed) : null;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT" && !(error instanceof SyntaxError)) {
+      throw error;
+    }
+    return null;
+  }
 }
 
 async function queuePostProjectWrite<T>(operation: () => Promise<T>): Promise<T> {
@@ -212,4 +309,13 @@ function stripUndefined<T extends Record<string, unknown>>(value: T): Partial<T>
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object";
+}
+
+function uniqueIds(ids: string[]): string[] {
+  return [...new Set(ids.filter(Boolean))];
+}
+
+function mergeImages<T extends { id: string }>(existing: T[], next: T[]): T[] {
+  const ids = new Set(next.map((image) => image.id));
+  return [...existing.filter((image) => !ids.has(image.id)), ...next];
 }
