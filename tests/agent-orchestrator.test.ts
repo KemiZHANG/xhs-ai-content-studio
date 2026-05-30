@@ -453,6 +453,10 @@ describe("agent orchestrator", () => {
     expect(result.postProject?.evidencePack.insights.some((insight) => insight.sourceType === "viral_library")).toBe(true);
     expect(result.postProject?.copyDraft?.id).toBe(result.currentDraft?.id);
     expect(result.answer).toContain("爆款库");
+    expect(result.answer).toContain("这版为什么这样写");
+    expect(result.answer).toContain("文案直接引用的证据");
+    expect(result.answer).toContain("实时研究");
+    expect(result.answer).toContain("爆款库补充规律");
     expect(result.cards.map((card) => card.type)).toContain("copy_draft");
   });
 

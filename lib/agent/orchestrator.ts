@@ -1431,7 +1431,7 @@ ${JSON.stringify(selectedSamples, null, 2)}
     lastUserIntent: "generate_copy"
   });
 
-  const referenced = summarizeReferencedEvidence(updatedProject, draft.basedOnEvidenceIds ?? evidenceIds);
+  const referenced = summarizeReferencedEvidence(updatedProject, draft.basedOnEvidenceIds ?? evidenceIds, draft.evidenceReferences);
   return {
     answer: [
       "已基于当前 PostProject、CreativeBrief、实时证据和爆款库规律生成原创草稿。",
@@ -1940,13 +1940,48 @@ function stringArray(value: unknown, fallback: string[]): string[] {
     : fallback;
 }
 
-function summarizeReferencedEvidence(project: PostProject, evidenceIds: string[]): string {
-  const ids = new Set(evidenceIds);
-  const list = project.evidencePack.insights
-    .filter((insight) => ids.has(insight.id))
-    .slice(0, 5)
-    .map((insight) => `- ${insight.id}｜${labelForEvidenceSource(insight.sourceType)}｜${insight.type}：${insight.insight}`);
-  return list.length ? `这版主要参考了这些证据规律：\n${list.join("\n")}` : "";
+function summarizeReferencedEvidence(
+  project: PostProject,
+  evidenceIds: string[],
+  evidenceReferences?: GeneratedDraft["evidenceReferences"]
+): string {
+  const directIds = uniqueIds([
+    ...evidenceIds,
+    ...(evidenceReferences?.title ?? []),
+    ...(evidenceReferences?.content ?? []),
+    ...(evidenceReferences?.tags ?? []),
+    ...(evidenceReferences?.imagePrompt ?? [])
+  ]);
+  const briefIds = project.creativeBrief?.basedOnEvidenceIds ?? [];
+  const ids = new Set([...directIds, ...briefIds]);
+  const insights = project.evidencePack.insights.filter((insight) => ids.has(insight.id));
+  if (!insights.length) {
+    return "";
+  }
+
+  const directInsights = insights.filter((insight) => directIds.includes(insight.id)).slice(0, 4);
+  const viralInsights = insights
+    .filter((insight) => insight.sourceType === "viral_library" && !directIds.includes(insight.id))
+    .slice(0, 3);
+  const realtimeInsights = insights
+    .filter((insight) => (insight.sourceType ?? "realtime") === "realtime" && !directIds.includes(insight.id))
+    .slice(0, 3);
+
+  const sections = [
+    formatEvidenceSection("文案直接引用的证据", directInsights),
+    formatEvidenceSection("爆款库补充规律", viralInsights),
+    formatEvidenceSection("实时研究补充结论", realtimeInsights)
+  ].filter(Boolean);
+
+  return sections.length ? `这版为什么这样写：\n${sections.join("\n")}` : "";
+}
+
+function formatEvidenceSection(title: string, insights: PostProject["evidencePack"]["insights"]): string {
+  if (!insights.length) {
+    return "";
+  }
+  const items = insights.map((insight) => `- ${insight.id}｜${labelForEvidenceSource(insight.sourceType)}｜${insight.type}：${insight.insight}`);
+  return `${title}：\n${items.join("\n")}`;
 }
 
 function mergeSelectedGeneratedImages(project: PostProject, candidates: string[], selected: string) {
