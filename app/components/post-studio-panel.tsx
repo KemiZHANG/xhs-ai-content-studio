@@ -33,6 +33,7 @@ import type {
   WorkspaceState
 } from "@/app/types";
 import { getPostStageGuidance } from "@/lib/post-project/guidance";
+import { getPostVersionStatus } from "@/lib/post-project/versioning";
 import type { PostAction } from "@/lib/post-project/types";
 
 type StudioTab = "insights" | "brief" | "evidence" | "viral" | "references" | "generated" | "publish";
@@ -156,6 +157,7 @@ export function PostStudioPanel({
   const copyVersions = project?.copyVersions ?? [];
   const imagePromptVersions = project?.imagePrompts ?? [];
   const draftEvidenceIds = project?.copyDraft?.draft.basedOnEvidenceIds ?? copyVersions.at(-1)?.basedOnEvidenceIds ?? [];
+  const versionStatus = project ? getPostVersionStatus(project) : null;
 
   const generatedCopyPrompt = useMemo(
     () =>
@@ -394,6 +396,19 @@ export function PostStudioPanel({
                     <span>图片：{project.finalPost.imageIds.length} 张</span>
                     <span>Prompt：{project.finalPost.imagePromptVersionIds.length} 个</span>
                   </div>
+                </section>
+              ) : null}
+              {versionStatus ? (
+                <section className={versionStatus.qualityGateFresh ? "versionIntegrity ok" : "versionIntegrity warn"} aria-label="版本与发布检查状态">
+                  <strong>{versionStatus.qualityGateFresh ? "版本已确认" : "版本需要复核"}</strong>
+                  <p>{versionStatus.summary}</p>
+                  <div>
+                    <span>文案：{versionStatus.activeCopyVersionId ?? "待生成"}</span>
+                    <span>Prompt：{versionStatus.activeImagePromptVersionIds.length || 0} 个</span>
+                  </div>
+                  {versionStatus.warnings.slice(0, 3).map((warning) => (
+                    <small key={warning}>{warning}</small>
+                  ))}
                 </section>
               ) : null}
               {draftEvidenceIds.length ? (

@@ -3777,6 +3777,51 @@ textarea {
   padding: 5px 8px;
 }
 
+.versionIntegrity {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  gap: 7px;
+  padding: 11px 12px;
+}
+
+.versionIntegrity.ok {
+  background: rgba(18, 118, 97, 0.08);
+  border-color: rgba(18, 118, 97, 0.2);
+}
+
+.versionIntegrity.warn {
+  background: rgba(190, 122, 20, 0.1);
+  border-color: rgba(190, 122, 20, 0.24);
+}
+
+.versionIntegrity strong {
+  color: var(--ink);
+}
+
+.versionIntegrity p,
+.versionIntegrity small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.versionIntegrity div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.versionIntegrity span {
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 5px 8px;
+}
+
 .studioDrawerBackdrop {
   align-items: stretch;
   background: rgba(0, 0, 0, 0.28);
