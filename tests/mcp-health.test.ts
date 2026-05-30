@@ -67,4 +67,25 @@ describe("MCP health route", () => {
     expect(payload.loggedIn).toBe(true);
     expect(payload.activeAccount.loginName).toBe("xiaohongshu-mcp");
   });
+
+  it("does not mark negative login text as logged in", async () => {
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      readMcpText: () => "not logged in",
+      createXhsMcpClient: () => ({
+        checkLoginStatus: vi.fn(async () => ({ ok: true })),
+        listTools: vi.fn(async () => [])
+      })
+    }));
+
+    const { GET } = await import("@/app/api/health/mcp/route");
+    const response = await GET();
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.loggedIn).toBe(false);
+    expect(payload.activeAccount.status).toBe("logged_out");
+  });
 });

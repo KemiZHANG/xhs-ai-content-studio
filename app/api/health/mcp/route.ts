@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAgentToolRegistry } from "@/lib/agent/tools/registry";
+import { isExplicitXhsLoggedInStatus } from "@/lib/mcp/login-status";
 import { createXhsMcpClient, readMcpText } from "@/lib/mcp/xhs";
 import { readSettings } from "@/lib/storage/settings";
 
@@ -14,7 +15,7 @@ export async function GET() {
     const client = createXhsMcpClient(settings);
     const result = await client.checkLoginStatus();
     const text = readMcpText(result);
-    const loggedIn = /已登录|logged/i.test(text);
+    const loggedIn = isExplicitXhsLoggedInStatus(text);
     const loginName = extractLoginName(text);
     const tools = await client.listTools().catch(() => []);
     const toolNames = tools.map((tool) => tool.name).filter(Boolean);

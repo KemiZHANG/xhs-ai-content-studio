@@ -7,6 +7,7 @@ import {
 } from "@/lib/agent/publishing";
 import { createPublishIntent, validatePublishIntent } from "@/lib/agent/guardrails";
 import { updateWorkspaceState } from "@/lib/agent/state";
+import { isExplicitXhsLoggedInStatus, isExplicitXhsLoggedOutStatus } from "@/lib/mcp/login-status";
 import { createXhsMcpClient, readMcpText } from "@/lib/mcp/xhs";
 import { buildEvidenceCitationReport } from "@/lib/post-project/citations";
 import { runPostQualityGate } from "@/lib/post-project/quality";
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
       visibility: isPublishVisibility(body.visibility) ? body.visibility : settings.defaultVisibility,
       scheduleAt: body.scheduleAt
     });
-    const qualityReview = await getQualityGateReview(publishArgs, body.assetIds ?? []);
+    const qualityReview = await getQualityGateReview(publishArgs, body.assetIds ?? [], { dryRun: body.dryRun });
 
     if (body.dryRun) {
       const publishIntent = createPublishIntent({
@@ -257,7 +258,8 @@ export async function POST(request: Request) {
 
 async function getQualityGateReview(
   publishArgs: GuardedPublishArgs,
-  assetIds: string[]
+  assetIds: string[],
+  options: { dryRun?: boolean } = {}
 ): Promise<{
   qualityCheck?: QualityCheck;
   reasons: string[];
@@ -269,7 +271,13 @@ async function getQualityGateReview(
     const evidenceCitationSummary = buildPublishEvidenceCitationSummary(project);
     const versionSnapshot = buildPublishVersionSnapshot(project);
     if (!hasPostProjectPublishContext(project)) {
-      return { reasons: [], evidenceCitationSummary, versionSnapshot };
+      return {
+        reasons: options.dryRun
+          ? []
+          : ["真实发布必须先在 Post Studio 保存当前帖子项目并运行 Quality Gate，不能绕过 PostProject 发布检查。"],
+        evidenceCitationSummary,
+        versionSnapshot
+      };
     }
     const snapshotMismatchReasons = getProjectSnapshotMismatchReasons(project, publishArgs, assetIds);
     if (snapshotMismatchReasons.length) {
@@ -434,7 +442,7 @@ async function verifyActiveXhsLogin(client: ReturnType<typeof createXhsMcpClient
   try {
     const result = await client.checkLoginStatus();
     const text = readMcpText(result);
-    if (/未登录|not\s*login|logged\s*out/i.test(text)) {
+    if (isExplicitXhsLoggedOutStatus(text) || !isExplicitXhsLoggedInStatus(text)) {
       return "当前小红书 MCP 未登录，请先完成登录后再发布。";
     }
     return null;

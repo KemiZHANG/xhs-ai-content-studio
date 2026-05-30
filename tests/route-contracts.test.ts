@@ -638,16 +638,174 @@ describe("API route contracts", () => {
     }));
     vi.doMock("@/lib/post-project/store", () => ({
       readPostProject: async () => ({
-        evidencePack: { insights: [] },
+        creativeBrief: {
+          audience: "咖啡探店人群",
+          painPoint: "不知道周末去哪坐一会儿",
+          contentAngle: "真实探店体验",
+          emotionalHook: "周末放松",
+          proofPoints: ["自然光", "安静座位"],
+          tone: "真实自然",
+          visualMood: "暖光咖啡馆",
+          imageMustHave: ["咖啡", "桌面"],
+          imageMustAvoid: [],
+          platformStyle: "小红书真实分享",
+          tabooWords: [],
+          complianceNotes: [],
+          basedOnEvidenceIds: ["insight-1"]
+        },
+        visualDirection: {
+          mood: "真实自然",
+          composition: "咖啡桌面近景",
+          colorPalette: "暖色",
+          mustHave: ["咖啡", "桌面"],
+          mustAvoid: [],
+          basedOnEvidenceIds: ["insight-1"]
+        },
+        copyDraft: {
+          id: "draft-current",
+          updatedAt: "now",
+          draft: {
+            title: "周末可以坐一下午的咖啡馆",
+            content: "这家咖啡馆更适合想安静坐一会儿的人。下午自然光会落在靠窗位置，点单可以选拿铁和小甜品，适合聊天、短暂办公或者一个人放空。周末建议早点去，热门时段座位会紧张。",
+            tags: ["咖啡", "探店"],
+            structure: [],
+            imagePrompt: "暖光咖啡馆桌面近景",
+            basedOnEvidenceIds: ["insight-1"]
+          },
+          images: [],
+          visibility: defaultSettings.defaultVisibility
+        },
+        evidencePack: {
+          insights: [{
+            id: "insight-1",
+            type: "copy",
+            insight: "用真实场景、人群和注意事项增强可信度",
+            sourceSampleIds: ["sample-1"],
+            confidence: 0.9,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }]
+        },
         selectedSamples: [],
-        selectedImages: [],
-        imagePrompts: []
+        selectedImages: ["asset-1"],
+        imagePrompts: [{ id: "prompt-1", value: { prompt: "暖光咖啡馆桌面近景" }, basedOnEvidenceIds: ["insight-1"] }]
       }),
       updatePostProject: vi.fn(async () => ({}))
     }));
     vi.doMock("@/lib/storage/drafts", () => ({
       createDraftRecord: vi.fn(() => currentDraft),
       writeCurrentDraft: vi.fn(async (draft) => draft)
+    }));
+
+    const { POST } = await import("@/app/api/publish/route");
+    const response = await POST(
+      jsonRequest({
+        title: "周末可以坐一下午的咖啡馆",
+        content: "这家咖啡馆更适合想安静坐一会儿的人。下午自然光会落在靠窗位置，点单可以选拿铁和小甜品，适合聊天、短暂办公或者一个人放空。周末建议早点去，热门时段座位会紧张。",
+        tags: ["咖啡", "探店"],
+        assetIds: ["asset-1"],
+        confirmed: true
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toEqual({ status: "published", publishResult: { ok: true }, currentDraft });
+    expect(publishContent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "周末可以坐一下午的咖啡馆",
+        content: "这家咖啡馆更适合想安静坐一会儿的人。下午自然光会落在靠窗位置，点单可以选拿铁和小甜品，适合聊天、短暂办公或者一个人放空。周末建议早点去，热门时段座位会紧张。",
+        tags: ["咖啡", "探店"],
+        images: [path.join(process.cwd(), "generated-assets", "uploads", "image.png")]
+      })
+    );
+  });
+
+  it("blocks real publish calls without a saved PostProject quality context", async () => {
+    const asset = {
+      id: "asset-1",
+      kind: "upload",
+      name: "image",
+      originalName: "image.png",
+      absolutePath: path.join(process.cwd(), "generated-assets", "uploads", "image.png"),
+      mimeType: "image/png",
+      size: 10,
+      createdAt: "2026-05-21T00:00:00.000Z"
+    };
+    const executeGuardedPublish = vi.fn();
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings,
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: async () => asset
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({ publishContent: vi.fn() })
+    }));
+    vi.doMock("@/lib/agent/publishing", () => ({
+      getPublishIntent: vi.fn(),
+      publishIntentMatchesArgs: vi.fn(() => false),
+      executeGuardedPublish
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => ({
+        creativeBrief: {
+          audience: "咖啡探店人群",
+          painPoint: "不知道周末去哪坐一会儿",
+          contentAngle: "真实探店体验",
+          emotionalHook: "周末放松",
+          proofPoints: ["自然光", "安静座位"],
+          tone: "真实自然",
+          visualMood: "暖光咖啡馆",
+          imageMustHave: ["咖啡", "桌面"],
+          imageMustAvoid: [],
+          platformStyle: "小红书真实分享",
+          tabooWords: [],
+          complianceNotes: [],
+          basedOnEvidenceIds: ["insight-1"]
+        },
+        visualDirection: {
+          mood: "真实自然",
+          composition: "咖啡桌面近景",
+          colorPalette: "暖色",
+          mustHave: ["咖啡", "桌面"],
+          mustAvoid: [],
+          basedOnEvidenceIds: ["insight-1"]
+        },
+        copyDraft: {
+          id: "draft-current",
+          updatedAt: "now",
+          draft: {
+            title: "周末可以坐一下午的咖啡馆",
+            content: "这家咖啡馆更适合想安静坐一会儿的人。下午自然光会落在靠窗位置，点单可以选拿铁和小甜品，适合聊天、短暂办公或者一个人放空。周末建议早点去，热门时段座位会紧张。",
+            tags: ["咖啡", "探店"],
+            structure: [],
+            imagePrompt: "暖光咖啡馆桌面近景",
+            basedOnEvidenceIds: ["insight-1"]
+          },
+          images: [],
+          visibility: defaultSettings.defaultVisibility
+        },
+        evidencePack: {
+          insights: [{
+            id: "insight-1",
+            type: "copy",
+            insight: "用真实场景、人群和注意事项增强可信度",
+            sourceSampleIds: ["sample-1"],
+            confidence: 0.9,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }]
+        },
+        selectedSamples: [],
+        selectedImages: ["asset-1"],
+        imagePrompts: [{ id: "prompt-1", value: { prompt: "暖光咖啡馆桌面近景" }, basedOnEvidenceIds: ["insight-1"] }]
+      }),
+      updatePostProject: vi.fn(async () => ({}))
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(),
+      writeCurrentDraft: vi.fn()
     }));
 
     const { POST } = await import("@/app/api/publish/route");
@@ -662,16 +820,10 @@ describe("API route contracts", () => {
     );
     const payload = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(payload).toEqual({ status: "published", publishResult: { ok: true }, currentDraft });
-    expect(publishContent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "title",
-        content: "content",
-        tags: ["tag"],
-        images: [path.join(process.cwd(), "generated-assets", "uploads", "image.png")]
-      })
-    );
+    expect(response.status).toBe(400);
+    expect(payload.error).toContain("Post Studio");
+    expect(payload.error).toContain("Quality Gate");
+    expect(executeGuardedPublish).not.toHaveBeenCalled();
   });
 
   it("returns a dry-run publish preview without calling MCP or writing a draft", async () => {
@@ -708,10 +860,56 @@ describe("API route contracts", () => {
     });
     vi.doMock("@/lib/post-project/store", () => ({
       readPostProject: async () => ({
-        evidencePack: { insights: [] },
+        creativeBrief: {
+          audience: "咖啡探店人群",
+          painPoint: "不知道周末去哪坐一会儿",
+          contentAngle: "真实探店体验",
+          emotionalHook: "周末放松",
+          proofPoints: ["自然光", "安静座位"],
+          tone: "真实自然",
+          visualMood: "暖光咖啡馆",
+          imageMustHave: ["咖啡", "桌面"],
+          imageMustAvoid: [],
+          platformStyle: "小红书真实分享",
+          tabooWords: [],
+          complianceNotes: [],
+          basedOnEvidenceIds: ["insight-1"]
+        },
+        visualDirection: {
+          mood: "真实自然",
+          composition: "咖啡桌面近景",
+          colorPalette: "暖色",
+          mustHave: ["咖啡", "桌面"],
+          mustAvoid: [],
+          basedOnEvidenceIds: ["insight-1"]
+        },
+        copyDraft: {
+          id: "draft-current",
+          updatedAt: "now",
+          draft: {
+            title: "周末可以坐一下午的咖啡馆",
+            content: "这家咖啡馆更适合想安静坐一会儿的人。下午自然光会落在靠窗位置，点单可以选拿铁和小甜品，适合聊天、短暂办公或者一个人放空。周末建议早点去，热门时段座位会紧张。",
+            tags: ["咖啡", "探店"],
+            structure: [],
+            imagePrompt: "暖光咖啡馆桌面近景",
+            basedOnEvidenceIds: ["insight-1"]
+          },
+          images: [],
+          visibility: defaultSettings.defaultVisibility
+        },
+        evidencePack: {
+          insights: [{
+            id: "insight-1",
+            type: "copy",
+            insight: "用真实场景、人群和注意事项增强可信度",
+            sourceSampleIds: ["sample-1"],
+            confidence: 0.9,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }]
+        },
         selectedSamples: [],
-        selectedImages: [],
-        imagePrompts: []
+        selectedImages: ["asset-1"],
+        imagePrompts: [{ id: "prompt-1", value: { prompt: "暖光咖啡馆桌面近景" }, basedOnEvidenceIds: ["insight-1"] }]
       }),
       updatePostProject: vi.fn(async () => ({}))
     }));
@@ -737,7 +935,7 @@ describe("API route contracts", () => {
       expect.objectContaining({
         status: "preview",
         dryRun: true,
-        publishIntent: expect.objectContaining({ status: "draft", accountId: defaultSettings.activeAccountId }),
+        publishIntent: expect.objectContaining({ status: expect.stringMatching(/draft|blocked/), accountId: defaultSettings.activeAccountId }),
         preview: expect.objectContaining({
           risk: "external_write",
           requiresConfirmation: true,
@@ -885,10 +1083,56 @@ describe("API route contracts", () => {
     }));
     vi.doMock("@/lib/post-project/store", () => ({
       readPostProject: async () => ({
-        evidencePack: { insights: [] },
+        creativeBrief: {
+          audience: "咖啡探店人群",
+          painPoint: "不知道周末去哪坐一会儿",
+          contentAngle: "真实探店体验",
+          emotionalHook: "周末放松",
+          proofPoints: ["自然光", "安静座位"],
+          tone: "真实自然",
+          visualMood: "暖光咖啡馆",
+          imageMustHave: ["咖啡", "桌面"],
+          imageMustAvoid: [],
+          platformStyle: "小红书真实分享",
+          tabooWords: [],
+          complianceNotes: [],
+          basedOnEvidenceIds: ["insight-1"]
+        },
+        visualDirection: {
+          mood: "真实自然",
+          composition: "咖啡桌面近景",
+          colorPalette: "暖色",
+          mustHave: ["咖啡", "桌面"],
+          mustAvoid: [],
+          basedOnEvidenceIds: ["insight-1"]
+        },
+        copyDraft: {
+          id: "draft-current",
+          updatedAt: "now",
+          draft: {
+            title: "周末可以坐一下午的咖啡馆",
+            content: "这家咖啡馆更适合想安静坐一会儿的人。下午自然光会落在靠窗位置，点单可以选拿铁和小甜品，适合聊天、短暂办公或者一个人放空。周末建议早点去，热门时段座位会紧张。",
+            tags: ["咖啡", "探店"],
+            structure: [],
+            imagePrompt: "暖光咖啡馆桌面近景",
+            basedOnEvidenceIds: ["insight-1"]
+          },
+          images: [],
+          visibility: defaultSettings.defaultVisibility
+        },
+        evidencePack: {
+          insights: [{
+            id: "insight-1",
+            type: "copy",
+            insight: "用真实场景、人群和注意事项增强可信度",
+            sourceSampleIds: ["sample-1"],
+            confidence: 0.9,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }]
+        },
         selectedSamples: [],
-        selectedImages: [],
-        imagePrompts: []
+        selectedImages: ["asset-1"],
+        imagePrompts: [{ id: "prompt-1", value: { prompt: "暖光咖啡馆桌面近景" }, basedOnEvidenceIds: ["insight-1"] }]
       }),
       updatePostProject: vi.fn(async () => ({}))
     }));
@@ -900,9 +1144,9 @@ describe("API route contracts", () => {
     const { POST } = await import("@/app/api/publish/route");
     const response = await POST(
       jsonRequest({
-        title: "title",
-        content: "content",
-        tags: ["tag"],
+        title: "周末可以坐一下午的咖啡馆",
+        content: "这家咖啡馆更适合想安静坐一会儿的人。下午自然光会落在靠窗位置，点单可以选拿铁和小甜品，适合聊天、短暂办公或者一个人放空。周末建议早点去，热门时段座位会紧张。",
+        tags: ["咖啡", "探店"],
         assetIds: ["asset-1"],
         publishPolicy: "draft_only"
       })
