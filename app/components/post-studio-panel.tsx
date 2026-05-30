@@ -33,7 +33,7 @@ import type {
   WorkspaceState
 } from "@/app/types";
 
-type StudioTab = "insights" | "brief" | "evidence" | "viral" | "assets" | "publish";
+type StudioTab = "insights" | "brief" | "evidence" | "viral" | "references" | "generated" | "publish";
 
 type ResearchForm = {
   topic: string;
@@ -117,8 +117,10 @@ export function PostStudioPanel({
   const [selectedEvidence, setSelectedEvidence] = useState<SampleEvidence | null>(null);
   const [selectedViralCase, setSelectedViralCase] = useState<ViralCase | null>(null);
   const selectedAssets = assets.filter((asset) => publishAssetIds.includes(asset.id));
-  const generatedAssets = assets.filter((asset) => asset.kind === "generated");
-  const imageCandidates = uniqueAssets([...selectedAssets, ...generatedAssets, ...assets]).slice(0, 8);
+  const uploadAssets = assets.filter((asset) => asset.kind === "upload");
+  const generatedAssets = [...assets].filter((asset) => asset.kind === "generated").sort(sortNewestAsset);
+  const recentGeneratedAssets = uniqueAssets([...selectedAssets, ...generatedAssets]).slice(0, 6);
+  const referenceAssets = uniqueAssets([...selectedAssets, ...uploadAssets]).slice(0, 6);
   const runningJob = jobs.find((job) => job.status === "queued" || job.status === "running") ?? null;
   const insights = project?.evidencePack.insights ?? [];
   const viralInsights = insights.filter((insight) => insight.sourceType === "viral_library");
@@ -416,7 +418,8 @@ export function PostStudioPanel({
               { id: "brief", label: "Brief" },
               { id: "evidence", label: "证据" },
               { id: "viral", label: "爆款库" },
-              { id: "assets", label: "素材" },
+              { id: "references", label: "图片参考" },
+              { id: "generated", label: "生成素材" },
               { id: "publish", label: "检查" }
             ].map((item) => (
               <button className={tab === item.id ? "active" : ""} key={item.id} onClick={() => setTab(item.id as StudioTab)} type="button">
@@ -533,12 +536,13 @@ export function PostStudioPanel({
             </SideSection>
           ) : null}
 
-          {tab === "assets" ? (
-            <SideSection icon={ImagePlus} title="图片与素材">
+          {tab === "references" ? (
+            <SideSection icon={ImagePlus} title="图片参考">
               <strong>{selectedAssets.length ? `已选 ${selectedAssets.length} 张发布图片` : "还没有选中发布图片"}</strong>
-              {imageCandidates.length ? (
+              <p className="muted">这里主要放产品原图、参考图和当前选中图。默认不铺开全部素材，更多管理在 Assets。</p>
+              {referenceAssets.length ? (
                 <div className="studioAssetGrid selectable">
-                  {imageCandidates.map((asset) => {
+                  {referenceAssets.map((asset) => {
                     const selected = publishAssetIds.includes(asset.id);
                     return (
                       <button
@@ -554,20 +558,57 @@ export function PostStudioPanel({
                         }
                       >
                         <img alt={asset.name} src={`/api/assets/file/${asset.id}`} />
-                        <span>{selected ? "已选" : asset.kind === "generated" ? "生成图" : "素材"}</span>
+                        <span>{selected ? "已选" : "参考图"}</span>
                       </button>
                     );
                   })}
                 </div>
               ) : (
-                <p className="muted">还没有选中发布图片。可以上传产品图、生成场景图，或生成图文卡片。</p>
+                <p className="muted">还没有产品图或参考图。可以去图片创作台上传，也可以直接让 Agent 生成图片方向。</p>
               )}
               {project?.finalPost?.imageIds.length ? (
                 <p className="muted">最终帖子图片：{project.finalPost.imageIds.slice(0, 4).join(" / ")}</p>
               ) : null}
               <div className="inlineActionGrid">
-                <button className="secondaryButton fullWidth" onClick={() => onQuickAction("generate_images")} type="button">Agent 生成配图</button>
                 <button className="secondaryButton fullWidth" onClick={onOpenImageStudio} type="button">高级图片创作台</button>
+                <button className="secondaryButton fullWidth" onClick={() => onNavigate("assets")} type="button">管理全部素材</button>
+              </div>
+            </SideSection>
+          ) : null}
+
+          {tab === "generated" ? (
+            <SideSection icon={ImagePlus} title="已生成素材">
+              <strong>{recentGeneratedAssets.length ? `最近 ${recentGeneratedAssets.length} 张` : "还没有生成图"}</strong>
+              <p className="muted">这里只展示当前选中图和最近生成结果，避免素材过多干扰创作决策。</p>
+              {recentGeneratedAssets.length ? (
+                <div className="studioAssetGrid selectable">
+                  {recentGeneratedAssets.map((asset) => {
+                    const selected = publishAssetIds.includes(asset.id);
+                    return (
+                      <button
+                        className={selected ? "studioAssetPick selected" : "studioAssetPick"}
+                        key={asset.id}
+                        type="button"
+                        onClick={() =>
+                          onSelectPostImages(
+                            selected
+                              ? publishAssetIds.filter((id) => id !== asset.id)
+                              : [...publishAssetIds, asset.id]
+                          )
+                        }
+                      >
+                        <img alt={asset.name} src={`/api/assets/file/${asset.id}`} />
+                        <span>{selected ? "已选" : "生成图"}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="muted">可以让 Agent 生成配图，或在图片创作台生成 AI 生图 / 图文卡片。</p>
+              )}
+              <div className="inlineActionGrid">
+                <button className="secondaryButton fullWidth" onClick={() => onQuickAction("generate_images")} type="button">Agent 生成配图</button>
+                <button className="secondaryButton fullWidth" onClick={onOpenImageStudio} type="button">打开图片创作台</button>
               </div>
             </SideSection>
           ) : null}
@@ -1066,4 +1107,8 @@ function uniqueAssets(assets: AssetRecord[]): AssetRecord[] {
     seen.add(asset.id);
     return true;
   });
+}
+
+function sortNewestAsset(left: AssetRecord, right: AssetRecord): number {
+  return Date.parse(right.createdAt) - Date.parse(left.createdAt);
 }
