@@ -117,6 +117,21 @@ describe("agent planner", () => {
     expect(plan.steps[0].action).toBe("askClarifyingQuestion");
   });
 
+  it("asks for evidence or brief context before drafting from an under-specified project", () => {
+    const plan = createAgentPlan({
+      message: "帮我写一篇小红书笔记",
+      hasCurrentDraft: false,
+      attachedAssetCount: 0,
+      postStage: "briefing",
+      hasEvidence: false,
+      hasCreativeBrief: false
+    });
+
+    expect(plan.intent).toBe("ask");
+    expect(plan.steps[0].action).toBe("askClarifyingQuestion");
+    expect(plan.steps[0].reason).toContain("does not have enough evidence");
+  });
+
   it("plans card rendering from the current draft", () => {
     const plan = createAgentPlan({
       message: "把当前草稿生成小红书图文卡片",

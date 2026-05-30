@@ -108,6 +108,14 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
     });
   }
 
+  if (isDraftCreationFromProjectRequest(message, lower) && !isPublishRequest(message, lower) && !hasExplicitResearchSignal(message, lower)) {
+    return buildPlan({
+      intent: "ask",
+      topic: inferTopic(message),
+      steps: [step("askClarifyingQuestion", "The user wants draft creation, but the active PostProject does not have enough evidence or CreativeBrief context.")]
+    });
+  }
+
   if (isViralKnowledgeRequest(message, lower)) {
     return buildPlan({
       intent: "retrieve_viral_knowledge",
@@ -196,6 +204,10 @@ function inferNewProjectTopic(message: string): string | undefined {
 
 function isResearchRequest(message: string, lower: string): boolean {
   return /搜索|查找|找|分析|高收藏|高赞|爆款|小红书|笔记|竞品|研究/.test(message) || lower.includes("research");
+}
+
+function hasExplicitResearchSignal(message: string, lower: string): boolean {
+  return /搜索|查找|找|分析|高收藏|高赞|爆款|竞品|研究/.test(message) || lower.includes("research");
 }
 
 function isViralKnowledgeRequest(message: string, lower: string): boolean {
