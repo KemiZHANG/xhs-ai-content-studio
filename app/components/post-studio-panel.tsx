@@ -36,6 +36,7 @@ import type {
 } from "@/app/types";
 import { getPostStageGuidance } from "@/lib/post-project/guidance";
 import { buildEvidenceCitationReport, buildEvidenceReferenceSummary } from "@/lib/post-project/citations";
+import { activeAccountReadinessHint, isHealthForActiveAccount } from "@/app/components/account-readiness";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
@@ -245,7 +246,8 @@ export function PostStudioPanel({
       citationReport.sections.every((section) => section.insights.length)
   );
   const hasVisualDirection = Boolean(latestImagePrompt || project?.visualDirection);
-  const accountReady = Boolean(health?.loggedIn);
+  const accountReady = isHealthForActiveAccount(health, settings);
+  const accountReadyHint = activeAccountReadinessHint(health, settings);
   const publishReady = Boolean(
     publishDraft.title.trim() &&
       publishDraft.content.trim() &&
@@ -1039,7 +1041,7 @@ export function PostStudioPanel({
               <CheckItem ok={hasVisualDirection} label="图片方向 / Prompt 已确认" />
               <CheckItem ok={citationTraceReady} label="字段级证据引用可追溯" />
               <CheckItem ok={versionStatus?.qualityGateFresh === true} label="最终版本与 Quality Gate 一致" />
-              <CheckItem ok={accountReady} label={`账号：${activeAccount?.displayName ?? "未配置"}`} />
+              <CheckItem ok={accountReady} label={`账号：${activeAccount?.displayName ?? "未配置"} · ${accountReadyHint}`} />
               <CheckItem ok={publishVisibility === "仅自己可见"} label={`可见范围：${publishVisibility}`} />
               <CheckItem ok={!publishScheduleAt || Date.parse(publishScheduleAt) > Date.now()} label={publishScheduleAt ? `定时：${publishScheduleAt}（本地时区）` : "发布时间：立即"} />
               <CheckItem ok={settings.defaultAutoPublish === false} label="自动发布默认关闭" />

@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { parseTagsText } from "@/lib/publishing/assembly";
 import type { AssetRecord, Health, PendingPublishConfirmation, PostProject, PublishDraftState, RedactedSettings } from "@/app/types";
+import { activeAccountReadinessHint, isHealthForActiveAccount } from "@/app/components/account-readiness";
 import { formatMcpEndpoint } from "@/app/components/xhs-display-utils";
 import { StatusLine, StatusPill } from "@/app/components/status-badges";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
@@ -56,7 +57,8 @@ export function PublishAssemblyPanel({
   const tagCount = parseTagsText(draft.tagsText).length;
   const ready = Boolean(draft.title.trim() && draft.content.trim() && tagCount && selectedAssets.length);
   const activeAccount = settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
-  const accountReady = Boolean(health?.loggedIn);
+  const accountReady = isHealthForActiveAccount(health, settings);
+  const accountReadyHint = activeAccountReadinessHint(health, settings);
   const quality = postProject?.qualityCheck;
   const finalPost = postProject?.finalPost;
   const postPlan = postProject?.publishPlan;
@@ -104,7 +106,7 @@ export function PublishAssemblyPanel({
             <StatusLine ok={Boolean(tagCount)} label={`${tagCount} 个标签`} />
             <StatusLine ok={Boolean(selectedAssets.length)} label={`${selectedAssets.length} 张图片`} />
             <StatusLine ok={visibility === "仅自己可见"} label={`可见范围：${visibility}`} />
-            <StatusLine ok={accountReady} label={`发布账号：${activeAccount?.displayName ?? "未配置账号"}`} />
+            <StatusLine ok={accountReady} label={`发布账号：${activeAccount?.displayName ?? "未配置账号"} · ${accountReadyHint}`} />
             <StatusLine ok={quality?.canPublish === true} label={quality ? `Quality Gate：${quality.canPublish ? "通过" : "需处理"}` : "Quality Gate：待检查"} />
             <StatusLine ok={versionStatus?.qualityGateFresh === true} label={versionStatus ? `版本状态：${versionStatus.qualityGateFresh ? "已锁定" : "需复核"}` : "版本状态：待组装"} />
           </section>
@@ -171,6 +173,7 @@ export function PublishAssemblyPanel({
           <div>
             <strong>将发布到：{activeAccount?.displayName ?? "未配置账号"}</strong>
             <span>{health?.activeAccount?.loginName ? `真实登录名：${health.activeAccount.loginName}` : "真实登录名：检测后显示"}</span>
+            <span>{accountReadyHint}</span>
             <span>{activeAccount?.mcpUrl ?? settings.mcpUrl}</span>
           </div>
           <StatusPill ok={accountReady} label={accountReady ? "账号已登录" : "请先检测/登录"} />
