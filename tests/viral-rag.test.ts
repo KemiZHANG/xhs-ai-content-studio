@@ -65,12 +65,20 @@ describe("viral RAG retrieval", () => {
       query: "广州咖啡馆 高收藏 探店",
       topic: "广州咖啡馆",
       category: "探店",
+      minCollects: 1000,
+      minShares: 20,
+      sortBy: "collects",
+      sortOrder: "desc",
       limit: 5,
       realtimeEvidenceCount: 4
     });
 
     expect(pack.rewrittenQueries.length).toBeGreaterThan(1);
     expect(pack.results[0].case.id).toBe(viralCase.id);
+    expect(pack.filters).toMatchObject({ minCollects: 1000, minShares: 20, sortBy: "collects" });
+    expect(pack.filterSummary).toContain("收藏 ≥ 1000");
+    expect(pack.filterSummary).toContain("分享 ≥ 20");
+    expect(pack.filterSummary).toContain("按收藏降序排序");
     expect(pack.insights.every((item) => item.sourceType === "viral_library")).toBe(true);
     expect(pack.sufficiency.realtimeCount).toBe(4);
     expect(pack.sufficiency.viralCount).toBe(1);

@@ -22,6 +22,20 @@ export type ViralRetrievalInput = {
   realtimeEvidenceCount?: number;
 };
 
+export type ViralRetrievalFilters = Partial<Pick<
+  ViralRetrievalInput,
+  | "createdAfter"
+  | "createdBefore"
+  | "minLikes"
+  | "minCollects"
+  | "minComments"
+  | "minShares"
+  | "minScore"
+  | "tags"
+  | "sortBy"
+  | "sortOrder"
+>>;
+
 export type RagSufficiency = {
   isEnough: boolean;
   realtimeCount: number;
@@ -33,6 +47,8 @@ export type RagSufficiency = {
 export type ViralKnowledgePack = {
   query: string;
   rewrittenQueries: string[];
+  filters?: ViralRetrievalFilters;
+  filterSummary?: string;
   results: ViralSearchResult[];
   insights: EvidenceInsight[];
   sufficiency: RagSufficiency;
@@ -40,11 +56,13 @@ export type ViralKnowledgePack = {
 
 export async function retrieveViralKnowledge(input: ViralRetrievalInput): Promise<ViralKnowledgePack> {
   const rewrittenQueries = rewriteRetrievalQueries(input);
+  const filters = extractViralRetrievalFilters(input);
   const results = await retrieveViralCasesWithFusion(input, rewrittenQueries);
   const insights = viralCasesToEvidenceInsights(results.map((result) => result.case));
   return {
     query: input.query,
     rewrittenQueries,
+    ...(filters ? { filters, filterSummary: summarizeViralRetrievalFilters(filters) } : {}),
     results,
     insights,
     sufficiency: evaluateRagSufficiency({
@@ -55,6 +73,39 @@ export async function retrieveViralKnowledge(input: ViralRetrievalInput): Promis
       hasStructure: insights.some((insight) => insight.type === "structure" || insight.type === "copy")
     })
   };
+}
+
+export function extractViralRetrievalFilters(input: ViralRetrievalInput): ViralRetrievalFilters | undefined {
+  const filters: ViralRetrievalFilters = {
+    createdAfter: input.createdAfter,
+    createdBefore: input.createdBefore,
+    minLikes: input.minLikes,
+    minCollects: input.minCollects,
+    minComments: input.minComments,
+    minShares: input.minShares,
+    minScore: input.minScore,
+    tags: input.tags?.length ? input.tags : undefined,
+    sortBy: input.sortBy,
+    sortOrder: input.sortOrder
+  };
+  const cleaned = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== undefined)) as ViralRetrievalFilters;
+  return Object.keys(cleaned).length ? cleaned : undefined;
+}
+
+export function summarizeViralRetrievalFilters(filters?: ViralRetrievalFilters): string {
+  if (!filters) return "";
+  const items = [
+    filters.createdAfter ? `入库时间 ≥ ${filters.createdAfter.slice(0, 10)}` : "",
+    filters.createdBefore ? `入库时间 ≤ ${filters.createdBefore.slice(0, 10)}` : "",
+    filters.minLikes !== undefined ? `点赞 ≥ ${filters.minLikes}` : "",
+    filters.minCollects !== undefined ? `收藏 ≥ ${filters.minCollects}` : "",
+    filters.minComments !== undefined ? `评论 ≥ ${filters.minComments}` : "",
+    filters.minShares !== undefined ? `分享 ≥ ${filters.minShares}` : "",
+    filters.minScore !== undefined ? `综合分 ≥ ${filters.minScore}` : "",
+    filters.tags?.length ? `标签包含 ${filters.tags.join("、")}` : "",
+    filters.sortBy ? `按${ragSortLabel(filters.sortBy)}${filters.sortOrder === "asc" ? "升序" : "降序"}排序` : ""
+  ].filter(Boolean);
+  return items.join("；");
 }
 
 async function retrieveViralCasesWithFusion(
@@ -191,4 +242,16 @@ export function evaluateRagSufficiency({
 
 function uniqueStrings(values: string[]): string[] {
   return [...new Set(values.map((item) => item.trim()).filter(Boolean))];
+}
+
+function ragSortLabel(sortBy: NonNullable<ViralRetrievalFilters["sortBy"]>): string {
+  const labels = {
+    createdAt: "入库时间",
+    likes: "点赞",
+    collects: "收藏",
+    comments: "评论",
+    shares: "分享",
+    score: "综合分"
+  };
+  return labels[sortBy];
 }

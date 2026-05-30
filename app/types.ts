@@ -101,6 +101,19 @@ export type WorkflowResult = {
   viralKnowledge?: {
     query: string;
     rewrittenQueries: string[];
+    filters?: {
+      createdAfter?: string;
+      createdBefore?: string;
+      minLikes?: number;
+      minCollects?: number;
+      minComments?: number;
+      minShares?: number;
+      minScore?: number;
+      tags?: string[];
+      sortBy?: "createdAt" | "likes" | "collects" | "comments" | "shares" | "score";
+      sortOrder?: "asc" | "desc";
+    };
+    filterSummary?: string;
     sufficiency: {
       isEnough: boolean;
       realtimeCount: number;

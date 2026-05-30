@@ -3596,6 +3596,14 @@ textarea {
   margin: 0;
 }
 
+.ragStatus .ragFilterLine {
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(18, 118, 97, 0.14);
+  border-radius: 9px;
+  color: var(--ink);
+  padding: 7px 8px;
+}
+
 .sideActionStack {
   display: grid;
   gap: 8px;

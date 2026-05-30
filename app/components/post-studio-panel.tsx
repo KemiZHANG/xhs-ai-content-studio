@@ -509,6 +509,9 @@ export function PostStudioPanel({
                 <div className={viralPack.sufficiency.isEnough ? "ragStatus good" : "ragStatus warn"}>
                   <strong>{viralPack.sufficiency.isEnough ? "RAG 证据充足" : "RAG 证据还不够"}</strong>
                   <p>{viralPack.sufficiency.recommendation}</p>
+                  {viralPack.filterSummary ? (
+                    <small className="ragFilterLine">本次筛选：{viralPack.filterSummary}</small>
+                  ) : null}
                   {viralPack.rewrittenQueries?.length ? (
                     <small>检索扩展：{viralPack.rewrittenQueries.slice(0, 3).join(" / ")}</small>
                   ) : null}

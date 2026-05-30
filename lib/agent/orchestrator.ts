@@ -22,7 +22,7 @@ import { renderXhsCardSet } from "@/lib/cards/renderer";
 import type { ModelProvider } from "@/lib/models/provider";
 import { createAssetRecord, getAsset, saveAsset } from "@/lib/storage/assets";
 import { createDraftRecord, type DraftRecord } from "@/lib/storage/drafts";
-import type { ViralKnowledgePack } from "@/lib/rag/viral";
+import { summarizeViralRetrievalFilters, type ViralKnowledgePack } from "@/lib/rag/viral";
 import type { GeneratedDraft, XhsMcpWorkflowClient } from "@/lib/workflows/one-click";
 
 export type RunAgentTurnInput = AgentRuntimeContext & {
@@ -977,31 +977,7 @@ function appendRagFilterSummaryToAnswer(answer: string, filters: ReturnType<type
 }
 
 function formatRagFiltersSummary(filters: ReturnType<typeof createAgentPlan>["ragFilters"]): string {
-  if (!filters) return "";
-  const items = [
-    filters.createdAfter ? `入库时间 ≥ ${filters.createdAfter.slice(0, 10)}` : "",
-    filters.createdBefore ? `入库时间 ≤ ${filters.createdBefore.slice(0, 10)}` : "",
-    filters.minLikes !== undefined ? `点赞 ≥ ${filters.minLikes}` : "",
-    filters.minCollects !== undefined ? `收藏 ≥ ${filters.minCollects}` : "",
-    filters.minComments !== undefined ? `评论 ≥ ${filters.minComments}` : "",
-    filters.minShares !== undefined ? `分享 ≥ ${filters.minShares}` : "",
-    filters.minScore !== undefined ? `综合分 ≥ ${filters.minScore}` : "",
-    filters.tags?.length ? `标签包含 ${filters.tags.join("、")}` : "",
-    filters.sortBy ? `按${ragSortLabel(filters.sortBy)}${filters.sortOrder === "asc" ? "升序" : "降序"}排序` : ""
-  ].filter(Boolean);
-  return items.join("；");
-}
-
-function ragSortLabel(sortBy: NonNullable<NonNullable<ReturnType<typeof createAgentPlan>["ragFilters"]>["sortBy"]>): string {
-  const labels = {
-    createdAt: "入库时间",
-    likes: "点赞",
-    collects: "收藏",
-    comments: "评论",
-    shares: "分享",
-    score: "综合分"
-  };
-  return labels[sortBy];
+  return summarizeViralRetrievalFilters(filters);
 }
 
 function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecord | null, postProject?: PostProject | null): AgentResponseCard[] {
