@@ -3536,6 +3536,11 @@ textarea {
   margin: 0;
 }
 
+.sideActionStack {
+  display: grid;
+  gap: 8px;
+}
+
 .publishConfirmMini {
   border: 1px solid var(--line);
   border-radius: 12px;

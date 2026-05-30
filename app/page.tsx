@@ -518,6 +518,11 @@ export default function Home() {
       case "create_creative_brief":
         await submitChatMessage("请基于当前研究证据和爆款库规律，生成/刷新这个 PostProject 的 CreativeBrief，并说明参考了哪些证据。", false);
         return;
+      case "retrieve_viral_knowledge":
+        await submitChatMessage("请刷新当前项目的爆款库 RAG 证据，不要重新搜索小红书。请把可复用的标题钩子、正文结构、标签组合、图片风格和评论关注点合入 PostProject evidencePack。", false);
+        await loadViralKnowledge();
+        await loadPostProject();
+        return;
       case "generate_copy":
         await submitChatMessage("请基于当前 PostProject 的证据、爆款库规律和 CreativeBrief 生成一篇原创小红书图文笔记，不要重新搜索，并记录引用的证据 ID。", false);
         return;
@@ -1168,6 +1173,7 @@ export default function Home() {
             onSelectPostImages={(ids) => void selectPostImages(ids)}
             onSaveToViralLibrary={(sample) => void saveSampleToViralLibrary(sample)}
             onReloadViralLibrary={() => void loadViralKnowledge()}
+            onRefreshViralEvidence={() => void handlePostStudioAction("retrieve_viral_knowledge")}
             onOpenImageStudio={() => setSection("imageStudio")}
             onOpenPublish={() => void openPublishAssemblyFromWorkspace()}
             onNavigate={setSection}

@@ -76,6 +76,7 @@ export function PostStudioPanel({
   onSelectPostImages,
   onSaveToViralLibrary,
   onReloadViralLibrary,
+  onRefreshViralEvidence,
   onOpenImageStudio,
   onOpenPublish
 }: {
@@ -110,6 +111,7 @@ export function PostStudioPanel({
   onSelectPostImages: (assetIds: string[]) => void;
   onSaveToViralLibrary: (sample: SampleEvidence) => void;
   onReloadViralLibrary: () => void;
+  onRefreshViralEvidence: () => void;
   onOpenImageStudio: () => void;
   onOpenPublish: () => void;
 }) {
@@ -532,7 +534,13 @@ export function PostStudioPanel({
               ) : (
                 <p className="muted">还没有爆款库样本。可以先在“研究证据”里把高质量样本保存进库。</p>
               )}
-              <button className="secondaryButton fullWidth" onClick={onReloadViralLibrary} type="button">刷新爆款库</button>
+              <div className="sideActionStack">
+                <button className="primaryButton fullWidth" onClick={onRefreshViralEvidence} type="button">
+                  <Sparkles size={16} />
+                  刷新当前项目 RAG 证据
+                </button>
+                <button className="secondaryButton fullWidth" onClick={onReloadViralLibrary} type="button">只刷新本地爆款库列表</button>
+              </div>
             </SideSection>
           ) : null}
 
