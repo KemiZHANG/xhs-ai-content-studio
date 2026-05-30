@@ -352,11 +352,15 @@ export function PostStudioPanel({
           </div>
 
           <div className="canvasActionRow">
-            <button className="secondaryButton" onClick={onOpenImageStudio} type="button">
-              <ImagePlus size={16} />
-              生成/选择图片
+            <button className="secondaryButton" onClick={() => onQuickAction("plan_visuals")} type="button">
+              <Sparkles size={16} />
+              规划图片方向
             </button>
-            <button className="primaryButton" onClick={onOpenPublish} disabled={!publishDraft.title || !publishDraft.content} type="button">
+            <button className="secondaryButton" onClick={() => onQuickAction("generate_images")} type="button">
+              <ImagePlus size={16} />
+              Agent 生图
+            </button>
+            <button className="primaryButton" onClick={() => onQuickAction("run_quality_gate")} disabled={!publishDraft.title || !publishDraft.content} type="button">
               <ShieldCheck size={16} />
               发布检查
             </button>
@@ -510,7 +514,10 @@ export function PostStudioPanel({
               {project?.finalPost?.imageIds.length ? (
                 <p className="muted">最终帖子图片：{project.finalPost.imageIds.slice(0, 4).join(" / ")}</p>
               ) : null}
-              <button className="secondaryButton fullWidth" onClick={onOpenImageStudio} type="button">打开图片创作台</button>
+              <div className="inlineActionGrid">
+                <button className="secondaryButton fullWidth" onClick={() => onQuickAction("generate_images")} type="button">Agent 生成配图</button>
+                <button className="secondaryButton fullWidth" onClick={onOpenImageStudio} type="button">高级图片创作台</button>
+              </div>
             </SideSection>
           ) : null}
 
@@ -536,7 +543,10 @@ export function PostStudioPanel({
                   ))}
                 </div>
               ) : null}
-              <button className="primaryButton fullWidth" onClick={onOpenPublish} type="button">进入发布确认</button>
+              <div className="inlineActionGrid">
+                <button className="secondaryButton fullWidth" onClick={() => onQuickAction("run_quality_gate")} type="button">刷新质量检查</button>
+                <button className="primaryButton fullWidth" onClick={onOpenPublish} type="button">进入发布确认</button>
+              </div>
             </SideSection>
           ) : null}
 

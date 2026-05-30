@@ -538,6 +538,12 @@ export default function Home() {
         return;
       case "assemble_post":
       case "run_quality_gate":
+        await commitCanvasToProject();
+        await loadPostProject();
+        await loadWorkspace();
+        setSection("flow");
+        setNotice("已在 Post Studio 内刷新质量检查；确认无风险后再进入发布确认。");
+        return;
       case "request_publish_confirmation":
       case "schedule_publish":
       case "publish_now":

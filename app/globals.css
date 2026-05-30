@@ -3327,6 +3327,11 @@ textarea {
   color: var(--accent-strong);
 }
 
+.inlineActionGrid {
+  display: grid;
+  gap: 8px;
+}
+
 .studioEmpty {
   align-items: center;
   background: var(--surface-subtle);
