@@ -3703,6 +3703,59 @@ textarea {
   font-weight: 900;
 }
 
+.citationAudit {
+  border: 1px solid rgba(18, 118, 97, 0.14);
+  border-radius: 12px;
+  display: grid;
+  gap: 7px;
+  padding: 10px 11px;
+}
+
+.citationAudit.ok {
+  background: rgba(20, 143, 113, 0.08);
+}
+
+.citationAudit.warn {
+  background: rgba(191, 107, 38, 0.1);
+  border-color: rgba(191, 107, 38, 0.22);
+}
+
+.citationAudit span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.citationAudit strong {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.citationAudit div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.citationAudit em {
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 999px;
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  padding: 4px 7px;
+}
+
+.citationAudit p {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .briefStack,
 .qualityBox {
   display: grid;

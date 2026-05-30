@@ -152,6 +152,12 @@ export function PostStudioPanel({
   const citationReport = project && draftEvidenceIds.length
     ? buildEvidenceCitationReport(project, draftEvidenceIds, project.copyDraft?.draft.evidenceReferences)
     : null;
+  const citationTraceReady = Boolean(
+    citationReport &&
+      citationReport.allEvidenceIds.length &&
+      !citationReport.missingEvidenceIds.length &&
+      citationReport.sections.every((section) => section.insights.length)
+  );
   const hasVisualDirection = Boolean(latestImagePrompt || project?.visualDirection);
   const activeAccount = settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
   const accountReady = Boolean(health?.loggedIn);
@@ -701,6 +707,7 @@ export function PostStudioPanel({
               <CheckItem ok={Boolean(publishDraft.tagsText)} label="标签已填写" />
               <CheckItem ok={Boolean(selectedAssets.length)} label="已选择图片" />
               <CheckItem ok={hasVisualDirection} label="图片方向 / Prompt 已确认" />
+              <CheckItem ok={citationTraceReady} label="字段级证据引用可追溯" />
               <CheckItem ok={versionStatus?.qualityGateFresh === true} label="最终版本与 Quality Gate 一致" />
               <CheckItem ok={accountReady} label={`账号：${activeAccount?.displayName ?? "未配置"}`} />
               <CheckItem ok={publishVisibility === "仅自己可见"} label={`可见范围：${publishVisibility}`} />
@@ -740,6 +747,20 @@ export function PostStudioPanel({
                   ))}
                   {quality.evidenceReview ? (
                     <p className="muted">证据覆盖：{quality.evidenceReview.summary}</p>
+                  ) : null}
+                  {citationReport?.allEvidenceIds.length ? (
+                    <div className={citationTraceReady ? "citationAudit ok" : "citationAudit warn"}>
+                      <span>字段级证据追踪</span>
+                      <strong>{citationReport.summary}</strong>
+                      <div>
+                        {citationReport.sections.map((section) => (
+                          <em key={section.field}>{labelForCitationField(section.field)} {section.insights.length}</em>
+                        ))}
+                      </div>
+                      {citationReport.missingEvidenceIds.length ? (
+                        <p>缺失：{citationReport.missingEvidenceIds.slice(0, 3).join(" / ")}</p>
+                      ) : null}
+                    </div>
                   ) : null}
                   {quality.evidenceAlignment ? (
                     <div className={quality.evidenceAlignment.isAligned ? "evidenceAlignment ok" : "evidenceAlignment warn"}>
