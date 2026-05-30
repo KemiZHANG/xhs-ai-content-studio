@@ -526,7 +526,7 @@ function buildAgentTurnResult({
 }
 
 function appendEvidenceReferenceNote(answer: string, plan: AgentPlan, postProject?: PostProject | null): string {
-  if (plan.intent === "answer" || plan.intent === "ask") {
+  if (!shouldAppendEvidenceReference(plan)) {
     return answer;
   }
   const insights = (postProject?.evidencePack.insights ?? [])
@@ -539,6 +539,21 @@ function appendEvidenceReferenceNote(answer: string, plan: AgentPlan, postProjec
     .map((insight) => `- ${insight.id}｜${labelForEvidenceSource(insight.sourceType)}｜${insight.type}: ${insight.insight}`)
     .join("\n");
   return `${answer}\n\n参考证据：\n${note}`;
+}
+
+function shouldAppendEvidenceReference(plan: AgentPlan): boolean {
+  if (plan.intent === "ask") {
+    return false;
+  }
+  if (plan.intent !== "answer") {
+    return true;
+  }
+  return plan.steps.some((step) => {
+    if (["generateDraft", "summarizeEvidence", "runQualityGate", "assemblePost", "generateImages", "generateCards"].includes(step.action)) {
+      return true;
+    }
+    return /evidence|CreativeBrief|visual|image prompt|draft|quality gate|证据|图片方向|文案|草稿/i.test(step.reason);
+  });
 }
 
 function labelForEvidenceSource(sourceType?: string): string {
