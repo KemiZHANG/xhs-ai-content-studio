@@ -261,6 +261,9 @@ export function PostStudioPanel({
           <StagePill label="研究" value={samples.length ? `${samples.length} 条证据` : "待研究"} />
           <StagePill label="文案" value={publishDraft.title ? "可编辑" : "待生成"} />
           <StagePill label="图片" value={selectedAssets.length ? `${selectedAssets.length} 张` : "待选择"} />
+          <StagePill label="保存" value={labelForCanvasSaveStatus(canvasDirty, versionStatus)} />
+          <StagePill label="版本" value={labelForVersionLockStatus(versionStatus)} />
+          <StagePill label="检查" value={labelForQualityStatus(quality, versionStatus?.qualityGateFresh === true)} />
           <StagePill label="发布" value={labelForPublishStatus(project?.publishPlan?.status)} />
         </div>
         <div className="nextActionBar">
@@ -1685,6 +1688,32 @@ function labelForTraceStatus(status: string): string {
     failed: "失败"
   };
   return labels[status] ?? status;
+}
+
+function labelForCanvasSaveStatus(
+  canvasDirty: boolean,
+  versionStatus: ReturnType<typeof getPostVersionStatus> | null
+): string {
+  if (canvasDirty) return "未保存";
+  if (versionStatus?.finalPostMatchesCanvas) return "已入稿";
+  return "已同步";
+}
+
+function labelForVersionLockStatus(versionStatus: ReturnType<typeof getPostVersionStatus> | null): string {
+  if (!versionStatus) return "待生成";
+  if (versionStatus.qualityGateFresh) return "已锁定";
+  if (versionStatus.finalPostMatchesCanvas) return "待检查";
+  if (versionStatus.needsReassemble) return "需组装";
+  return "待确认";
+}
+
+function labelForQualityStatus(
+  quality: PostProject["qualityCheck"] | undefined,
+  qualityGateFresh: boolean
+): string {
+  if (!quality) return "未检查";
+  if (!qualityGateFresh) return "已失效";
+  return quality.canPublish ? "通过" : "需处理";
 }
 
 function labelForPublishStatus(status?: string): string {
