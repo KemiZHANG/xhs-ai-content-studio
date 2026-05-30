@@ -933,14 +933,19 @@ export function PostStudioPanel({
             </SideSection>
           ) : null}
 
-          <div className="advancedEntry">
-            <strong>高级入口</strong>
-            <button onClick={() => onNavigate("chat")} type="button">AI 工作台</button>
-            <button onClick={() => onNavigate("workflow")} type="button">主题研究台</button>
-            <button onClick={() => onNavigate("imageStudio")} type="button">图片创作台</button>
-            <button onClick={() => onNavigate("publish")} type="button">发布装配台</button>
-            <button onClick={() => onNavigate("jobs")} type="button">任务进度</button>
-          </div>
+          <details className="advancedEntry">
+            <summary>
+              <strong>高级/旧工作台入口</strong>
+              <span>日常创作优先留在 Post Studio，这里只保留专项工具。</span>
+            </summary>
+            <div>
+              <button onClick={() => onNavigate("chat")} type="button">AI 工作台</button>
+              <button onClick={() => onNavigate("workflow")} type="button">主题研究台</button>
+              <button onClick={() => onNavigate("imageStudio")} type="button">图片创作台</button>
+              <button onClick={() => onNavigate("publish")} type="button">发布装配台</button>
+              <button onClick={() => onNavigate("jobs")} type="button">任务进度</button>
+            </div>
+          </details>
         </aside>
       </div>
 

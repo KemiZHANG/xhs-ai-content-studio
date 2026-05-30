@@ -4544,10 +4544,32 @@ textarea {
 
 .advancedEntry {
   border-top: 1px solid var(--line);
-  display: grid;
-  gap: 8px;
   margin-top: 14px;
   padding-top: 14px;
+}
+
+.advancedEntry summary {
+  align-items: flex-start;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  list-style: none;
+}
+
+.advancedEntry summary::-webkit-details-marker {
+  display: none;
+}
+
+.advancedEntry summary span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.advancedEntry > div {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .advancedEntry button {
