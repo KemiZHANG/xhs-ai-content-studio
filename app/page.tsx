@@ -256,10 +256,14 @@ export default function Home() {
 
   async function applyJobsSnapshot(nextJobs: JobRecord[], streamedWorkspace?: WorkspaceState) {
     setJobs(nextJobs);
+    const activeRecentJobIds = streamedWorkspace?.recentJobIds ?? workspace?.recentJobIds;
     if (streamedWorkspace) {
       setWorkspace(streamedWorkspace);
       if (streamedWorkspace.currentDraft) {
         applyCurrentDraft(streamedWorkspace.currentDraft);
+      } else {
+        setCurrentDraft(null);
+        setPublishDraft({ title: "", content: "", tagsText: "", imagePrompt: "" });
       }
       setPublishAssetIds(streamedWorkspace.selectedImageIds ?? []);
     }
@@ -281,6 +285,9 @@ export default function Home() {
       setAutoReturnJobId(null);
     }
     const latestCompleted = nextJobs.find((job) => job.status === "completed" && job.result);
+    if (latestCompleted && activeRecentJobIds && !activeRecentJobIds.includes(latestCompleted.id)) {
+      return;
+    }
     if (latestCompleted?.result) {
       if (!workflowResult) {
         applyWorkflowResult(latestCompleted.result);
@@ -920,6 +927,9 @@ export default function Home() {
     setPublishScheduleAt("");
     setPublishStatus("");
     setPendingPublish(null);
+    setActiveJobId(null);
+    setAutoReturnJobId(null);
+    setAutoReturnTarget("flow");
     setChatAssetIds([]);
     await loadPostProject();
     return data.workspace;
