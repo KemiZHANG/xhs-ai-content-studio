@@ -7,6 +7,7 @@ import {
 } from "@/lib/agent/publishing";
 import { createPublishIntent, validatePublishIntent } from "@/lib/agent/guardrails";
 import { createXhsMcpClient } from "@/lib/mcp/xhs";
+import { readPostProject } from "@/lib/post-project/store";
 import { buildPublishContentArgs, parseTagsText } from "@/lib/publishing/assembly";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { getAsset, type AssetRecord } from "@/lib/storage/assets";
@@ -50,6 +51,7 @@ export async function POST(request: Request) {
       visibility: isPublishVisibility(body.visibility) ? body.visibility : settings.defaultVisibility,
       scheduleAt: body.scheduleAt
     });
+    const qualityBlockReasons = await getQualityGateBlockReasons(publishArgs);
 
     if (body.dryRun) {
       const publishIntent = createPublishIntent({
@@ -59,7 +61,7 @@ export async function POST(request: Request) {
         accountId: settings.activeAccountId,
         mcpUrl: settings.mcpUrl
       });
-      const validationErrors = validatePublishIntent(publishIntent);
+      const validationErrors = [...validatePublishIntent(publishIntent), ...qualityBlockReasons];
       await appendPublishAudit({
         event: "preview",
         status: validationErrors.length ? "blocked" : "preview",
@@ -100,6 +102,16 @@ export async function POST(request: Request) {
           idempotencyKeySuffix: publishIntent.idempotencyKey.slice(-6)
         }
       });
+    }
+
+    if (qualityBlockReasons.length) {
+      return NextResponse.json(
+        {
+          error: qualityBlockReasons.join("；"),
+          requiresConfirmation: false
+        },
+        { status: 400 }
+      );
     }
 
     const confirmed = await resolvePublishConfirmation({
@@ -182,6 +194,39 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+async function getQualityGateBlockReasons(publishArgs: GuardedPublishArgs): Promise<string[]> {
+  try {
+    const project = await readPostProject();
+    if (!project.qualityCheck || project.auditStatus !== "blocked") {
+      return [];
+    }
+    if (!project.finalPost || !samePublishCopy(project.finalPost, publishArgs)) {
+      return [];
+    }
+    return [
+      "当前 PostProject 未通过 Quality Gate",
+      ...project.qualityCheck.issues.slice(0, 5)
+    ];
+  } catch {
+    return [];
+  }
+}
+
+function samePublishCopy(
+  finalPost: { title: string; content: string; tags: string[] },
+  publishArgs: GuardedPublishArgs
+): boolean {
+  return (
+    finalPost.title.trim() === publishArgs.title.trim() &&
+    finalPost.content.trim() === publishArgs.content.trim() &&
+    normalizeTags(finalPost.tags).join("|") === normalizeTags(publishArgs.tags).join("|")
+  );
+}
+
+function normalizeTags(tags: string[]): string[] {
+  return tags.map((tag) => tag.replace(/^#/, "").trim()).filter(Boolean).sort();
 }
 
 async function resolvePublishConfirmation({

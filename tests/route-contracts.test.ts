@@ -640,6 +640,70 @@ describe("API route contracts", () => {
     expect(publishContent).not.toHaveBeenCalled();
   });
 
+  it("blocks publish route calls when the active post project failed quality gate", async () => {
+    const asset = {
+      id: "asset-1",
+      kind: "upload",
+      name: "image",
+      originalName: "image.png",
+      absolutePath: "C:\\xhs\\generated-assets\\uploads\\image.png",
+      mimeType: "image/png",
+      size: 10,
+      createdAt: "2026-05-21T00:00:00.000Z"
+    };
+    const publishContent = vi.fn(async () => ({ ok: true }));
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings,
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: async () => asset
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({ publishContent })
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => ({
+        auditStatus: "blocked",
+        finalPost: {
+          title: "全网第一",
+          content: "content",
+          tags: ["tag"]
+        },
+        qualityCheck: {
+          issues: ["标题存在夸张词", "未选择合适图片"]
+        }
+      })
+    }));
+    vi.doMock("@/lib/agent/publishing", () => ({
+      getPublishIntent: vi.fn(),
+      publishIntentMatchesArgs: vi.fn(() => false),
+      executeGuardedPublish: vi.fn()
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(),
+      writeCurrentDraft: vi.fn()
+    }));
+
+    const { POST } = await import("@/app/api/publish/route");
+    const response = await POST(
+      jsonRequest({
+        title: "全网第一",
+        content: "content",
+        tags: ["tag"],
+        assetIds: ["asset-1"],
+        confirmed: true
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload.error).toContain("Quality Gate");
+    expect(payload.error).toContain("标题存在夸张词");
+    expect(publishContent).not.toHaveBeenCalled();
+  });
+
   it("blocks asset file reads outside workspace asset folders", async () => {
     vi.doMock("@/lib/storage/assets", () => ({
       getAsset: async () => ({
