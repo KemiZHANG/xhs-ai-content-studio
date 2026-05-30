@@ -13,7 +13,8 @@ import type {
   WorkspaceState
 } from "@/lib/agent/types";
 import { readPostProject, updatePostProject } from "@/lib/post-project/store";
-import { copyVersionFromDraft, deriveCreativeBrief, deriveImagePromptVersion, deriveVisualDirection } from "@/lib/post-project/brief";
+import { copyVersionFromDraft, deriveCreativeBrief, deriveFinalPost, deriveImagePromptVersion, deriveVisualDirection } from "@/lib/post-project/brief";
+import { runPostQualityGate } from "@/lib/post-project/quality";
 import type { PostProject, ProductInfo } from "@/lib/post-project/types";
 import { renderXhsCardSet } from "@/lib/cards/renderer";
 import type { ModelProvider } from "@/lib/models/provider";
@@ -272,6 +273,40 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
         agentRun,
         trace,
         postProject: imageSelectionTurn.postProject
+      });
+    }
+
+    const qualityCheckTurn = await maybeHandleQualityCheckTurn(input, plan, initialPostProject);
+    if (qualityCheckTurn) {
+      trace = addTraceEvent(trace, {
+        type: "tool_called",
+        label: "project.runQualityGate",
+        detail: "Assembled the active PostProject final post and ran Quality Gate.",
+        metadata: {
+          canPublish: qualityCheckTurn.postProject.qualityCheck?.canPublish,
+          issues: qualityCheckTurn.postProject.qualityCheck?.issues
+        }
+      });
+      trace = addTraceEvent(trace, {
+        type: "workspace_updated",
+        label: "Workspace updated",
+        detail: "Stored finalPost and qualityCheck on the active PostProject."
+      });
+      agentRun = completeRun(agentRun);
+      trace = addTraceEvent(trace, {
+        type: "run_completed",
+        label: "Agent run completed",
+        detail: "Agent turn completed after Quality Gate."
+      });
+      await persistAgentTrace(trace);
+      return buildAgentTurnResult({
+        answer: qualityCheckTurn.answer,
+        plan,
+        workspace: qualityCheckTurn.workspace,
+        currentDraft: qualityCheckTurn.postProject.copyDraft ?? input.currentDraft ?? undefined,
+        agentRun,
+        trace,
+        postProject: qualityCheckTurn.postProject
       });
     }
 
@@ -1214,6 +1249,79 @@ async function maybeHandleImageSelectionTurn(
 
   return {
     answer: `已选择第 ${selectedIndex + 1} 张图作为当前发布图片。下一步可以继续生成/修改文案，或进入发布检查。`,
+    workspace,
+    postProject: updatedProject
+  };
+}
+
+async function maybeHandleQualityCheckTurn(
+  input: RunAgentTurnInput,
+  plan: ReturnType<typeof createAgentPlan>,
+  postProject: PostProject
+): Promise<{ answer: string; workspace: WorkspaceState; postProject: PostProject } | null> {
+  if (plan.intent !== "assemble_post" && plan.intent !== "quality_check") {
+    return null;
+  }
+
+  const existing = await readWorkspaceState();
+  const currentDraft = postProject.copyDraft ?? input.currentDraft ?? existing.currentDraft ?? null;
+  const selectedImages = postProject.selectedImages.length ? postProject.selectedImages : existing.selectedImageIds;
+  if (!currentDraft) {
+    const workspace = await updateWorkspaceState({ lastUserIntent: plan.intent });
+    return {
+      answer: "还不能进入发布检查：当前项目没有草稿。请先基于证据生成文案。",
+      workspace,
+      postProject
+    };
+  }
+  if (!selectedImages.length) {
+    const workspace = await updateWorkspaceState({
+      currentDraftId: currentDraft.id,
+      currentDraft,
+      lastUserIntent: plan.intent
+    });
+    return {
+      answer: "还不能进入发布检查：当前项目还没有选中发布图片。请先上传、生成或选择至少一张图片。",
+      workspace,
+      postProject
+    };
+  }
+
+  const finalPost = deriveFinalPost({
+    copyDraft: currentDraft,
+    selectedImages,
+    imagePrompts: postProject.imagePrompts,
+    finalPost: undefined
+  });
+  const qualityCheck = runPostQualityGate({
+    ...postProject,
+    copyDraft: currentDraft,
+    selectedImages,
+    finalPost
+  });
+  const updatedProject = await updatePostProject({
+    copyDraft: currentDraft,
+    selectedImages,
+    finalPost,
+    qualityCheck,
+    auditStatus: qualityCheck.canPublish ? "passed" : "blocked",
+    currentStage: "reviewing"
+  });
+  const workspace = await updateWorkspaceState({
+    currentDraftId: currentDraft.id,
+    currentDraft,
+    selectedImageIds: selectedImages,
+    lastUserIntent: plan.intent
+  });
+  return {
+    answer: [
+      "已把当前文案和选中图片组装成最终帖子，并完成发布前 Quality Gate。",
+      `标题：${currentDraft.draft.title}`,
+      `图片：${selectedImages.length} 张`,
+      qualityCheck.canPublish ? "结果：通过，可以进入人工发布确认。" : "结果：暂不建议发布，需要先处理风险。",
+      qualityCheck.issues.length ? `主要问题：${qualityCheck.issues.slice(0, 4).join("；")}` : "",
+      qualityCheck.suggestions.length ? `建议：${qualityCheck.suggestions.slice(0, 3).join("；")}` : ""
+    ].filter(Boolean).join("\n"),
     workspace,
     postProject: updatedProject
   };

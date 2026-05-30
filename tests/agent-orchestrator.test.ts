@@ -481,6 +481,92 @@ describe("agent orchestrator", () => {
     expect(result.answer).toContain("已选择第 2 张图");
   });
 
+  it("assembles the current draft and selected image into finalPost before publish confirmation", async () => {
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: {
+        sampleIds: ["note-1"],
+        insights: [{
+          id: "insight-1",
+          sourceType: "realtime",
+          type: "copy",
+          insight: "真实写排队、人均和适合人群",
+          sourceSampleIds: ["note-1"],
+          confidence: 0.8,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }]
+      },
+      creativeBrief: {
+        audience: "广州咖啡爱好者",
+        painPoint: "不知道周末是否值得去",
+        contentAngle: "真实避坑",
+        emotionalHook: "先说结论",
+        proofPoints: ["排队", "人均"],
+        tone: "真实",
+        visualMood: "自然光",
+        imageMustHave: ["门头"],
+        imageMustAvoid: [],
+        platformStyle: "小红书",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      visualDirection: {
+        mood: "自然光",
+        composition: "门头+饮品",
+        colorPalette: "暖色",
+        mustHave: ["门头"],
+        mustAvoid: [],
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      selectedImages: ["asset-1"],
+      currentStage: "image_ready"
+    });
+    const draft = {
+      id: "draft-final",
+      updatedAt: "2026-05-30T00:00:00.000Z",
+      draft: {
+        title: "广州咖啡周末指南",
+        content: "这篇适合想周末找安静咖啡馆的人。先看人均和排队，再看座位光线，最后给适合人群和避峰建议。",
+        tags: ["广州咖啡馆", "探店"],
+        structure: ["适合谁", "体验", "避坑"],
+        imagePrompt: "自然光咖啡馆",
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      images: [],
+      visibility: defaultSettings.defaultVisibility
+    };
+    const { updateWorkspaceState } = await import("@/lib/agent/state");
+    await updateWorkspaceState({ currentDraftId: draft.id, currentDraft: draft, selectedImageIds: ["asset-1"] });
+
+    const result = await runAgentTurn({
+      message: "把当前内容组合成最终帖子并进入发布检查",
+      conversationId: "chat-quality",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: draft,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(result.intent).toBe("quality_check");
+    expect(result.postProject?.finalPost?.title).toBe("广州咖啡周末指南");
+    expect(result.postProject?.finalPost?.imageIds).toEqual(["asset-1"]);
+    expect(result.postProject?.qualityCheck).toBeTruthy();
+    expect(result.cards.map((card) => card.type)).toContain("quality_check");
+    expect(result.answer).toContain("Quality Gate");
+  });
+
   it("requires a confirmation intent even when auto publish policy is enabled", async () => {
     let publishCalls = 0;
     const result = await runAgentTurn({

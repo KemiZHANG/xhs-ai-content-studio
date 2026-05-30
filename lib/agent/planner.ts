@@ -39,6 +39,17 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
     });
   }
 
+  if (isQualityCheckRequest(message, lower) && input.hasCurrentDraft) {
+    return buildPlan({
+      intent: "quality_check",
+      topic: inferTopic(message),
+      steps: [
+        step("assemblePost", "Assemble current draft and selected images into the final post.", "project.assemblePost"),
+        step("runQualityGate", "Run the PostProject Quality Gate before publish confirmation.", "project.runQualityGate")
+      ]
+    });
+  }
+
   if (isCardGenerationRequest(message, lower) && input.hasCurrentDraft) {
     return buildPlan({
       intent: "generate_cards",
@@ -152,6 +163,10 @@ function isCardGenerationRequest(message: string, lower: string): boolean {
 
 function isImageSelectionRequest(message: string, lower: string): boolean {
   return /(?:用|选|选择|设为|就用|使用).{0,8}(?:第?\s*\d+\s*张|第?\s*[一二三四五六七八九十两]\s*张|这张|当前图|封面图|配图)/.test(message) || lower.includes("select image");
+}
+
+function isQualityCheckRequest(message: string, lower: string): boolean {
+  return /发布检查|质量检查|检查发布|进入发布检查|组合(?:成)?(?:最终)?帖子|组装(?:成)?(?:最终)?帖子|生成确认单|发布前检查/.test(message) || lower.includes("quality gate");
 }
 
 function isDraftRevisionRequest(message: string, lower: string): boolean {

@@ -114,4 +114,18 @@ describe("agent planner", () => {
     expect(plan.selectedImageIndex).toBe(2);
     expect(plan.steps.map((step) => step.action)).toEqual(["selectImages"]);
   });
+
+  it("plans final post assembly and quality gate from publish-check language", () => {
+    const plan = createAgentPlan({
+      message: "把当前内容组合成最终帖子并进入发布检查",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      hasSelectedImages: true,
+      postStage: "image_ready",
+      allowedActions: ["assemble_post", "run_quality_gate"]
+    });
+
+    expect(plan.intent).toBe("quality_check");
+    expect(plan.steps.map((step) => step.action)).toEqual(["assemblePost", "runQualityGate"]);
+  });
 });
