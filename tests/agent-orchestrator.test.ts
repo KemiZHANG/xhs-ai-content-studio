@@ -623,6 +623,9 @@ describe("agent orchestrator", () => {
     expect(result.postProject?.evidencePack.insights.some((insight) => insight.sourceType === "viral_library")).toBe(true);
     expect(result.postProject?.creativeBrief?.basedOnEvidenceIds.some((id) => id.startsWith("viral-insight-"))).toBe(true);
     expect(result.cards.map((card) => card.type)).toContain("viral_knowledge");
+    const viralCard = result.cards.find((card) => card.id === "card-viral-strategy");
+    expect(viralCard?.summary).toContain("可复用策略");
+    expect((viralCard?.data as { evidenceIds?: string[] } | undefined)?.evidenceIds?.length).toBeGreaterThan(0);
     expect(result.toolTrace.some((item) => item.label === "knowledge.retrieveViralPatterns" && item.status === "completed")).toBe(true);
     expect(result.trace.events.some((event) => event.type === "tool_completed" && event.label === "knowledge.retrieveViralPatterns")).toBe(true);
     expect(result.answer).toContain("爆款库");

@@ -1030,6 +1030,16 @@ function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecor
       });
     }
   }
+  const viralStrategy = extractViralStrategyReport(workspace.evidenceSummary);
+  if (viralStrategy) {
+    cards.push({
+      id: "card-viral-strategy",
+      type: "viral_knowledge",
+      title: "爆款策略",
+      summary: viralStrategy.summary,
+      data: viralStrategy
+    });
+  }
   if (postProject?.creativeBrief) {
     cards.push({
       id: "card-creative-brief",
@@ -1101,6 +1111,29 @@ function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecor
     });
   }
   return cards;
+}
+
+function extractViralStrategyReport(summary: unknown): {
+  summary: string;
+  recommendedAngles: string[];
+  evidenceIds: string[];
+} | null {
+  const viralKnowledge = isRecord(summary) ? summary.viralKnowledge : undefined;
+  const strategyReport = isRecord(viralKnowledge) ? viralKnowledge.strategyReport : undefined;
+  if (!isRecord(strategyReport) || typeof strategyReport.summary !== "string") {
+    return null;
+  }
+  return {
+    summary: strategyReport.summary,
+    recommendedAngles: stringArrayFromUnknown(strategyReport.recommendedAngles),
+    evidenceIds: stringArrayFromUnknown(strategyReport.evidenceIds)
+  };
+}
+
+function stringArrayFromUnknown(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string" && Boolean(item.trim())).map((item) => item.trim())
+    : [];
 }
 
 function formatQualityCardSummary(qualityCheck: NonNullable<PostProject["qualityCheck"]>): string {
