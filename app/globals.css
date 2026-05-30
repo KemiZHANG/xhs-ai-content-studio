@@ -2216,6 +2216,57 @@ textarea {
   font-size: 12px;
 }
 
+.publishProjectState {
+  background:
+    linear-gradient(135deg, rgba(18, 118, 97, 0.08), rgba(255, 255, 255, 0.8)),
+    var(--surface-subtle);
+  border: 1px solid rgba(18, 118, 97, 0.16);
+  border-radius: 14px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.publishProjectState p {
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.publishStateGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.publishStateGrid span {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.publishStateGrid small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.publishStateGrid strong {
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.publishIssueList {
+  color: rgba(141, 73, 36, 0.92);
+  line-height: 1.6;
+  margin: 0;
+  padding-left: 18px;
+}
+
 .phonePreview {
   background: #fffefa;
   border: 1px solid rgba(25, 33, 30, 0.1);
@@ -3664,6 +3715,7 @@ textarea {
   .modeSwitch,
   .publishControls,
   .publishReadinessGrid,
+  .publishStateGrid,
   .promptGrid,
   .researchSummaryGrid {
     grid-template-columns: 1fr;

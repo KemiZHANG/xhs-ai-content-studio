@@ -9,7 +9,8 @@ import { createPublishIntent, validatePublishIntent } from "@/lib/agent/guardrai
 import { updateWorkspaceState } from "@/lib/agent/state";
 import { createXhsMcpClient, readMcpText } from "@/lib/mcp/xhs";
 import { runPostQualityGate } from "@/lib/post-project/quality";
-import { readPostProject } from "@/lib/post-project/store";
+import { readPostProject, updatePostProject } from "@/lib/post-project/store";
+import type { QualityCheck } from "@/lib/post-project/types";
 import { buildPublishContentArgs, parseTagsText } from "@/lib/publishing/assembly";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { getAsset, type AssetRecord } from "@/lib/storage/assets";
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
       visibility: isPublishVisibility(body.visibility) ? body.visibility : settings.defaultVisibility,
       scheduleAt: body.scheduleAt
     });
-    const qualityBlockReasons = await getQualityGateBlockReasons(publishArgs, body.assetIds ?? []);
+    const qualityReview = await getQualityGateReview(publishArgs, body.assetIds ?? []);
 
     if (body.dryRun) {
       const publishIntent = createPublishIntent({
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
         accountId: settings.activeAccountId,
         mcpUrl: settings.mcpUrl
       });
-      const validationErrors = [...validatePublishIntent(publishIntent), ...qualityBlockReasons];
+      const validationErrors = [...validatePublishIntent(publishIntent), ...qualityReview.reasons];
       await appendPublishAudit({
         event: "preview",
         status: validationErrors.length ? "blocked" : "preview",
@@ -106,10 +107,17 @@ export async function POST(request: Request) {
       });
     }
 
-    if (qualityBlockReasons.length) {
+    if (qualityReview.qualityCheck) {
+      await updatePostProject({
+        qualityCheck: qualityReview.qualityCheck,
+        auditStatus: qualityReview.qualityCheck.canPublish ? "passed" : "blocked"
+      }).catch(() => undefined);
+    }
+
+    if (qualityReview.reasons.length) {
       return NextResponse.json(
         {
-          error: qualityBlockReasons.join("；"),
+          error: qualityReview.reasons.join("；"),
           requiresConfirmation: false
         },
         { status: 400 }
@@ -154,6 +162,10 @@ export async function POST(request: Request) {
     });
 
     if (guardedPublish.status === "awaiting_approval") {
+      await updatePostProject({
+        publishPlan: guardedPublish.publishIntent,
+        auditStatus: "unchecked"
+      }).catch(() => undefined);
       return NextResponse.json(
         {
           error: guardedPublish.reasons.join("；") || "发布需要确认",
@@ -165,6 +177,10 @@ export async function POST(request: Request) {
     }
 
     if (guardedPublish.status === "blocked") {
+      await updatePostProject({
+        publishPlan: guardedPublish.publishIntent,
+        auditStatus: "blocked"
+      }).catch(() => undefined);
       return NextResponse.json(
         {
           error: guardedPublish.reasons.join("；") || "发布被安全规则阻止",
@@ -202,6 +218,12 @@ export async function POST(request: Request) {
       selectedImageIds: body.assetIds ?? [],
       publishPlan: guardedPublish.publishIntent
     });
+    await updatePostProject({
+      publishPlan: guardedPublish.publishIntent,
+      copyDraft: currentDraft,
+      selectedImages: body.assetIds ?? [],
+      auditStatus: guardedPublish.status === "published" || guardedPublish.status === "scheduled" ? "passed" : "unchecked"
+    }).catch(() => undefined);
 
     return NextResponse.json({
       status: publishArgs.scheduleAt ? "scheduled" : "published",
@@ -216,7 +238,10 @@ export async function POST(request: Request) {
   }
 }
 
-async function getQualityGateBlockReasons(publishArgs: GuardedPublishArgs, assetIds: string[]): Promise<string[]> {
+async function getQualityGateReview(
+  publishArgs: GuardedPublishArgs,
+  assetIds: string[]
+): Promise<{ qualityCheck?: QualityCheck; reasons: string[] }> {
   try {
     const project = await readPostProject();
     const imageIds = assetIds.length ? assetIds : publishArgs.images;
@@ -234,14 +259,17 @@ async function getQualityGateBlockReasons(publishArgs: GuardedPublishArgs, asset
       selectedImages: imageIds
     });
     if (qualityCheck.canPublish) {
-      return [];
+      return { qualityCheck, reasons: [] };
     }
-    return [
+    return {
+      qualityCheck,
+      reasons: [
       "当前发布内容未通过 Quality Gate",
       ...qualityCheck.issues.slice(0, 5)
-    ];
+      ]
+    };
   } catch {
-    return [];
+    return { reasons: [] };
   }
 }
 

@@ -405,7 +405,7 @@ describe("API route contracts", () => {
       updatedAt: "2026-05-30T00:00:00.000Z",
       draft: {
         title: "title",
-        content: "content",
+        content: "这是一段足够具体的发布正文，包含真实场景、体验细节、适用人群、注意事项和互动引导，用来通过发布前质量检查。",
         tags: ["tag"],
         structure: [],
         imagePrompt: ""
@@ -543,6 +543,7 @@ describe("API route contracts", () => {
       createdAt: "2026-05-21T00:00:00.000Z"
     };
     const publishContent = vi.fn(async () => ({ ok: true }));
+    const updatePostProject = vi.fn(async () => ({}));
     const executeGuardedPublish = vi.fn(async ({ policy }) => ({
       status: policy.confirmed ? "published" : "awaiting_approval",
       reasons: policy.confirmed ? [] : ["review required before external publishing"],
@@ -564,6 +565,17 @@ describe("API route contracts", () => {
       getPublishIntent: vi.fn(),
       publishIntentMatchesArgs: vi.fn(() => false),
       executeGuardedPublish
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => ({
+        evidencePack: { insights: [{ id: "insight-1" }] },
+        selectedSamples: [],
+        creativeBrief: { basedOnEvidenceIds: ["insight-1"] },
+        visualDirection: { mood: "真实" },
+        copyDraft: null,
+        imagePrompts: []
+      }),
+      updatePostProject
     }));
     vi.doMock("@/lib/storage/drafts", () => ({
       createDraftRecord: vi.fn(),
@@ -590,6 +602,9 @@ describe("API route contracts", () => {
       })
     );
     expect(executeGuardedPublish).toHaveBeenCalledWith(expect.objectContaining({ policy: expect.objectContaining({ confirmed: false }) }));
+    expect(updatePostProject).toHaveBeenCalledWith(expect.objectContaining({
+      publishPlan: expect.objectContaining({ id: "publish-1" })
+    }));
     expect(publishContent).not.toHaveBeenCalled();
   });
 
@@ -686,7 +701,8 @@ describe("API route contracts", () => {
         qualityCheck: {
           issues: ["标题存在夸张词", "未选择合适图片"]
         }
-      })
+      }),
+      updatePostProject: vi.fn(async () => ({}))
     }));
     vi.doMock("@/lib/agent/publishing", () => ({
       getPublishIntent: vi.fn(),

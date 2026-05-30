@@ -2,7 +2,7 @@
 
 import { X } from "lucide-react";
 import { parseTagsText } from "@/lib/publishing/assembly";
-import type { AssetRecord, Health, PendingPublishConfirmation, PublishDraftState, RedactedSettings } from "@/app/types";
+import type { AssetRecord, Health, PendingPublishConfirmation, PostProject, PublishDraftState, RedactedSettings } from "@/app/types";
 import { formatMcpEndpoint } from "@/app/components/xhs-display-utils";
 import { StatusLine, StatusPill } from "@/app/components/status-badges";
 
@@ -16,6 +16,7 @@ export function PublishAssemblyPanel({
   scheduleAt,
   status,
   pendingPublish,
+  postProject,
   busy,
   onDraftChange,
   onToggleAsset,
@@ -37,6 +38,7 @@ export function PublishAssemblyPanel({
   scheduleAt: string;
   status: string;
   pendingPublish: PendingPublishConfirmation | null;
+  postProject: PostProject | null;
   busy: boolean;
   onDraftChange: (draft: PublishDraftState) => void;
   onToggleAsset: (id: string) => void;
@@ -54,7 +56,10 @@ export function PublishAssemblyPanel({
   const ready = Boolean(draft.title.trim() && draft.content.trim() && tagCount && selectedAssets.length);
   const activeAccount = settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
   const accountReady = Boolean(health?.loggedIn);
-  const canSubmit = ready && accountReady;
+  const quality = postProject?.qualityCheck;
+  const finalPost = postProject?.finalPost;
+  const postPlan = postProject?.publishPlan;
+  const canSubmit = ready && accountReady && quality?.canPublish !== false;
 
   return (
     <div className="twoColumn wideLeft">
@@ -94,8 +99,41 @@ export function PublishAssemblyPanel({
             <StatusLine ok={Boolean(selectedAssets.length)} label={`${selectedAssets.length} 张图片`} />
             <StatusLine ok={visibility === "仅自己可见"} label={`可见范围：${visibility}`} />
             <StatusLine ok={accountReady} label={`发布账号：${activeAccount?.displayName ?? "未配置账号"}`} />
+            <StatusLine ok={quality?.canPublish !== false} label={quality ? `Quality Gate：${quality.canPublish ? "通过" : "需处理"}` : "Quality Gate：待检查"} />
           </section>
         </div>
+
+        {finalPost || quality || postPlan ? (
+          <section className="publishProjectState">
+            <div>
+              <strong>PostProject 发布状态</strong>
+              <p>发布确认会绑定当前最终帖子、图片版本、账号、可见范围和定时时间。</p>
+            </div>
+            <div className="publishStateGrid">
+              <span>
+                <small>最终标题</small>
+                <strong>{finalPost?.title || draft.title || "待确认"}</strong>
+              </span>
+              <span>
+                <small>最终图片</small>
+                <strong>{finalPost?.imageIds.length ?? selectedAssets.length} 张</strong>
+              </span>
+              <span>
+                <small>Quality</small>
+                <strong>{quality ? (quality.canPublish ? "通过" : "阻止") : "待检查"}</strong>
+              </span>
+              <span>
+                <small>确认单</small>
+                <strong>{postPlan?.status ? labelForPublishStatus(postPlan.status) : "未生成"}</strong>
+              </span>
+            </div>
+            {quality?.issues.length ? (
+              <ul className="publishIssueList">
+                {quality.issues.slice(0, 4).map((issue) => <li key={issue}>{issue}</li>)}
+              </ul>
+            ) : null}
+          </section>
+        ) : null}
 
         <section className={accountReady ? "publishAccountGuard ok" : "publishAccountGuard warn"}>
           <div>
@@ -265,4 +303,19 @@ export function PublishAssemblyPanel({
       </section>
     </div>
   );
+}
+
+function labelForPublishStatus(status: string): string {
+  const labels: Record<string, string> = {
+    draft: "草稿",
+    blocked: "已阻止",
+    awaiting_approval: "待人工确认",
+    approved: "已确认",
+    publishing: "发布中",
+    published: "已发布",
+    scheduled: "已定时",
+    failed: "失败",
+    cancelled: "已取消"
+  };
+  return labels[status] ?? status;
 }

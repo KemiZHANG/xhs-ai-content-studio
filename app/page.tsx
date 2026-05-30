@@ -1253,6 +1253,7 @@ export default function Home() {
             scheduleAt={publishScheduleAt}
             status={publishStatus}
             pendingPublish={pendingPublish}
+            postProject={postProject}
             busy={busy === "publish"}
             onDraftChange={handlePublishDraftChange}
             onToggleAsset={(id) =>
