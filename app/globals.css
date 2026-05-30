@@ -3663,6 +3663,46 @@ textarea {
   text-align: center;
 }
 
+.citationSummaryBox {
+  background: linear-gradient(135deg, rgba(18, 118, 97, 0.08), rgba(255, 255, 255, 0.8));
+  border: 1px solid rgba(18, 118, 97, 0.18);
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.citationSummaryBox strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.citationSummaryBox p,
+.citationSummaryBox small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.citationFieldGrid {
+  display: grid;
+  gap: 8px;
+}
+
+.citationFieldGrid article {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 10px;
+  padding: 9px;
+}
+
+.citationFieldGrid span {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 900;
+}
+
 .briefStack,
 .qualityBox {
   display: grid;

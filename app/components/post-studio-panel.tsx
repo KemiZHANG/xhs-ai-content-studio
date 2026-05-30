@@ -33,6 +33,7 @@ import type {
   WorkspaceState
 } from "@/app/types";
 import { getPostStageGuidance } from "@/lib/post-project/guidance";
+import { buildEvidenceCitationReport } from "@/lib/post-project/citations";
 import { getPostVersionStatus } from "@/lib/post-project/versioning";
 import type { PostAction } from "@/lib/post-project/types";
 
@@ -148,6 +149,9 @@ export function PostStudioPanel({
   const imagePromptVersions = project?.imagePrompts ?? [];
   const draftEvidenceIds = project?.copyDraft?.draft.basedOnEvidenceIds ?? copyVersions.at(-1)?.basedOnEvidenceIds ?? [];
   const versionStatus = project ? getPostVersionStatus(project) : null;
+  const citationReport = project && draftEvidenceIds.length
+    ? buildEvidenceCitationReport(project, draftEvidenceIds, project.copyDraft?.draft.evidenceReferences)
+    : null;
   const hasVisualDirection = Boolean(latestImagePrompt || project?.visualDirection);
   const activeAccount = settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
   const accountReady = Boolean(health?.loggedIn);
@@ -472,6 +476,23 @@ export function PostStudioPanel({
                 ))}
                 {insights.length > keyLearningInsights.length ? (
                   <p className="muted">已压缩展示 {keyLearningInsights.length} 条核心规律；完整实时样本、爆款库来源和评论在“证据 / 爆款库”里查看。</p>
+                ) : null}
+                {citationReport?.allEvidenceIds.length ? (
+                  <div className="citationSummaryBox">
+                    <strong>当前草稿证据引用</strong>
+                    <p>{citationReport.summary}</p>
+                    <div className="citationFieldGrid">
+                      {citationReport.sections.slice(0, 4).map((section) => (
+                        <article key={section.field}>
+                          <span>{labelForCitationField(section.field)} · {section.insights.length} 条</span>
+                          <p>{section.insights.slice(0, 2).map((insight) => `${labelForSource(insight.sourceType)}：${insight.insight}`).join(" / ") || "暂无可追溯证据"}</p>
+                        </article>
+                      ))}
+                    </div>
+                    {citationReport.warnings.length ? (
+                      <small>{citationReport.warnings.slice(0, 2).join("；")}</small>
+                    ) : null}
+                  </div>
                 ) : null}
                 </>
               ) : (
@@ -1148,6 +1169,16 @@ function labelForSource(sourceType?: string): string {
     user_input: "用户输入"
   };
   return sourceType ? labels[sourceType] ?? sourceType : "实时";
+}
+
+function labelForCitationField(field: string): string {
+  const labels: Record<string, string> = {
+    title: "标题",
+    content: "正文",
+    tags: "标签",
+    imagePrompt: "图片方向"
+  };
+  return labels[field] ?? field;
 }
 
 function labelForAgentCard(type: string): string {
