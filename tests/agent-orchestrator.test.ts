@@ -146,6 +146,13 @@ describe("agent orchestrator", () => {
     expect(result.intentConfidence).toBeLessThan(0.7);
     expect(result.questions.join(" ")).toContain("还没有可发布的草稿");
     expect(result.answer).toContain("还没有可发布的草稿");
+    expect(result.cards).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: "card-publish-missing-draft",
+        type: "publish_check",
+        title: "发布前缺少草稿"
+      })
+    ]));
     expect(result.workspace.publishPlan).toBeNull();
     expect(runChatAgent).not.toHaveBeenCalled();
   });

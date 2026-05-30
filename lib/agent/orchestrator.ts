@@ -573,7 +573,7 @@ function buildAgentTurnResult({
   trace: AgentTurnResult["trace"];
   postProject?: PostProject | null;
 }): AgentTurnResult {
-  const cards = buildCardsFromTurn(workspace, currentDraft, postProject);
+  const cards = buildCardsFromTurn(workspace, currentDraft, postProject, plan);
   const evidenceAwareAnswer = appendEvidenceReferenceNote(answer, plan, postProject);
   const structured = buildStructuredAgentResponse({
     answer: evidenceAwareAnswer,
@@ -1023,7 +1023,12 @@ function formatRagFiltersSummary(filters: ReturnType<typeof createAgentPlan>["ra
   return summarizeViralRetrievalFilters(filters);
 }
 
-function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecord | null, postProject?: PostProject | null): AgentResponseCard[] {
+function buildCardsFromTurn(
+  workspace: WorkspaceState,
+  currentDraft?: DraftRecord | null,
+  postProject?: PostProject | null,
+  plan?: AgentPlan
+): AgentResponseCard[] {
   const cards: AgentResponseCard[] = [];
   if (postProject) {
     const guidance = getPostStageGuidance(postProject.currentStage, postProject.allowedActions);
@@ -1127,6 +1132,19 @@ function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecor
       title: postProject.qualityCheck.canPublish ? "质量检查通过" : "质量检查需处理",
       summary: formatQualityCardSummary(postProject.qualityCheck),
       data: postProject.qualityCheck
+    });
+  }
+  if (plan && isPublishWithoutDraftPlan(plan, workspace, postProject)) {
+    cards.push({
+      id: "card-publish-missing-draft",
+      type: "publish_check",
+      title: "发布前缺少草稿",
+      summary: "当前还没有可发布的草稿或最终帖子。请先生成文案、选择图片并组装发布稿。",
+      data: {
+        blocked: true,
+        missing: ["copyDraft", "finalPost"],
+        nextActions: ["generate_copy", "select_images", "assemble_post"]
+      }
     });
   }
   if (workspace.publishPlan) {
