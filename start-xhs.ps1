@@ -7,6 +7,25 @@ function Test-Port($port) {
   return [bool](Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue)
 }
 
+function Open-InChromeOrDefault($url) {
+  $chromeCandidates = @(
+    (Join-Path ${env:ProgramFiles} "Google\Chrome\Application\chrome.exe"),
+    (Join-Path ${env:ProgramFiles(x86)} "Google\Chrome\Application\chrome.exe"),
+    (Join-Path ${env:LocalAppData} "Google\Chrome\Application\chrome.exe")
+  )
+
+  foreach ($candidate in $chromeCandidates) {
+    if ($candidate -and (Test-Path $candidate)) {
+      Start-Process -FilePath $candidate -ArgumentList @($url)
+      Write-Host "Opened XHS Studio in Google Chrome: $url"
+      return
+    }
+  }
+
+  Start-Process $url
+  Write-Host "Google Chrome was not found. Opened XHS Studio with the default browser: $url"
+}
+
 Set-Location $root
 
 if (-not (Test-Path $mcpExe)) {
@@ -37,4 +56,4 @@ if (-not (Test-Port 3000)) {
 }
 
 Start-Sleep -Seconds 3
-Start-Process "http://localhost:3000"
+Open-InChromeOrDefault "http://localhost:3000"
