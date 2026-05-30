@@ -853,6 +853,8 @@ describe("agent orchestrator", () => {
     expect(result.workspace.publishPlan?.status).toBe("awaiting_approval");
     expect(result.workspace.publishPlan?.scheduleAt).toBe("2099-05-22T20:00:00+08:00");
     expect(result.workspace.publishPlan?.images).toEqual([selectedImagePath]);
+    expect(result.postProject?.publishPlan?.status).toBe("awaiting_approval");
+    expect(result.postProject?.currentStage).toBe("reviewing");
   });
 
   it("stores standalone image selection on workspace and PostProject", async () => {

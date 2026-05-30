@@ -1896,6 +1896,17 @@ async function maybeHandleGuardedPublishTurn(
     lastUserIntent: plan.intent,
     publishPlan: guardedPublish.publishIntent
   });
+  await updatePostProject({
+    publishPlan: guardedPublish.publishIntent,
+    auditStatus: guardedPublish.status === "blocked" || guardedPublish.status === "failed" ? "blocked" : "unchecked",
+    currentStage: guardedPublish.status === "scheduled"
+      ? "scheduled"
+      : guardedPublish.status === "published"
+        ? "published"
+        : guardedPublish.status === "failed"
+          ? "failed"
+          : "reviewing"
+  });
 
   return {
     answer:
