@@ -3548,7 +3548,23 @@ textarea {
 .versionCard {
   align-items: start;
   display: grid;
-  gap: 4px;
+  gap: 7px;
+  padding: 2px 0;
+}
+
+.versionCard > div:first-child {
+  align-items: start;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.versionCard p,
+.versionCard small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
 }
 
 .versionSwitcher button {
@@ -3569,6 +3585,44 @@ textarea {
 
 .compactVersionSwitcher {
   background: var(--surface-subtle);
+}
+
+.promptVersionCard {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.promptVersionCard:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.finalPostSnapshot {
+  background: rgba(23, 24, 29, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  gap: 8px;
+  padding: 11px 12px;
+}
+
+.finalPostSnapshot strong {
+  color: var(--ink);
+}
+
+.finalPostSnapshot div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.finalPostSnapshot span {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 5px 8px;
 }
 
 .studioDrawerBackdrop {

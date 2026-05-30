@@ -280,6 +280,11 @@ export function PostStudioPanel({
                   <div>
                     {copyVersions.slice(-4).map((version, index) => (
                       <article className="versionCard" key={version.id}>
+                        <div>
+                          <strong>{version.value.title || version.label || `版本 ${index + 1}`}</strong>
+                          <span>{formatDateTime(version.createdAt)} · 证据 {version.basedOnEvidenceIds.length}</span>
+                        </div>
+                        <p>{summarizeDraftDiff(publishDraft, version.value)}</p>
                         <button
                           type="button"
                           onClick={() => {
@@ -292,9 +297,8 @@ export function PostStudioPanel({
                             onSelectCopyVersion(version.id);
                           }}
                         >
-                          {version.label || `版本 ${index + 1}`}
+                          回滚到此版本
                         </button>
-                        <span>{summarizeDraftDiff(publishDraft, version.value)}</span>
                       </article>
                     ))}
                   </div>
@@ -328,17 +332,34 @@ export function PostStudioPanel({
                   </div>
                   <div>
                     {imagePromptVersions.slice(-3).map((version, index) => (
-                      <button
-                        key={version.id}
-                        type="button"
-                        onClick={() => {
-                          onDraftChange({ ...publishDraft, imagePrompt: version.value.prompt });
-                          onSelectImagePromptVersion(version.id);
-                        }}
-                      >
-                        {version.label || `Prompt ${index + 1}`}
-                      </button>
+                      <article className="versionCard promptVersionCard" key={version.id}>
+                        <div>
+                          <strong>{version.label || `Prompt ${index + 1}`}</strong>
+                          <span>{formatDateTime(version.createdAt)} · 证据 {version.basedOnEvidenceIds.length}</span>
+                        </div>
+                        <p>{summarizePromptDiff(latestImagePrompt, version.value.prompt)}</p>
+                        {version.value.negativePrompt ? <small>避免：{version.value.negativePrompt.slice(0, 90)}</small> : null}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onDraftChange({ ...publishDraft, imagePrompt: version.value.prompt });
+                            onSelectImagePromptVersion(version.id);
+                          }}
+                        >
+                          使用此 Prompt
+                        </button>
+                      </article>
                     ))}
+                  </div>
+                </section>
+              ) : null}
+              {project?.finalPost ? (
+                <section className="finalPostSnapshot" aria-label="最终帖子快照">
+                  <strong>最终帖子快照</strong>
+                  <div>
+                    <span>文案版本：{project.finalPost.copyVersionId ?? "当前画布"}</span>
+                    <span>图片：{project.finalPost.imageIds.length} 张</span>
+                    <span>Prompt：{project.finalPost.imagePromptVersionIds.length} 个</span>
                   </div>
                 </section>
               ) : null}
@@ -850,6 +871,26 @@ function summarizeDraftDiff(current: PublishDraftState, version: NonNullable<Wor
   const versionTags = version.tags.join("|");
   if (currentTags && currentTags !== versionTags) changes.push("标签不同");
   return changes.length ? changes.join(" · ") : "当前画布一致";
+}
+
+function summarizePromptDiff(currentPrompt: string, nextPrompt: string): string {
+  const current = currentPrompt.trim();
+  const next = nextPrompt.trim();
+  if (!current) return next ? `将填入 ${next.length} 字图片 Prompt` : "Prompt 为空";
+  if (current === next) return "当前 Prompt 一致";
+  const delta = next.length - current.length;
+  return `Prompt ${delta > 0 ? "+" : ""}${delta} 字 · ${next.slice(0, 58)}${next.length > 58 ? "..." : ""}`;
+}
+
+function formatDateTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 }
 
 function parseTags(value: string): string[] {
