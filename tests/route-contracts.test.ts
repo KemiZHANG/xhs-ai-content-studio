@@ -432,6 +432,23 @@ describe("API route contracts", () => {
       input,
       steps: []
     }));
+    const resetWorkspaceState = vi.fn(async (patch) => ({
+      schemaVersion: 1,
+      workspaceId: "workspace-job",
+      updatedAt: "",
+      selectedSamples: [],
+      selectedImageIds: [],
+      productImageIds: [],
+      recentJobIds: [],
+      recentRunIds: [],
+      recentConversationIds: [],
+      ...patch
+    }));
+    const resetPostProject = vi.fn(async (seed) => ({
+      id: seed.id,
+      topic: seed.topic,
+      currentStage: seed.currentStage
+    }));
 
     vi.doMock("@/lib/storage/settings", () => ({
       readSettings: async () => ({
@@ -444,9 +461,21 @@ describe("API route contracts", () => {
     vi.doMock("@/lib/jobs/runner", () => ({
       getJobRunner: () => ({ enqueueWorkflow })
     }));
+    vi.doMock("@/lib/agent/state", () => ({
+      resetWorkspaceState
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      resetPostProject
+    }));
 
     const { POST } = await import("@/app/api/jobs/route");
-    const response = await POST(jsonRequest({ topic: "coffee", autoPublish: true }));
+    const response = await POST(jsonRequest({
+      topic: "coffee",
+      autoPublish: true,
+      imageSource: "product",
+      assetIds: ["asset-1"],
+      productName: "咖啡豆"
+    }));
     const payload = await response.json();
 
     expect(response.status).toBe(200);
@@ -458,6 +487,23 @@ describe("API route contracts", () => {
         autoPublish: false
       })
     );
+    expect(resetWorkspaceState).toHaveBeenCalledWith(expect.objectContaining({
+      topic: "coffee",
+      currentDraft: null,
+      selectedSamples: [],
+      selectedImageIds: [],
+      productImageIds: ["asset-1"],
+      publishPlan: null,
+      lastUserIntent: "research_to_draft"
+    }));
+    expect(resetPostProject).toHaveBeenCalledWith(expect.objectContaining({
+      topic: "coffee",
+      productInfo: expect.objectContaining({
+        name: "咖啡豆",
+        referenceAssetIds: ["asset-1"]
+      }),
+      currentStage: "researching"
+    }));
   });
 
   it("returns published status and currentDraft from the publish route", async () => {

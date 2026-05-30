@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { resetWorkspaceState } from "@/lib/agent/state";
 import { getJobRunner } from "@/lib/jobs/runner";
+import { resetPostProject } from "@/lib/post-project/store";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { isPublishVisibility, readSettings } from "@/lib/storage/settings";
 import type { OneClickInput, PublishMode } from "@/lib/workflows/one-click";
@@ -49,6 +51,34 @@ export async function POST(request: Request) {
     if (!input.topic) {
       return NextResponse.json({ error: "请输入主题" }, { status: 400 });
     }
+
+    const referenceAssetIds = input.imageSource === "product" || input.imageSource === "asset" ? input.assetIds ?? [] : [];
+    const initialWorkspace = await resetWorkspaceState({
+      topic: input.topic,
+      selectedSamples: [],
+      evidenceSummary: undefined,
+      currentDraftId: undefined,
+      currentDraft: null,
+      selectedImageIds: [],
+      productImageIds: referenceAssetIds,
+      publishPlan: null,
+      lastUserIntent: input.workflowGoal === "research" ? "research_only" : "research_to_draft"
+    });
+    await resetPostProject({
+      id: initialWorkspace.workspaceId === "local-default"
+        ? "post-local-default"
+        : initialWorkspace.workspaceId.replace(/^workspace-/, "post-"),
+      topic: input.topic,
+      productInfo: {
+        name: input.productName,
+        sellingPoints: input.sellingPoints,
+        scene: input.scene,
+        referenceAssetIds
+      },
+      goal: input.requirements,
+      auditStatus: "unchecked",
+      currentStage: "researching"
+    });
 
     const job = await getJobRunner().enqueueWorkflow(input);
     return NextResponse.json({ job });
