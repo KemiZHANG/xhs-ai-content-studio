@@ -232,6 +232,103 @@ describe("post project", () => {
     expect(quality.complianceScore).toBeLessThan(100);
   });
 
+  it("blocks product-image prompts that change packaging or logos", () => {
+    const baseProject = {
+      productInfo: {
+        name: "低因咖啡豆",
+        referenceAssetIds: ["product-photo-1"]
+      },
+      creativeBrief: {
+        audience: "咖啡新手",
+        painPoint: "怕晚上喝咖啡影响睡眠",
+        contentAngle: "真实产品使用场景",
+        emotionalHook: "晚上也想喝咖啡但不想太兴奋",
+        proofPoints: ["低因", "晚间场景", "冲泡方式"],
+        tone: "真实分享",
+        visualMood: "居家暖光",
+        imageMustHave: ["产品主体"],
+        imageMustAvoid: ["虚假认证"],
+        platformStyle: "小红书真实种草",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-product"]
+      },
+      visualDirection: {
+        mood: "居家暖光",
+        composition: "产品放在桌面，旁边有咖啡杯",
+        colorPalette: "warm",
+        mustHave: ["产品主体"],
+        mustAvoid: ["虚假 logo"],
+        basedOnEvidenceIds: ["insight-product"]
+      },
+      evidencePack: {
+        sampleIds: ["note-product"],
+        insights: [{
+          id: "insight-product",
+          sourceType: "user_input",
+          type: "visual",
+          insight: "保留产品主体，换成居家晚间场景。",
+          sourceSampleIds: ["note-product"],
+          confidence: 0.9,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }]
+      },
+      selectedImages: ["asset-product"],
+      finalPost: {
+        title: "晚上也能安心喝的低因咖啡豆",
+        content: "这篇笔记从晚间使用场景出发，讲清楚适合哪些人、怎么冲泡、口感细节和需要注意的地方，用真实体验帮助用户判断是否适合自己。",
+        tags: ["低因咖啡", "咖啡豆", "晚间咖啡"],
+        imageIds: ["asset-product"],
+        imagePromptVersionIds: ["prompt-risk"]
+      },
+      copyDraft: {
+        id: "draft-product",
+        updatedAt: "2026-05-31T00:00:00.000Z",
+        visibility: defaultSettings.defaultVisibility,
+        images: [],
+        draft: {
+          title: "晚上也能安心喝的低因咖啡豆",
+          content: "这篇笔记从晚间使用场景出发，讲清楚适合哪些人、怎么冲泡、口感细节和需要注意的地方，用真实体验帮助用户判断是否适合自己。",
+          tags: ["低因咖啡", "咖啡豆", "晚间咖啡"],
+          structure: ["场景", "体验", "适合人群"],
+          imagePrompt: "居家暖光产品场景图",
+          basedOnEvidenceIds: ["insight-product"],
+          evidenceReferences: {
+            title: ["insight-product"],
+            content: ["insight-product"],
+            tags: ["insight-product"],
+            imagePrompt: ["insight-product"]
+          }
+        }
+      }
+    } satisfies Parameters<typeof runPostQualityGate>[0];
+    const quality = runPostQualityGate({
+      ...baseProject,
+      imagePrompts: [{
+        id: "prompt-risk",
+        createdAt: "2026-05-31T00:00:00.000Z",
+        label: "风险图片提示词",
+        value: { prompt: "重新设计产品包装和 logo，让标签换成更高级的文字" },
+        basedOnEvidenceIds: ["insight-product"]
+      }]
+    });
+    const safeQuality = runPostQualityGate({
+      ...baseProject,
+      imagePrompts: [{
+        id: "prompt-safe",
+        createdAt: "2026-05-31T00:00:00.000Z",
+        label: "安全图片提示词",
+        value: { prompt: "保留产品包装、logo、标签、颜色和轮廓，只替换居家暖光背景" },
+        basedOnEvidenceIds: ["insight-product"]
+      }]
+    });
+
+    expect(quality.canPublish).toBe(false);
+    expect(quality.issues.join(" ")).toContain("产品外观");
+    expect(quality.suggestions.join(" ")).toContain("不要改变包装");
+    expect(safeQuality.issues.join(" ")).not.toContain("产品外观");
+  });
+
   it("flags drafts that are too close to source samples", () => {
     const sourceText = "真实探店体验先讲排队和人均再给适合拍照的位置最后提醒周末避开高峰";
     const quality = runPostQualityGate({

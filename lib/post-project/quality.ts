@@ -7,7 +7,7 @@ const riskyClaims = ["认证", "销量", "全网", "官方", "治愈", "疗效",
 export function runPostQualityGate(project: Pick<
   PostProject,
   "finalPost" | "copyDraft" | "selectedImages" | "creativeBrief" | "visualDirection"
-> & Partial<Pick<PostProject, "selectedSamples" | "evidencePack" | "imagePrompts">>): QualityCheck {
+> & Partial<Pick<PostProject, "productInfo" | "selectedSamples" | "evidencePack" | "imagePrompts">>): QualityCheck {
   const finalPost = project.finalPost ?? finalPostFromDraft(project);
   const issues: string[] = [];
   const suggestions: string[] = [];
@@ -102,6 +102,12 @@ export function runPostQualityGate(project: Pick<
     suggestions.push("删除无法证明的认证、销量、功效和 before/after 对比。");
   }
 
+  const productMutationRisk = findProductMutationRisk(project);
+  if (productMutationRisk) {
+    issues.push(`图片方向可能改变产品外观：${productMutationRisk}`);
+    suggestions.push("产品图场景化只能替换环境和构图，不要改变包装、logo、标签、材质、颜色或产品轮廓。");
+  }
+
   if ((finalPost?.tags.length ?? 0) > 10) {
     issues.push("标签数量偏多，可能像标签堆砌");
     suggestions.push("保留主题词、场景词、人群词和 1-2 个风格词。");
@@ -138,7 +144,13 @@ export function runPostQualityGate(project: Pick<
     hasVisualEvidenceMismatch
   ]);
   const platformFitScore = scoreFromIssues([(finalPost?.tags.length ?? 0) === 0, (finalPost?.tags.length ?? 0) > 10]);
-  const complianceScore = scoreFromIssues([risky.length > 0, exaggerated.length > 1, Boolean(copiedSampleTitle), !originalityReview.isSafe]);
+  const complianceScore = scoreFromIssues([
+    risky.length > 0,
+    Boolean(productMutationRisk),
+    exaggerated.length > 1,
+    Boolean(copiedSampleTitle),
+    !originalityReview.isSafe
+  ]);
   const hasCriticalPublishRisk = Boolean(
     !finalPost?.title ||
       !finalPost.content ||
@@ -149,6 +161,7 @@ export function runPostQualityGate(project: Pick<
       hasVisualEvidenceMismatch ||
       exaggerated.length ||
       risky.length ||
+      productMutationRisk ||
       copiedSampleTitle ||
       !originalityReview.isSafe ||
       (project.copyDraft ? !draftEvidenceIds.length || invalidEvidenceIds.length > 0 || Boolean(citationReport?.missingEvidenceIds.length) : false)
@@ -173,6 +186,48 @@ export function runPostQualityGate(project: Pick<
     originalityReview,
     checkedAt: new Date().toISOString()
   };
+}
+
+function findProductMutationRisk(
+  project: Partial<Pick<PostProject, "productInfo" | "creativeBrief" | "visualDirection" | "imagePrompts">>
+): string | null {
+  const hasProductContext = Boolean(project.productInfo?.name || project.productInfo?.referenceAssetIds?.length);
+  if (!hasProductContext) return null;
+  const visualText = [
+    project.creativeBrief?.visualMood,
+    ...(project.creativeBrief?.imageMustHave ?? []),
+    project.visualDirection?.mood,
+    project.visualDirection?.composition,
+    project.visualDirection?.colorPalette,
+    ...(project.visualDirection?.mustHave ?? []),
+    ...(project.imagePrompts ?? []).flatMap((prompt) => [prompt.value.prompt, prompt.value.negativePrompt ?? ""])
+  ].filter(Boolean).join(" ");
+  const normalized = stripSafeBackgroundReplacementPhrases(visualText.toLowerCase());
+  if (!normalized.trim()) return null;
+
+  const identityTerms = ["包装", "logo", "商标", "标签", "瓶身", "盒身", "材质", "颜色", "轮廓", "外观", "product", "package", "packaging", "label", "material", "color", "logo"];
+  const mutationTerms = ["改变", "改掉", "改成", "替换", "换成", "重做", "重绘", "重新设计", "去掉", "删除", "虚构", "change", "replace", "redesign", "remove", "alter"];
+  const negationTerms = ["不要", "不得", "不能", "避免", "禁止", "保留", "保持", "不改变", "不要改变", "do not", "don't", "avoid", "keep", "preserve", "without changing"];
+  const hasIdentityTerm = identityTerms.some((term) => normalized.includes(term.toLowerCase()));
+  if (!hasIdentityTerm) return null;
+  for (const mutation of mutationTerms) {
+    const index = normalized.indexOf(mutation.toLowerCase());
+    if (index < 0) continue;
+    const context = normalized.slice(Math.max(0, index - 18), index + mutation.length + 28);
+    if (negationTerms.some((term) => context.includes(term.toLowerCase()))) continue;
+    if (identityTerms.some((term) => context.includes(term.toLowerCase()))) {
+      return context.trim();
+    }
+  }
+  return null;
+}
+
+function stripSafeBackgroundReplacementPhrases(text: string): string {
+  return text
+    .replace(/只?替换[^，。,.；;]*?(背景|环境|场景)/g, "")
+    .replace(/只?换[^，。,.；;]*?(背景|环境|场景)/g, "")
+    .replace(/change[^，。,.；;]*?(background|scene|environment)/g, "")
+    .replace(/replace[^，。,.；;]*?(background|scene|environment)/g, "");
 }
 
 function buildEvidenceAlignment(
