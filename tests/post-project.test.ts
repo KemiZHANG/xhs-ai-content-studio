@@ -13,6 +13,7 @@ import {
   resetPostProject,
   updatePostProject
 } from "@/lib/post-project";
+import { buildEvidenceCitationReport } from "@/lib/post-project/citations";
 import { runPostQualityGate } from "@/lib/post-project/quality";
 import { defaultSettings } from "@/lib/storage/settings";
 import { createViralCaseFromEvidence } from "@/lib/viral-knowledge/store";
@@ -973,5 +974,71 @@ describe("post project", () => {
     expect(quality.canPublish).toBe(false);
     expect(quality.issues.join(" ")).toContain("不可追溯证据");
     expect(quality.suggestions.join(" ")).toContain("当前 evidencePack");
+  });
+
+  it("infers field-specific evidence citations from shared basedOnEvidenceIds", () => {
+    const report = buildEvidenceCitationReport({
+      creativeBrief: {
+        audience: "city cafe collectors",
+        painPoint: "need a save-worthy quiet cafe",
+        contentAngle: "real visit guide",
+        emotionalHook: "avoid wasting time",
+        proofPoints: ["queue", "price"],
+        tone: "honest",
+        visualMood: "natural light",
+        imageMustHave: ["window seat"],
+        imageMustAvoid: ["copied source images"],
+        platformStyle: "xiaohongshu",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-title", "insight-copy", "insight-tag", "insight-visual"]
+      },
+      evidencePack: {
+        sampleIds: ["note-1", "viral-1"],
+        insights: [
+          {
+            id: "insight-title",
+            sourceType: "realtime",
+            type: "title",
+            insight: "Lead with the save-worthy cafe scene.",
+            sourceSampleIds: ["note-1"],
+            confidence: 0.9,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          },
+          {
+            id: "insight-copy",
+            sourceType: "viral_library",
+            type: "structure",
+            insight: "Use queue -> price -> seating -> reminder.",
+            sourceSampleIds: ["viral-1"],
+            confidence: 0.82,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          },
+          {
+            id: "insight-tag",
+            sourceType: "viral_library",
+            type: "tag",
+            insight: "Use city + scene + use-case tags.",
+            sourceSampleIds: ["viral-1"],
+            confidence: 0.75,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          },
+          {
+            id: "insight-visual",
+            sourceType: "realtime",
+            type: "visual",
+            insight: "Cover image should show natural light and a window seat.",
+            sourceSampleIds: ["note-1"],
+            confidence: 0.78,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }
+        ]
+      }
+    }, ["insight-title", "insight-copy", "insight-tag", "insight-visual"]);
+
+    expect(report.sections.find((section) => section.field === "title")?.evidenceIds).toEqual(["insight-title", "insight-copy"]);
+    expect(report.sections.find((section) => section.field === "content")?.evidenceIds).toEqual(["insight-copy"]);
+    expect(report.sections.find((section) => section.field === "tags")?.evidenceIds).toEqual(["insight-tag", "insight-title"]);
+    expect(report.sections.find((section) => section.field === "imagePrompt")?.evidenceIds).toEqual(["insight-visual", "insight-copy"]);
   });
 });

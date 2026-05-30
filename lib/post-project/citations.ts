@@ -33,7 +33,9 @@ export function buildEvidenceCitationReport(
     ...(project.creativeBrief?.basedOnEvidenceIds ?? [])
   ]);
   const sections: EvidenceCitationSection[] = (["title", "content", "tags", "imagePrompt"] as const).map((field) => {
-    const ids = uniqueIds([...(evidenceReferences?.[field] ?? []), ...fallbackIds]).slice(0, 8);
+    const explicitIds = evidenceReferences?.[field] ?? [];
+    const inferredIds = inferFieldEvidenceIds(project.evidencePack.insights, field, fallbackIds);
+    const ids = uniqueIds([...(explicitIds.length ? explicitIds : []), ...inferredIds]).slice(0, 8);
     return buildCitationSection(project.evidencePack.insights, field, ids);
   });
   const allEvidenceIds = uniqueIds(sections.flatMap((section) => section.evidenceIds));
@@ -71,6 +73,42 @@ export function formatEvidenceCitationReport(report: EvidenceCitationReport): st
     ...visibleSections,
     warningText
   ].filter(Boolean).join("\n");
+}
+
+function inferFieldEvidenceIds(
+  insights: EvidenceInsight[],
+  field: EvidenceCitationField,
+  fallbackIds: string[]
+): string[] {
+  const fallbackSet = new Set(fallbackIds);
+  const allowedTypes = citationFieldInsightTypes(field);
+  const relevant = insights
+    .filter((insight) => fallbackSet.has(insight.id))
+    .filter((insight) => insight.sourceType === "user_input" || allowedTypes.includes(insight.type))
+    .sort((left, right) => {
+      const byType = allowedTypes.indexOf(left.type) - allowedTypes.indexOf(right.type);
+      const bySource = sourcePriority(left.sourceType) - sourcePriority(right.sourceType);
+      return byType || bySource || right.confidence - left.confidence || left.id.localeCompare(right.id);
+    })
+    .map((insight) => insight.id);
+  return relevant.length ? uniqueIds(relevant) : fallbackIds;
+}
+
+function citationFieldInsightTypes(field: EvidenceCitationField): EvidenceInsight["type"][] {
+  const types: Record<EvidenceCitationField, EvidenceInsight["type"][]> = {
+    title: ["hook", "title", "structure", "pain_point", "audience"],
+    content: ["copy", "structure", "pain_point", "audience", "comment", "hook"],
+    tags: ["tag", "audience", "pain_point", "title"],
+    imagePrompt: ["visual", "structure", "audience", "pain_point"]
+  };
+  return types[field];
+}
+
+function sourcePriority(sourceType?: EvidenceSourceType): number {
+  if (sourceType === "user_input") return 0;
+  if (sourceType === "realtime" || !sourceType) return 1;
+  if (sourceType === "viral_library") return 2;
+  return 3;
 }
 
 function formatSourceOverview(report: EvidenceCitationReport): string[] {
