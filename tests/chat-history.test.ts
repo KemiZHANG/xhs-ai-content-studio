@@ -52,6 +52,8 @@ describe("chat history storage", () => {
       assistantContent: "我整理了当前项目的下一步。",
       assistantMeta: {
         intent: "research_to_draft",
+        intentConfidence: 0.66,
+        needsUserInput: true,
         stage: "copy_ready",
         questions: ["请确认目标人群"],
         cards: [{
@@ -83,6 +85,8 @@ describe("chat history storage", () => {
     expect(assistant?.toolTrace?.[0].label).toBe("draft.createFromEvidence");
     expect(assistant?.questions).toEqual(["请确认目标人群"]);
     expect(assistant?.intent).toBe("research_to_draft");
+    expect(assistant?.intentConfidence).toBe(0.66);
+    expect(assistant?.needsUserInput).toBe(true);
     expect(assistant?.stage).toBe("copy_ready");
   });
 });
