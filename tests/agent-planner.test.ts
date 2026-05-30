@@ -38,6 +38,30 @@ describe("agent planner", () => {
     ]);
     expect(plan.topic).toContain("广州咖啡馆");
     expect(plan.timeRange).toBe("一周内");
+    expect(plan.ragFilters?.sortBy).toBe("collects");
+    expect(plan.ragFilters?.sortOrder).toBe("desc");
+    expect(plan.ragFilters?.createdAfter).toBeTruthy();
+  });
+
+  it("extracts viral RAG metric and tag filters from natural language", () => {
+    const plan = createAgentPlan({
+      message: "检索爆款库里广州咖啡馆 #探店 #拍照 收藏超过1000 点赞大于2千 分享20以上 综合分3000以上的高收藏案例",
+      hasCurrentDraft: false,
+      attachedAssetCount: 0,
+      postStage: "brief_ready",
+      hasEvidence: true
+    });
+
+    expect(plan.intent).toBe("retrieve_viral_knowledge");
+    expect(plan.ragFilters).toMatchObject({
+      minCollects: 1000,
+      minLikes: 2000,
+      minShares: 20,
+      minScore: 3000,
+      sortBy: "collects",
+      sortOrder: "desc",
+      tags: ["探店", "拍照"]
+    });
   });
 
   it("plans a viral-library refresh without realtime research", () => {

@@ -7,6 +7,7 @@ import type { StoredChatMessage } from "@/lib/storage/chat";
 import type { OneClickResult } from "@/lib/workflows/one-click";
 import type { CreatorMemoryProfile } from "@/lib/agent/memory";
 import type { PostProject, PostStage } from "@/lib/post-project/types";
+import type { ViralRetrievalInput } from "@/lib/rag/viral";
 
 export type AgentAction =
   | "startProject"
@@ -55,6 +56,7 @@ export type AgentPlan = {
   selectedImageIndex?: number;
   scheduleText?: string;
   requiresAssets?: boolean;
+  ragFilters?: Partial<Omit<ViralRetrievalInput, "query" | "topic" | "limit" | "realtimeEvidenceCount">>;
   steps: AgentPlanStep[];
 };
 

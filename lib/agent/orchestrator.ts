@@ -924,7 +924,7 @@ async function maybeHandleViralKnowledgeTurn(
   }
 
   const seededProject = postProject.topic ? postProject : await updatePostProject({ topic });
-  const updatedProject = await ensureViralEvidenceForProject(seededProject, { force: true });
+  const updatedProject = await ensureViralEvidenceForProject(seededProject, { force: true, filters: plan.ragFilters });
   const viralInsights = updatedProject.evidencePack.insights.filter((insight) => insight.sourceType === "viral_library");
   const topInsights = viralInsights.slice(0, 5);
   const workspace = await updateWorkspaceState({
@@ -1836,7 +1836,10 @@ function buildAgentImagePrompt({
     .join("\n\n");
 }
 
-async function ensureViralEvidenceForProject(project: PostProject, options: { force?: boolean } = {}): Promise<PostProject> {
+async function ensureViralEvidenceForProject(
+  project: PostProject,
+  options: { force?: boolean; filters?: ReturnType<typeof createAgentPlan>["ragFilters"] } = {}
+): Promise<PostProject> {
   const hasViralEvidence = project.evidencePack.insights.some((insight) => insight.sourceType === "viral_library");
   if ((hasViralEvidence && !options.force) || !project.topic) {
     return project;
@@ -1852,6 +1855,7 @@ async function ensureViralEvidenceForProject(project: PostProject, options: { fo
       project.tone
     ].filter(Boolean).join(" "),
     topic: project.topic,
+    ...options.filters,
     limit: 6,
     realtimeEvidenceCount: project.selectedSamples.length
   });

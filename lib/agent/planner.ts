@@ -112,6 +112,7 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
     return buildPlan({
       intent: "retrieve_viral_knowledge",
       topic: inferTopic(message),
+      ragFilters: inferRagFilters(message),
       steps: [step("retrieveViralKnowledge", "Refresh reusable patterns from the viral knowledge base without running realtime Xiaohongshu search.", "knowledge.retrieveViralPatterns")]
     });
   }
@@ -122,6 +123,7 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
       intent: wantsDraft ? "research_to_draft" : "research_only",
       topic: inferTopic(message),
       timeRange: inferTimeRange(message),
+      ragFilters: inferRagFilters(message),
       steps: wantsDraft
         ? [
             step("research", "Search and collect Xiaohongshu evidence.", "workflow.searchRank"),
@@ -227,6 +229,64 @@ function inferTimeRange(message: string): string | undefined {
   if (/今天|一天|一天内/.test(message)) return "一天内";
   if (/半年|六个月/.test(message)) return "半年内";
   return undefined;
+}
+
+function inferRagFilters(message: string): AgentPlan["ragFilters"] {
+  const filters: AgentPlan["ragFilters"] = {};
+  const timeRange = inferTimeRange(message);
+  if (timeRange) {
+    filters.createdAfter = createdAfterForTimeRange(timeRange);
+  }
+  const minLikes = inferMetricThreshold(message, ["点赞", "赞", "likes"]);
+  const minCollects = inferMetricThreshold(message, ["收藏", "藏", "collects"]);
+  const minComments = inferMetricThreshold(message, ["评论", "评", "comments"]);
+  const minShares = inferMetricThreshold(message, ["分享", "转发", "shares"]);
+  const minScore = inferMetricThreshold(message, ["评分", "分数", "综合分", "score"]);
+  if (minLikes !== undefined) filters.minLikes = minLikes;
+  if (minCollects !== undefined) filters.minCollects = minCollects;
+  if (minComments !== undefined) filters.minComments = minComments;
+  if (minShares !== undefined) filters.minShares = minShares;
+  if (minScore !== undefined) filters.minScore = minScore;
+  if (/高分|评分高|综合分/.test(message)) filters.sortBy = "score";
+  if (/高分享|分享高|转发高/.test(message)) filters.sortBy = "shares";
+  if (/高评论|评论高/.test(message)) filters.sortBy = "comments";
+  if (/高赞|点赞高/.test(message)) filters.sortBy = "likes";
+  if (/高收藏|收藏高|高藏/.test(message)) filters.sortBy = "collects";
+  if (filters.sortBy) filters.sortOrder = "desc";
+  const tags = inferTags(message);
+  if (tags.length) filters.tags = tags;
+  return Object.keys(filters).length ? filters : undefined;
+}
+
+function createdAfterForTimeRange(timeRange: string): string | undefined {
+  const days = timeRange === "一天内" ? 1 : timeRange === "一周内" ? 7 : timeRange === "两周内" ? 14 : timeRange === "半年内" ? 183 : undefined;
+  if (!days) return undefined;
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date.toISOString();
+}
+
+function inferMetricThreshold(message: string, labels: string[]): number | undefined {
+  for (const label of labels) {
+    const pattern = new RegExp(`${label}\\s*(?:大于|超过|高于|至少|>=|不少于)?\\s*(\\d+(?:\\.\\d+)?)\\s*(万|千|k|K)?`);
+    const match = message.match(pattern);
+    if (match?.[1]) {
+      const base = Number(match[1]);
+      const unit = match[2];
+      const multiplier = unit === "万" ? 10000 : unit === "千" || unit === "k" || unit === "K" ? 1000 : 1;
+      return Math.round(base * multiplier);
+    }
+  }
+  return undefined;
+}
+
+function inferTags(message: string): string[] {
+  const tagMatches = [...message.matchAll(/#([\p{L}\p{N}\u4e00-\u9fa5_-]{2,20})/gu)].map((match) => match[1]);
+  const explicit = message.match(/(?:标签|tag|tags)\s*(?:是|为|:|：)?\s*([^，。！？；;\n]+)/i);
+  const explicitTags = explicit?.[1]
+    ? explicit[1].split(/[、,\s]+/).map((item) => item.replace(/^#/, "").trim()).filter(Boolean)
+    : [];
+  return [...new Set([...tagMatches, ...explicitTags])].slice(0, 8);
 }
 
 function inferTopic(message: string): string | undefined {
