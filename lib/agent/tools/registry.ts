@@ -67,6 +67,66 @@ function defaultToolDefinitions(): AgentToolDefinition[] {
       supportsDryRun: true
     },
     {
+      name: "knowledge.saveViralCase",
+      description: "Save a high-quality research sample as structured reusable viral knowledge and attach its insights to the active PostProject.",
+      risk: "local_write",
+      profile: "research",
+      requiresConfirmation: false,
+      requiresModel: true,
+      requiresMcp: false,
+      supportsDryRun: true
+    },
+    {
+      name: "project.startProject",
+      description: "Reset the active PostProject and workspace when the user starts a new post, topic, product, or audience.",
+      risk: "local_write",
+      profile: "system",
+      requiresConfirmation: false,
+      requiresModel: false,
+      requiresMcp: false,
+      supportsDryRun: true
+    },
+    {
+      name: "project.updateBriefInputs",
+      description: "Update topic, audience, goal, tone, product, and selling-point slots on the active PostProject.",
+      risk: "local_write",
+      profile: "system",
+      requiresConfirmation: false,
+      requiresModel: false,
+      requiresMcp: false,
+      supportsDryRun: true
+    },
+    {
+      name: "project.selectImages",
+      description: "Bind selected generated, uploaded, or card-rendered assets to the active PostProject for publishing.",
+      risk: "local_write",
+      profile: "assets",
+      requiresConfirmation: false,
+      requiresModel: false,
+      requiresMcp: false,
+      supportsDryRun: true
+    },
+    {
+      name: "project.assemblePost",
+      description: "Combine the current draft and selected image assets into the active PostProject finalPost.",
+      risk: "local_write",
+      profile: "creator_publish",
+      requiresConfirmation: false,
+      requiresModel: false,
+      requiresMcp: false,
+      supportsDryRun: true
+    },
+    {
+      name: "project.runQualityGate",
+      description: "Run publish-readiness, traceability, compliance, and image-copy consistency checks before confirmation.",
+      risk: "local_write",
+      profile: "creator_publish",
+      requiresConfirmation: false,
+      requiresModel: false,
+      requiresMcp: false,
+      supportsDryRun: true
+    },
+    {
       name: "workflow.loadEvidence",
       description: "Load note details, body text, comments, images, and evidence snippets for selected samples.",
       risk: "read",
