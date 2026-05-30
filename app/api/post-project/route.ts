@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { updateWorkspaceState } from "@/lib/agent/state";
 import { requireLocalActionToken } from "@/lib/security/action-token";
-import { copyVersionFromDraft } from "@/lib/post-project/brief";
+import { copyVersionFromDraft, deriveFinalPost } from "@/lib/post-project/brief";
+import { runPostQualityGate } from "@/lib/post-project/quality";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import type { PostReadinessReport } from "@/lib/post-project/readiness";
 import { readPostProject, updatePostProject } from "@/lib/post-project/store";
@@ -14,6 +15,12 @@ export const runtime = "nodejs";
 type PostProjectActionBody =
   | {
       action: "commit_canvas";
+      draft: DraftRecord["draft"];
+      selectedImageIds?: string[];
+      visibility?: DraftRecord["visibility"];
+    }
+  | {
+      action: "run_quality_gate";
       draft: DraftRecord["draft"];
       selectedImageIds?: string[];
       visibility?: DraftRecord["visibility"];
@@ -55,7 +62,7 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
   project: PostProject;
   currentDraft?: DraftRecord | null;
 }> {
-  if (body.action === "commit_canvas") {
+  if (body.action === "commit_canvas" || body.action === "run_quality_gate") {
     const settings = await readSettings();
     const project = await readPostProject();
     const basedOnEvidenceIds = getCurrentEvidenceIds(project);
@@ -78,6 +85,22 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
     const syncedProject = await readPostProject();
     const copyVersion = copyVersionFromDraft(currentDraft, basedOnEvidenceIds);
     const selectedImageIds = Array.isArray(body.selectedImageIds) ? body.selectedImageIds.map(String).filter(Boolean) : syncedProject.selectedImages;
+    const finalPost = body.action === "run_quality_gate"
+      ? deriveFinalPost({
+          copyDraft: currentDraft,
+          selectedImages: selectedImageIds,
+          imagePrompts: syncedProject.imagePrompts ?? [],
+          finalPost: undefined
+        })
+      : undefined;
+    const qualityCheck = body.action === "run_quality_gate"
+      ? runPostQualityGate({
+          ...syncedProject,
+          copyDraft: currentDraft,
+          selectedImages: selectedImageIds,
+          finalPost
+        })
+      : undefined;
     const nextProject = await updatePostProject({
       copyDraft: currentDraft,
       copyVersions: [
@@ -85,11 +108,11 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
         copyVersion
       ],
       selectedImages: selectedImageIds,
-      finalPost: undefined,
+      finalPost,
       publishPlan: null,
-      qualityCheck: undefined,
-      auditStatus: "unchecked",
-      currentStage: "copy_ready"
+      qualityCheck,
+      auditStatus: qualityCheck ? (qualityCheck.canPublish ? "passed" : "blocked") : "unchecked",
+      currentStage: qualityCheck ? "reviewing" : "copy_ready"
     });
     return { project: nextProject, currentDraft };
   }

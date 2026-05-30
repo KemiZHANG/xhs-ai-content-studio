@@ -401,6 +401,34 @@ export default function Home() {
     return data.project;
   }
 
+  async function runCanvasQualityGate() {
+    const data = (await clientApi("/api/post-project", {
+      method: "PATCH",
+      body: JSON.stringify({
+        action: "run_quality_gate",
+        draft: {
+          title: publishDraft.title,
+          content: publishDraft.content,
+          tags: parseTagsText(publishDraft.tagsText),
+          structure: [],
+          imagePrompt: publishDraft.imagePrompt
+        },
+        selectedImageIds: publishAssetIds,
+        visibility: publishVisibility
+      })
+    })) as { project: PostProject; currentDraft?: DraftRecord | null };
+    setPostProject(data.project);
+    if (data.currentDraft) {
+      applyCurrentDraft(data.currentDraft);
+    }
+    await loadWorkspace();
+    setCanvasDirty(false);
+    setNotice(data.project.qualityCheck?.canPublish
+      ? "发布检查已通过，已生成最终帖子快照。"
+      : "发布检查完成：请先处理 Quality Gate 提示的问题。");
+    return data.project;
+  }
+
   async function selectCopyVersion(versionId: string) {
     setPendingPublish(null);
     const data = (await clientApi("/api/post-project", {
@@ -568,11 +596,8 @@ export default function Home() {
         return;
       case "assemble_post":
       case "run_quality_gate":
-        await commitCanvasToProject();
-        await loadPostProject();
-        await loadWorkspace();
+        await runCanvasQualityGate();
         setSection("flow");
-        setNotice("已在 Post Studio 内刷新质量检查；确认无风险后再进入发布确认。");
         return;
       case "request_publish_confirmation":
       case "schedule_publish":
