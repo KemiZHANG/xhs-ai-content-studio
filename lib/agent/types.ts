@@ -136,7 +136,7 @@ export type PublishIntent = {
 };
 
 export type PublishConfirmationItem = {
-  id: "copy" | "images" | "account" | "visibility" | "schedule" | "quality";
+  id: "copy" | "visual" | "images" | "account" | "visibility" | "schedule" | "quality";
   label: string;
   required: boolean;
   confirmed: boolean;

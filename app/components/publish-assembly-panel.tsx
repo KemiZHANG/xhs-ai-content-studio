@@ -107,7 +107,7 @@ export function PublishAssemblyPanel({
           <section className="publishProjectState">
             <div>
               <strong>PostProject 发布状态</strong>
-              <p>发布确认会绑定当前最终帖子、图片版本、账号、可见范围和定时时间。</p>
+              <p>发布确认会绑定当前最终帖子、图片方向 / Prompt、图片版本、账号、可见范围和定时时间。</p>
             </div>
             <div className="publishStateGrid">
               <span>

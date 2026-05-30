@@ -50,8 +50,20 @@ describe("agent publish guardrails", () => {
     expect(decision.allowed).toBe(true);
     expect(decision.status).toBe("approved");
     expect((intent.confirmationChecklist ?? []).map((item) => item.label)).toEqual(
-      expect.arrayContaining(["最终文案版本", "最终图片版本", "发布账号", "可见范围", "Quality Gate"])
+      expect.arrayContaining(["最终文案版本", "最终图片版本", "图片方向 / Prompt", "发布账号", "可见范围", "Quality Gate"])
     );
+  });
+
+  it("requires confirming visual direction before real external publishing", () => {
+    const intent = baseIntent();
+    const visualItem = (intent.confirmationChecklist ?? []).find((item) => item.id === "visual");
+
+    expect(visualItem).toMatchObject({
+      label: "图片方向 / Prompt",
+      required: true,
+      confirmed: false
+    });
+    expect(visualItem?.detail).toContain("CreativeBrief");
   });
 
   it("marks schedule confirmation as required only for scheduled publish intents", () => {

@@ -98,6 +98,13 @@ export function buildPublishConfirmationChecklist({
       detail: `${images.length} 张图片`
     },
     {
+      id: "visual",
+      label: "图片方向 / Prompt",
+      required: true,
+      confirmed,
+      detail: "图片方向已和最终文案、CreativeBrief、证据包对齐"
+    },
+    {
       id: "account",
       label: "发布账号",
       required: true,
