@@ -644,6 +644,73 @@ describe("post project", () => {
     expect(quality.evidenceAlignment?.sharedEvidenceIds).toEqual(["viral-insight-style"]);
   });
 
+  it("blocks publish quality when the draft only cites viral-library evidence", () => {
+    const quality = runPostQualityGate({
+      creativeBrief: {
+        audience: "coffee explorers",
+        painPoint: "need a calm weekend cafe",
+        contentAngle: "real visit guide",
+        emotionalHook: "save before weekend",
+        proofPoints: ["light", "seating"],
+        tone: "grounded",
+        visualMood: "warm window light",
+        imageMustHave: ["coffee", "table"],
+        imageMustAvoid: [],
+        platformStyle: "xiaohongshu useful guide",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["viral-insight-style"]
+      },
+      visualDirection: {
+        mood: "warm window light",
+        composition: "coffee table with seat detail",
+        colorPalette: "warm neutral",
+        mustHave: ["coffee"],
+        mustAvoid: [],
+        basedOnEvidenceIds: ["viral-insight-style"]
+      },
+      selectedImages: ["asset-1"],
+      evidencePack: {
+        sampleIds: ["viral-1"],
+        insights: [{
+          id: "viral-insight-style",
+          sourceType: "viral_library",
+          type: "visual",
+          insight: "Use a window-light cover with concrete seating detail",
+          sourceSampleIds: ["viral-1"],
+          confidence: 0.86,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }]
+      },
+      finalPost: {
+        title: "Weekend cafe guide",
+        content: "This note gives a grounded weekend cafe choice for people who want a calm seat, natural light, practical ordering ideas, and a reminder to avoid the busiest hour. It focuses on the user's own visit plan instead of copying any historical sample.",
+        tags: ["coffee", "weekend"],
+        imageIds: ["asset-1"],
+        imagePromptVersionIds: []
+      },
+      copyDraft: {
+        id: "draft-viral-only",
+        updatedAt: "2026-05-30T00:00:00.000Z",
+        draft: {
+          title: "Weekend cafe guide",
+          content: "This note gives a grounded weekend cafe choice for people who want a calm seat, natural light, practical ordering ideas, and a reminder to avoid the busiest hour. It focuses on the user's own visit plan instead of copying any historical sample.",
+          tags: ["coffee", "weekend"],
+          structure: [],
+          imagePrompt: "warm window light coffee table",
+          basedOnEvidenceIds: ["viral-insight-style"]
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      }
+    });
+
+    expect(quality.canPublish).toBe(false);
+    expect(quality.issues.join(" ")).toContain("实时小红书研究证据");
+    expect(quality.evidenceReview?.viralEvidenceIds).toEqual(["viral-insight-style"]);
+    expect(quality.evidenceReview?.realtimeEvidenceIds).toEqual([]);
+  });
+
   it("blocks publish when copy and visual direction cite different evidence", () => {
     const longContent = "这篇笔记面向周末想找安静咖啡馆的人，先说明适合的人群和真实体验，再补充座位、光线、人均、排队时间和避坑提醒，最后用一个轻互动问题收尾。";
     const quality = runPostQualityGate({

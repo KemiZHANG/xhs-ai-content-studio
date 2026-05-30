@@ -29,7 +29,7 @@ export function runPostQualityGate(project: Pick<
       !hasStringOverlap(draftEvidenceIds, visualEvidenceIds)
   );
   const evidenceAlignment = buildEvidenceAlignment(draftEvidenceIds, visualEvidenceIds, Boolean(project.visualDirection));
-  const evidenceReview = buildEvidenceReview(project, draftEvidenceIds);
+  const evidenceReview = buildEvidenceReview(project, draftEvidenceIds) as NonNullable<QualityCheck["evidenceReview"]>;
   const evidencePack = project.evidencePack;
   const citationReport = project.copyDraft && evidencePack?.insights.length
     ? buildEvidenceCitationReport({ evidencePack, creativeBrief: project.creativeBrief }, draftEvidenceIds, project.copyDraft.draft.evidenceReferences)
@@ -45,6 +45,13 @@ export function runPostQualityGate(project: Pick<
   if (project.copyDraft && !draftEvidenceIds.length) {
     issues.push("当前草稿缺少 basedOnEvidenceIds，无法证明标题、正文和标签来自 evidencePack 规律");
     suggestions.push("请重新基于当前证据生成文案，或补充草稿引用的证据 ID。");
+  }
+  if (project.copyDraft && evidenceReview.referencedEvidenceIds.length && !evidenceReview.realtimeEvidenceIds.length) {
+    issues.push("当前发布稿没有引用实时小红书研究证据，不能只依赖爆款库或用户输入进入发布。");
+    suggestions.push("请先搜索当前主题的真实小红书笔记，或把实时研究证据合入 PostProject 后重新生成文案。");
+  }
+  if (project.copyDraft && evidenceReview.realtimeEvidenceIds.length && !evidenceReview.viralEvidenceIds.length) {
+    suggestions.push("当前发布稿只引用了实时研究，建议补充爆款库长期规律来校准标题钩子、正文结构和图片风格。");
   }
   const invalidEvidenceIds = draftEvidenceIds.filter((id) => !evidenceIds.has(id));
   if (invalidEvidenceIds.length) {
@@ -134,7 +141,12 @@ export function runPostQualityGate(project: Pick<
     risky.length > 0,
     Boolean(copiedSampleTitle),
     !originalityReview.isSafe,
-    project.copyDraft ? !draftEvidenceIds.length || invalidEvidenceIds.length > 0 || Boolean(citationReport?.missingEvidenceIds.length) : false
+    project.copyDraft
+      ? !draftEvidenceIds.length ||
+        invalidEvidenceIds.length > 0 ||
+        Boolean(citationReport?.missingEvidenceIds.length) ||
+        (evidenceReview.referencedEvidenceIds.length > 0 && !evidenceReview.realtimeEvidenceIds.length)
+      : false
   ]);
   const visualConsistencyScore = scoreFromIssues([
     !finalPost?.imageIds.length,
@@ -164,7 +176,12 @@ export function runPostQualityGate(project: Pick<
       productMutationRisk ||
       copiedSampleTitle ||
       !originalityReview.isSafe ||
-      (project.copyDraft ? !draftEvidenceIds.length || invalidEvidenceIds.length > 0 || Boolean(citationReport?.missingEvidenceIds.length) : false)
+      (project.copyDraft
+        ? !draftEvidenceIds.length ||
+          invalidEvidenceIds.length > 0 ||
+          Boolean(citationReport?.missingEvidenceIds.length) ||
+          (evidenceReview.referencedEvidenceIds.length > 0 && !evidenceReview.realtimeEvidenceIds.length)
+        : false)
   );
   const canPublish = !hasCriticalPublishRisk && complianceScore >= 70;
 
