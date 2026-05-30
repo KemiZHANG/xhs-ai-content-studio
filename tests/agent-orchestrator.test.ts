@@ -460,6 +460,99 @@ describe("agent orchestrator", () => {
     expect(result.cards.map((card) => card.type)).toContain("copy_draft");
   });
 
+  it("applies planner RAG filters after legacy research workflows", async () => {
+    const highSample: SampleEvidence = {
+      id: "note-high-filtered",
+      title: "广州咖啡馆高收藏拍照攻略",
+      author: "author",
+      likes: 1500,
+      collects: 1800,
+      comments: 90,
+      shares: 35,
+      score: 3300,
+      url: "https://www.xiaohongshu.com/explore/note-high-filtered",
+      imageUrls: ["https://example.com/high.jpg"],
+      cachedImageUrls: [],
+      detailText: "先讲拍照座位，再写人均、光线和周末排队，最后给避峰建议。",
+      commentSnippets: ["想知道哪张桌子出片"],
+      reasonHighlights: []
+    };
+    const lowSample: SampleEvidence = {
+      ...highSample,
+      id: "note-low-filtered",
+      title: "广州咖啡馆普通记录",
+      likes: 100,
+      collects: 80,
+      comments: 6,
+      shares: 1,
+      score: 160,
+      url: "https://www.xiaohongshu.com/explore/note-low-filtered"
+    };
+    const highCase = await createViralCaseFromEvidence({
+      sample: highSample,
+      topic: "广州咖啡馆",
+      category: "探店"
+    });
+    const lowCase = await createViralCaseFromEvidence({
+      sample: lowSample,
+      topic: "广州咖啡馆",
+      category: "探店"
+    });
+    await upsertViralCases([highCase, lowCase]);
+    const runChatAgent = vi.fn(async () => ({
+      answer: "legacy research done",
+      workflowResult: {
+        status: "draft_ready" as const,
+        steps: [],
+        samples: [],
+        evidence: [highSample],
+        researchSummary: {
+          contentStrengths: ["高收藏样本强调拍照座位和排队信息"],
+          imageStrengths: [],
+          learningsForContent: [],
+          learningsForImages: [],
+          nextQuestions: []
+        },
+        report: "",
+        imageStyleReport: "",
+        draft: null,
+        images: [],
+        publishResult: null
+      }
+    }));
+
+    const result = await runAgentTurn({
+      message: "帮我找最近一周广州咖啡馆收藏超过1000 分享20以上的高收藏笔记并生成文案",
+      conversationId: "chat-filtered-rag",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      },
+      runChatAgentImpl: runChatAgent
+    });
+
+    const viralSourceIds = result.postProject?.evidencePack.insights
+      .filter((insight) => insight.sourceType === "viral_library")
+      .flatMap((insight) => insight.sourceSampleIds) ?? [];
+
+    expect(runChatAgent).toHaveBeenCalled();
+    expect(result.intent).toBe("research_to_draft");
+    expect(result.trace.events.some((event) => event.label === "knowledge.retrieveViralPatterns")).toBe(true);
+    expect(viralSourceIds).toContain(highCase.id);
+    expect(viralSourceIds).not.toContain(lowCase.id);
+  });
+
   it("refreshes viral-library evidence on the active PostProject without realtime research", async () => {
     const viralSample: SampleEvidence = {
       id: "note-viral-bag",

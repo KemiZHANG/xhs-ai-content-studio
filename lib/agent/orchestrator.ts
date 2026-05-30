@@ -488,6 +488,22 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
       }
     });
 
+    let postProject = await readPostProject();
+    if (plan.steps.some((step) => step.action === "retrieveViralKnowledge")) {
+      postProject = await ensureViralEvidenceForProject(postProject, {
+        force: Boolean(plan.ragFilters),
+        filters: plan.ragFilters
+      });
+      trace = addTraceEvent(trace, {
+        type: "tool_called",
+        label: "knowledge.retrieveViralPatterns",
+        detail: "Refreshed viral-library RAG evidence after the legacy research workflow.",
+        metadata: {
+          filters: plan.ragFilters,
+          viralInsightCount: postProject.evidencePack.insights.filter((insight) => insight.sourceType === "viral_library").length
+        }
+      });
+    }
     agentRun = completeRun(agentRun);
     trace = addTraceEvent(trace, {
       type: "run_completed",
@@ -495,7 +511,6 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
       detail: "Agent turn completed successfully."
     });
     await persistAgentTrace(trace);
-    const postProject = await readPostProject();
 
     return {
       ...legacyResult,
