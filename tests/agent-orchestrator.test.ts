@@ -464,6 +464,8 @@ describe("agent orchestrator", () => {
     expect(result.answer).toContain("实时研究");
     expect(result.answer).toContain("爆款库补充规律");
     expect(result.cards.map((card) => card.type)).toContain("copy_draft");
+    expect(result.cards.map((card) => card.type)).toContain("evidence_citations");
+    expect(result.cards.find((card) => card.type === "evidence_citations")?.summary).toContain("实时研究");
   });
 
   it("applies planner RAG filters after legacy research workflows", async () => {

@@ -1042,6 +1042,10 @@ function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecor
 
   const draft = currentDraft ?? workspace.currentDraft;
   if (draft) {
+    const citationReport =
+      postProject
+        ? buildEvidenceCitationReport(postProject, draft.draft.basedOnEvidenceIds ?? postProject.creativeBrief?.basedOnEvidenceIds ?? [], draft.draft.evidenceReferences)
+        : null;
     cards.push({
       id: "card-copy-draft",
       type: "copy_draft",
@@ -1049,6 +1053,15 @@ function buildCardsFromTurn(workspace: WorkspaceState, currentDraft?: DraftRecor
       summary: draft.draft.content.slice(0, 160),
       data: draft.draft
     });
+    if (citationReport?.allEvidenceIds.length) {
+      cards.push({
+        id: "card-evidence-citations",
+        type: "evidence_citations",
+        title: "证据引用",
+        summary: citationReport.summary,
+        data: citationReport
+      });
+    }
     const imagePrompt = postProject?.imagePrompts.at(-1)?.value.prompt ?? draft.draft.imagePrompt;
     if (imagePrompt) {
       cards.push({

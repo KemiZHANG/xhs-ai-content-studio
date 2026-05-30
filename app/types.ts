@@ -293,6 +293,7 @@ export type ChatMessage = {
 export type AgentResponseCardType =
   | "evidence_summary"
   | "viral_knowledge"
+  | "evidence_citations"
   | "creative_brief"
   | "copy_draft"
   | "visual_direction"

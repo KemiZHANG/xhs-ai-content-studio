@@ -1154,6 +1154,7 @@ function labelForAgentCard(type: string): string {
   const labels: Record<string, string> = {
     evidence_summary: "证据摘要",
     viral_knowledge: "爆款库",
+    evidence_citations: "证据引用",
     creative_brief: "CreativeBrief",
     copy_draft: "文案草稿",
     visual_direction: "图片方向",
