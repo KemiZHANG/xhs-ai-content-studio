@@ -142,6 +142,9 @@ describe("viral knowledge base", () => {
     expect(insights.map((item) => item.type)).toContain("hook");
     expect(insights.map((item) => item.type)).toContain("structure");
     expect(insights.map((item) => item.type)).toContain("copy");
+    expect(insights.map((item) => item.type)).toContain("comment");
+    expect(insights.find((item) => item.type === "comment")?.insight).toContain("评论关注点");
+    expect(insights.find((item) => item.type === "comment")?.insight).toContain("决策信息");
     expect(insights.some((item) => item.insight.includes("近似复刻"))).toBe(true);
   });
 

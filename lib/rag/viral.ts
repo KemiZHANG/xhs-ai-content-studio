@@ -124,7 +124,7 @@ export function buildViralStrategyReport({
     ...cases.map((item) => item.painPoint),
     ...cases.flatMap((item) => item.extractedInsights.audienceSignals),
     ...cases.flatMap((item) => item.extractedInsights.painPoints),
-    ...insights.filter((item) => item.type === "audience" || item.type === "pain_point").map((item) => item.insight)
+    ...insights.filter((item) => item.type === "audience" || item.type === "pain_point" || item.type === "comment").map((item) => item.insight)
   ]).slice(0, 5);
   const originalityRules = uniqueStrings([
     ...cases.flatMap((item) => item.creativeSafety?.doNotCopy ?? item.extractedInsights.avoidCopying),

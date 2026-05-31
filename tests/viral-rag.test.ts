@@ -81,6 +81,8 @@ describe("viral RAG retrieval", () => {
     expect(pack.filterSummary).toContain("分享 ≥ 20");
     expect(pack.filterSummary).toContain("按收藏降序排序");
     expect(pack.insights.every((item) => item.sourceType === "viral_library")).toBe(true);
+    expect(pack.insights.map((item) => item.type)).toContain("comment");
+    expect(pack.strategyReport.audiencePainPoints.join(" ")).toContain("评论关注点");
     expect(pack.sufficiency.realtimeCount).toBe(4);
     expect(pack.sufficiency.viralCount).toBe(1);
   });

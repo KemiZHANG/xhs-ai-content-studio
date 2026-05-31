@@ -161,9 +161,20 @@ export function viralCasesToEvidenceInsights(cases: ViralCase[]) {
       evidenceInsight("visual", item.imageStyle, sourceSampleIds, now, 0.72),
       evidenceInsight("audience", item.audience, sourceSampleIds, now, 0.68),
       evidenceInsight("pain_point", item.painPoint, sourceSampleIds, now, 0.7),
+      evidenceInsight("comment", summarizeCommentConcerns(item.extractedInsights.commentConcerns), sourceSampleIds, now, 0.7),
       evidenceInsight("copy", item.creativeSafety?.summary ?? "", sourceSampleIds, now, 0.78)
     ]);
   });
+}
+
+function summarizeCommentConcerns(commentConcerns: string[]): string {
+  const concerns = uniqueStrings(commentConcerns)
+    .map((item) => item.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .slice(0, 5);
+  return concerns.length
+    ? `评论关注点应转化为新内容的决策信息或互动问题：${concerns.join(" / ")}`
+    : "";
 }
 
 async function extractViralInsightsWithModel({
