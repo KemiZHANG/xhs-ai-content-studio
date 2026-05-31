@@ -58,6 +58,7 @@ import { buildPostProjectContextSummary } from "@/app/components/post-project-co
 import { buildGeneratedAssetSummary, buildReferenceAssetSummary } from "@/app/components/asset-panel-summary";
 import { buildPostNextStepCoach } from "@/app/components/post-next-step-coach";
 import { buildPostFlowSummary, type PostFlowPhase } from "@/app/components/post-flow-summary";
+import { buildPostSideDigest } from "@/app/components/post-side-digest";
 import { buildCreatorMemoryDigest } from "@/lib/agent/memory-digest";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
@@ -385,6 +386,19 @@ export function PostStudioPanel({
       ].join("\n"),
     [projectTitle, researchForm.contentType, researchForm.requirements]
   );
+  const sideDigest = buildPostSideDigest({
+    insightCount: insights.length,
+    realtimeInsightCount: realtimeInsights.length,
+    viralInsightCount: viralInsights.length,
+    hasBrief: Boolean(brief),
+    selectedImageCount: selectedAssets.length,
+    generatedImageCount: generatedAssets.length,
+    referenceImageCount: referenceAssets.length,
+    publishReady,
+    accountReady,
+    qualityFresh: versionStatus?.qualityGateFresh === true,
+    activeTab: tab
+  });
 
   return (
     <div className="postStudio">
@@ -829,6 +843,27 @@ export function PostStudioPanel({
         </section>
 
         <aside className="panel studioSidePane">
+          <div className="studioSideDigest">
+            <div>
+              <span>右侧工作区</span>
+              <strong>{sideDigest.headline}</strong>
+              <p>{sideDigest.detail}</p>
+            </div>
+            <div className="studioSideDigestGrid">
+              {sideDigest.cards.map((card) => (
+                <button
+                  className={`studioSideDigestCard ${card.state} ${tab === card.tab ? "active" : ""}`}
+                  key={card.id}
+                  onClick={() => setTab(card.tab)}
+                  type="button"
+                >
+                  <span>{card.label}</span>
+                  <strong>{card.value}</strong>
+                  <small>{card.detail}</small>
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="studioTabs" role="tablist">
             {[
               { id: "insights", label: "结论" },

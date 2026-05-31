@@ -4650,6 +4650,86 @@ textarea {
   padding: 5px;
 }
 
+.studioSideDigest {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(248, 244, 237, 0.72));
+  border: 1px solid rgba(39, 37, 31, 0.1);
+  border-radius: 14px;
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 12px;
+}
+
+.studioSideDigest > div:first-child span {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.studioSideDigest > div:first-child strong {
+  color: var(--ink);
+  display: block;
+  font-size: 15px;
+  margin-top: 2px;
+}
+
+.studioSideDigest > div:first-child p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 4px 0 0;
+}
+
+.studioSideDigestGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.studioSideDigestCard {
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(39, 37, 31, 0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  display: grid;
+  gap: 3px;
+  min-height: 96px;
+  padding: 10px;
+  text-align: left;
+}
+
+.studioSideDigestCard span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.studioSideDigestCard strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.studioSideDigestCard small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.studioSideDigestCard.ready {
+  border-color: rgba(18, 118, 97, 0.18);
+}
+
+.studioSideDigestCard.warn {
+  border-color: rgba(190, 122, 20, 0.24);
+}
+
+.studioSideDigestCard.active {
+  background: #fff;
+  border-color: rgba(18, 118, 97, 0.34);
+  box-shadow: 0 10px 24px rgba(39, 37, 31, 0.08);
+}
+
 .studioTabs button {
   background: transparent;
   border: 0;
@@ -6429,6 +6509,10 @@ textarea {
   }
 
   .postFlowRail {
+    grid-template-columns: 1fr;
+  }
+
+  .studioSideDigestGrid {
     grid-template-columns: 1fr;
   }
 
