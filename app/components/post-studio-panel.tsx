@@ -268,6 +268,7 @@ export function PostStudioPanel({
       publishDraft.tagsText.trim() &&
       selectedAssets.length &&
       hasVisualDirection &&
+      citationTraceReady &&
       accountReady &&
       !canvasDirty &&
       quality?.canPublish === true &&
@@ -1156,6 +1157,7 @@ export function PostStudioPanel({
                         tagsText: publishDraft.tagsText,
                         imageCount: selectedAssets.length,
                         hasVisualDirection,
+                        citationTraceReady,
                         accountReady,
                         quality,
                         qualityGateFresh: versionStatus?.qualityGateFresh === true
@@ -2080,6 +2082,7 @@ function buildPublishReadinessHint({
   tagsText,
   imageCount,
   hasVisualDirection,
+  citationTraceReady,
   accountReady,
   quality,
   qualityGateFresh
@@ -2089,6 +2092,7 @@ function buildPublishReadinessHint({
   tagsText: string;
   imageCount: number;
   hasVisualDirection: boolean;
+  citationTraceReady: boolean;
   accountReady: boolean;
   quality?: PostProject["qualityCheck"];
   qualityGateFresh: boolean;
@@ -2099,6 +2103,7 @@ function buildPublishReadinessHint({
   if (!tagsText.trim()) missing.push("标签");
   if (!imageCount) missing.push("发布图片");
   if (!hasVisualDirection) missing.push("图片方向 / Prompt");
+  if (!citationTraceReady) missing.push("字段级证据引用");
   if (!accountReady) missing.push("小红书登录账号");
   if (!quality) {
     missing.push("Quality Gate 未运行");
