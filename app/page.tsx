@@ -26,7 +26,7 @@ import {
   WorkflowRibbon
 } from "@/app/components/xhs-panels";
 import { AccountStatusCard } from "@/app/components/account-status-card";
-import { PostStudioPanel } from "@/app/components/post-studio-panel";
+import { PostStudioPanel, type StudioTab } from "@/app/components/post-studio-panel";
 import { ChatPanel } from "@/app/components/chat-workbench";
 import { StatusPill } from "@/app/components/status-badges";
 import { SettingsPanel } from "@/app/components/settings-panel";
@@ -116,6 +116,7 @@ export default function Home() {
   const [assets, setAssets] = useState<AssetRecord[]>([]);
   const [workspace, setWorkspace] = useState<WorkspaceState | null>(null);
   const [postProject, setPostProject] = useState<PostProject | null>(null);
+  const [postStudioFocus, setPostStudioFocus] = useState<{ tab: StudioTab; nonce: number } | null>(null);
   const [viralCases, setViralCases] = useState<ViralCase[]>([]);
   const [creatorMemory, setCreatorMemory] = useState<CreatorMemoryProfile | null>(null);
   const [workflowResult, setWorkflowResult] = useState<WorkflowResult | null>(null);
@@ -591,8 +592,8 @@ export default function Home() {
       setAutoReturnTarget("flow");
       setAutoReturnJobId(data.job.id);
       setJobs((current) => [data.job, ...current.filter((job) => job.id !== data.job.id)]);
-      setSection("jobs");
-      setNotice("主题研究任务已创建，只会搜索和分析，不会生成草稿或发布。完成后会自动回到 Post Studio。");
+      focusPostStudioTab("evidence");
+      setNotice("主题研究任务已创建，只会搜索和分析，不会生成草稿或发布。进度会留在 Post Studio 左侧，结果会同步到右侧证据面板。");
     } finally {
       setBusy(null);
     }
@@ -639,8 +640,8 @@ export default function Home() {
         await submitChatMessage("请把当前草稿生成小红书图文卡片：封面 + 多张正文卡片，默认 1080×1440，内容要清晰、有收藏价值。", false);
         return;
       case "select_images":
-        setSection("imageStudio");
-        setNotice("请在图片创作台选择或生成要进入发布画布的图片。");
+        focusPostStudioTab(publishAssetIds.length ? "generated" : "references");
+        setNotice("已聚焦 Post Studio 的图片面板。你可以在右侧选择已有图片；需要高级生图时再打开图片创作台。");
         return;
       case "assemble_post":
       case "run_quality_gate":
@@ -650,7 +651,7 @@ export default function Home() {
       case "request_publish_confirmation":
       case "schedule_publish":
       case "publish_now":
-        await openPublishAssemblyFromWorkspace();
+        await openPublishAssemblyFromWorkspace({ stayInStudio: true });
         return;
       case "recover":
         await loadWorkspace();
@@ -660,6 +661,11 @@ export default function Home() {
       default:
         setChatInput(`请继续执行下一步：${action}`);
     }
+  }
+
+  function focusPostStudioTab(tab: StudioTab) {
+    setPostStudioFocus({ tab, nonce: Date.now() });
+    setSection("flow");
   }
 
   async function uploadAsset(event: FormEvent<HTMLFormElement>) {
@@ -1016,7 +1022,7 @@ export default function Home() {
     setNotice("请在发布装配台确认文案、图片、可见范围和发布时间。");
   }
 
-  async function openPublishAssemblyFromWorkspace() {
+  async function openPublishAssemblyFromWorkspace(options: { stayInStudio?: boolean } = {}) {
     const draftRecord = workspace?.currentDraft ?? currentDraft;
     const selectedImageIds = workspace?.selectedImageIds?.length ? workspace.selectedImageIds : publishAssetIds;
     if (draftRecord) {
@@ -1036,8 +1042,13 @@ export default function Home() {
         : {},
       selectedImageIds
     );
-    setSection("publish");
-    setNotice("已把当前草稿和已选图片带到发布装配台。");
+    if (options.stayInStudio) {
+      focusPostStudioTab("publish");
+      setNotice("已在 Post Studio 内聚焦发布检查。确认文案、图片、账号、可见范围和时间后再生成确认单。");
+    } else {
+      setSection("publish");
+      setNotice("已把当前草稿和已选图片带到发布装配台。");
+    }
   }
 
   async function submitFinalPublish(scheduleAt?: string) {
@@ -1276,6 +1287,7 @@ export default function Home() {
             jobs={jobs}
             viralCases={viralCases}
             creatorMemory={creatorMemory}
+            focusTab={postStudioFocus}
             onResearchFormChange={(next) => setWorkflowForm((current) => ({ ...current, ...next }))}
             onRunResearch={(event) => void runWorkflow(event)}
             onChatInput={setChatInput}
@@ -1294,7 +1306,7 @@ export default function Home() {
             onSearchViralLibrary={(filters) => void loadViralKnowledge(filters)}
             onRefreshViralEvidence={() => void handlePostStudioAction("retrieve_viral_knowledge")}
             onOpenImageStudio={() => setSection("imageStudio")}
-            onOpenPublish={() => void openPublishAssemblyFromWorkspace()}
+            onOpenPublish={() => void openPublishAssemblyFromWorkspace({ stayInStudio: true })}
             onPreparePublish={() => void submitFinalPublish(publishScheduleAt)}
             onVisibilityChange={(value) => {
               setPendingPublish(null);

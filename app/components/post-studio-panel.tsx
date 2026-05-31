@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent, ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bot,
   CheckCircle2,
@@ -42,7 +42,7 @@ import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-proje
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
 
-type StudioTab = "insights" | "brief" | "evidence" | "viral" | "references" | "generated" | "publish";
+export type StudioTab = "insights" | "brief" | "evidence" | "viral" | "references" | "generated" | "publish";
 
 type ResearchForm = {
   topic: string;
@@ -73,6 +73,7 @@ export function PostStudioPanel({
   jobs,
   viralCases,
   creatorMemory,
+  focusTab,
   onResearchFormChange,
   onRunResearch,
   onChatInput,
@@ -118,6 +119,7 @@ export function PostStudioPanel({
   jobs: JobRecord[];
   viralCases: ViralCase[];
   creatorMemory: CreatorMemoryProfile | null;
+  focusTab?: { tab: StudioTab; nonce: number } | null;
   onResearchFormChange: (next: ResearchForm) => void;
   onRunResearch: (event: FormEvent<HTMLFormElement>) => void;
   onChatInput: (value: string) => void;
@@ -168,6 +170,11 @@ export function PostStudioPanel({
     minScore: "",
     sortBy: "score" as "createdAt" | "likes" | "collects" | "score"
   });
+  useEffect(() => {
+    if (focusTab?.tab) {
+      setTab(focusTab.tab);
+    }
+  }, [focusTab?.nonce, focusTab?.tab]);
   const selectedAssets = assets.filter((asset) => publishAssetIds.includes(asset.id));
   const uploadAssets = assets.filter((asset) => asset.kind === "upload");
   const generatedAssets = [...assets].filter((asset) => asset.kind === "generated").sort(sortNewestAsset);
