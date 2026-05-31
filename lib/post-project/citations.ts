@@ -16,11 +16,21 @@ export type EvidenceCitationReport = {
   allEvidenceIds: string[];
   missingEvidenceIds: string[];
   sourceCounts: Record<EvidenceSourceType, number>;
+  viralEvidenceTrace?: EvidenceCitationTrace[];
   hasRealtimeEvidence: boolean;
   hasViralEvidence: boolean;
   hasUserInputEvidence: boolean;
   warnings: string[];
   summary: string;
+};
+
+export type EvidenceCitationTrace = {
+  caseId: string;
+  sourceUrl: string;
+  score: number;
+  matchedQueries: string[];
+  reasons: string[];
+  evidenceInsightIds: string[];
 };
 
 export type EvidenceReferenceSummary = {
@@ -53,12 +63,14 @@ export function buildEvidenceCitationReport(
   const missingEvidenceIds = uniqueIds(sections.flatMap((section) => section.missingEvidenceIds));
   const sourceCounts = countSources(sections.flatMap((section) => section.insights));
   const warnings = buildCitationWarnings(sections, missingEvidenceIds, sourceCounts);
+  const viralEvidenceTrace = extractViralEvidenceTrace(project.evidencePack.summary, allEvidenceIds);
 
   return {
     sections,
     allEvidenceIds,
     missingEvidenceIds,
     sourceCounts,
+    viralEvidenceTrace,
     hasRealtimeEvidence: sourceCounts.realtime > 0,
     hasViralEvidence: sourceCounts.viral_library > 0,
     hasUserInputEvidence: sourceCounts.user_input > 0,
@@ -81,6 +93,7 @@ export function formatEvidenceCitationReport(report: EvidenceCitationReport): st
     "这版为什么这样写：",
     report.summary,
     ...formatSourceOverview(report),
+    ...formatViralEvidenceTrace(report.viralEvidenceTrace),
     ...visibleSections,
     warningText
   ].filter(Boolean).join("\n");
@@ -151,6 +164,47 @@ function formatSourceOverview(report: EvidenceCitationReport): string[] {
     realtime.length ? `文案直接引用的证据：\n${realtime.map(formatInsightLine).join("\n")}` : "",
     viral.length ? `爆款库补充规律：\n${viral.map(formatInsightLine).join("\n")}` : ""
   ].filter(Boolean);
+}
+
+function formatViralEvidenceTrace(trace: EvidenceCitationTrace[] | undefined): string[] {
+  if (!trace?.length) return [];
+  const lines = trace.slice(0, 3).map((item) => {
+    const matched = item.matchedQueries.length ? `｜query: ${item.matchedQueries.slice(0, 2).join(" / ")}` : "";
+    const reason = item.reasons.length ? `｜reason: ${item.reasons.slice(0, 2).join(" / ")}` : "";
+    return `- ${item.caseId}｜score ${item.score}${matched}${reason}｜evidence: ${item.evidenceInsightIds.slice(0, 4).join("、")}`;
+  });
+  return [`爆款库检索追溯：\n${lines.join("\n")}`];
+}
+
+function extractViralEvidenceTrace(summary: unknown, evidenceIds: string[]): EvidenceCitationTrace[] {
+  if (!isRecord(summary)) return [];
+  const viralKnowledge = isRecord(summary.viralKnowledge) ? summary.viralKnowledge : undefined;
+  const rawTrace = isRecord(viralKnowledge) && Array.isArray(viralKnowledge.evidenceTrace)
+    ? viralKnowledge.evidenceTrace
+    : [];
+  const evidenceIdSet = new Set(evidenceIds);
+  return rawTrace
+    .map((item) => normalizeViralTrace(item))
+    .filter((item): item is EvidenceCitationTrace => Boolean(item))
+    .filter((item) => item.evidenceInsightIds.some((id) => evidenceIdSet.has(id)))
+    .slice(0, 8);
+}
+
+function normalizeViralTrace(value: unknown): EvidenceCitationTrace | null {
+  if (!isRecord(value)) return null;
+  const caseId = typeof value.caseId === "string" ? value.caseId : "";
+  const sourceUrl = typeof value.sourceUrl === "string" ? value.sourceUrl : "";
+  const score = typeof value.score === "number" && Number.isFinite(value.score) ? value.score : 0;
+  const evidenceInsightIds = stringArray(value.evidenceInsightIds);
+  if (!caseId || !evidenceInsightIds.length) return null;
+  return {
+    caseId,
+    sourceUrl,
+    score,
+    matchedQueries: stringArray(value.matchedQueries),
+    reasons: stringArray(value.reasons),
+    evidenceInsightIds
+  };
 }
 
 function buildCitationSection(
@@ -264,4 +318,14 @@ function uniqueInsightsById(insights: EvidenceInsight[]): EvidenceInsight[] {
     seen.add(insight.id);
     return true;
   });
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? uniqueIds(value.map((item) => String(item)).filter(Boolean))
+    : [];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object";
 }

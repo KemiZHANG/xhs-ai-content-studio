@@ -27,6 +27,21 @@ function project(): Pick<PostProject, "evidencePack" | "creativeBrief"> {
     },
     evidencePack: {
       sampleIds: ["note-live", "viral-case"],
+      summary: {
+        viralKnowledge: {
+          evidenceTrace: [
+            {
+              caseId: "viral-case",
+              sourceSampleId: "viral-case",
+              sourceUrl: "https://www.xiaohongshu.com/explore/viral-case",
+              score: 0.91,
+              matchedQueries: ["Guangzhou cafe visual"],
+              reasons: ["semantic match", "quality sample"],
+              evidenceInsightIds: ["viral-insight-visual"]
+            }
+          ]
+        }
+      },
       insights: [
         {
           id: "insight-user",
@@ -73,6 +88,11 @@ describe("evidence citation report", () => {
     expect(report.hasRealtimeEvidence).toBe(true);
     expect(report.hasViralEvidence).toBe(true);
     expect(report.missingEvidenceIds).toEqual([]);
+    expect(report.viralEvidenceTrace?.[0]).toMatchObject({
+      caseId: "viral-case",
+      sourceUrl: "https://www.xiaohongshu.com/explore/viral-case",
+      evidenceInsightIds: ["viral-insight-visual"]
+    });
     expect(report.sections.find((section) => section.field === "imagePrompt")?.insights[0]?.sourceType).toBe("viral_library");
     expect(report.summary).toContain("实时研究");
     expect(report.summary).toContain("爆款库");
@@ -112,6 +132,8 @@ describe("evidence citation report", () => {
     expect(formatted).toContain("标题");
     expect(formatted).toContain("图片方向");
     expect(formatted).toContain("viral-insight-visual");
+    expect(formatted).toContain("爆款库检索追溯");
+    expect(formatted).toContain("Guangzhou cafe visual");
   });
 
   it("falls back to CreativeBrief evidence when a legacy draft has no citation ids", () => {
