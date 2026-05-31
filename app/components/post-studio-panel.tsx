@@ -51,6 +51,7 @@ import { labelForPostAction } from "@/app/components/post-action-labels";
 import { buildPostStudioStatusSummary } from "@/app/components/post-studio-status";
 import { buildViralApplicationModel } from "@/app/components/viral-application";
 import { buildPublishConfirmationSummary } from "@/app/components/publish-confirmation-summary";
+import { buildPostProjectContextSummary } from "@/app/components/post-project-context";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
@@ -328,6 +329,16 @@ export function PostStudioPanel({
   const publishStatusLabel = staleCanvasPublishPlan
     ? "需重新确认"
     : labelForPublishStatus(project?.publishPlan?.status);
+  const projectContextSummary = buildPostProjectContextSummary({
+    project,
+    workspace,
+    settings,
+    health,
+    canvasDirty,
+    pendingPublish,
+    staleCanvasPublishPlan,
+    staleAccountPublishPlan: Boolean(staleAccountPublishPlan)
+  });
 
   const generatedCopyPrompt = useMemo(
     () =>
@@ -348,6 +359,26 @@ export function PostStudioPanel({
           <span className="flowKicker">Post Studio</span>
           <h2>{projectTitle}</h2>
           <p>围绕一篇帖子推进：先研究真实笔记，再生成文案、图片方向、发布预览和安全检查。</p>
+          <div className={`projectContextCard ${projectContextSummary.state}`}>
+            <div>
+              <span>当前帖子项目</span>
+              <strong>{projectContextSummary.title}</strong>
+              <p>{projectContextSummary.projectLine}</p>
+            </div>
+            <div className="projectContextLines">
+              <span>{projectContextSummary.accountLine}</span>
+              <span>{projectContextSummary.scopeLine}</span>
+              <span>{projectContextSummary.publishLine}</span>
+            </div>
+            <div className="projectContextChips">
+              {projectContextSummary.chips.map((item) => (
+                <em className={item.state} key={item.label}>
+                  <small>{item.label}</small>
+                  {item.value}
+                </em>
+              ))}
+            </div>
+          </div>
           <div className={`studioStatusSummary ${statusSummary.riskLevel}`}>
             <div>
               <span>当前判断</span>

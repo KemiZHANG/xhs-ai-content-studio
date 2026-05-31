@@ -3370,6 +3370,101 @@ textarea {
   margin: 0;
 }
 
+.projectContextCard {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 14px 32px rgba(44, 38, 28, 0.07);
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 13px;
+}
+
+.projectContextCard.clean {
+  border-color: rgba(18, 118, 97, 0.2);
+}
+
+.projectContextCard.dirty {
+  background: linear-gradient(135deg, rgba(190, 122, 20, 0.1), rgba(255, 255, 255, 0.86));
+  border-color: rgba(190, 122, 20, 0.28);
+}
+
+.projectContextCard.warn {
+  background: linear-gradient(135deg, rgba(185, 65, 55, 0.08), rgba(255, 255, 255, 0.86));
+  border-color: rgba(185, 65, 55, 0.24);
+}
+
+.projectContextCard span {
+  color: var(--muted);
+  display: block;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.projectContextCard strong {
+  color: var(--ink);
+  display: block;
+  font-size: 16px;
+  line-height: 1.25;
+  margin-top: 2px;
+}
+
+.projectContextCard p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin-top: 4px;
+}
+
+.projectContextLines {
+  display: grid;
+  gap: 5px;
+}
+
+.projectContextLines span {
+  overflow-wrap: anywhere;
+}
+
+.projectContextChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.projectContextChips em {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  display: inline-flex;
+  flex-direction: column;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 850;
+  gap: 1px;
+  min-width: 78px;
+  padding: 6px 9px;
+}
+
+.projectContextChips em small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.projectContextChips em.ok {
+  background: rgba(18, 118, 97, 0.1);
+  border-color: rgba(18, 118, 97, 0.18);
+  color: var(--accent-strong);
+}
+
+.projectContextChips em.warn {
+  background: rgba(191, 107, 38, 0.12);
+  border-color: rgba(191, 107, 38, 0.22);
+  color: #8a4b18;
+}
+
 .studioStatusSummary {
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid var(--line);
