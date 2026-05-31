@@ -194,7 +194,7 @@ describe("agent planner", () => {
     expect(plan.steps[0].action).toBe("askClarifyingQuestion");
   });
 
-  it("asks before acting on vague active-project commands", () => {
+  it("uses the current PostProject stage to continue vague active-project commands", () => {
     const plan = createAgentPlan({
       message: "帮我弄一下",
       hasCurrentDraft: true,
@@ -205,9 +205,40 @@ describe("agent planner", () => {
       hasSelectedImages: true
     });
 
-    expect(plan.intent).toBe("ask");
-    expect(plan.steps[0].action).toBe("askClarifyingQuestion");
-    expect(plan.steps[0].reason).toContain("too vague");
+    expect(plan.intent).toBe("answer");
+    expect(plan.steps.map((step) => step.action)).toEqual(["planVisuals"]);
+    expect(plan.steps[0].toolName).toBe("workflow.planVisuals");
+    expect(plan.steps[0].reason).toContain("Continue from current PostProject stage");
+  });
+
+  it("continues from evidence-ready stage by creating a CreativeBrief", () => {
+    const plan = createAgentPlan({
+      message: "继续",
+      hasCurrentDraft: false,
+      attachedAssetCount: 0,
+      postStage: "evidence_ready",
+      hasEvidence: true
+    });
+
+    expect(plan.intent).toBe("create_creative_brief");
+    expect(plan.steps.map((step) => step.action)).toEqual(["createCreativeBrief"]);
+    expect(plan.steps[0].toolName).toBe("project.createCreativeBrief");
+  });
+
+  it("continues from reviewing stage by preparing a guarded publish confirmation", () => {
+    const plan = createAgentPlan({
+      message: "下一步",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      postStage: "reviewing",
+      hasEvidence: true,
+      hasCreativeBrief: true,
+      hasSelectedImages: true
+    });
+
+    expect(plan.intent).toBe("prepare_publish");
+    expect(plan.steps.map((step) => step.action)).toEqual(["preparePublish"]);
+    expect(plan.steps[0].toolName).toBe("publish.prepare");
   });
 
   it("asks for evidence or brief context before drafting from an under-specified project", () => {

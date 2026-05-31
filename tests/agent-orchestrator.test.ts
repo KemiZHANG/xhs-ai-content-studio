@@ -157,6 +157,58 @@ describe("agent orchestrator", () => {
     expect(result.questions.join(" ")).toContain("目标人群");
   });
 
+  it("continues an evidence-ready PostProject without forcing the user to restate the next step", async () => {
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      targetAudience: "周末探店人群",
+      goal: "生成真实探店笔记",
+      tone: "真实分享",
+      evidencePack: {
+        sampleIds: ["note-1"],
+        insights: [
+          {
+            id: "insight-title",
+            sourceType: "realtime",
+            type: "title",
+            insight: "标题先给城市、场景和收藏理由。",
+            sourceSampleIds: ["note-1"],
+            confidence: 0.86,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }
+        ]
+      }
+    });
+
+    const runChatAgent = vi.fn(async () => ({ answer: "legacy should not run" }));
+    const result = await runAgentTurn({
+      message: "继续",
+      conversationId: "chat-stage-continue",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      },
+      runChatAgentImpl: runChatAgent
+    });
+
+    expect(result.intent).toBe("create_creative_brief");
+    expect(result.needsUserInput).toBe(false);
+    expect(result.postProject?.creativeBrief).toBeTruthy();
+    expect(result.cards.map((card) => card.type)).toContain("creative_brief");
+    expect(result.quickActions.map((action) => action.action)).toContain("generate_copy");
+    expect(runChatAgent).not.toHaveBeenCalled();
+  });
+
   it("turns publish requests into guarded publish intents before MCP is called", async () => {
     let publishCalls = 0;
     const result = await runAgentTurn({

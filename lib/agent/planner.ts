@@ -1,5 +1,6 @@
 import type { AgentPlan, AgentPlanStep } from "@/lib/agent/types";
-import type { PostStage } from "@/lib/post-project/types";
+import { getPostStageGuidance } from "@/lib/post-project/guidance";
+import type { PostAction, PostStage } from "@/lib/post-project/types";
 
 export type CreateAgentPlanInput = {
   message: string;
@@ -233,6 +234,10 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
   }
 
   if (isAmbiguousLowSignalRequest(message, lower)) {
+    const continuePlan = buildStageContinuationPlan(input, message);
+    if (continuePlan) {
+      return continuePlan;
+    }
     return buildPlan({
       intent: "ask",
       topic: inferTopic(message),
@@ -247,6 +252,130 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
       ? [step("askClarifyingQuestion", "The user intent is ambiguous and no active PostProject context exists.")]
       : [step("answer", "Answer directly or delegate to the legacy chat agent.")]
   });
+}
+
+function buildStageContinuationPlan(input: CreateAgentPlanInput, message: string): AgentPlan | null {
+  const stage = input.postStage ?? "empty";
+  if (stage === "empty") {
+    return null;
+  }
+  const allowedActions = input.allowedActions ?? [];
+  const guidance = getPostStageGuidance(stage, allowedActions as PostAction[]);
+  const primaryAction = guidance.primaryAction ?? (allowedActions[0] as PostAction | undefined);
+  if (!primaryAction || primaryAction === "recover") {
+    return null;
+  }
+  return planFromPostAction(primaryAction, input, message, guidance.title);
+}
+
+function planFromPostAction(
+  action: PostAction,
+  input: CreateAgentPlanInput,
+  message: string,
+  guidanceTitle: string
+): AgentPlan | null {
+  const reason = `Continue from current PostProject stage: ${guidanceTitle}.`;
+  switch (action) {
+    case "search_research":
+      return buildPlan({
+        intent: "research_only",
+        topic: inferTopic(message),
+        steps: [
+          step("research", reason, "workflow.searchRank"),
+          step("retrieveViralKnowledge", "Retrieve reusable patterns from the viral knowledge base.", "knowledge.retrieveViralPatterns"),
+          step("summarizeEvidence", "Summarize evidence for the user.", "workflow.summarizeEvidence")
+        ]
+      });
+    case "create_creative_brief":
+      return buildPlan({
+        intent: "create_creative_brief",
+        topic: inferTopic(message),
+        steps: [step("createCreativeBrief", reason, "project.createCreativeBrief")]
+      });
+    case "generate_copy":
+      return buildPlan({
+        intent: "answer",
+        topic: inferTopic(message),
+        steps: [step("generateDraft", reason, "draft.createFromEvidence")]
+      });
+    case "revise_copy":
+      return input.hasCurrentDraft
+        ? buildPlan({
+            intent: "revise_draft",
+            topic: inferTopic(message),
+            steps: [step("reviseDraft", reason, "draft.reviseCurrent")]
+          })
+        : null;
+    case "plan_visuals":
+    case "generate_image_prompts":
+      return buildPlan({
+        intent: "answer",
+        topic: inferTopic(message),
+        steps: [step("planVisuals", reason, "workflow.planVisuals")]
+      });
+    case "confirm_visual_direction":
+      return buildPlan({
+        intent: "confirm_visual_direction",
+        topic: inferTopic(message),
+        steps: [step("confirmVisualDirection", reason, "project.confirmVisualDirection")]
+      });
+    case "generate_images":
+      return buildPlan({
+        intent: "generate_images",
+        topic: inferTopic(message),
+        requiresAssets: false,
+        steps: [step("generateImages", reason, "workflow.generateImages")]
+      });
+    case "generate_cards":
+      return input.hasCurrentDraft
+        ? buildPlan({
+            intent: "generate_cards",
+            topic: inferTopic(message),
+            steps: [step("generateCards", reason, "image.generateCards")]
+          })
+        : null;
+    case "select_images":
+      return buildPlan({
+        intent: "select_images",
+        topic: inferTopic(message),
+        selectedImageIndex: inferSelectedImageIndex(message),
+        steps: [step("selectImages", reason, "project.selectImages")]
+      });
+    case "assemble_post":
+      return input.hasCurrentDraft
+        ? buildPlan({
+            intent: "assemble_post",
+            topic: inferTopic(message),
+            steps: [step("assemblePost", reason, "project.assemblePost")]
+          })
+        : null;
+    case "run_quality_gate":
+      return input.hasCurrentDraft
+        ? buildPlan({
+            intent: "quality_check",
+            topic: inferTopic(message),
+            steps: [
+              step("assemblePost", "Assemble current draft and selected images into the final post.", "project.assemblePost"),
+              step("runQualityGate", reason, "project.runQualityGate")
+            ]
+          })
+        : null;
+    case "request_publish_confirmation":
+      return input.hasCurrentDraft
+        ? buildPlan({
+            intent: "prepare_publish",
+            topic: inferTopic(message),
+            steps: [step("preparePublish", reason, "publish.prepare")]
+          })
+        : null;
+    case "start_brief":
+    case "update_brief_inputs":
+    case "schedule_publish":
+    case "publish_now":
+    case "summarize_evidence":
+    case "recover":
+      return null;
+  }
 }
 
 function isDraftOutputRequest(message: string): boolean {
