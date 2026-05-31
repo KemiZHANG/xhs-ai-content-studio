@@ -2217,13 +2217,22 @@ describe("API route contracts", () => {
         visibility: defaultSettings.defaultVisibility
       },
       copyVersions: [],
-      imagePrompts: [{
-        id: "prompt-v1",
-        createdAt: "then",
-        label: "prompt",
-        value: { prompt: "新图提示词", negativePrompt: "不要文字错误" },
-        basedOnEvidenceIds: ["visual-insight"]
-      }],
+      imagePrompts: [
+        {
+          id: "prompt-v1",
+          createdAt: "then",
+          label: "prompt",
+          value: { prompt: "新图提示词", negativePrompt: "不要文字错误" },
+          basedOnEvidenceIds: ["visual-insight"]
+        },
+        {
+          id: "prompt-latest",
+          createdAt: "later",
+          label: "latest prompt",
+          value: { prompt: "另一个当前 Prompt" },
+          basedOnEvidenceIds: ["latest-visual-insight"]
+        }
+      ],
       evidencePack: { insights: [{ id: "fallback-insight" }] }
     };
 
@@ -2263,11 +2272,15 @@ describe("API route contracts", () => {
       copyVersions: [expect.objectContaining({
         basedOnEvidenceIds: ["brief-insight"]
       })],
+      imagePrompts: [
+        expect.objectContaining({ id: "prompt-latest" }),
+        expect.objectContaining({ id: "prompt-v1" })
+      ],
       finalPost: undefined,
       publishPlan: null,
       qualityCheck: undefined,
       auditStatus: "unchecked",
-      currentStage: "copy_ready"
+      currentStage: "image_prompt_ready"
     }));
   });
 

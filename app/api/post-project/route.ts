@@ -196,17 +196,22 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
     throw new Error("切换图片 Prompt 版本失败");
   }
   const copyVersion = copyVersionFromDraft(currentDraft, getCurrentEvidenceIds(project));
+  const activeImagePrompts = [
+    ...project.imagePrompts.filter((item) => item.id !== version.id),
+    version
+  ];
   const nextProject = await updatePostProject({
     copyDraft: currentDraft,
     copyVersions: [
       ...project.copyVersions.filter((item) => item.id !== copyVersion.id),
       copyVersion
     ],
+    imagePrompts: activeImagePrompts,
     finalPost: undefined,
     publishPlan: null,
     qualityCheck: undefined,
     auditStatus: "unchecked",
-    currentStage: "copy_ready"
+    currentStage: "image_prompt_ready"
   });
   return { project: nextProject, currentDraft };
 }

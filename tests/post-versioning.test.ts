@@ -111,6 +111,37 @@ describe("post versioning status", () => {
     expect(finalPost?.basedOnEvidenceIds).toEqual(["insight-1", "insight-visual"]);
   });
 
+  it("treats the last image prompt as the active rollback target", () => {
+    const project = {
+      ...baseProject,
+      imagePrompts: [
+        {
+          id: "prompt-old",
+          createdAt: "2026-05-29T00:00:00.000Z",
+          label: "Old Prompt",
+          value: { prompt: "older visual direction" },
+          basedOnEvidenceIds: ["insight-old"]
+        },
+        ...baseProject.imagePrompts
+      ]
+    };
+    const finalPost = deriveFinalPost({
+      copyDraft: project.copyDraft,
+      selectedImages: project.selectedImages,
+      imagePrompts: project.imagePrompts,
+      finalPost: undefined
+    });
+    const snapshot = buildPublishVersionSnapshot({
+      ...project,
+      finalPost,
+      qualityCheck: undefined
+    });
+
+    expect(finalPost?.imagePromptVersionIds).toEqual(["prompt-1"]);
+    expect(finalPost?.basedOnEvidenceIds).toEqual(["insight-1"]);
+    expect(snapshot.imagePromptVersionIds).toEqual(["prompt-1"]);
+  });
+
   it("summarizes differences between the final post snapshot and current canvas", () => {
     const report = getPostVersionDiffReport({
       ...baseProject,

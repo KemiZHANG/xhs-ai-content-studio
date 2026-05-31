@@ -34,7 +34,7 @@ export function getPostVersionStatus(project: Pick<
   const activeCopyVersionId = project.copyDraft ? `copy-${project.copyDraft.id}` : undefined;
   const selectedImages = Array.isArray(project.selectedImages) ? project.selectedImages : [];
   const imagePrompts = Array.isArray(project.imagePrompts) ? project.imagePrompts : [];
-  const activeImagePromptVersionIds = imagePrompts.map((prompt) => prompt.id);
+  const activeImagePromptVersionIds = getActiveImagePromptVersionIds(imagePrompts);
   const finalPostMatchesCanvas = Boolean(
     project.finalPost &&
       activeCopyVersionId &&
@@ -76,7 +76,7 @@ export function getPostVersionDiffReport(project: Pick<
 >): PostVersionDiffReport {
   const finalPost = project.finalPost;
   const draft = project.copyDraft?.draft;
-  const activePromptIds = project.imagePrompts.map((prompt) => prompt.id);
+  const activePromptIds = getActiveImagePromptVersionIds(project.imagePrompts);
   const changes: PostVersionDiff[] = [
     diffItem("title", "标题", finalPost?.title ?? "", draft?.title ?? ""),
     diffItem("content", "正文", finalPost?.content ?? "", draft?.content ?? ""),
@@ -132,6 +132,10 @@ export function compareTextVersion<T extends { title?: string; content?: string;
       ? `版本之间有 ${changedFields.length} 处差异：${changes.filter((item) => item.changed).map((item) => item.label).join("、")}`
       : "两个版本内容一致"
   };
+}
+
+function getActiveImagePromptVersionIds(imagePrompts: PostProject["imagePrompts"]): string[] {
+  return imagePrompts.length ? [imagePrompts[imagePrompts.length - 1].id] : [];
 }
 
 function sameStringSet(left: string[], right: string[]): boolean {
