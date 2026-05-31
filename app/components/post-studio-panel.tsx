@@ -160,6 +160,7 @@ export function PostStudioPanel({
 }) {
   const [tab, setTab] = useState<StudioTab>("insights");
   const [selectedEvidence, setSelectedEvidence] = useState<SampleEvidence | null>(null);
+  const [evidenceCatalogOpen, setEvidenceCatalogOpen] = useState(false);
   const [selectedViralCase, setSelectedViralCase] = useState<ViralCase | null>(null);
   const [viralSearchForm, setViralSearchForm] = useState({
     query: "",
@@ -198,7 +199,8 @@ export function PostStudioPanel({
   const projectViralPack = extractProjectViralPack(project);
   const viralPack = workflowResult?.viralKnowledge ?? workflowResult?.researchSummary?.viralKnowledge ?? projectViralPack ?? null;
   const samples = project?.selectedSamples ?? workflowResult?.evidence ?? workspace?.selectedSamples ?? [];
-  const saveableSamples = samples.filter(isSampleEvidence).slice(0, 3);
+  const evidenceSamples = samples.filter(isSampleEvidence);
+  const saveableSamples = evidenceSamples.slice(0, 3);
   const allowedPostActions = (project?.allowedActions ?? []) as PostAction[];
   const nextActions = allowedPostActions.length ? allowedPostActions.slice(0, 3) : (["search_research"] as PostAction[]);
   const stageGuidance = getPostStageGuidance(project?.currentStage ?? "empty", allowedPostActions);
@@ -703,8 +705,8 @@ export function PostStudioPanel({
 
           {tab === "evidence" ? (
             <SideSection icon={Library} title="研究证据">
-              <strong>{samples.length} 条样本</strong>
-              <p className="muted">默认只展示摘要；完整笔记、评论和图片证据保留在主题研究台。</p>
+              <strong>{evidenceSamples.length} 条样本</strong>
+              <p className="muted">默认只展示 3 条高价值摘要；完整笔记、评论和图片证据在本页证据目录中查看。</p>
               {saveableSamples.length ? (
                 <>
                   <div className="sideActionStack compact">
@@ -730,7 +732,13 @@ export function PostStudioPanel({
                   </div>
                 </>
               ) : null}
-              <button className="secondaryButton fullWidth" onClick={() => saveableSamples[0] ? setSelectedEvidence(saveableSamples[0]) : onNavigate("workflow")} type="button">查看证据详情</button>
+              <button
+                className="secondaryButton fullWidth"
+                onClick={() => evidenceSamples.length ? setEvidenceCatalogOpen(true) : onNavigate("workflow")}
+                type="button"
+              >
+                {evidenceSamples.length > saveableSamples.length ? `查看全部 ${evidenceSamples.length} 条证据` : "查看证据详情"}
+              </button>
             </SideSection>
           ) : null}
 
@@ -1284,6 +1292,17 @@ export function PostStudioPanel({
       {selectedEvidence ? (
         <EvidenceDrawer sample={selectedEvidence} onClose={() => setSelectedEvidence(null)} onSave={() => onSaveToViralLibrary(selectedEvidence)} />
       ) : null}
+      {evidenceCatalogOpen ? (
+        <EvidenceCatalogDrawer
+          samples={evidenceSamples}
+          onClose={() => setEvidenceCatalogOpen(false)}
+          onOpenSample={(sample) => {
+            setEvidenceCatalogOpen(false);
+            setSelectedEvidence(sample);
+          }}
+          onSaveSample={onSaveToViralLibrary}
+        />
+      ) : null}
       {selectedViralCase ? (
         <ViralCaseDrawer viralCase={selectedViralCase} onClose={() => setSelectedViralCase(null)} />
       ) : null}
@@ -1744,6 +1763,57 @@ function EvidenceDrawer({ sample, onClose, onSave }: { sample: SampleEvidence; o
   );
 }
 
+function EvidenceCatalogDrawer({
+  samples,
+  onClose,
+  onOpenSample,
+  onSaveSample
+}: {
+  samples: SampleEvidence[];
+  onClose: () => void;
+  onOpenSample: (sample: SampleEvidence) => void;
+  onSaveSample: (sample: SampleEvidence) => void;
+}) {
+  const sortedSamples = [...samples].sort((left, right) => scoreEvidence(right) - scoreEvidence(left));
+
+  return (
+    <div className="studioDrawerBackdrop" role="presentation" onClick={onClose}>
+      <aside className="studioDrawer" role="dialog" aria-modal="true" aria-label="研究证据目录" onClick={(event) => event.stopPropagation()}>
+        <header>
+          <div>
+            <span>Evidence Catalog</span>
+            <h3>研究证据目录</h3>
+            <p>完整样本留在抽屉里，不打断主创作台；打开单条后可查看正文、评论和图片。</p>
+          </div>
+          <button type="button" onClick={onClose}>关闭</button>
+        </header>
+
+        <section className="drawerSection">
+          <div className="drawerEvidenceList">
+            {sortedSamples.map((sample, index) => (
+              <article key={sample.id}>
+                <div>
+                  <span>#{index + 1} · 赞 {sample.likes} · 藏 {sample.collects} · 评 {sample.comments}</span>
+                  <strong>{sample.title}</strong>
+                  <p>{sample.detailText || sample.reasonHighlights[0] || "暂无正文，仍可参考互动数据和图片风格。"}</p>
+                </div>
+                <div className="evidenceActions">
+                  <button className="textButton" type="button" onClick={() => onOpenSample(sample)}>
+                    打开详情
+                  </button>
+                  <button className="textButton" type="button" onClick={() => onSaveSample(sample)}>
+                    保存到爆款库
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      </aside>
+    </div>
+  );
+}
+
 function ViralCaseDrawer({ viralCase, onClose }: { viralCase: ViralCase; onClose: () => void }) {
   const insights = viralCase.extractedInsights;
   return (
@@ -2037,6 +2107,10 @@ function hasTraceableVisualDirection(project: PostProject | null): boolean {
 
 function isSampleEvidence(value: unknown): value is SampleEvidence {
   return Boolean(value) && typeof value === "object" && typeof (value as { id?: unknown }).id === "string" && typeof (value as { title?: unknown }).title === "string";
+}
+
+function scoreEvidence(sample: SampleEvidence): number {
+  return (Number(sample.collects) || 0) * 3 + (Number(sample.likes) || 0) + (Number(sample.comments) || 0) * 2;
 }
 
 function summarizeDraftDiff(current: PublishDraftState, version: NonNullable<WorkflowResult["draft"]>): string {

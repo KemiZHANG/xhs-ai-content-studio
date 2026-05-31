@@ -4542,6 +4542,43 @@ textarea {
   padding-left: 18px;
 }
 
+.drawerEvidenceList {
+  display: grid;
+  gap: 12px;
+}
+
+.drawerEvidenceList article {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(36, 32, 26, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 252, 247, 0.72);
+}
+
+.drawerEvidenceList article > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.drawerEvidenceList span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.drawerEvidenceList strong {
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.drawerEvidenceList p {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
 .viralKnowledgeGrid {
   display: grid;
   gap: 10px;
