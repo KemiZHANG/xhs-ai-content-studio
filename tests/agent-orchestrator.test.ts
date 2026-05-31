@@ -206,19 +206,18 @@ describe("agent orchestrator", () => {
       runChatAgentImpl: runChatAgent
     });
 
-    expect(result.intent).toBe("create_creative_brief");
+    expect(result.intent).toBe("retrieve_viral_knowledge");
     expect(result.needsUserInput).toBe(false);
-    expect(result.postProject?.creativeBrief).toBeTruthy();
-    expect(result.cards.find((card) => card.type === "director_summary")?.summary).toContain("下一步：生成文案");
+    expect(result.answer).toContain("刷新爆款库 RAG");
+    expect(result.cards.find((card) => card.type === "director_summary")?.summary).toContain("下一步：刷新爆款库 RAG");
     expect(result.cards.find((card) => card.type === "director_summary")?.data).toMatchObject({
-      intent: "create_creative_brief",
-      stage: "brief_ready",
-      nextAction: "generate_copy",
+      intent: "retrieve_viral_knowledge",
+      stage: "evidence_ready",
+      nextAction: "retrieve_viral_knowledge",
       memorySignalCount: 2,
       memoryHints: ["用户认可真实探店感", "避免广告腔"]
     });
-    expect(result.cards.map((card) => card.type)).toContain("creative_brief");
-    expect(result.quickActions.map((action) => action.action)).toContain("generate_copy");
+    expect(result.quickActions.map((action) => action.action)).toContain("retrieve_viral_knowledge");
     expect(runChatAgent).not.toHaveBeenCalled();
   });
 

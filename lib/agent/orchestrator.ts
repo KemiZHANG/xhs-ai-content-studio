@@ -1778,6 +1778,7 @@ const postActionLabels: Record<PostAction, string> = {
   update_brief_inputs: "补充/修改需求",
   search_research: "搜索真实笔记",
   summarize_evidence: "总结证据优点",
+  retrieve_viral_knowledge: "刷新爆款库 RAG",
   create_creative_brief: "生成创作 Brief",
   generate_copy: "生成文案",
   revise_copy: "修改当前文案",

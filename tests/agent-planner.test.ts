@@ -225,6 +225,21 @@ describe("agent planner", () => {
     expect(plan.steps[0].toolName).toBe("project.createCreativeBrief");
   });
 
+  it("continues from evidence-ready readiness action by refreshing viral RAG", () => {
+    const plan = createAgentPlan({
+      message: "继续",
+      hasCurrentDraft: false,
+      attachedAssetCount: 0,
+      postStage: "evidence_ready",
+      hasEvidence: true,
+      allowedActions: ["retrieve_viral_knowledge", "create_creative_brief", "search_research"]
+    });
+
+    expect(plan.intent).toBe("retrieve_viral_knowledge");
+    expect(plan.steps.map((step) => step.action)).toEqual(["retrieveViralKnowledge"]);
+    expect(plan.steps[0].toolName).toBe("knowledge.retrieveViralPatterns");
+  });
+
   it("continues from reviewing stage by preparing a guarded publish confirmation", () => {
     const plan = createAgentPlan({
       message: "下一步",

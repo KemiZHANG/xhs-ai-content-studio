@@ -25,6 +25,7 @@ export type PostAction =
   | "update_brief_inputs"
   | "search_research"
   | "summarize_evidence"
+  | "retrieve_viral_knowledge"
   | "create_creative_brief"
   | "generate_copy"
   | "revise_copy"

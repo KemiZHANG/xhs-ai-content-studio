@@ -261,6 +261,14 @@ function buildStageContinuationPlan(input: CreateAgentPlanInput, message: string
   }
   const allowedActions = input.allowedActions ?? [];
   const guidance = getPostStageGuidance(stage, allowedActions as PostAction[]);
+  if (
+    stage === "evidence_ready" &&
+    input.hasEvidence &&
+    !input.hasCreativeBrief &&
+    allowedActions.includes("retrieve_viral_knowledge")
+  ) {
+    return planFromPostAction("retrieve_viral_knowledge", input, message, "补充爆款库 RAG");
+  }
   const primaryAction = guidance.primaryAction ?? (allowedActions[0] as PostAction | undefined);
   if (!primaryAction || primaryAction === "recover") {
     return null;
@@ -291,6 +299,12 @@ function planFromPostAction(
         intent: "create_creative_brief",
         topic: inferTopic(message),
         steps: [step("createCreativeBrief", reason, "project.createCreativeBrief")]
+      });
+    case "retrieve_viral_knowledge":
+      return buildPlan({
+        intent: "retrieve_viral_knowledge",
+        topic: inferTopic(message),
+        steps: [step("retrieveViralKnowledge", reason, "knowledge.retrieveViralPatterns")]
       });
     case "generate_copy":
       return buildPlan({

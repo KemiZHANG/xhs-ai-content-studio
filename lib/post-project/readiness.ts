@@ -3,6 +3,7 @@ import type { PostAction, PostStage } from "@/lib/post-project/types";
 
 export type PostReadinessStepId =
   | "evidence"
+  | "viral_rag"
   | "brief"
   | "copy"
   | "visual"
@@ -74,6 +75,8 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
   const imagePrompts = project.imagePrompts ?? [];
   const selectedImages = project.selectedImages ?? [];
   const hasEvidence = Boolean(insights.length || selectedSamples.length);
+  const viralInsights = insights.filter((insight) => isRecord(insight) && insight.sourceType === "viral_library");
+  const hasViralRag = viralInsights.length > 0;
   const hasBrief = Boolean(project.creativeBrief);
   const draft = project.copyDraft?.draft;
   const hasCopy = Boolean(draft?.title?.trim() && draft?.content?.trim());
@@ -99,6 +102,21 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
       ready: hasEvidence,
       detail: hasEvidence ? `已沉淀 ${insights.length} 条规律` : "先搜索真实笔记或补充参考样本",
       action: actionSet.has("search_research") ? "search_research" : undefined
+    },
+    {
+      id: "viral_rag",
+      label: "爆款库 RAG",
+      ready: hasViralRag || hasBrief,
+      detail: hasViralRag
+        ? `已合入 ${viralInsights.length} 条历史爆款规律`
+        : hasBrief
+          ? "当前 Brief 已生成；如需补强可随时刷新爆款库 RAG"
+        : hasEvidence
+          ? "把历史爆款库规律合入 evidencePack，补足标题钩子、结构、标签和图片风格"
+          : "先完成实时研究，再检索历史爆款库",
+      action: hasEvidence && !hasViralRag && !hasBrief && actionSet.has("retrieve_viral_knowledge")
+        ? "retrieve_viral_knowledge"
+        : undefined
     },
     {
       id: "brief",

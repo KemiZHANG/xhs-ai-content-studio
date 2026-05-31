@@ -124,7 +124,7 @@ describe("post readiness report", () => {
       allowedActions: ["request_publish_confirmation"]
     }));
 
-    expect(report.progress).toBe(88);
+    expect(report.progress).toBe(89);
     expect(report.canRequestPublish).toBe(true);
     expect(report.nextAction).toBe("request_publish_confirmation");
     expect(report.blockers).toEqual([
@@ -133,6 +133,75 @@ describe("post readiness report", () => {
     expect(report.visibleItems.map((item) => item.id)).toContain("confirmation");
     expect(report.visibleItems.map((item) => item.id)).toContain("quality");
     expect(report.visibleItems.length).toBeLessThanOrEqual(5);
+  });
+
+  it("promotes viral RAG between realtime evidence and CreativeBrief", () => {
+    const report = buildPostReadinessReport(project({
+      evidencePack: {
+        sampleIds: ["sample-1"],
+        insights: [{
+          id: "insight-title",
+          sourceType: "realtime",
+          type: "title",
+          insight: "高收藏标题先给场景再给收藏理由",
+          sourceSampleIds: ["sample-1"],
+          confidence: 0.82,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }]
+      },
+      selectedSamples: [{ id: "sample-1", title: "sample" }],
+      currentStage: "evidence_ready",
+      allowedActions: ["retrieve_viral_knowledge", "create_creative_brief", "search_research"]
+    }));
+
+    expect(report.items.find((item) => item.id === "viral_rag")).toMatchObject({
+      ready: false,
+      action: "retrieve_viral_knowledge",
+      detail: expect.stringContaining("历史爆款库规律")
+    });
+    expect(report.nextAction).toBe("retrieve_viral_knowledge");
+  });
+
+  it("treats viral RAG as optional enrichment after CreativeBrief exists", () => {
+    const report = buildPostReadinessReport(project({
+      evidencePack: {
+        sampleIds: ["sample-1"],
+        insights: [{
+          id: "insight-title",
+          sourceType: "realtime",
+          type: "title",
+          insight: "标题先给场景",
+          sourceSampleIds: ["sample-1"],
+          confidence: 0.82,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }]
+      },
+      selectedSamples: [{ id: "sample-1", title: "sample" }],
+      creativeBrief: {
+        audience: "探店用户",
+        painPoint: "选择困难",
+        contentAngle: "安静咖啡馆",
+        emotionalHook: "慢下来",
+        proofPoints: ["真实体验"],
+        tone: "真实分享",
+        visualMood: "自然光",
+        imageMustHave: [],
+        imageMustAvoid: [],
+        platformStyle: "小红书",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-title"]
+      },
+      currentStage: "brief_ready",
+      allowedActions: ["generate_copy", "plan_visuals", "retrieve_viral_knowledge"]
+    }));
+
+    expect(report.items.find((item) => item.id === "viral_rag")).toMatchObject({
+      ready: true,
+      action: undefined,
+      detail: expect.stringContaining("如需补强")
+    });
+    expect(report.nextAction).toBe("generate_copy");
   });
 
   it("does not allow publish confirmation when the quality gate belongs to a stale final post", () => {
