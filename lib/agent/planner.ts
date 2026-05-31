@@ -117,6 +117,21 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
     });
   }
 
+  if (isCreativeBriefRequest(message, lower)) {
+    if (input.hasEvidence || input.hasCreativeBrief || input.postStage === "briefing" || input.allowedActions?.includes("create_creative_brief")) {
+      return buildPlan({
+        intent: "create_creative_brief",
+        topic: inferTopic(message),
+        steps: [step("createCreativeBrief", "Refresh the shared CreativeBrief from PostProject evidence, user inputs, and viral-library patterns.", "project.createCreativeBrief")]
+      });
+    }
+    return buildPlan({
+      intent: "ask",
+      topic: inferTopic(message),
+      steps: [step("askClarifyingQuestion", "The user wants a CreativeBrief, but the active PostProject does not have enough evidence or brief input yet.")]
+    });
+  }
+
   if (isDraftCreationFromProjectRequest(message, lower) && (input.hasEvidence || input.hasCreativeBrief)) {
     return buildPlan({
       intent: "answer",
@@ -222,6 +237,10 @@ function isDraftOutputRequest(message: string): boolean {
 
 function isVisualPlanningRequest(message: string, lower: string): boolean {
   return /图片风格|图片方向|视觉|封面|配图|图文|提示词|场景图|产品图/.test(message) || lower.includes("visual") || lower.includes("image prompt");
+}
+
+function isCreativeBriefRequest(message: string, lower: string): boolean {
+  return /CreativeBrief|创作简报|创作 Brief|内容方向|生成\/刷新.*Brief|刷新.*Brief|整理.*Brief|生成.*Brief/i.test(message) || lower.includes("creative brief");
 }
 
 function isAmbiguousLowSignalRequest(message: string, lower: string): boolean {

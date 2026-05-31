@@ -35,6 +35,7 @@ export type AgentIntent =
   | "start_project"
   | "research_to_draft"
   | "research_only"
+  | "create_creative_brief"
   | "retrieve_viral_knowledge"
   | "save_viral_knowledge"
   | "revise_draft"

@@ -127,6 +127,20 @@ describe("agent planner", () => {
     expect(plan.steps[0].toolName).toBe("knowledge.saveViralCase");
   });
 
+  it("plans a direct CreativeBrief refresh from current evidence", () => {
+    const plan = createAgentPlan({
+      message: "请基于当前研究证据和爆款库规律，生成/刷新这个 PostProject 的 CreativeBrief",
+      hasCurrentDraft: false,
+      attachedAssetCount: 0,
+      postStage: "evidence_ready",
+      hasEvidence: true
+    });
+
+    expect(plan.intent).toBe("create_creative_brief");
+    expect(plan.steps.map((step) => step.action)).toEqual(["createCreativeBrief"]);
+    expect(plan.steps[0].toolName).toBe("project.createCreativeBrief");
+  });
+
   it("plans product image generation when the user refers to uploaded product images", () => {
     const plan = createAgentPlan({
       message: "用我上传的产品图生成小红书场景图",

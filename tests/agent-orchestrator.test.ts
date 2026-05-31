@@ -1545,6 +1545,70 @@ describe("agent orchestrator", () => {
     ]));
   });
 
+  it("refreshes CreativeBrief as a first-class Agent action", async () => {
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      targetAudience: "探店账号粉丝",
+      goal: "生成真实避坑探店笔记",
+      tone: "生活化",
+      evidencePack: {
+        sampleIds: ["note-brief-live"],
+        insights: [{
+          id: "insight-brief-title",
+          sourceType: "realtime",
+          type: "title",
+          insight: "标题先给适用人群，再给避坑收益",
+          sourceSampleIds: ["note-brief-live"],
+          confidence: 0.82,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }, {
+          id: "viral-brief-visual",
+          sourceType: "viral_library",
+          type: "visual",
+          insight: "封面用窗边自然光和座位信息，提升收藏动机",
+          sourceSampleIds: ["viral-case-brief"],
+          confidence: 0.84,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }]
+      },
+      selectedSamples: [],
+      currentStage: "evidence_ready"
+    });
+
+    const result = await runAgentTurn({
+      message: "请基于当前研究证据和爆款库规律，生成/刷新这个 PostProject 的 CreativeBrief，并说明参考了哪些证据。",
+      conversationId: "chat-create-brief",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(result.intent).toBe("create_creative_brief");
+    expect(result.postProject?.currentStage).toBe("brief_ready");
+    expect(result.postProject?.creativeBrief?.basedOnEvidenceIds).toEqual(expect.arrayContaining(["insight-brief-title", "viral-brief-visual"]));
+    expect(result.cards.map((card) => card.type)).toContain("creative_brief");
+    expect(result.answer).toContain("已刷新当前 PostProject 的 CreativeBrief");
+    expect(result.answer).toContain("参考证据");
+    expect(result.toolTrace).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        label: "project.createCreativeBrief",
+        status: "running"
+      })
+    ]));
+  });
+
   it("applies planner RAG filters after legacy research workflows", async () => {
     const highSample: SampleEvidence = {
       id: "note-high-filtered",

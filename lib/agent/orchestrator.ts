@@ -255,6 +255,40 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
       });
     }
 
+    const creativeBriefTurn = await maybeHandleCreativeBriefTurn(input, plan, initialPostProject);
+    if (creativeBriefTurn) {
+      trace = addTraceEvent(trace, {
+        type: "tool_called",
+        label: "project.createCreativeBrief",
+        detail: "Refreshed the shared CreativeBrief from PostProject evidence and user inputs.",
+        metadata: {
+          stage: creativeBriefTurn.postProject.currentStage,
+          basedOnEvidenceIds: creativeBriefTurn.postProject.creativeBrief?.basedOnEvidenceIds
+        }
+      });
+      trace = addTraceEvent(trace, {
+        type: "workspace_updated",
+        label: "Workspace updated",
+        detail: "Stored the refreshed CreativeBrief on the active PostProject."
+      });
+      agentRun = completeRun(agentRun);
+      trace = addTraceEvent(trace, {
+        type: "run_completed",
+        label: "Agent run completed",
+        detail: "Agent turn completed after refreshing CreativeBrief."
+      });
+      await persistAgentTrace(trace);
+      return buildAgentTurnResult({
+        answer: creativeBriefTurn.answer,
+        plan,
+        workspace: creativeBriefTurn.workspace,
+        currentDraft: input.currentDraft ?? undefined,
+        agentRun,
+        trace,
+        postProject: creativeBriefTurn.postProject
+      });
+    }
+
     const cardGenerationTurn = await maybeHandleCardGenerationTurn(input, plan);
     if (cardGenerationTurn) {
       trace = addTraceEvent(trace, {
@@ -1087,6 +1121,65 @@ function formatBriefPatchSummary(project: PostProject): string {
     `语气：${project.tone ?? "未填写"}`,
     project.productInfo.name ? `产品/店铺：${project.productInfo.name}` : ""
   ].filter(Boolean).join("\n");
+}
+
+async function maybeHandleCreativeBriefTurn(
+  input: RunAgentTurnInput,
+  plan: ReturnType<typeof createAgentPlan>,
+  postProject: PostProject
+): Promise<{ answer: string; workspace: WorkspaceState; postProject: PostProject } | null> {
+  if (plan.intent !== "create_creative_brief") {
+    return null;
+  }
+
+  const candidate: PostProject = {
+    ...postProject,
+    creativeBrief: undefined
+  };
+  const creativeBrief = deriveCreativeBrief(candidate);
+  if (!creativeBrief) {
+    const workspace = await updateWorkspaceState({ lastUserIntent: "create_creative_brief" });
+    return {
+      answer: [
+        "当前还不能生成可靠的 CreativeBrief：PostProject 缺少主题、目标人群、内容目标、用户输入或可追溯研究证据。",
+        "请先补充创作需求，或搜索真实小红书笔记后再生成 CreativeBrief。"
+      ].join("\n"),
+      workspace,
+      postProject
+    };
+  }
+
+  const updatedProject = await updatePostProject({
+    creativeBrief,
+    visualDirection: undefined,
+    imagePrompts: [],
+    finalPost: undefined,
+    qualityCheck: undefined,
+    auditStatus: "unchecked",
+    currentStage: "brief_ready"
+  });
+  const referenceSummary = buildEvidenceReferenceSummary(updatedProject, creativeBrief.basedOnEvidenceIds);
+  const workspace = await updateWorkspaceState({
+    topic: updatedProject.topic,
+    evidenceSummary: updatedProject.evidencePack.summary,
+    selectedSamples: updatedProject.selectedSamples,
+    lastUserIntent: "create_creative_brief"
+  });
+  return {
+    answer: [
+      "已刷新当前 PostProject 的 CreativeBrief。文案和图片方向都会基于这同一份 Brief 继续生成。",
+      `目标人群：${creativeBrief.audience}`,
+      `内容角度：${creativeBrief.contentAngle}`,
+      `情绪钩子：${creativeBrief.emotionalHook}`,
+      `视觉氛围：${creativeBrief.visualMood}`,
+      referenceSummary.insights.length
+        ? `参考证据：${referenceSummary.summary}\n${referenceSummary.insights.slice(0, 5).map((insight) => `- ${insight.id}｜${labelForEvidenceSource(insight.sourceType)}｜${insight.type}：${insight.insight}`).join("\n")}`
+        : "证据状态：这份 Brief 主要来自用户输入，暂时不能当作小红书研究结论。",
+      "下一步可以生成文案，或先生成图片方向让我确认。"
+    ].join("\n"),
+    workspace,
+    postProject: updatedProject
+  };
 }
 
 async function maybeHandleViralKnowledgeTurn(
