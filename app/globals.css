@@ -3343,6 +3343,113 @@ textarea {
   margin: 0;
 }
 
+.studioStatusSummary {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 16px 36px rgba(44, 38, 28, 0.08);
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 13px;
+}
+
+.studioStatusSummary.ok {
+  border-color: rgba(18, 118, 97, 0.24);
+  background: linear-gradient(135deg, rgba(18, 118, 97, 0.1), rgba(255, 255, 255, 0.82));
+}
+
+.studioStatusSummary.warn {
+  border-color: rgba(191, 107, 38, 0.28);
+  background: linear-gradient(135deg, rgba(191, 107, 38, 0.12), rgba(255, 255, 255, 0.84));
+}
+
+.studioStatusSummary span {
+  color: var(--muted);
+  display: block;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.studioStatusSummary strong {
+  color: var(--ink);
+  display: block;
+  font-size: 18px;
+  line-height: 1.25;
+  margin-top: 2px;
+}
+
+.studioStatusSummary p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+.studioStatusChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.studioStatusChips em {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  display: inline-flex;
+  flex-direction: column;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 850;
+  gap: 1px;
+  min-width: 72px;
+  padding: 6px 9px;
+}
+
+.studioStatusChips em small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.studioStatusChips em.ok {
+  background: rgba(18, 118, 97, 0.1);
+  border-color: rgba(18, 118, 97, 0.18);
+  color: var(--accent-strong);
+}
+
+.studioStatusChips em.warn {
+  background: rgba(191, 107, 38, 0.12);
+  border-color: rgba(191, 107, 38, 0.22);
+  color: #8a4b18;
+}
+
+.studioAccountLine {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.studioAccountLine svg {
+  color: var(--accent-strong);
+  flex: 0 0 auto;
+}
+
+.studioStatusBlockers {
+  color: var(--muted);
+  display: grid;
+  font-size: 12px;
+  gap: 4px;
+  line-height: 1.45;
+  list-style-position: inside;
+  margin: 0;
+  padding: 0;
+}
+
 .postStageStrip {
   display: none;
 }

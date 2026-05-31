@@ -47,6 +47,7 @@ import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 import { pickEvidenceHighlights, scoreEvidence, summarizeEvidenceSample } from "@/app/components/evidence-display";
 import { labelForPostAction } from "@/app/components/post-action-labels";
+import { buildPostStudioStatusSummary } from "@/app/components/post-studio-status";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
@@ -287,6 +288,16 @@ export function PostStudioPanel({
       versionStatus?.qualityGateFresh === true
   );
   const readiness = project ? buildPostReadinessReport(project) : null;
+  const statusSummary = buildPostStudioStatusSummary({
+    project,
+    workspace,
+    settings,
+    health,
+    evidenceCount: samples.length,
+    hasDraft: Boolean(publishDraft.title || project?.copyDraft || project?.finalPost),
+    selectedImageCount: selectedAssets.length,
+    canvasDirty
+  });
 
   const generatedCopyPrompt = useMemo(
     () =>
@@ -307,6 +318,30 @@ export function PostStudioPanel({
           <span className="flowKicker">Post Studio</span>
           <h2>{projectTitle}</h2>
           <p>围绕一篇帖子推进：先研究真实笔记，再生成文案、图片方向、发布预览和安全检查。</p>
+          <div className={`studioStatusSummary ${statusSummary.riskLevel}`}>
+            <div>
+              <span>当前判断</span>
+              <strong>{statusSummary.headline}</strong>
+              <p>{statusSummary.detail}</p>
+            </div>
+            <div className="studioStatusChips">
+              {statusSummary.chips.map((item) => (
+                <em className={item.state} key={item.label}>
+                  <small>{item.label}</small>
+                  {item.value}
+                </em>
+              ))}
+            </div>
+            <div className="studioAccountLine">
+              <ShieldCheck size={15} />
+              <span>{statusSummary.accountLine}</span>
+            </div>
+            {statusSummary.blockers.length ? (
+              <ul className="studioStatusBlockers">
+                {statusSummary.blockers.map((item) => <li key={item}>{item}</li>)}
+              </ul>
+            ) : null}
+          </div>
         </div>
         <div className="postStageStrip">
           <StagePill label="阶段" value={labelForStage(project?.currentStage ?? "empty")} />
