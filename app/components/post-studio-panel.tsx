@@ -52,6 +52,7 @@ import { buildPostStudioStatusSummary } from "@/app/components/post-studio-statu
 import { buildViralApplicationModel } from "@/app/components/viral-application";
 import { buildPublishConfirmationSummary } from "@/app/components/publish-confirmation-summary";
 import { buildPostProjectContextSummary } from "@/app/components/post-project-context";
+import { buildGeneratedAssetSummary, buildReferenceAssetSummary } from "@/app/components/asset-panel-summary";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
@@ -194,6 +195,18 @@ export function PostStudioPanel({
   const generatedAssets = [...assets].filter((asset) => asset.kind === "generated").sort(sortNewestAsset);
   const recentGeneratedAssets = uniqueAssets([...selectedAssets, ...generatedAssets]).slice(0, 6);
   const referenceAssets = uniqueAssets([...selectedAssets, ...uploadAssets]).slice(0, 6);
+  const referenceAssetSummary = buildReferenceAssetSummary({
+    selectedAssets,
+    referenceAssets,
+    totalUploadCount: uploadAssets.length,
+    limit: 4
+  });
+  const generatedAssetSummary = buildGeneratedAssetSummary({
+    selectedAssets,
+    generatedAssets,
+    totalGeneratedCount: generatedAssets.length,
+    limit: 4
+  });
   const runningJob = jobs.find((job) => job.status === "queued" || job.status === "running") ?? null;
   const insights = project?.evidencePack.insights ?? [];
   const viralInsights = insights.filter((insight) => insight.sourceType === "viral_library");
@@ -1229,9 +1242,9 @@ export function PostStudioPanel({
                 <ImagePlus size={18} />
                 <span>拖入或粘贴产品图 / 参考图</span>
               </div>
-              {referenceAssets.length ? (
+              {referenceAssetSummary.previewAssets.length ? (
                 <div className="studioAssetGrid selectable">
-                  {referenceAssets.map((asset) => {
+                  {referenceAssetSummary.previewAssets.map((asset) => {
                     const selected = publishAssetIds.includes(asset.id);
                     return (
                       <button
@@ -1281,11 +1294,14 @@ export function PostStudioPanel({
 
           {tab === "generated" ? (
             <SideSection icon={ImagePlus} title="已生成素材">
-              <strong>{recentGeneratedAssets.length ? `最近 ${recentGeneratedAssets.length} 张` : "还没有生成图"}</strong>
-              <p className="muted">这里只展示当前选中图和最近生成结果，避免素材过多干扰创作决策。</p>
-              {recentGeneratedAssets.length ? (
+              <div className={`assetPanelSummary ${generatedAssetSummary.state}`}>
+                <strong>{generatedAssetSummary.headline}</strong>
+                <p>{generatedAssetSummary.detail}</p>
+                <span>{generatedAssetSummary.actionHint}</span>
+              </div>
+              {generatedAssetSummary.previewAssets.length ? (
                 <div className="studioAssetGrid selectable">
-                  {recentGeneratedAssets.map((asset) => {
+                  {generatedAssetSummary.previewAssets.map((asset) => {
                     const selected = publishAssetIds.includes(asset.id);
                     const projectImage = project?.generatedImages.find((image) => (image.assetId ?? image.id) === asset.id);
                     return (

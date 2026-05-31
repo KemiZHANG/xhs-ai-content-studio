@@ -5612,6 +5612,42 @@ textarea {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.assetPanelSummary {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+}
+
+.assetPanelSummary.ready {
+  background: linear-gradient(135deg, rgba(18, 118, 97, 0.1), rgba(255, 255, 255, 0.84));
+  border-color: rgba(18, 118, 97, 0.22);
+}
+
+.assetPanelSummary.needs_selection {
+  background: linear-gradient(135deg, rgba(190, 122, 20, 0.1), rgba(255, 255, 255, 0.84));
+  border-color: rgba(190, 122, 20, 0.24);
+}
+
+.assetPanelSummary.empty {
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.assetPanelSummary strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.assetPanelSummary p,
+.assetPanelSummary span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+}
+
 .studioAssetGrid img {
   aspect-ratio: 1;
   border-radius: 10px;
