@@ -1346,6 +1346,7 @@ export default function Home() {
             publishScheduleAt={publishScheduleAt}
             canvasDirty={canvasDirty}
             pendingPublish={pendingPublish}
+            publishAudits={publishAudits}
             settings={settings}
             health={health}
             jobs={jobs}

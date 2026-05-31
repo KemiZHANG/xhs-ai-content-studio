@@ -26,6 +26,7 @@ import type {
   JobRecord,
   PendingPublishConfirmation,
   PostProject,
+  PublishAuditRecord,
   PublishDraftState,
   RedactedSettings,
   SampleEvidence,
@@ -51,6 +52,7 @@ import { labelForPostAction } from "@/app/components/post-action-labels";
 import { buildPostStudioStatusSummary } from "@/app/components/post-studio-status";
 import { buildViralApplicationModel } from "@/app/components/viral-application";
 import { buildPublishConfirmationSummary } from "@/app/components/publish-confirmation-summary";
+import { buildPublishAuditSafetySummary } from "@/app/components/publish-audit-summary";
 import { buildPostProjectContextSummary } from "@/app/components/post-project-context";
 import { buildGeneratedAssetSummary, buildReferenceAssetSummary } from "@/app/components/asset-panel-summary";
 import { buildPostNextStepCoach } from "@/app/components/post-next-step-coach";
@@ -84,6 +86,7 @@ export function PostStudioPanel({
   publishScheduleAt,
   canvasDirty,
   pendingPublish,
+  publishAudits,
   settings,
   health,
   jobs,
@@ -134,6 +137,7 @@ export function PostStudioPanel({
   publishScheduleAt: string;
   canvasDirty: boolean;
   pendingPublish: PendingPublishConfirmation | null;
+  publishAudits: PublishAuditRecord[];
   settings: RedactedSettings;
   health: Health | null;
   jobs: JobRecord[];
@@ -332,6 +336,12 @@ export function PostStudioPanel({
     accountReady,
     hasVisualDirection,
     qualityGateFresh: versionStatus?.qualityGateFresh === true
+  });
+  const auditSummary = buildPublishAuditSafetySummary({
+    audits: publishAudits,
+    settings,
+    currentTitle: publishDraft.title || project?.finalPost?.title || project?.copyDraft?.draft.title,
+    publishIntentId: pendingPublish?.publishIntentId ?? project?.publishPlan?.id
   });
   const readiness = project ? buildPostReadinessReport(project) : null;
   const nextStepCoach = buildPostNextStepCoach({ guidance: stageGuidance, readiness, nextActions });
@@ -1472,6 +1482,24 @@ export function PostStudioPanel({
                 </p>
                 <span>确认单：{pendingPublish ? `${pendingPublish.mode === "schedule" ? "定时" : "立即"} · 待人工确认` : "未生成"}</span>
                 {health?.activeAccount?.loginName ? <span>登录名：{health.activeAccount.loginName}</span> : null}
+              </div>
+              <div className={`publishAuditMini ${auditSummary.state}`}>
+                <div>
+                  <span>最近发布审计</span>
+                  <strong>{auditSummary.headline}</strong>
+                  <p>{auditSummary.detail}</p>
+                </div>
+                <div className="publishAuditMiniGrid">
+                  <span>动作 <b>{auditSummary.eventLabel}</b></span>
+                  <span>账号 <b>{auditSummary.accountLine ?? "当前账号"}</b></span>
+                  {auditSummary.createdAt ? <span>时间 <b>{new Date(auditSummary.createdAt).toLocaleString()}</b></span> : null}
+                  {auditSummary.title ? <span>标题 <b>{auditSummary.title}</b></span> : null}
+                </div>
+                {auditSummary.reasonLine ? <p className="muted">原因：{auditSummary.reasonLine}</p> : null}
+                {auditSummary.evidenceLine ? <p className="muted">证据：{auditSummary.evidenceLine}</p> : null}
+                <button className="secondaryButton fullWidth" onClick={() => onNavigate("audit")} type="button">
+                  查看完整发布历史
+                </button>
               </div>
               {activePublishPlan ? (
                 <div className="publishIntentSummary">
