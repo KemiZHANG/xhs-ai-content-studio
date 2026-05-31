@@ -3845,6 +3845,22 @@ textarea {
   margin: 0;
 }
 
+.nextActionDecision {
+  border-left: 2px solid rgba(18, 118, 97, 0.28);
+  color: var(--muted);
+  display: grid;
+  font-size: 11px;
+  gap: 3px;
+  line-height: 1.45;
+  margin: 4px 0;
+  padding-left: 8px;
+}
+
+.nextActionSafety {
+  color: #9a3412;
+  font-weight: 800;
+}
+
 .nextActionBar small {
   color: var(--muted);
   font-size: 11px;

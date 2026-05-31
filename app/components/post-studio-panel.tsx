@@ -545,6 +545,11 @@ export function PostStudioPanel({
           <span className="nextActionEyebrow">下一步建议</span>
           <strong>{nextStepCoach.headline}</strong>
           <p>{nextStepCoach.detail}</p>
+          <div className="nextActionDecision">
+            <span>为什么：{nextStepCoach.whyLine}</span>
+            <span>完成后：{nextStepCoach.outcomeLine}</span>
+            {nextStepCoach.safetyLine ? <span className="nextActionSafety">{nextStepCoach.safetyLine}</span> : null}
+          </div>
           {nextStepCoach.progressLine ? <small>{nextStepCoach.progressLine}</small> : null}
           <div className="nextActionButtons">
             {nextStepCoach.primaryAction ? (

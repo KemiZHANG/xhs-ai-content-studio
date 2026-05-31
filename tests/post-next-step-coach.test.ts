@@ -23,6 +23,8 @@ describe("post next step coach", () => {
     expect(coach.primaryAction).toBe("search_research");
     expect(coach.primaryLabel).toBe("搜索笔记");
     expect(coach.detail).toContain("研究证据");
+    expect(coach.whyLine).toContain("真实小红书样本");
+    expect(coach.outcomeLine).toContain("证据");
     expect(coach.progressLine).toContain("准备度");
   });
 
@@ -36,6 +38,31 @@ describe("post next step coach", () => {
 
     expect(coach.primaryAction).toBe("plan_visuals");
     expect(coach.primaryLabel).toBe("规划图片");
+    expect(coach.whyLine).toContain("图文");
+    expect(coach.outcomeLine).toContain("图片方向");
     expect(coach.secondaryActions.map((item) => item.label)).toEqual(["修改文案", "生成卡片"]);
+  });
+
+  it("surfaces safety reminders before publish-sensitive actions", () => {
+    const qualityGuidance = getPostStageGuidance("assembling", ["run_quality_gate", "request_publish_confirmation"]);
+    const qualityCoach = buildPostNextStepCoach({
+      guidance: qualityGuidance,
+      readiness: null,
+      nextActions: ["run_quality_gate", "request_publish_confirmation"]
+    });
+
+    expect(qualityCoach.primaryAction).toBe("run_quality_gate");
+    expect(qualityCoach.safetyLine).toContain("Quality Gate");
+
+    const publishGuidance = getPostStageGuidance("reviewing", ["request_publish_confirmation"]);
+    const publishCoach = buildPostNextStepCoach({
+      guidance: publishGuidance,
+      readiness: null,
+      nextActions: ["request_publish_confirmation"]
+    });
+
+    expect(publishCoach.primaryAction).toBe("request_publish_confirmation");
+    expect(publishCoach.safetyLine).toContain("人工确认");
+    expect(publishCoach.outcomeLine).toContain("不会直接发到小红书");
   });
 });
