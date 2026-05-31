@@ -4440,6 +4440,32 @@ textarea {
   padding: 7px 8px;
 }
 
+.viralApplyPanel {
+  background: rgba(18, 118, 97, 0.06);
+  border: 1px solid rgba(18, 118, 97, 0.14);
+  border-radius: 14px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.viralApplyPanel.ready {
+  background: linear-gradient(135deg, rgba(18, 118, 97, 0.1), rgba(255, 255, 255, 0.76));
+}
+
+.viralApplyPanel strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.viralApplyPanel p,
+.viralApplyPanel small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 4px 0 0;
+}
+
 .sideActionStack {
   display: grid;
   gap: 8px;

@@ -49,6 +49,7 @@ import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-proje
 import { buildEvidencePanelModel, scoreEvidence, summarizeEvidenceSample } from "@/app/components/evidence-display";
 import { labelForPostAction } from "@/app/components/post-action-labels";
 import { buildPostStudioStatusSummary } from "@/app/components/post-studio-status";
+import { buildViralApplicationModel } from "@/app/components/viral-application";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
@@ -202,6 +203,7 @@ export function PostStudioPanel({
     learnings: pickViralLearningLines(item),
     rewriteRules: pickViralRewriteLines(item)
   }));
+  const viralApplication = buildViralApplicationModel(project);
   const projectViralPack = extractProjectViralPack(project);
   const viralPack = workflowResult?.viralKnowledge ?? workflowResult?.researchSummary?.viralKnowledge ?? projectViralPack ?? null;
   const samples = project?.selectedSamples ?? workflowResult?.evidence ?? workspace?.selectedSamples ?? [];
@@ -1008,6 +1010,25 @@ export function PostStudioPanel({
                   ) : null}
                 </div>
               ) : null}
+              <div className={viralApplication.evidenceCount ? "viralApplyPanel ready" : "viralApplyPanel"}>
+                <div>
+                  <strong>{viralApplication.headline}</strong>
+                  <p>{viralApplication.detail}</p>
+                  {viralApplication.evidenceCount ? <small>当前已接入 {viralApplication.evidenceCount} 条爆款库 evidencePack 结论。</small> : null}
+                </div>
+                <div className="inlineActionGrid">
+                  {viralApplication.actions.map((item) => (
+                    <button
+                      className={item.primary ? "primaryButton fullWidth" : "secondaryButton fullWidth"}
+                      key={item.id}
+                      onClick={() => onQuickAction(item.action)}
+                      type="button"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {viralPack?.strategyReport ? (
                 <div className="viralStrategyCard">
                   <strong>爆款策略摘要</strong>
