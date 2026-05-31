@@ -5116,6 +5116,60 @@ textarea {
   margin: 0;
 }
 
+.viralLibraryHealth {
+  background:
+    linear-gradient(135deg, rgba(181, 125, 47, 0.08), rgba(18, 118, 97, 0.04));
+  border: 1px solid rgba(181, 125, 47, 0.2);
+  border-radius: 14px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.viralLibraryHealth.ready {
+  background:
+    linear-gradient(135deg, rgba(18, 118, 97, 0.08), rgba(18, 118, 97, 0.03));
+  border-color: rgba(18, 118, 97, 0.22);
+}
+
+.viralLibraryHealth strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.viralLibraryHealth p,
+.viralLibraryHealth small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.viralLibraryHealthStats {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.viralLibraryHealthStats span {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  display: flex;
+  font-size: 11px;
+  justify-content: space-between;
+  padding: 6px 8px;
+}
+
+.viralLibraryHealthStats span.good b {
+  color: var(--ok);
+}
+
+.viralLibraryHealthStats span.warn b {
+  color: var(--warn);
+}
+
 .miniEvidenceList .keyViralInsight {
   border-color: rgba(18, 118, 97, 0.2);
   background: rgba(18, 118, 97, 0.055);

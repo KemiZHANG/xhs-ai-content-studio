@@ -56,6 +56,7 @@ import { labelForPostAction } from "@/app/components/post-action-labels";
 import { buildPostStudioStatusSummary } from "@/app/components/post-studio-status";
 import { buildViralApplicationModel } from "@/app/components/viral-application";
 import { buildViralEvidenceSummary } from "@/app/components/viral-evidence-summary";
+import { buildViralLibraryHealth } from "@/app/components/viral-library-health";
 import { buildPublishConfirmationSummary } from "@/app/components/publish-confirmation-summary";
 import { buildPublishAuditSafetySummary } from "@/app/components/publish-audit-summary";
 import { buildPostProjectContextSummary } from "@/app/components/post-project-context";
@@ -246,6 +247,7 @@ export function PostStudioPanel({
   const projectViralPack = extractProjectViralPack(project);
   const viralPack = workflowResult?.viralKnowledge ?? workflowResult?.researchSummary?.viralKnowledge ?? projectViralPack ?? null;
   const viralEvidenceSummary = buildViralEvidenceSummary({ project, viralCases, viralKnowledge: viralPack });
+  const viralLibraryHealth = buildViralLibraryHealth(viralCases);
   const samples = project?.selectedSamples ?? workflowResult?.evidence ?? workspace?.selectedSamples ?? [];
   const evidenceSamples = samples.filter(isSampleEvidence);
   const evidencePanel = buildEvidencePanelModel(evidenceSamples, 3);
@@ -1066,6 +1068,25 @@ export function PostStudioPanel({
             <SideSection icon={Library} title="爆款库证据">
               <strong>{viralCases.length} 条历史爆款规律</strong>
               <p className="muted">这里长期沉淀标题钩子、正文结构、标签组合、图片风格和评论关注点。默认只显示关键规律，不保存原文合集。</p>
+              <div className={viralLibraryHealth.status === "ready" ? "viralLibraryHealth ready" : "viralLibraryHealth"}>
+                <div>
+                  <strong>{viralLibraryHealth.headline}</strong>
+                  <p>{viralLibraryHealth.detail}</p>
+                </div>
+                <div className="viralLibraryHealthStats">
+                  {viralLibraryHealth.stats.map((item) => (
+                    <span className={item.tone} key={item.label}>
+                      {item.label} <b>{item.value}</b>
+                    </span>
+                  ))}
+                </div>
+                {viralLibraryHealth.warnings.length ? (
+                  <small>风险：{viralLibraryHealth.warnings.slice(0, 2).join(" / ")}</small>
+                ) : null}
+                {viralLibraryHealth.recommendations.length ? (
+                  <small>建议：{viralLibraryHealth.recommendations.slice(0, 2).join(" / ")}</small>
+                ) : null}
+              </div>
               <ViralEvidenceDigest summary={viralEvidenceSummary} />
               <details className="viralSearchDrawer">
                 <summary>
