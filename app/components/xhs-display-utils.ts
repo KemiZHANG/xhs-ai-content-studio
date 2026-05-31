@@ -27,7 +27,7 @@ export function subtitleForSection(section: Section): string {
     assets: "管理产品原图、参考图和生成结果；主要从 AI 工作台和图片创作台上传使用。",
     imageStudio: "在 AI 生图和图文卡片之间切换，产出可直接发布的视觉素材。",
     chat: "用自然语言调度搜索、分析、文案、图片和发布装配。",
-    publish: "合并当前草稿与图片，检查安全项后立即或定时发布。",
+    publish: "合并当前草稿与图片，检查安全项，先生成确认单，再由你确认立即或定时发布。",
     audit: "回看发布预览、确认单、阻止原因、真实发布和定时发布记录。",
     history: "回看研究记录、证据、草稿和生成结果。",
     settings: "配置本地 MCP、文本模型、图片模型与发布权限。"
@@ -40,8 +40,8 @@ export function modeLabel(mode: string): string {
     research: "证据研究",
     draft: "草稿模式",
     material: "素材模式",
-    publish: "立即发布",
-    schedule: "定时发布"
+    publish: "生成发布确认单",
+    schedule: "生成定时确认单"
   };
   return labels[mode] ?? mode;
 }

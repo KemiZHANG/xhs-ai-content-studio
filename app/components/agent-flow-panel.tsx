@@ -20,6 +20,7 @@ import type {
   WorkflowResult,
   WorkspaceState
 } from "@/app/types";
+import { labelForPostAction } from "@/app/components/post-action-labels";
 
 type FlowForm = {
   topic: string;
@@ -377,24 +378,5 @@ function labelForStage(stage: PostProject["currentStage"]): string {
 }
 
 function labelForAction(action: string): string {
-  const labels: Record<string, string> = {
-    start_brief: "填写主题",
-    update_brief_inputs: "补充需求",
-    search_research: "搜索笔记",
-    summarize_evidence: "总结证据",
-    create_creative_brief: "生成创作简报",
-    generate_copy: "生成文案",
-    revise_copy: "修改文案",
-    plan_visuals: "规划图片",
-    generate_image_prompts: "生成图片提示词",
-    generate_images: "生成图片",
-    select_images: "选图",
-    assemble_post: "组装帖子",
-    run_quality_gate: "发布检查",
-    request_publish_confirmation: "生成确认单",
-    schedule_publish: "定时发布",
-    publish_now: "立即发布",
-    recover: "恢复/重试"
-  };
-  return labels[action] ?? action;
+  return labelForPostAction(action);
 }

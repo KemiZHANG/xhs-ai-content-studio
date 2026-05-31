@@ -1439,9 +1439,9 @@ const postActionLabels: Record<PostAction, string> = {
   select_images: "选择发布图片",
   assemble_post: "组装发布稿",
   run_quality_gate: "发布前检查",
-  request_publish_confirmation: "确认发布",
-  schedule_publish: "定时发布",
-  publish_now: "立即发布",
+  request_publish_confirmation: "生成发布确认单",
+  schedule_publish: "生成定时发布确认单",
+  publish_now: "生成立即发布确认单",
   recover: "修复当前项目"
 };
 

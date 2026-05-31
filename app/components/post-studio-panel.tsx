@@ -41,6 +41,7 @@ import { citationFieldBadges, formatCitationStripSummary } from "@/app/component
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 import { pickEvidenceHighlights, scoreEvidence, summarizeEvidenceSample } from "@/app/components/evidence-display";
+import { labelForPostAction } from "@/app/components/post-action-labels";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
@@ -2023,27 +2024,7 @@ function labelForStage(stage: PostProject["currentStage"]): string {
 }
 
 function labelForAction(action: string): string {
-  const labels: Record<string, string> = {
-    start_brief: "补充需求",
-    update_brief_inputs: "完善 Brief",
-    search_research: "搜索笔记",
-    summarize_evidence: "总结证据",
-    create_creative_brief: "生成 Brief",
-    generate_copy: "生成文案",
-    revise_copy: "修改文案",
-    plan_visuals: "规划图片",
-    generate_image_prompts: "生成图片 Prompt",
-    generate_images: "生成图片",
-    generate_cards: "生成卡片",
-    select_images: "选图",
-    assemble_post: "组装帖子",
-    run_quality_gate: "质量检查",
-    request_publish_confirmation: "发布确认",
-    schedule_publish: "定时发布",
-    publish_now: "立即发布",
-    recover: "恢复"
-  };
-  return labels[action] ?? action;
+  return labelForPostAction(action);
 }
 
 function labelForInsight(type: string): string {
