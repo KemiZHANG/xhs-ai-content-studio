@@ -1722,6 +1722,28 @@ textarea {
   margin: 0;
 }
 
+.evidencePanelSummary {
+  background: rgba(18, 118, 97, 0.08);
+  border: 1px solid rgba(18, 118, 97, 0.16);
+  border-radius: 12px;
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+}
+
+.evidencePanelSummary strong {
+  color: var(--accent-strong);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.evidencePanelSummary p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+}
+
 .miniProgress {
   background: rgba(0, 0, 0, 0.12);
   border-radius: 999px;

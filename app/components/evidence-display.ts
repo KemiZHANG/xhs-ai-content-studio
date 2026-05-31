@@ -8,6 +8,31 @@ export function pickEvidenceHighlights(samples: SampleEvidence[], limit = 3): Sa
   return [...samples].sort((left, right) => scoreEvidence(right) - scoreEvidence(left)).slice(0, Math.max(0, limit));
 }
 
+export type EvidencePanelModel = {
+  visibleSamples: SampleEvidence[];
+  hiddenCount: number;
+  summary: string;
+  detailHint: string;
+};
+
+export function buildEvidencePanelModel(samples: SampleEvidence[], visibleLimit = 3): EvidencePanelModel {
+  const visibleSamples = pickEvidenceHighlights(samples, visibleLimit);
+  const hiddenCount = Math.max(0, samples.length - visibleSamples.length);
+  const topScore = visibleSamples[0] ? scoreEvidence(visibleSamples[0]) : 0;
+  return {
+    visibleSamples,
+    hiddenCount,
+    summary: samples.length
+      ? `已压缩展示 ${visibleSamples.length} 条高价值摘要，完整 ${samples.length} 条样本保留在证据详情。`
+      : "研究完成后这里只显示 3 条高价值摘要，完整笔记、评论和图片会放入证据详情。",
+    detailHint: hiddenCount
+      ? `还有 ${hiddenCount} 条样本已折叠，点击查看全部证据。`
+      : topScore
+        ? "当前样本较少，仍可打开详情查看正文、评论和图片。"
+        : "暂无可排序样本，先搜索真实笔记。"
+  };
+}
+
 export function summarizeEvidenceSample(sample: SampleEvidence, maxLength = 120): string {
   const source =
     sample.reasonHighlights.find(Boolean) ??

@@ -45,7 +45,7 @@ import { buildAgentTraceSummary } from "@/app/components/agent-trace-summary";
 import { extractStageGuidanceDisplay } from "@/app/components/agent-stage-guidance";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
-import { pickEvidenceHighlights, scoreEvidence, summarizeEvidenceSample } from "@/app/components/evidence-display";
+import { buildEvidencePanelModel, scoreEvidence, summarizeEvidenceSample } from "@/app/components/evidence-display";
 import { labelForPostAction } from "@/app/components/post-action-labels";
 import { buildPostStudioStatusSummary } from "@/app/components/post-studio-status";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
@@ -205,7 +205,8 @@ export function PostStudioPanel({
   const viralPack = workflowResult?.viralKnowledge ?? workflowResult?.researchSummary?.viralKnowledge ?? projectViralPack ?? null;
   const samples = project?.selectedSamples ?? workflowResult?.evidence ?? workspace?.selectedSamples ?? [];
   const evidenceSamples = samples.filter(isSampleEvidence);
-  const saveableSamples = pickEvidenceHighlights(evidenceSamples, 3);
+  const evidencePanel = buildEvidencePanelModel(evidenceSamples, 3);
+  const saveableSamples = evidencePanel.visibleSamples;
   const allowedPostActions = (project?.allowedActions ?? []) as PostAction[];
   const stageGuidance = getPostStageGuidance(project?.currentStage ?? "empty", allowedPostActions);
   const nextActions = getOrderedPostNextActions(project?.currentStage ?? "empty", allowedPostActions.length ? allowedPostActions : ["search_research"]);
@@ -761,6 +762,10 @@ export function PostStudioPanel({
                 <p className="muted">完成研究后，系统会把标题、正文、标签和图片规律压缩成统一 Brief，文案和图片都从这里出发。</p>
               )}
             </SideSection>
+          ) : null}
+
+          {tab === "evidence" ? (
+            <EvidencePanelSummary summary={evidencePanel.summary} detailHint={evidencePanel.detailHint} />
           ) : null}
 
           {tab === "evidence" ? (
@@ -1757,6 +1762,15 @@ function EvidenceReferenceBox({
       {summary.missingEvidenceIds.length ? (
         <small>缺失证据 ID：{summary.missingEvidenceIds.slice(0, 3).join("、")}</small>
       ) : null}
+    </article>
+  );
+}
+
+function EvidencePanelSummary({ summary, detailHint }: { summary: string; detailHint: string }) {
+  return (
+    <article className="evidencePanelSummary">
+      <strong>{summary}</strong>
+      <p>{detailHint}</p>
     </article>
   );
 }
