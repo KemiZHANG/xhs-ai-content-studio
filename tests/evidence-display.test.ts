@@ -50,6 +50,8 @@ describe("evidence display helpers", () => {
     expect(panel.hiddenCount).toBe(1);
     expect(panel.totalCount).toBe(4);
     expect(panel.visibleCount).toBe(3);
+    expect(panel.inlineTitle).toBe("高价值摘要 3/4");
+    expect(panel.primaryActionLabel).toBe("打开完整证据目录");
     expect(panel.stats).toEqual([
       { label: "摘要", value: "3" },
       { label: "全部", value: "4" },
@@ -57,6 +59,15 @@ describe("evidence display helpers", () => {
     ]);
     expect(panel.summary).toContain("已压缩展示 3 条");
     expect(panel.detailHint).toContain("还有 1 条");
+  });
+
+  it("keeps empty research panels action-oriented without showing raw slots", () => {
+    const panel = buildEvidencePanelModel([], 3);
+
+    expect(panel.visibleSamples).toEqual([]);
+    expect(panel.inlineTitle).toBe("等待研究证据");
+    expect(panel.summary).toContain("这里只显示 3 条高价值摘要");
+    expect(panel.primaryActionLabel).toBe("开始主题研究");
   });
 
   it("summarizes missing body text as an interaction/image-style hint", () => {

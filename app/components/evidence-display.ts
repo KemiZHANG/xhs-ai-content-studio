@@ -13,8 +13,10 @@ export type EvidencePanelModel = {
   hiddenCount: number;
   totalCount: number;
   visibleCount: number;
+  inlineTitle: string;
   summary: string;
   detailHint: string;
+  primaryActionLabel: string;
   stats: Array<{
     label: string;
     value: string;
@@ -30,6 +32,9 @@ export function buildEvidencePanelModel(samples: SampleEvidence[], visibleLimit 
     hiddenCount,
     totalCount: samples.length,
     visibleCount: visibleSamples.length,
+    inlineTitle: samples.length
+      ? `高价值摘要 ${visibleSamples.length}/${samples.length}`
+      : "等待研究证据",
     summary: samples.length
       ? `已压缩展示 ${visibleSamples.length} 条高价值摘要，完整 ${samples.length} 条样本保留在证据详情。`
       : "研究完成后这里只显示 3 条高价值摘要，完整笔记、评论和图片会放入证据详情。",
@@ -38,6 +43,9 @@ export function buildEvidencePanelModel(samples: SampleEvidence[], visibleLimit 
       : topScore
         ? "当前样本较少，仍可打开详情查看正文、评论和图片。"
         : "暂无可排序样本，先搜索真实笔记。",
+    primaryActionLabel: samples.length
+      ? `打开完整证据目录`
+      : "开始主题研究",
     stats: [
       { label: "摘要", value: `${visibleSamples.length}` },
       { label: "全部", value: `${samples.length}` },

@@ -957,13 +957,19 @@ export function PostStudioPanel({
           ) : null}
 
           {tab === "evidence" ? (
-            <EvidencePanelSummary summary={evidencePanel.summary} detailHint={evidencePanel.detailHint} stats={evidencePanel.stats} />
+            <EvidencePanelSummary
+              detailHint={evidencePanel.detailHint}
+              onPrimaryAction={() => evidenceSamples.length ? setEvidenceCatalogOpen(true) : onNavigate("workflow")}
+              primaryActionLabel={evidencePanel.primaryActionLabel}
+              stats={evidencePanel.stats}
+              summary={evidencePanel.summary}
+            />
           ) : null}
 
           {tab === "evidence" ? (
             <SideSection icon={Library} title="研究证据">
-              <strong>{evidenceSamples.length} 条样本</strong>
-              <p className="muted">默认只展示 3 条高价值摘要；完整笔记、评论和图片证据在本页证据目录中查看。</p>
+              <strong>{evidencePanel.inlineTitle}</strong>
+              <p className="muted">这里不会铺开原文、评论和图片；默认只保留可判断价值的摘要，完整内容进抽屉。</p>
               {saveableSamples.length ? (
                 <>
                   <div className="sideActionStack compact">
@@ -995,7 +1001,7 @@ export function PostStudioPanel({
                 onClick={() => evidenceSamples.length ? setEvidenceCatalogOpen(true) : onNavigate("workflow")}
                 type="button"
               >
-                {evidenceSamples.length > saveableSamples.length ? `查看全部 ${evidenceSamples.length} 条证据` : "查看证据详情"}
+                {evidencePanel.primaryActionLabel}
               </button>
             </SideSection>
           ) : null}
@@ -2202,16 +2208,22 @@ function EvidenceReferenceBox({
 function EvidencePanelSummary({
   summary,
   detailHint,
-  stats
+  stats,
+  primaryActionLabel,
+  onPrimaryAction
 }: {
   summary: string;
   detailHint: string;
   stats: Array<{ label: string; value: string }>;
+  primaryActionLabel: string;
+  onPrimaryAction: () => void;
 }) {
   return (
     <article className="evidencePanelSummary">
-      <strong>{summary}</strong>
-      <p>{detailHint}</p>
+      <div>
+        <strong>{summary}</strong>
+        <p>{detailHint}</p>
+      </div>
       <div className="evidencePanelStats" aria-label="证据摘要统计">
         {stats.map((item) => (
           <span key={item.label}>
@@ -2220,6 +2232,9 @@ function EvidencePanelSummary({
           </span>
         ))}
       </div>
+      <button className="secondaryButton fullWidth" type="button" onClick={onPrimaryAction}>
+        {primaryActionLabel}
+      </button>
     </article>
   );
 }
