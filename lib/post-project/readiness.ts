@@ -32,9 +32,11 @@ export type PostReadinessReport = {
 type ReadinessProject = {
   allowedActions?: readonly string[];
   copyDraft?: {
+    id?: string;
     draft?: {
       title?: string;
       content?: string;
+      tags?: readonly string[];
     };
   } | null;
   creativeBrief?: unknown;
@@ -42,7 +44,14 @@ type ReadinessProject = {
   evidencePack?: {
     insights?: readonly unknown[];
   } | null;
-  finalPost?: unknown;
+  finalPost?: {
+    title?: string;
+    content?: string;
+    tags?: readonly string[];
+    imageIds?: readonly string[];
+    imagePromptVersionIds?: readonly string[];
+    copyVersionId?: string;
+  };
   imagePrompts?: readonly unknown[];
   publishPlan?: {
     status?: string;
@@ -71,8 +80,9 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
   const hasVisualPlan = hasTraceableVisualPlan(project.visualDirection, imagePrompts);
   const hasImages = selectedImages.length > 0;
   const hasFinalPost = Boolean(project.finalPost);
-  const qualityFreshEnough = Boolean(project.qualityCheck?.canPublish);
-  const canRunQualityGate = hasFinalPost && hasImages && hasCopy && actionSet.has("run_quality_gate");
+  const finalPostCurrent = isFinalPostCurrent(project);
+  const qualityFreshEnough = Boolean(project.qualityCheck?.canPublish && finalPostCurrent);
+  const canRunQualityGate = finalPostCurrent && hasImages && hasCopy && actionSet.has("run_quality_gate");
   const canRequestPublish = qualityFreshEnough && hasFinalPost && hasImages && hasCopy;
   const hasPublishConfirmation = Boolean(
     project.publishPlan?.status === "awaiting_approval" ||
@@ -130,8 +140,12 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
     {
       id: "assembly",
       label: "成稿装配",
-      ready: hasFinalPost,
-      detail: hasFinalPost ? "文案和图片已绑定为同一篇帖子" : "把当前草稿和选中图片装配成最终帖子",
+      ready: finalPostCurrent,
+      detail: finalPostCurrent
+        ? "文案和图片已绑定为同一篇帖子"
+        : hasFinalPost
+          ? "最终帖子快照已落后于当前画布，需要重新装配"
+          : "把当前草稿和选中图片装配成最终帖子",
       action: actionSet.has("assemble_post") ? "assemble_post" : undefined
     },
     {
@@ -140,7 +154,9 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
       ready: qualityFreshEnough,
       detail: qualityFreshEnough
         ? "质量门通过"
-        : project.qualityCheck?.issues.slice(0, 2).join("；") || "运行证据、原创性和发布风险检查",
+        : project.qualityCheck?.canPublish && !finalPostCurrent
+          ? "Quality Gate 已失效：文案、图片或 Prompt 已与最终帖子快照不一致"
+          : project.qualityCheck?.issues.slice(0, 2).join("；") || "运行证据、原创性和发布风险检查",
       action: qualityFreshEnough || !canRunQualityGate ? undefined : "run_quality_gate"
     },
     {
@@ -202,8 +218,49 @@ function hasTraceableVisualPlan(visualDirection: unknown, imagePrompts: readonly
   return Boolean(hasEvidenceIds(visualDirection) || imagePrompts.some(hasEvidenceIds));
 }
 
+function isFinalPostCurrent(project: ReadinessProject): boolean {
+  const finalPost = project.finalPost;
+  const draft = project.copyDraft;
+  if (!finalPost || !draft?.id || !draft.draft) {
+    return false;
+  }
+
+  const activePromptIds = getActiveImagePromptVersionIds(project.imagePrompts ?? []);
+  return (
+    finalPost.copyVersionId === `copy-${draft.id}` &&
+    finalPost.title === draft.draft.title &&
+    finalPost.content === draft.draft.content &&
+    sameStringSet(safeStringArray(finalPost.tags), safeStringArray(draft.draft.tags)) &&
+    sameStringSet(safeStringArray(finalPost.imageIds), safeStringArray(project.selectedImages)) &&
+    sameStringSet(safeStringArray(finalPost.imagePromptVersionIds), activePromptIds)
+  );
+}
+
+function getActiveImagePromptVersionIds(imagePrompts: readonly unknown[]): string[] {
+  const promptIds = imagePrompts
+    .map((prompt) => {
+      if (!prompt || typeof prompt !== "object") return "";
+      const id = (prompt as { id?: unknown }).id;
+      return typeof id === "string" ? id.trim() : "";
+    })
+    .filter(Boolean);
+  return promptIds.length ? [promptIds[promptIds.length - 1]] : [];
+}
+
 function hasEvidenceIds(value: unknown): boolean {
   if (!value || typeof value !== "object") return false;
   const evidenceIds = (value as { basedOnEvidenceIds?: unknown }).basedOnEvidenceIds;
   return Array.isArray(evidenceIds) && evidenceIds.some((item) => typeof item === "string" && item.trim());
+}
+
+function safeStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.map((item) => String(item).trim()).filter(Boolean)
+    : [];
+}
+
+function sameStringSet(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) return false;
+  const rightSet = new Set(right);
+  return left.every((item) => rightSet.has(item));
 }

@@ -103,7 +103,7 @@ describe("post readiness report", () => {
         tags: ["广州咖啡", "周末探店"],
         imageIds: ["asset-1"],
         imagePromptVersionIds: ["prompt-1"],
-        copyVersionId: "draft-1"
+        copyVersionId: "copy-draft-1"
       },
       qualityCheck: {
         titleScore: 90,
@@ -129,6 +129,90 @@ describe("post readiness report", () => {
     expect(report.visibleItems.map((item) => item.id)).toContain("confirmation");
     expect(report.visibleItems.map((item) => item.id)).toContain("quality");
     expect(report.visibleItems.length).toBeLessThanOrEqual(5);
+  });
+
+  it("does not allow publish confirmation when the quality gate belongs to a stale final post", () => {
+    const report = buildPostReadinessReport(project({
+      evidencePack: {
+        sampleIds: ["sample-1"],
+        insights: [{
+          id: "insight-1",
+          sourceType: "realtime",
+          type: "title",
+          insight: "标题先给场景再给利益点",
+          sourceSampleIds: ["sample-1"],
+          confidence: 0.8,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }]
+      },
+      selectedSamples: [{ id: "sample-1", title: "sample" }],
+      creativeBrief: {
+        audience: "周末探店人群",
+        painPoint: "不知道去哪坐一下午",
+        contentAngle: "安静咖啡馆清单",
+        emotionalHook: "周末慢下来",
+        proofPoints: ["真实体验"],
+        tone: "真实分享",
+        visualMood: "暖色真实照片",
+        imageMustHave: ["咖啡", "环境"],
+        imageMustAvoid: ["夸张广告"],
+        platformStyle: "小红书探店",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      copyDraft: {
+        id: "draft-1",
+        updatedAt: "2026-05-31T00:00:00.000Z",
+        draft: {
+          title: "广州周末安静咖啡馆",
+          content: "适合坐一下午的真实探店清单。",
+          tags: ["广州咖啡", "周末探店"],
+          structure: [],
+          imagePrompt: "真实咖啡馆场景",
+          basedOnEvidenceIds: ["insight-1"]
+        },
+        images: [],
+        visibility: "仅自己可见"
+      },
+      imagePrompts: [{
+        id: "prompt-1",
+        label: "主图",
+        createdAt: "2026-05-31T00:00:00.000Z",
+        basedOnEvidenceIds: ["insight-1"],
+        value: { prompt: "真实咖啡馆场景" }
+      }],
+      selectedImages: ["asset-2"],
+      finalPost: {
+        title: "广州周末安静咖啡馆",
+        content: "适合坐一下午的真实探店清单。",
+        tags: ["广州咖啡", "周末探店"],
+        imageIds: ["asset-1"],
+        imagePromptVersionIds: ["prompt-1"],
+        copyVersionId: "copy-draft-1"
+      },
+      qualityCheck: {
+        titleScore: 90,
+        copyScore: 90,
+        visualConsistencyScore: 90,
+        platformFitScore: 90,
+        complianceScore: 90,
+        canPublish: true,
+        issues: [],
+        suggestions: [],
+        checkedAt: "2026-05-31T00:00:00.000Z"
+      },
+      currentStage: "reviewing",
+      allowedActions: ["assemble_post", "run_quality_gate", "request_publish_confirmation"]
+    }));
+
+    expect(report.canRequestPublish).toBe(false);
+    expect(report.items.find((item) => item.id === "assembly")).toMatchObject({
+      ready: false,
+      action: "assemble_post"
+    });
+    expect(report.items.find((item) => item.id === "quality")?.detail).toContain("已失效");
+    expect(report.nextAction).toBe("assemble_post");
   });
 
   it("shows quality issues before allowing publish confirmation", () => {
@@ -176,7 +260,7 @@ describe("post readiness report", () => {
         tags: ["tag"],
         imageIds: ["asset-1"],
         imagePromptVersionIds: [],
-        copyVersionId: "draft-1"
+        copyVersionId: "copy-draft-1"
       },
       qualityCheck: {
         titleScore: 50,
