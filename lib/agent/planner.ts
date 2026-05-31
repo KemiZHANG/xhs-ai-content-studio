@@ -10,6 +10,7 @@ export type CreateAgentPlanInput = {
   hasEvidence?: boolean;
   hasCreativeBrief?: boolean;
   hasSelectedImages?: boolean;
+  hasPendingPublishConfirmation?: boolean;
 };
 
 export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
@@ -22,6 +23,22 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
       intent: "start_project",
       topic: inferNewProjectTopic(message) ?? inferTopic(message),
       steps: [step("startProject", "Reset the active PostProject and start a clean post workspace.", "project.startProject")]
+    });
+  }
+
+  if (input.hasPendingPublishConfirmation && isCancelPublishConfirmationRequest(message, lower)) {
+    return buildPlan({
+      intent: "cancel_publish_confirmation",
+      topic: inferTopic(message),
+      steps: [step("cancelPublishConfirmation", "Cancel the active pending publish confirmation without calling Xiaohongshu.", "publish.cancelConfirmation")]
+    });
+  }
+
+  if (input.hasPendingPublishConfirmation && isPublishConfirmationReviewRequest(message, lower)) {
+    return buildPlan({
+      intent: "review_publish_confirmation",
+      topic: inferTopic(message),
+      steps: [step("reviewPublishConfirmation", "Show the active publish confirmation and require explicit UI confirmation before external publishing.", "publish.reviewConfirmation")]
     });
   }
 
@@ -244,6 +261,14 @@ function isScheduledPublishRequest(message: string, lower: string): boolean {
 
 function isPublishRequest(message: string, lower: string): boolean {
   return /发布|发出去|发笔记|发送|发到小红书|帮我发|立即发|确认发布/.test(message) || lower.includes("publish");
+}
+
+function isPublishConfirmationReviewRequest(message: string, lower: string): boolean {
+  return /查看.*确认单|确认单|确认发布|确认立即发布|确认定时发布|可以发了|就这样发|确认提交/.test(message) || lower.includes("confirm publish");
+}
+
+function isCancelPublishConfirmationRequest(message: string, lower: string): boolean {
+  return /取消.*确认|取消.*发布|撤销.*发布|不要发|先别发|别发了|取消确认单/.test(message) || lower.includes("cancel publish");
 }
 
 function inferTimeRange(message: string): string | undefined {

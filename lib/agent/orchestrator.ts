@@ -49,7 +49,8 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
     allowedActions: initialPostProject.allowedActions,
     hasEvidence: Boolean(initialPostProject.evidencePack.insights.length || initialPostProject.selectedSamples.length),
     hasCreativeBrief: Boolean(initialPostProject.creativeBrief),
-    hasSelectedImages: Boolean(initialPostProject.selectedImages.length)
+    hasSelectedImages: Boolean(initialPostProject.selectedImages.length),
+    hasPendingPublishConfirmation: initialPostProject.publishPlan?.status === "awaiting_approval"
   });
   let agentRun = createAgentRun({
     message: input.message,
@@ -430,6 +431,39 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
         agentRun,
         trace,
         postProject: draftFromProjectTurn.postProject
+      });
+    }
+
+    const publishConfirmationTurn = await maybeHandlePublishConfirmationTurn(input, plan, initialPostProject);
+    if (publishConfirmationTurn) {
+      trace = addTraceEvent(trace, {
+        type: "tool_completed",
+        label: plan.intent === "cancel_publish_confirmation" ? "publish.cancelConfirmation" : "publish.reviewConfirmation",
+        detail: plan.intent === "cancel_publish_confirmation"
+          ? "Cancelled the pending publish confirmation without external publishing."
+          : "Returned the active publish confirmation for manual review."
+      });
+      trace = addTraceEvent(trace, {
+        type: "workspace_updated",
+        label: "Workspace updated",
+        detail: "Synchronized publish confirmation state with the active PostProject."
+      });
+      agentRun = completeRun(agentRun);
+      trace = addTraceEvent(trace, {
+        type: "run_completed",
+        label: "Agent run completed",
+        detail: "Agent turn completed after handling publish confirmation context."
+      });
+      await persistAgentTrace(trace);
+
+      return buildAgentTurnResult({
+        answer: publishConfirmationTurn.answer,
+        plan,
+        workspace: publishConfirmationTurn.workspace,
+        currentDraft: input.currentDraft ?? undefined,
+        agentRun,
+        trace,
+        postProject: publishConfirmationTurn.postProject
       });
     }
 
@@ -2426,6 +2460,63 @@ async function maybeHandleGuardedPublishTurn(
             : `发布准备未通过安全检查。\n标题：${currentDraft.draft.title}\n原因：${guardedPublish.reasons.join("；")}`,
     currentDraft,
     workspace
+  };
+}
+
+async function maybeHandlePublishConfirmationTurn(
+  input: RunAgentTurnInput,
+  plan: ReturnType<typeof createAgentPlan>,
+  postProject: PostProject
+): Promise<{ answer: string; workspace: WorkspaceState; postProject: PostProject } | null> {
+  if (plan.intent !== "review_publish_confirmation" && plan.intent !== "cancel_publish_confirmation") {
+    return null;
+  }
+
+  const workspace = await readWorkspaceState();
+  const activePlan = postProject.publishPlan ?? workspace.publishPlan ?? null;
+  if (!activePlan || activePlan.status !== "awaiting_approval") {
+    const updatedWorkspace = await updateWorkspaceState({ lastUserIntent: plan.intent });
+    return {
+      answer: "当前没有待确认的发布单。请先在发布检查里生成确认单，系统不会因为一句模糊指令直接发布。",
+      workspace: updatedWorkspace,
+      postProject
+    };
+  }
+
+  if (plan.intent === "cancel_publish_confirmation") {
+    const updatedWorkspace = await updateWorkspaceState({
+      lastUserIntent: plan.intent,
+      publishPlan: null
+    });
+    const updatedProject = await updatePostProject({
+      publishPlan: null,
+      auditStatus: "unchecked",
+      currentStage: "reviewing"
+    });
+    return {
+      answer: "已取消当前发布确认单，没有调用小红书发布。文案、图片和 Quality Gate 结果仍保留在 Post Studio，可以修改后重新生成确认单。",
+      workspace: updatedWorkspace,
+      postProject: updatedProject
+    };
+  }
+
+  const requiredItems = (activePlan.confirmationChecklist ?? []).filter((item) => item.required);
+  const confirmedItems = requiredItems.filter((item) => item.confirmed);
+  const updatedWorkspace = await updateWorkspaceState({
+    lastUserIntent: plan.intent,
+    publishPlan: activePlan
+  });
+  return {
+    answer: [
+      "当前已有待人工确认的发布单，我不会在聊天里直接调用小红书发布。",
+      `标题：${activePlan.title}`,
+      `图片：${activePlan.images.length} 张；标签：${activePlan.tags.length} 个；可见范围：${activePlan.visibility}`,
+      activePlan.scheduleAt ? `定时时间：${activePlan.scheduleAt}` : "发布时间：立即",
+      `确认项：${confirmedItems.length}/${requiredItems.length}`,
+      "请在 Post Studio 右侧发布检查或完整发布台点击“确认发布/确认定时发布”按钮完成最后一步。"
+    ].join("\n"),
+    workspace: updatedWorkspace,
+    postProject
   };
 }
 

@@ -23,6 +23,8 @@ export type AgentAction =
   | "runQualityGate"
   | "preparePublish"
   | "schedulePublish"
+  | "reviewPublishConfirmation"
+  | "cancelPublishConfirmation"
   | "askClarifyingQuestion"
   | "answer";
 
@@ -39,6 +41,8 @@ export type AgentIntent =
   | "quality_check"
   | "prepare_publish"
   | "schedule_publish"
+  | "review_publish_confirmation"
+  | "cancel_publish_confirmation"
   | "ask"
   | "answer";
 

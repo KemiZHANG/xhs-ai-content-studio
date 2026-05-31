@@ -168,6 +168,30 @@ describe("agent planner", () => {
     expect(plan.scheduleText).toContain("今晚 8 点");
   });
 
+  it("routes confirmation language to the active publish confirmation instead of creating another intent", () => {
+    const plan = createAgentPlan({
+      message: "确认发布，就这样发",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      hasPendingPublishConfirmation: true
+    });
+
+    expect(plan.intent).toBe("review_publish_confirmation");
+    expect(plan.steps.map((step) => step.action)).toEqual(["reviewPublishConfirmation"]);
+  });
+
+  it("routes cancel language to the pending publish confirmation", () => {
+    const plan = createAgentPlan({
+      message: "先别发了，取消确认单",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      hasPendingPublishConfirmation: true
+    });
+
+    expect(plan.intent).toBe("cancel_publish_confirmation");
+    expect(plan.steps.map((step) => step.action)).toEqual(["cancelPublishConfirmation"]);
+  });
+
   it("asks for a draft before preparing a publish intent", () => {
     const plan = createAgentPlan({
       message: "帮我发布到小红书",

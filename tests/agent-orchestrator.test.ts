@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runAgentTurn } from "@/lib/agent/orchestrator";
+import { createPublishIntent } from "@/lib/agent/guardrails";
 import { resetPostProject } from "@/lib/post-project/store";
 import { defaultSettings } from "@/lib/storage/settings";
 import { createViralCaseFromEvidence, upsertViralCases } from "@/lib/viral-knowledge/store";
@@ -201,6 +202,121 @@ describe("agent orchestrator", () => {
       "revise_copy",
       "select_images"
     ]);
+  });
+
+  it("reviews an existing publish confirmation instead of preparing a duplicate publish intent", async () => {
+    const imagePath = path.join(tempDir, "generated-assets", "generated", "confirm.png");
+    const publishIntent = {
+      ...createPublishIntent({
+        title: "广州周末咖啡馆",
+        content: "适合周末收藏的咖啡馆真实分享。",
+        tags: ["广州咖啡", "探店"],
+        images: [imagePath],
+        visibility: defaultSettings.defaultVisibility,
+        requestedBy: "manual",
+        accountId: defaultSettings.activeAccountId,
+        mcpUrl: defaultSettings.mcpUrl
+      }),
+      status: "awaiting_approval" as const
+    };
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      copyDraft: {
+        id: "draft-confirm",
+        updatedAt: "2026-05-31T00:00:00.000Z",
+        draft: {
+          title: publishIntent.title,
+          content: publishIntent.content,
+          tags: publishIntent.tags,
+          structure: [],
+          imagePrompt: ""
+        },
+        images: [{ path: imagePath }],
+        visibility: defaultSettings.defaultVisibility
+      },
+      publishPlan: publishIntent,
+      currentStage: "reviewing"
+    });
+    let publishCalls = 0;
+    const result = await runAgentTurn({
+      message: "确认发布，就这样发",
+      conversationId: "chat-review-confirmation",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => {
+          publishCalls += 1;
+          return { ok: true };
+        }
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(result.intent).toBe("review_publish_confirmation");
+    expect(publishCalls).toBe(0);
+    expect(result.answer).toContain("不会在聊天里直接调用小红书发布");
+    expect(result.workspace.publishPlan?.id).toBe(publishIntent.id);
+    expect(result.quickActions.map((action) => action.action)).toEqual([
+      "review_publish_confirmation",
+      "confirm_publish",
+      "cancel_publish"
+    ]);
+  });
+
+  it("cancels an existing publish confirmation without external publishing", async () => {
+    const publishIntent = {
+      ...createPublishIntent({
+        title: "广州周末咖啡馆",
+        content: "适合周末收藏的咖啡馆真实分享。",
+        tags: ["广州咖啡", "探店"],
+        images: [path.join(tempDir, "generated-assets", "generated", "confirm.png")],
+        visibility: defaultSettings.defaultVisibility,
+        requestedBy: "manual",
+        accountId: defaultSettings.activeAccountId,
+        mcpUrl: defaultSettings.mcpUrl
+      }),
+      status: "awaiting_approval" as const
+    };
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      publishPlan: publishIntent,
+      currentStage: "reviewing"
+    });
+    const result = await runAgentTurn({
+      message: "先别发了，取消确认单",
+      conversationId: "chat-cancel-confirmation",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => {
+          throw new Error("should not publish when cancelling");
+        }
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(result.intent).toBe("cancel_publish_confirmation");
+    expect(result.workspace.publishPlan).toBeNull();
+    expect(result.postProject?.publishPlan).toBeNull();
+    expect(result.answer).toContain("没有调用小红书发布");
   });
 
   it("asks for a draft instead of researching when publish is requested without a draft", async () => {
