@@ -1104,6 +1104,19 @@ export function PostStudioPanel({
                   <p>{viralApplication.detail}</p>
                   {viralApplication.evidenceCount ? <small>当前已接入 {viralApplication.evidenceCount} 条爆款库 evidencePack 结论。</small> : null}
                   {viralApplication.focusedCount ? <small>本次重点：{viralApplication.focusedCount} 条，生成时会优先引用。</small> : null}
+                  {viralApplication.citedEvidenceIds.length ? (
+                    <small>已被当前创作引用：{viralApplication.citedEvidenceIds.slice(0, 4).join(" / ")}</small>
+                  ) : null}
+                </div>
+                <div className="viralApplicationRoutes" aria-label="爆款库应用路径">
+                  {viralApplication.routes.map((route) => (
+                    <article className={`viralApplicationRoute ${route.status}`} key={route.id}>
+                      <span>{route.label}</span>
+                      <strong>{labelForViralRouteStatus(route.status)}</strong>
+                      <p>{route.detail}</p>
+                      {route.evidenceIds.length ? <small>证据：{route.evidenceIds.slice(0, 3).join(" / ")}</small> : null}
+                    </article>
+                  ))}
                 </div>
                 <div className="inlineActionGrid">
                   {viralApplication.actions.map((item) => (
@@ -2076,6 +2089,12 @@ function uniqueText(values: string[]): string[] {
 
 function labelForViralExtraction(method: ViralCase["extraction"]["method"]): string {
   return method === "model" ? "AI 提炼" : "本地启发式";
+}
+
+function labelForViralRouteStatus(status: "empty" | "pending" | "ready"): string {
+  if (status === "ready") return "已应用";
+  if (status === "pending") return "待应用";
+  return "未开始";
 }
 
 function CheckItem({ ok, label }: { ok: boolean; label: string }) {

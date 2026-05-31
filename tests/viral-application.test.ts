@@ -18,6 +18,7 @@ describe("viral application model", () => {
 
     expect(model.evidenceCount).toBe(0);
     expect(model.focusedCount).toBe(0);
+    expect(model.routes.map((route) => route.status)).toEqual(["empty", "empty", "empty"]);
     expect(model.actions).toEqual([
       { id: "viral-refresh-rag", label: "刷新 RAG 证据", action: "retrieve_viral_knowledge", primary: true }
     ]);
@@ -32,6 +33,12 @@ describe("viral application model", () => {
 
     expect(model.evidenceCount).toBe(1);
     expect(model.headline).toContain("evidencePack");
+    expect(model.routes[0]).toMatchObject({
+      id: "brief",
+      status: "pending",
+      evidenceIds: ["viral-insight-hook"]
+    });
+    expect(model.routes[1].status).toBe("empty");
     expect(model.actions[0]).toMatchObject({ action: "create_creative_brief", primary: true });
   });
 
@@ -45,6 +52,7 @@ describe("viral application model", () => {
 
     expect(model.focusedCount).toBe(1);
     expect(model.headline).toContain("重点");
+    expect(model.routes[0].evidenceIds).toEqual(["viral-insight-hook"]);
   });
 
   it("moves users from viral-enhanced Brief to copy and visual planning", () => {
@@ -70,6 +78,57 @@ describe("viral application model", () => {
     const model = buildViralApplicationModel(project);
 
     expect(model.headline).toContain("已接入创作链路");
+    expect(model.routes.map((route) => route.status)).toEqual(["ready", "pending", "pending"]);
+    expect(model.citedEvidenceIds).toEqual(["viral-insight-hook"]);
     expect(model.actions.map((action) => action.action)).toEqual(["generate_copy", "plan_visuals"]);
+  });
+
+  it("shows which creative outputs already cite viral evidence", () => {
+    const project = createBlankPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: { sampleIds: ["viral-case-1"], insights: [viralInsight] },
+      creativeBrief: {
+        audience: "周末探店人群",
+        painPoint: "怕踩雷",
+        contentAngle: "真实避坑探店",
+        emotionalHook: "先给结论",
+        proofPoints: ["排队", "人均", "出片点"],
+        tone: "真实分享",
+        visualMood: "自然光",
+        imageMustHave: ["店内空间"],
+        imageMustAvoid: ["虚假认证"],
+        platformStyle: "小红书图文",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["viral-insight-hook"]
+      },
+      copyDraft: {
+        id: "draft-1",
+        updatedAt: "2026-05-31T00:00:00.000Z",
+        draft: {
+          title: "广州咖啡馆先说结论",
+          content: "这家适合周末去。",
+          tags: ["广州咖啡", "周末探店"],
+          structure: ["先结论", "再场景"],
+          imagePrompt: "自然光咖啡馆封面",
+          basedOnEvidenceIds: ["viral-insight-hook"]
+        },
+        images: [],
+        visibility: "仅自己可见"
+      },
+      visualDirection: {
+        mood: "自然光",
+        composition: "封面先展示空间和招牌",
+        colorPalette: "暖白和木色",
+        mustHave: ["门头", "座位区"],
+        mustAvoid: ["虚假 logo"],
+        basedOnEvidenceIds: ["viral-insight-hook"]
+      }
+    });
+    const model = buildViralApplicationModel(project);
+
+    expect(model.routes.map((route) => route.status)).toEqual(["ready", "ready", "ready"]);
+    expect(model.routes.every((route) => route.evidenceIds.includes("viral-insight-hook"))).toBe(true);
+    expect(model.actions[0]).toMatchObject({ action: "retrieve_viral_knowledge" });
   });
 });
