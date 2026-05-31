@@ -124,7 +124,13 @@ describe("viral evidence summary", () => {
       isFocused: true,
       isCited: true
     });
-    expect(summary.sourceCases[0]).toMatchObject({ id: "viral-case-1", hookType: "场景收藏钩子" });
+    expect(summary.sourceCases[0]).toMatchObject({
+      id: "viral-case-1",
+      hookType: "场景收藏钩子",
+      safetySummary: "只学习场景和结构，不复制标题正文",
+      reusablePatterns: ["场景钩子 + 收藏理由"],
+      doNotCopy: ["不要复制原文表达"]
+    });
     expect(summary.traceLine).toContain("已被 Brief");
   });
 

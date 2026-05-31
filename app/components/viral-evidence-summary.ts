@@ -22,6 +22,9 @@ export type ViralEvidenceSummaryModel = {
     hookType: string;
     category: string;
     score: number;
+    safetySummary: string;
+    reusablePatterns: string[];
+    doNotCopy: string[];
   }>;
   traceLine: string;
   missingLine?: string;
@@ -63,7 +66,10 @@ export function buildViralEvidenceSummary({
       title: item.title,
       hookType: item.hookType,
       category: item.category,
-      score: item.metrics.score
+      score: item.metrics.score,
+      safetySummary: item.creativeSafety?.summary ?? "只复用结构和风格，不复制原文原图。",
+      reusablePatterns: (item.creativeSafety?.reusablePatterns ?? item.extractedInsights.reusableRules).slice(0, 2),
+      doNotCopy: (item.creativeSafety?.doNotCopy ?? item.extractedInsights.avoidCopying).slice(0, 2)
     }));
   const citedCount = viralInsights.filter((insight) => citedIds.has(insight.id)).length;
   const focusedCount = viralInsights.filter((insight) => focusedIds.has(insight.id)).length;

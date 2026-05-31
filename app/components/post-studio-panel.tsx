@@ -2259,7 +2259,17 @@ function ViralEvidenceDigest({
       {summary.sourceCases.length && !compact ? (
         <div className="viralEvidenceSources">
           {summary.sourceCases.map((item) => (
-            <span key={item.id}>{item.hookType || item.title} · {item.category} · 分 {Math.round(item.score)}</span>
+            <span
+              key={item.id}
+              title={[
+                item.safetySummary,
+                item.reusablePatterns.length ? `可学：${item.reusablePatterns.join(" / ")}` : "",
+                item.doNotCopy.length ? `不要复制：${item.doNotCopy.join(" / ")}` : ""
+              ].filter(Boolean).join("\n")}
+            >
+              {item.hookType || item.title} · {item.category} · 分 {Math.round(item.score)}
+              {item.doNotCopy.length ? ` · 边界：${item.doNotCopy[0]}` : ""}
+            </span>
           ))}
         </div>
       ) : null}
