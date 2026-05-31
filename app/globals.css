@@ -1662,6 +1662,20 @@ textarea {
   background: linear-gradient(180deg, rgba(191, 107, 38, 0.12), var(--surface-strong));
 }
 
+.canvasCard.versionCanvasCard.ok {
+  border-color: rgba(20, 143, 113, 0.24);
+  background: linear-gradient(180deg, rgba(20, 143, 113, 0.08), var(--surface-strong));
+}
+
+.canvasCard.versionCanvasCard.warn {
+  border-color: rgba(191, 107, 38, 0.3);
+  background: linear-gradient(180deg, rgba(191, 107, 38, 0.12), var(--surface-strong));
+}
+
+.canvasCard.versionCanvasCard.neutral {
+  border-color: rgba(24, 28, 24, 0.1);
+}
+
 .canvasIssueList {
   color: var(--muted);
   display: grid;

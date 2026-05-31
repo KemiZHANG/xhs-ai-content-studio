@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { AssetRecord, CreatorMemoryProfile, DraftRecord, JobRecord, PostProject, WorkspaceState } from "@/app/types";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
+import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
+import { buildCanvasVersionDisplay } from "@/app/components/post-version-display";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
 
 export function WorkspaceCanvas({
@@ -40,6 +42,9 @@ export function WorkspaceCanvas({
   const quality = postProject?.qualityCheck;
   const readiness = postProject ? buildPostReadinessReport(postProject) : null;
   const readinessSteps = readiness ? pickCanvasReadinessSteps(readiness.items) : [];
+  const versionStatus = postProject ? getPostVersionStatus(postProject) : null;
+  const versionDiff = postProject ? getPostVersionDiffReport(postProject) : null;
+  const versionDisplay = buildCanvasVersionDisplay(versionStatus, versionDiff);
   const memorySignals = [
     ...(postProject?.agentMemory ?? []).slice(0, 2),
     ...(creatorMemory?.liked ?? []).slice(0, 2).map((item) => item.text),
@@ -184,6 +189,24 @@ export function WorkspaceCanvas({
           ) : null}
         </section>
       ) : null}
+
+      <section className={`canvasCard versionCanvasCard ${versionDisplay.tone}`} data-canvas-card="publish">
+        <span>版本快照</span>
+        <strong>{versionDisplay.label}</strong>
+        <p>{versionDisplay.detail}</p>
+        {versionDisplay.changedLabels.length ? (
+          <div className="tagRow">
+            {versionDisplay.changedLabels.map((label) => (
+              <em key={label}>{label}</em>
+            ))}
+          </div>
+        ) : null}
+        {versionDisplay.actionLabel ? (
+          <button className="secondaryButton fullWidth" disabled={!draft} onClick={onOpenPublish} type="button">
+            {versionDisplay.actionLabel}
+          </button>
+        ) : null}
+      </section>
 
       <section className="canvasCard" data-canvas-card="overview">
         <span>创作者记忆</span>
