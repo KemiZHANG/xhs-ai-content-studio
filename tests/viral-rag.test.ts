@@ -86,6 +86,17 @@ describe("viral RAG retrieval", () => {
     expect(pack.strategyReport.audiencePainPoints.join(" ")).toContain("评论关注点");
     expect(pack.sufficiency.realtimeCount).toBe(4);
     expect(pack.sufficiency.viralCount).toBe(1);
+    const trace = pack.evidenceTrace ?? [];
+    expect(trace[0]).toMatchObject({
+      caseId: viralCase.id,
+      sourceSampleId: viralCase.id,
+      sourceUrl: viralCase.sourceUrl
+    });
+    expect(trace[0].score).toBeGreaterThan(0);
+    expect(trace[0].matchedQueries.length).toBeGreaterThan(0);
+    expect(trace[0].reasons.length).toBeGreaterThan(0);
+    expect(trace[0].evidenceInsightIds.length).toBeGreaterThan(0);
+    expect(trace[0].evidenceInsightIds.every((id) => id.startsWith("viral-insight-"))).toBe(true);
   });
 
   it("scores structured viral knowledge quality for safer RAG reuse", async () => {

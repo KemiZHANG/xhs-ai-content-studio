@@ -55,6 +55,16 @@ export type ViralStrategyReport = {
   evidenceIds: string[];
 };
 
+export type ViralEvidenceTrace = {
+  caseId: string;
+  sourceSampleId: string;
+  sourceUrl: string;
+  score: number;
+  matchedQueries: string[];
+  reasons: string[];
+  evidenceInsightIds: string[];
+};
+
 export type ViralKnowledgePack = {
   query: string;
   rewrittenQueries: string[];
@@ -62,6 +72,7 @@ export type ViralKnowledgePack = {
   filterSummary?: string;
   results: ViralSearchResult[];
   insights: EvidenceInsight[];
+  evidenceTrace?: ViralEvidenceTrace[];
   sufficiency: RagSufficiency;
   strategyReport: ViralStrategyReport;
 };
@@ -71,6 +82,7 @@ export async function retrieveViralKnowledge(input: ViralRetrievalInput): Promis
   const filters = extractViralRetrievalFilters(input);
   const results = await retrieveViralCasesWithFusion(input, rewrittenQueries);
   const insights = viralCasesToEvidenceInsights(results.map((result) => result.case));
+  const evidenceTrace = buildViralEvidenceTrace(results, insights);
   const sufficiency = evaluateRagSufficiency({
     realtimeCount: input.realtimeEvidenceCount ?? 0,
     viralCount: results.length,
@@ -84,9 +96,31 @@ export async function retrieveViralKnowledge(input: ViralRetrievalInput): Promis
     ...(filters ? { filters, filterSummary: summarizeViralRetrievalFilters(filters) } : {}),
     results,
     insights,
+    evidenceTrace,
     sufficiency,
     strategyReport: buildViralStrategyReport({ query: input.query, results, insights, sufficiency })
   };
+}
+
+export function buildViralEvidenceTrace(
+  results: ViralSearchResult[],
+  insights: EvidenceInsight[]
+): ViralEvidenceTrace[] {
+  return results.map((result) => {
+    const evidenceInsightIds = insights
+      .filter((insight) => insight.sourceSampleIds.includes(result.case.id))
+      .map((insight) => insight.id);
+
+    return {
+      caseId: result.case.id,
+      sourceSampleId: result.case.id,
+      sourceUrl: result.case.sourceUrl,
+      score: result.score,
+      matchedQueries: uniqueStrings(result.matchedQueries ?? []),
+      reasons: uniqueStrings(result.reasons).slice(0, 8),
+      evidenceInsightIds
+    };
+  });
 }
 
 export function buildViralStrategyReport({

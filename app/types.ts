@@ -140,6 +140,15 @@ export type WorkflowResult = {
       confidence: number;
       createdAt: string;
     }>;
+    evidenceTrace?: Array<{
+      caseId: string;
+      sourceSampleId: string;
+      sourceUrl: string;
+      score: number;
+      matchedQueries: string[];
+      reasons: string[];
+      evidenceInsightIds: string[];
+    }>;
     results: Array<{
       score: number;
       reasons: string[];
