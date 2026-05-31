@@ -39,6 +39,7 @@ import { buildEvidenceCitationReport, buildEvidenceReferenceSummary } from "@/li
 import { activeAccountReadinessHint, isHealthForActiveAccount } from "@/app/components/account-readiness";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
+import { pickEvidenceHighlights, scoreEvidence, summarizeEvidenceSample } from "@/app/components/evidence-display";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
 
@@ -200,7 +201,7 @@ export function PostStudioPanel({
   const viralPack = workflowResult?.viralKnowledge ?? workflowResult?.researchSummary?.viralKnowledge ?? projectViralPack ?? null;
   const samples = project?.selectedSamples ?? workflowResult?.evidence ?? workspace?.selectedSamples ?? [];
   const evidenceSamples = samples.filter(isSampleEvidence);
-  const saveableSamples = evidenceSamples.slice(0, 3);
+  const saveableSamples = pickEvidenceHighlights(evidenceSamples, 3);
   const allowedPostActions = (project?.allowedActions ?? []) as PostAction[];
   const nextActions = allowedPostActions.length ? allowedPostActions.slice(0, 3) : (["search_research"] as PostAction[]);
   const stageGuidance = getPostStageGuidance(project?.currentStage ?? "empty", allowedPostActions);
@@ -739,6 +740,7 @@ export function PostStudioPanel({
                       <article key={sample.id}>
                         <strong>{sample.title}</strong>
                         <span>赞 {sample.likes} · 藏 {sample.collects} · 评 {sample.comments}</span>
+                        <p>{summarizeEvidenceSample(sample)}</p>
                         <div className="evidenceActions">
                           <button className="textButton" type="button" onClick={() => setSelectedEvidence(sample)}>
                             查看详情
@@ -1820,7 +1822,7 @@ function EvidenceCatalogDrawer({
                 <div>
                   <span>#{index + 1} · 赞 {sample.likes} · 藏 {sample.collects} · 评 {sample.comments}</span>
                   <strong>{sample.title}</strong>
-                  <p>{sample.detailText || sample.reasonHighlights[0] || "暂无正文，仍可参考互动数据和图片风格。"}</p>
+                  <p>{summarizeEvidenceSample(sample)}</p>
                 </div>
                 <div className="evidenceActions">
                   <button className="textButton" type="button" onClick={() => onOpenSample(sample)}>
@@ -2135,10 +2137,6 @@ function hasTraceableVisualDirection(project: PostProject | null): boolean {
 
 function isSampleEvidence(value: unknown): value is SampleEvidence {
   return Boolean(value) && typeof value === "object" && typeof (value as { id?: unknown }).id === "string" && typeof (value as { title?: unknown }).title === "string";
-}
-
-function scoreEvidence(sample: SampleEvidence): number {
-  return (Number(sample.collects) || 0) * 3 + (Number(sample.likes) || 0) + (Number(sample.comments) || 0) * 2;
 }
 
 function summarizeDraftDiff(current: PublishDraftState, version: NonNullable<WorkflowResult["draft"]>): string {
