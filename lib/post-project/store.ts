@@ -68,7 +68,7 @@ export async function updatePostProject(
   const current = await readPostProject();
   return writePostProject({
     ...current,
-    ...stripUndefined(patch)
+    ...normalizePatchForExplicitClears(patch)
   });
 }
 
@@ -577,6 +577,18 @@ async function queuePostProjectWrite<T>(operation: () => Promise<T>): Promise<T>
 
 function stripUndefined<T extends Record<string, unknown>>(value: T): Partial<T> {
   return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as Partial<T>;
+}
+
+function normalizePatchForExplicitClears(
+  patch: Partial<Omit<PostProject, "schemaVersion" | "id" | "updatedAt" | "allowedActions">>
+): Partial<PostProject> {
+  const normalized = stripUndefined(patch);
+  for (const key of ["creativeBrief", "visualDirection", "finalPost", "qualityCheck"] as const) {
+    if (Object.prototype.hasOwnProperty.call(patch, key) && patch[key] === undefined) {
+      normalized[key] = undefined;
+    }
+  }
+  return normalized as Partial<PostProject>;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

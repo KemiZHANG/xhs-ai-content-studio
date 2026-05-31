@@ -885,6 +885,149 @@ describe("agent orchestrator", () => {
     expect(result.cards.find((card) => card.type === "evidence_citations")?.summary).toContain("实时研究");
   });
 
+  it("revises the active PostProject draft and invalidates stale publish checks", async () => {
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      targetAudience: "周末探店用户",
+      goal: "生成真实探店笔记",
+      tone: "生活化",
+      evidencePack: {
+        sampleIds: ["sample-1"],
+        insights: [{
+          id: "insight-title",
+          sourceType: "realtime",
+          type: "title",
+          insight: "标题先给具体周末场景，再给收藏理由",
+          sourceSampleIds: ["sample-1"],
+          confidence: 0.88,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }]
+      },
+      creativeBrief: {
+        audience: "周末探店用户",
+        painPoint: "不知道去哪坐一下午",
+        contentAngle: "安静咖啡馆真实分享",
+        emotionalHook: "周末慢下来",
+        proofPoints: ["真实体验"],
+        tone: "生活化",
+        visualMood: "自然光",
+        imageMustHave: ["咖啡", "桌面"],
+        imageMustAvoid: ["广告感"],
+        platformStyle: "xiaohongshu",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-title"]
+      },
+      copyDraft: {
+        id: "draft-old",
+        updatedAt: "2026-05-31T00:00:00.000Z",
+        draft: {
+          title: "广州咖啡馆推荐",
+          content: "这里适合周末去坐一下午。",
+          tags: ["广州咖啡馆"],
+          structure: ["场景", "体验"],
+          imagePrompt: "自然光咖啡馆桌面",
+          basedOnEvidenceIds: ["insight-title"],
+          evidenceReferences: {
+            title: ["insight-title"],
+            content: ["insight-title"],
+            tags: ["insight-title"],
+            imagePrompt: ["insight-title"]
+          }
+        },
+        images: [{ path: path.join(tempDir, "generated-assets", "generated", "old.png") }],
+        visibility: defaultSettings.defaultVisibility
+      },
+      selectedImages: ["asset-old"],
+      finalPost: {
+        title: "广州咖啡馆推荐",
+        content: "这里适合周末去坐一下午。",
+        tags: ["广州咖啡馆"],
+        imageIds: ["asset-old"],
+        imagePromptVersionIds: [],
+        basedOnEvidenceIds: ["insight-title"]
+      },
+      publishPlan: {
+        id: "publish-old",
+        mode: "manual",
+        status: "awaiting_approval",
+        title: "广州咖啡馆推荐",
+        content: "这里适合周末去坐一下午。",
+        tags: ["广州咖啡馆"],
+        images: ["asset-old"],
+        visibility: defaultSettings.defaultVisibility,
+        requestedBy: "chat",
+        requestedAt: "2026-05-31T00:00:00.000Z",
+        idempotencyKey: "old-key",
+        confirmationChecklist: [],
+        guardrailResults: []
+      },
+      qualityCheck: {
+        titleScore: 90,
+        copyScore: 90,
+        visualConsistencyScore: 90,
+        platformFitScore: 90,
+        complianceScore: 90,
+        canPublish: true,
+        issues: [],
+        suggestions: [],
+        checkedAt: "2026-05-31T00:00:00.000Z"
+      },
+      currentStage: "reviewing"
+    });
+
+    const result = await runAgentTurn({
+      message: "把标题和正文改得更生活化一点",
+      conversationId: "chat-revise-project-draft",
+      settings: { ...defaultSettings, textApiKey: "text-key" },
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => JSON.stringify({
+          title: "周末想发呆就去这家咖啡馆",
+          content: "这家不是那种很吵的打卡店，更适合点杯咖啡慢慢坐一下午。",
+          tags: ["广州咖啡馆", "周末探店"],
+          structure: ["周末场景", "真实体验", "适合人群"],
+          imagePrompt: "自然光咖啡馆桌面近景",
+          basedOnEvidenceIds: ["insight-title"],
+          evidenceReferences: {
+            title: ["insight-title"],
+            content: ["insight-title"],
+            tags: ["insight-title"],
+            imagePrompt: ["insight-title"]
+          }
+        }),
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(result.intent).toBe("revise_draft");
+    expect(result.currentDraft?.id).not.toBe("draft-old");
+    expect(result.currentDraft?.draft.title).toBe("周末想发呆就去这家咖啡馆");
+    expect(result.currentDraft?.images).toEqual([{ path: path.join(tempDir, "generated-assets", "generated", "old.png") }]);
+    expect(result.currentDraft?.draft.basedOnEvidenceIds).toEqual(["insight-title"]);
+    expect(result.postProject?.copyDraft?.id).toBe(result.currentDraft?.id);
+    expect(result.postProject?.copyVersions.some((version) => version.id === `copy-${result.currentDraft?.id}`)).toBe(true);
+    expect(result.postProject?.finalPost).toBeUndefined();
+    expect(result.postProject?.publishPlan).toBeNull();
+    expect(result.postProject?.qualityCheck).toBeUndefined();
+    expect(result.postProject?.auditStatus).toBe("unchecked");
+    expect(result.workspace.currentDraftId).toBe(result.currentDraft?.id);
+    expect(result.workspace.publishPlan).toBeNull();
+    expect(result.answer).toContain("新的文案版本");
+    expect(result.answer).toContain("Quality Gate 已失效");
+    expect(result.cards.map((card) => card.type)).toContain("copy_draft");
+    expect(result.cards.map((card) => card.type)).toContain("evidence_citations");
+  });
+
   it("applies planner RAG filters after legacy research workflows", async () => {
     const highSample: SampleEvidence = {
       id: "note-high-filtered",

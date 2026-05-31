@@ -43,7 +43,7 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
   const initialPostProject = await readPostProject();
   const plan = createAgentPlan({
     message: input.message,
-    hasCurrentDraft: Boolean(input.currentDraft),
+    hasCurrentDraft: Boolean(input.currentDraft ?? initialPostProject.copyDraft),
     attachedAssetCount: input.attachedAssets.length,
     postStage: initialPostProject.currentStage,
     allowedActions: initialPostProject.allowedActions,
@@ -430,6 +430,40 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
         agentRun,
         trace,
         postProject: draftFromProjectTurn.postProject
+      });
+    }
+
+    const draftRevisionTurn = await maybeHandleDraftRevisionTurn(input, plan, initialPostProject);
+    if (draftRevisionTurn) {
+      trace = addTraceEvent(trace, {
+        type: "tool_called",
+        label: "draft.reviseCurrent",
+        detail: "Revised the active PostProject draft while preserving evidence citations.",
+        metadata: {
+          currentDraftId: draftRevisionTurn.currentDraft.id,
+          basedOnEvidenceIds: draftRevisionTurn.currentDraft.draft.basedOnEvidenceIds
+        }
+      });
+      trace = addTraceEvent(trace, {
+        type: "workspace_updated",
+        label: "Workspace updated",
+        detail: "Stored the revised draft version on PostProject and workspace."
+      });
+      agentRun = completeRun(agentRun);
+      trace = addTraceEvent(trace, {
+        type: "run_completed",
+        label: "Agent run completed",
+        detail: "Agent turn completed after revising the current draft."
+      });
+      await persistAgentTrace(trace);
+      return buildAgentTurnResult({
+        answer: draftRevisionTurn.answer,
+        plan,
+        workspace: draftRevisionTurn.workspace,
+        currentDraft: draftRevisionTurn.currentDraft,
+        agentRun,
+        trace,
+        postProject: draftRevisionTurn.postProject
       });
     }
 
@@ -1756,6 +1790,185 @@ ${JSON.stringify(selectedSamples, null, 2)}
       referenced
     ].filter(Boolean).join("\n"),
     currentDraft: draftRecord,
+    workspace,
+    postProject: updatedProject
+  };
+}
+
+async function maybeHandleDraftRevisionTurn(
+  input: RunAgentTurnInput,
+  plan: ReturnType<typeof createAgentPlan>,
+  postProject: PostProject
+): Promise<{ answer: string; currentDraft: DraftRecord; workspace: WorkspaceState; postProject: PostProject } | null> {
+  if (plan.intent !== "revise_draft") {
+    return null;
+  }
+
+  const existing = await readWorkspaceState();
+  const currentDraft = postProject.copyDraft ?? input.currentDraft ?? existing.currentDraft ?? null;
+  if (!currentDraft) {
+    const workspace = await updateWorkspaceState({ lastUserIntent: plan.intent });
+    return {
+      answer: "我可以修改文案，但当前 PostProject 还没有草稿。请先基于证据生成一版文案。",
+      currentDraft: createDraftRecord({
+        draft: {
+          title: "等待生成草稿",
+          content: "当前项目还没有可修改的草稿。",
+          tags: [],
+          structure: [],
+          imagePrompt: "",
+          basedOnEvidenceIds: postProject.evidencePack.insights.map((insight) => insight.id)
+        },
+        images: [],
+        visibility: input.settings.defaultVisibility
+      }),
+      workspace,
+      postProject
+    };
+  }
+
+  if (!input.settings.textApiKey.trim()) {
+    const workspace = await updateWorkspaceState({
+      currentDraftId: currentDraft.id,
+      currentDraft,
+      lastUserIntent: plan.intent
+    });
+    return {
+      answer: "修改当前文案需要文本模型 API Key。请先在设置页配置文本模型，再让我继续改稿。",
+      currentDraft,
+      workspace,
+      postProject
+    };
+  }
+
+  const evidenceIds = uniqueIds([
+    ...(currentDraft.draft.basedOnEvidenceIds ?? []),
+    ...(postProject.creativeBrief?.basedOnEvidenceIds ?? []),
+    ...postProject.evidencePack.insights.map((insight) => insight.id)
+  ]);
+  const evidenceForPrompt = postProject.evidencePack.insights
+    .filter((insight) => evidenceIds.includes(insight.id))
+    .slice(0, 12)
+    .map((insight) => ({
+      id: insight.id,
+      sourceType: insight.sourceType ?? "realtime",
+      type: insight.type,
+      insight: insight.insight,
+      confidence: insight.confidence
+    }));
+  const fallback: GeneratedDraft = {
+    ...currentDraft.draft,
+    basedOnEvidenceIds: (currentDraft.draft.basedOnEvidenceIds?.length ? currentDraft.draft.basedOnEvidenceIds : evidenceIds).slice(0, 8),
+    evidenceReferences: currentDraft.draft.evidenceReferences ?? {
+      title: evidenceIds.slice(0, 3),
+      content: evidenceIds.slice(0, 5),
+      tags: evidenceIds.slice(0, 5),
+      imagePrompt: evidenceIds.slice(0, 5)
+    }
+  };
+  const raw = await input.model.generateStructuredText(
+    `你是小红书内容创作导演型 Agent 的 Editor。请在不丢失证据引用的前提下修改当前 PostProject 草稿。
+
+用户修改要求：
+${input.message}
+
+当前草稿：
+${JSON.stringify(currentDraft.draft, null, 2)}
+
+PostProject：
+${JSON.stringify({
+  topic: postProject.topic,
+  productInfo: postProject.productInfo,
+  targetAudience: postProject.targetAudience,
+  goal: postProject.goal,
+  tone: postProject.tone,
+  currentStage: postProject.currentStage
+}, null, 2)}
+
+CreativeBrief：
+${JSON.stringify(postProject.creativeBrief ?? null, null, 2)}
+
+可引用证据（只能引用这些 id；sourceType=viral_library 只能学习规律，不能复制原文）：
+${JSON.stringify(evidenceForPrompt, null, 2)}
+
+要求：
+1. 按用户要求修改标题、正文、标签、结构或图片提示词。
+2. 保持原创，不能复制爆款样本原文，不能编造销量、认证、功效或官方背书。
+3. 修改后的 title/content/tags/imagePrompt 必须继续记录 basedOnEvidenceIds 或 evidenceReferences。
+4. 如果用户只要求改标题，也仍返回完整草稿 JSON。
+
+请只返回 JSON：
+{
+  "title": "标题",
+  "content": "正文",
+  "tags": ["标签"],
+  "structure": ["结构步骤"],
+  "imagePrompt": "图片提示词",
+  "basedOnEvidenceIds": ["证据ID"],
+  "evidenceReferences": {
+    "title": ["证据ID"],
+    "content": ["证据ID"],
+    "tags": ["证据ID"],
+    "imagePrompt": ["证据ID"]
+  }
+}`,
+    "Revise the current Xiaohongshu draft from PostProject evidence. Preserve citations and originality."
+  );
+  const revisedDraft = parseGeneratedDraft(raw, fallback, evidenceIds);
+  const revisedRecord = createDraftRecord({
+    draft: revisedDraft,
+    images: currentDraft.images,
+    visibility: currentDraft.visibility || input.settings.defaultVisibility,
+    input: {
+      topic: postProject.topic ?? revisedDraft.title,
+      contentType: "Post Studio revision",
+      timeRange: "当前项目",
+      sampleCount: postProject.selectedSamples.length,
+      visibility: currentDraft.visibility || input.settings.defaultVisibility,
+      workflowGoal: "draft",
+      publishMode: "draft",
+      analyzeImages: true,
+      generateImages: false,
+      requirements: input.message,
+      useViralKnowledge: true
+    }
+  });
+  const copyVersion = copyVersionFromDraft(revisedRecord, revisedDraft.basedOnEvidenceIds ?? evidenceIds);
+  const updatedProject = await updatePostProject({
+    copyDraft: revisedRecord,
+    copyVersions: [
+      ...postProject.copyVersions.filter((version) => version.id !== copyVersion.id),
+      copyVersion
+    ],
+    finalPost: undefined,
+    publishPlan: null,
+    qualityCheck: undefined,
+    auditStatus: "unchecked",
+    currentStage: "copy_ready"
+  });
+  const workspace = await updateWorkspaceState({
+    topic: updatedProject.topic ?? revisedDraft.title,
+    evidenceSummary: updatedProject.evidencePack.summary,
+    selectedSamples: updatedProject.selectedSamples,
+    currentDraftId: revisedRecord.id,
+    currentDraft: revisedRecord,
+    publishPlan: null,
+    lastUserIntent: plan.intent
+  });
+  const referenced = summarizeEvidenceCitationReport(updatedProject, revisedDraft.basedOnEvidenceIds ?? evidenceIds, revisedDraft.evidenceReferences);
+  return {
+    answer: [
+      "已按你的要求修改当前 PostProject 草稿，并保存为新的文案版本。",
+      `标题：${revisedDraft.title}`,
+      "",
+      revisedDraft.content,
+      "",
+      `标签：${revisedDraft.tags.map((tag) => `#${tag}`).join(" ")}`,
+      "",
+      referenced,
+      "旧的最终帖子、发布确认和 Quality Gate 已失效，需要重新组装并检查。"
+    ].filter(Boolean).join("\n"),
+    currentDraft: revisedRecord,
     workspace,
     postProject: updatedProject
   };
