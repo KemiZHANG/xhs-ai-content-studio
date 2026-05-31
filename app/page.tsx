@@ -36,6 +36,7 @@ import {
   selectActiveJob,
   selectWorkflowResultForDisplay
 } from "@/app/state/page-derived";
+import { shouldAutoOpenLatestConversation } from "@/app/state/chat-history-selection";
 import { noticeForProjectReset, resetWorkflowFormForNewProject } from "@/app/state/project-reset";
 import { canApplyWorkspaceSnapshot, isJobForWorkspace } from "@/lib/jobs/context";
 
@@ -535,7 +536,7 @@ export default function Home() {
   async function loadChatHistory() {
     const data = (await clientApi("/api/chat/history")) as { conversations: ChatConversation[] };
     setChatConversations(data.conversations);
-    if (!activeConversationId && data.conversations[0]) {
+    if (shouldAutoOpenLatestConversation({ activeConversationId, conversations: data.conversations })) {
       setActiveConversationId(data.conversations[0].id);
       setMessages(data.conversations[0].messages);
     }
