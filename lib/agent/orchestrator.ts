@@ -1069,14 +1069,26 @@ function buildCardsFromTurn(
       }
     });
   }
-  if (workspace.evidenceSummary || workspace.selectedSamples.length) {
+  const projectInsights = postProject?.evidencePack.insights ?? [];
+  const evidenceSampleCount = postProject?.selectedSamples.length ?? workspace.selectedSamples.length;
+  const sourceCounts = countEvidenceSources(projectInsights);
+  if (projectInsights.length || workspace.evidenceSummary || workspace.selectedSamples.length) {
     const viralKnowledge = isRecord(workspace.evidenceSummary) ? workspace.evidenceSummary.viralKnowledge : undefined;
+    const sourceSummary = projectInsights.length
+      ? `实时 ${sourceCounts.realtime} / 爆款库 ${sourceCounts.viral_library} / 用户输入 ${sourceCounts.user_input}`
+      : `旧工作区样本 ${workspace.selectedSamples.length}`;
     cards.push({
       id: "card-evidence-summary",
       type: "evidence_summary",
       title: "研究证据摘要",
-      summary: `已沉淀 ${workspace.selectedSamples.length} 条样本和研究结论。`,
-      data: workspace.evidenceSummary
+      summary: `已沉淀 ${evidenceSampleCount} 条样本、${projectInsights.length} 条可追溯结论。来源：${sourceSummary}。`,
+      data: {
+        summary: postProject?.evidencePack.summary ?? workspace.evidenceSummary,
+        sampleIds: postProject?.evidencePack.sampleIds ?? [],
+        insightCount: projectInsights.length,
+        sourceCounts,
+        keyInsights: projectInsights.slice(0, 5)
+      }
     });
     if (isRecord(viralKnowledge) && Array.isArray(viralKnowledge.results) && viralKnowledge.results.length) {
       cards.push({
@@ -1190,6 +1202,17 @@ function buildCardsFromTurn(
     });
   }
   return cards;
+}
+
+function countEvidenceSources(insights: PostProject["evidencePack"]["insights"]): Record<"realtime" | "viral_library" | "user_input", number> {
+  return insights.reduce(
+    (counts, insight) => {
+      const source = insight.sourceType ?? "realtime";
+      counts[source] += 1;
+      return counts;
+    },
+    { realtime: 0, viral_library: 0, user_input: 0 }
+  );
 }
 
 function extractViralStrategyReport(summary: unknown): {

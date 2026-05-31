@@ -459,6 +459,16 @@ describe("agent orchestrator", () => {
         insights: [expect.objectContaining({ id: "insight-visual" })]
       })
     });
+    expect(result.cards.find((card) => card.type === "evidence_summary")).toMatchObject({
+      summary: expect.stringContaining("可追溯结论"),
+      data: expect.objectContaining({
+        insightCount: 1,
+        sourceCounts: expect.objectContaining({
+          realtime: 1
+        }),
+        keyInsights: [expect.objectContaining({ id: "insight-visual" })]
+      })
+    });
     expect(result.cards.find((card) => card.type === "visual_direction")?.data).toMatchObject({
       evidenceSummary: expect.objectContaining({
         hasRealtimeEvidence: true
@@ -714,6 +724,15 @@ describe("agent orchestrator", () => {
     expect(result.answer).toContain("爆款库补充规律");
     expect(result.cards.map((card) => card.type)).toContain("copy_draft");
     expect(result.cards.map((card) => card.type)).toContain("evidence_citations");
+    expect(result.cards.find((card) => card.type === "evidence_summary")).toMatchObject({
+      summary: expect.stringContaining("爆款库"),
+      data: expect.objectContaining({
+        sourceCounts: expect.objectContaining({
+          realtime: 1,
+          viral_library: expect.any(Number)
+        })
+      })
+    });
     expect(result.cards.find((card) => card.type === "evidence_citations")?.summary).toContain("实时研究");
   });
 
