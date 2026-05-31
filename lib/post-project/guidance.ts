@@ -74,7 +74,7 @@ const stageGuidance: Record<PostStage, PostStageGuidance> = {
   },
   scheduled: {
     title: "已创建定时发布",
-    description: "当前帖子已进入定时状态，如要修改内容，需要重新生成发布确认单。",
+    description: "当前帖子已进入定时状态；如要修改内容，需要重新生成发布确认单。",
     primaryAction: "recover"
   },
   published: {

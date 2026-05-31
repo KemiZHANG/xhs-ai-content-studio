@@ -53,6 +53,7 @@ import { buildViralApplicationModel } from "@/app/components/viral-application";
 import { buildPublishConfirmationSummary } from "@/app/components/publish-confirmation-summary";
 import { buildPostProjectContextSummary } from "@/app/components/post-project-context";
 import { buildGeneratedAssetSummary, buildReferenceAssetSummary } from "@/app/components/asset-panel-summary";
+import { buildPostNextStepCoach } from "@/app/components/post-next-step-coach";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
@@ -329,6 +330,7 @@ export function PostStudioPanel({
     qualityGateFresh: versionStatus?.qualityGateFresh === true
   });
   const readiness = project ? buildPostReadinessReport(project) : null;
+  const nextStepCoach = buildPostNextStepCoach({ guidance: stageGuidance, readiness, nextActions });
   const statusSummary = buildPostStudioStatusSummary({
     project,
     workspace,
@@ -428,12 +430,19 @@ export function PostStudioPanel({
           <StagePill label="发布" value={publishStatusLabel} />
         </div>
         <div className="nextActionBar">
-          <strong>{stageGuidance.title}</strong>
-          <p>{stageGuidance.description}</p>
+          <span className="nextActionEyebrow">下一步建议</span>
+          <strong>{nextStepCoach.headline}</strong>
+          <p>{nextStepCoach.detail}</p>
+          {nextStepCoach.progressLine ? <small>{nextStepCoach.progressLine}</small> : null}
           <div className="nextActionButtons">
-            {nextActions.map((action) => (
-              <button className={action === stageGuidance.primaryAction ? "isPrimaryNext" : undefined} key={action} type="button" onClick={() => onQuickAction(action)}>
-                {labelForAction(action)}
+            {nextStepCoach.primaryAction ? (
+              <button className="isPrimaryNext" type="button" onClick={() => onQuickAction(nextStepCoach.primaryAction!)}>
+                {nextStepCoach.primaryLabel}
+              </button>
+            ) : null}
+            {nextStepCoach.secondaryActions.map((item) => (
+              <button key={item.action} type="button" onClick={() => onQuickAction(item.action)}>
+                {item.label}
               </button>
             ))}
           </div>

@@ -153,7 +153,7 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
       label: "质量检查",
       ready: qualityFreshEnough,
       detail: qualityFreshEnough
-        ? "质量门通过"
+        ? "质量门已通过"
         : project.qualityCheck?.canPublish && !finalPostCurrent
           ? "Quality Gate 已失效：文案、图片或 Prompt 已与最终帖子快照不一致"
           : project.qualityCheck?.issues.slice(0, 2).join("；") || "运行证据、原创性和发布风险检查",
