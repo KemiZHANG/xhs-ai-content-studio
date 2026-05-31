@@ -77,6 +77,47 @@ describe("agent orchestrator", () => {
     expect(runChatAgent).not.toHaveBeenCalled();
   });
 
+  it("surfaces a compact Agent plan card for full research-to-post requests", async () => {
+    const runChatAgent = vi.fn(async () => ({ answer: "legacy research flow" }));
+    const result = await runAgentTurn({
+      message: "帮我找最近一周广州咖啡馆高收藏笔记，分析标题和图片风格，再生成一篇适合探店账号的图文笔记",
+      conversationId: "chat-plan-card",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      },
+      runChatAgentImpl: runChatAgent
+    });
+
+    const planCard = result.cards.find((card) => card.type === "agent_plan");
+    expect(planCard).toMatchObject({
+      title: "Agent 执行计划",
+      summary: expect.stringContaining("生成 CreativeBrief")
+    });
+    expect(planCard?.data).toMatchObject({
+      intent: "research_to_draft",
+      steps: expect.arrayContaining([
+        expect.objectContaining({ action: "research", label: "搜索真实笔记" }),
+        expect.objectContaining({ action: "retrieveViralKnowledge", label: "检索爆款库" }),
+        expect.objectContaining({ action: "createCreativeBrief", label: "生成 CreativeBrief" }),
+        expect.objectContaining({ action: "generateDraft", label: "生成文案" }),
+        expect.objectContaining({ action: "planVisuals", label: "规划图片方向" })
+      ])
+    });
+    expect(result.intent).toBe("research_to_draft");
+  });
+
   it("asks stage-aware questions before drafting without evidence or CreativeBrief", async () => {
     await resetPostProject({ topic: "通勤包" });
     const result = await runAgentTurn({

@@ -7,6 +7,7 @@ import { readWorkspaceState, resetWorkspaceState, updateWorkspaceState } from "@
 import { createAgentToolRegistry } from "@/lib/agent/tools/registry";
 import { addTraceEvent, createAgentRun, createTrace, persistAgentTrace } from "@/lib/agent/trace";
 import type {
+  AgentAction,
   AgentPlan,
   AgentQuickAction,
   AgentResponseCard,
@@ -1117,6 +1118,30 @@ function buildCardsFromTurn(
   plan?: AgentPlan
 ): AgentResponseCard[] {
   const cards: AgentResponseCard[] = [];
+  if (plan && shouldShowAgentPlanCard(plan)) {
+    const plannedSteps = plan.steps.map((step, index) => ({
+      index: index + 1,
+      action: step.action,
+      label: labelForAgentPlanAction(step.action),
+      toolName: step.toolName,
+      reason: step.reason
+    }));
+    cards.push({
+      id: "card-agent-plan",
+      type: "agent_plan",
+      title: "Agent 执行计划",
+      summary: `计划 ${plannedSteps.length} 步：${plannedSteps.slice(0, 5).map((item) => item.label).join(" → ")}${plannedSteps.length > 5 ? " → ..." : ""}`,
+      data: {
+        intent: plan.intent,
+        intentConfidence: inferIntentConfidence(plan, workspace),
+        topic: plan.topic,
+        steps: plannedSteps,
+        safetyNote: plan.steps.some((step) => step.action === "preparePublish" || step.action === "schedulePublish" || step.action === "runQualityGate")
+          ? "涉及发布或发布检查时，仍需要人工确认后才会执行真实外部发布。"
+          : "这只是当前对话的可解释计划，真实外部动作仍受工具和安全策略约束。"
+      }
+    });
+  }
   if (postProject) {
     const guidance = getPostStageGuidance(postProject.currentStage, postProject.allowedActions);
     const readiness = buildPostReadinessReport(postProject);
@@ -1269,6 +1294,39 @@ function buildCardsFromTurn(
     });
   }
   return cards;
+}
+
+function shouldShowAgentPlanCard(plan: AgentPlan): boolean {
+  if (plan.intent === "ask") return false;
+  if (plan.steps.length >= 3) return true;
+  return plan.steps.some((step) =>
+    ["createCreativeBrief", "planVisuals", "assemblePost", "runQualityGate", "schedulePublish"].includes(step.action)
+  );
+}
+
+function labelForAgentPlanAction(action: AgentAction): string {
+  const labels: Record<AgentAction, string> = {
+    startProject: "新建项目",
+    research: "搜索真实笔记",
+    retrieveViralKnowledge: "检索爆款库",
+    summarizeEvidence: "总结证据",
+    createCreativeBrief: "生成 CreativeBrief",
+    generateDraft: "生成文案",
+    reviseDraft: "修改文案",
+    planVisuals: "规划图片方向",
+    generateImages: "生成图片",
+    generateCards: "生成图文卡片",
+    selectImages: "选择图片",
+    assemblePost: "组装发布稿",
+    runQualityGate: "发布前质检",
+    preparePublish: "准备发布确认",
+    schedulePublish: "生成定时计划",
+    reviewPublishConfirmation: "查看确认单",
+    cancelPublishConfirmation: "取消确认单",
+    askClarifyingQuestion: "补充信息",
+    answer: "直接回答"
+  };
+  return labels[action];
 }
 
 function buildPublishCheckCard(

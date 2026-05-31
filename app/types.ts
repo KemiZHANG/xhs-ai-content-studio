@@ -341,6 +341,7 @@ export type ChatMessage = {
 };
 
 export type AgentResponseCardType =
+  | "agent_plan"
   | "stage_guidance"
   | "evidence_summary"
   | "viral_knowledge"

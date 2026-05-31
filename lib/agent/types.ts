@@ -258,6 +258,7 @@ export type AgentTurnResult = {
 };
 
 export type AgentResponseCardType =
+  | "agent_plan"
   | "stage_guidance"
   | "evidence_summary"
   | "viral_knowledge"
