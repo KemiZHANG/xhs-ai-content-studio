@@ -410,8 +410,39 @@ function getProjectSnapshotMismatchReasons(
   if (project.selectedImages?.length && assetIds.length && !sameStringSet(project.selectedImages, assetIds)) {
     reasons.push("发布图片与当前 PostProject 选中图片版本不一致，请重新选择图片并运行发布检查");
   }
+  if (hasPublishImages(project, publishArgs, assetIds) && !hasTraceableVisualConfirmation(project)) {
+    reasons.push("发布前必须先在 Post Studio 确认图片方向 / Prompt，并确保图片方向引用当前 CreativeBrief 或 evidencePack 证据");
+  }
 
   return reasons;
+}
+
+function hasPublishImages(
+  project: Awaited<ReturnType<typeof readPostProject>>,
+  publishArgs: GuardedPublishArgs,
+  assetIds: string[]
+): boolean {
+  return Boolean(
+    assetIds.length ||
+      publishArgs.images.length ||
+      project.selectedImages?.length ||
+      project.finalPost?.imageIds?.length
+  );
+}
+
+function hasTraceableVisualConfirmation(project: Awaited<ReturnType<typeof readPostProject>>): boolean {
+  const visualEvidenceIds = Array.isArray(project.visualDirection?.basedOnEvidenceIds)
+    ? project.visualDirection.basedOnEvidenceIds.filter(Boolean)
+    : [];
+  const promptEvidenceIds = Array.isArray(project.imagePrompts)
+    ? project.imagePrompts.flatMap((prompt) =>
+        [
+          typeof prompt?.value?.prompt === "string" && prompt.value.prompt.trim() ? "prompt" : "",
+          ...(Array.isArray(prompt?.basedOnEvidenceIds) ? prompt.basedOnEvidenceIds : [])
+        ].filter(Boolean)
+      )
+    : [];
+  return Boolean(visualEvidenceIds.length || promptEvidenceIds.length > 1);
 }
 
 function hasPostProjectPublishContext(project: Awaited<ReturnType<typeof readPostProject>>): boolean {

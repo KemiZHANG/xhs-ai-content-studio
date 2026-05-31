@@ -1196,11 +1196,49 @@ describe("API route contracts", () => {
     vi.doMock("@/lib/post-project/store", () => ({
       readPostProject: async () => ({
         auditStatus: "blocked",
+        creativeBrief: {
+          audience: "探店人群",
+          painPoint: "不知道去哪",
+          contentAngle: "真实体验",
+          emotionalHook: "周末可去",
+          proofPoints: ["环境", "位置"],
+          tone: "真实",
+          visualMood: "自然光",
+          imageMustHave: ["咖啡"],
+          imageMustAvoid: [],
+          platformStyle: "小红书",
+          tabooWords: [],
+          complianceNotes: [],
+          basedOnEvidenceIds: ["insight-1"]
+        },
+        visualDirection: {
+          mood: "自然光",
+          composition: "桌面近景",
+          colorPalette: "暖色",
+          mustHave: ["咖啡"],
+          mustAvoid: [],
+          basedOnEvidenceIds: ["insight-1"]
+        },
         finalPost: {
           title: "全网第一",
           content: "content",
-          tags: ["tag"]
+          tags: ["tag"],
+          imageIds: ["asset-1"],
+          imagePromptVersionIds: ["prompt-1"],
+          basedOnEvidenceIds: ["insight-1"]
         },
+        selectedImages: ["asset-1"],
+        evidencePack: {
+          insights: [{
+            id: "insight-1",
+            type: "copy",
+            insight: "用真实场景和适用人群增强可信度",
+            sourceSampleIds: ["sample-1"],
+            confidence: 0.9,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }]
+        },
+        imagePrompts: [{ id: "prompt-1", value: { prompt: "自然光咖啡馆桌面" }, basedOnEvidenceIds: ["insight-1"] }],
         qualityCheck: {
           issues: ["标题存在夸张词", "未选择合适图片"]
         }
@@ -1368,6 +1406,93 @@ describe("API route contracts", () => {
 
     expect(response.status).toBe(400);
     expect(payload.error).toContain("发布图片与当前 PostProject");
+    expect(executeGuardedPublish).not.toHaveBeenCalled();
+    expect(publishContent).not.toHaveBeenCalled();
+  });
+
+  it("blocks publish when selected images have no traceable visual direction or prompt confirmation", async () => {
+    const asset = {
+      id: "asset-1",
+      kind: "upload",
+      name: "image",
+      originalName: "image.png",
+      absolutePath: "C:\\xhs\\generated-assets\\uploads\\image.png",
+      mimeType: "image/png",
+      size: 10,
+      createdAt: "2026-05-21T00:00:00.000Z"
+    };
+    const publishContent = vi.fn(async () => ({ ok: true }));
+    const executeGuardedPublish = vi.fn();
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings,
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: async () => asset
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({ publishContent })
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => ({
+        copyDraft: {
+          id: "draft-current",
+          draft: {
+            title: "当前标题",
+            content: "当前正文足够长，描述真实场景和适合人群，避免夸张承诺，给出明确使用建议。",
+            tags: ["当前标签"],
+            basedOnEvidenceIds: ["insight-1"],
+            evidenceReferences: {
+              title: ["insight-1"],
+              content: ["insight-1"],
+              tags: ["insight-1"],
+              imagePrompt: ["insight-1"]
+            }
+          }
+        },
+        creativeBrief: {
+          basedOnEvidenceIds: ["insight-1"]
+        },
+        selectedImages: ["asset-1"],
+        evidencePack: {
+          insights: [{
+            id: "insight-1",
+            type: "copy",
+            insight: "用真实场景和适用人群增强可信度",
+            sourceSampleIds: ["sample-1"],
+            confidence: 0.9,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }]
+        },
+        imagePrompts: []
+      }),
+      updatePostProject: vi.fn(async () => ({}))
+    }));
+    vi.doMock("@/lib/agent/publishing", () => ({
+      getPublishIntent: vi.fn(),
+      publishIntentMatchesArgs: vi.fn(() => false),
+      executeGuardedPublish
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(),
+      writeCurrentDraft: vi.fn()
+    }));
+
+    const { POST } = await import("@/app/api/publish/route");
+    const response = await POST(
+      jsonRequest({
+        title: "当前标题",
+        content: "当前正文足够长，描述真实场景和适合人群，避免夸张承诺，给出明确使用建议。",
+        tags: ["当前标签"],
+        assetIds: ["asset-1"],
+        confirmed: true
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload.error).toContain("图片方向 / Prompt");
     expect(executeGuardedPublish).not.toHaveBeenCalled();
     expect(publishContent).not.toHaveBeenCalled();
   });
