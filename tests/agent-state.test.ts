@@ -181,4 +181,28 @@ describe("workspace state", () => {
     expect(next.productImageIds).toEqual(["asset-2"]);
     expect(next.publishPlan?.id).toBe("publish-1");
   });
+
+  it("clears currentDraftId when the active draft is explicitly cleared", async () => {
+    await updateWorkspaceState({
+      currentDraftId: "draft-old",
+      currentDraft: {
+        id: "draft-old",
+        updatedAt: "2026-05-21T00:00:00.000Z",
+        draft: {
+          title: "Old draft",
+          content: "Old content",
+          tags: ["old"],
+          structure: [],
+          imagePrompt: "old prompt"
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      }
+    });
+
+    const next = await updateWorkspaceState({ currentDraft: null });
+
+    expect(next.currentDraft).toBeNull();
+    expect(next.currentDraftId).toBeUndefined();
+  });
 });

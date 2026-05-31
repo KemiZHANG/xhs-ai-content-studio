@@ -85,7 +85,7 @@ export async function updateWorkspaceState(
   const current = await readWorkspaceState();
   return writeWorkspaceState({
     ...current,
-    ...stripUndefined(patch)
+    ...normalizeWorkspacePatch(patch)
   });
 }
 
@@ -167,4 +167,15 @@ function normalizeWorkspaceState(state: WorkspaceState): WorkspaceState {
 
 function stripUndefined<T extends Record<string, unknown>>(value: T): Partial<T> {
   return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as Partial<T>;
+}
+
+function normalizeWorkspacePatch(
+  patch: Partial<Omit<WorkspaceState, "schemaVersion" | "workspaceId" | "updatedAt">>
+): Partial<WorkspaceState> {
+  const normalized = stripUndefined(patch);
+  if (Object.prototype.hasOwnProperty.call(patch, "currentDraft") && patch.currentDraft === null) {
+    normalized.currentDraft = null;
+    normalized.currentDraftId = undefined;
+  }
+  return normalized as Partial<WorkspaceState>;
 }
