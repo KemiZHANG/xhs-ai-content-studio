@@ -58,6 +58,7 @@ import { buildViralApplicationModel } from "@/app/components/viral-application";
 import { buildViralEvidenceSummary } from "@/app/components/viral-evidence-summary";
 import { buildViralLibraryHealth } from "@/app/components/viral-library-health";
 import { buildPublishConfirmationSummary } from "@/app/components/publish-confirmation-summary";
+import { buildPublishAccountSafety } from "@/app/components/publish-account-safety";
 import { buildPublishAuditSafetySummary } from "@/app/components/publish-audit-summary";
 import { buildPostProjectContextSummary } from "@/app/components/post-project-context";
 import { buildGeneratedAssetSummary, buildReferenceAssetSummary } from "@/app/components/asset-panel-summary";
@@ -370,6 +371,13 @@ export function PostStudioPanel({
     accountReady,
     hasVisualDirection,
     qualityGateFresh: versionStatus?.qualityGateFresh === true
+  });
+  const publishAccountSafety = buildPublishAccountSafety({
+    settings,
+    health,
+    publishPlan: project?.publishPlan,
+    pendingPublish,
+    canvasDirty
   });
   const publishTabSummary = buildPublishTabSummary({
     publishReady,
@@ -1611,6 +1619,26 @@ export function PostStudioPanel({
                   </ul>
                 ) : null}
               </div>
+              <div className={`publishAccountSafety ${publishAccountSafety.status}`}>
+                <div>
+                  <span>账号安全锁</span>
+                  <strong>{publishAccountSafety.headline}</strong>
+                  <p>{publishAccountSafety.detail}</p>
+                </div>
+                <div className="publishAccountSafetyLines">
+                  <span>当前账号 <b>{publishAccountSafety.activeAccountLine}</b></span>
+                  <span>确认单绑定 <b>{publishAccountSafety.lockedAccountLine}</b></span>
+                </div>
+                <div className="publishAccountSafetyChecks">
+                  {publishAccountSafety.checks.map((check) => (
+                    <em className={check.severity} key={check.label}>
+                      <small>{check.ok ? "通过" : check.severity === "blocked" ? "阻塞" : "提醒"}</small>
+                      <b>{check.label}</b>
+                      <span>{check.detail}</span>
+                    </em>
+                  ))}
+                </div>
+              </div>
               <div className="publishInlineControls">
                 <label>
                   <span>可见范围</span>
@@ -1705,7 +1733,7 @@ export function PostStudioPanel({
                       <button className="secondaryButton" disabled={busy} onClick={onCancelPublish} type="button">
                         取消确认单
                       </button>
-                      <button className="primaryButton dangerAction" disabled={busy || !accountReady} onClick={onConfirmPublish} type="button">
+                      <button className="primaryButton dangerAction" disabled={busy || !publishAccountSafety.canConfirmExisting} onClick={onConfirmPublish} type="button">
                         {pendingPublish.mode === "schedule" ? "确认定时发布" : "确认立即发布"}
                       </button>
                     </div>

@@ -5592,6 +5592,119 @@ textarea {
   line-height: 1.45;
 }
 
+.publishAccountSafety {
+  border: 1px solid rgba(30, 27, 23, 0.08);
+  border-radius: 14px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.publishAccountSafety.ready {
+  background: linear-gradient(135deg, rgba(18, 118, 97, 0.1), rgba(255, 255, 255, 0.86));
+  border-color: rgba(18, 118, 97, 0.24);
+}
+
+.publishAccountSafety.warn {
+  background: linear-gradient(135deg, rgba(190, 122, 20, 0.1), rgba(255, 255, 255, 0.86));
+  border-color: rgba(190, 122, 20, 0.26);
+}
+
+.publishAccountSafety.blocked {
+  background: linear-gradient(135deg, rgba(185, 65, 55, 0.1), rgba(255, 255, 255, 0.86));
+  border-color: rgba(185, 65, 55, 0.28);
+}
+
+.publishAccountSafety > div:first-child span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.publishAccountSafety > div:first-child strong {
+  color: var(--ink);
+  display: block;
+  font-size: 14px;
+  margin-top: 3px;
+}
+
+.publishAccountSafety > div:first-child p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 4px 0 0;
+}
+
+.publishAccountSafetyLines {
+  display: grid;
+  gap: 7px;
+}
+
+.publishAccountSafetyLines span {
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(30, 27, 23, 0.08);
+  border-radius: 10px;
+  color: var(--muted);
+  display: grid;
+  font-size: 11px;
+  gap: 3px;
+  padding: 7px 8px;
+}
+
+.publishAccountSafetyLines b {
+  color: var(--ink);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.publishAccountSafetyChecks {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.publishAccountSafetyChecks em {
+  background: rgba(255, 255, 255, 0.56);
+  border: 1px solid rgba(30, 27, 23, 0.08);
+  border-radius: 10px;
+  display: grid;
+  font-style: normal;
+  gap: 3px;
+  min-width: 0;
+  padding: 8px;
+}
+
+.publishAccountSafetyChecks em.ok {
+  border-color: rgba(18, 118, 97, 0.2);
+}
+
+.publishAccountSafetyChecks em.warn {
+  border-color: rgba(190, 122, 20, 0.24);
+}
+
+.publishAccountSafetyChecks em.blocked {
+  border-color: rgba(185, 65, 55, 0.24);
+}
+
+.publishAccountSafetyChecks small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.publishAccountSafetyChecks b {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.publishAccountSafetyChecks span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .publishInlineControls {
   display: grid;
   gap: 8px;
