@@ -71,6 +71,9 @@ export function ChatPanel({
   const showCurrentDraftStrip = Boolean(currentDraft && (activeConversationId || messages.length));
   const [showComposerContext, setShowComposerContext] = useState(false);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const latestConversationId = conversations[0]?.id ?? activeConversationId;
+  const isLatestConversation = !activeConversationId || activeConversationId === latestConversationId;
+  const latestWorkflowResultIndex = messages.reduce((latest, message, index) => (message.workflowResult ? index : latest), -1);
 
   useEffect(() => {
     const transcript = transcriptRef.current;
@@ -156,6 +159,7 @@ export function ChatPanel({
                 {message.workflowResult ? (
                   <ChatWorkflowResultSummary
                     result={message.workflowResult}
+                    requiresConfirmation={!isLatestConversation || index !== latestWorkflowResultIndex}
                     onDraftCommand={onDraftCommand}
                     onCopyStudio={onOpenCopyWorkspace}
                     onImageStudio={() => onOpenImageStudio()}
@@ -296,18 +300,21 @@ export function ChatPanel({
 
 export function ChatWorkflowResultSummary({
   result,
+  requiresConfirmation,
   onDraftCommand,
   onCopyStudio,
   onImageStudio,
   onOpenPublish
 }: {
   result: WorkflowResult;
+  requiresConfirmation?: boolean;
   onDraftCommand: (message: string) => void;
   onCopyStudio: (brief?: string) => void;
   onImageStudio: () => void;
   onOpenPublish: (draft?: NonNullable<WorkflowResult["draft"]>) => void;
 }) {
   const [armed, setArmed] = useState(false);
+  const canUseResult = !requiresConfirmation || armed;
   const evidenceCount = result.evidence?.length ?? result.samples.length;
   const imageCount = result.images.length;
   const title = result.draft?.title || (result.status === "research_ready" ? "证据研究已完成" : "工作流结果");
@@ -322,16 +329,18 @@ export function ChatWorkflowResultSummary({
           {evidenceCount} 条证据 · {imageCount} 张图片 · {result.draft ? "已生成草稿" : hasResearch ? "可继续创作" : "等待下一步"}
         </p>
       </div>
-      <div className={armed ? "chatResultGuard ready" : "chatResultGuard"}>
-        <strong>{armed ? "已确认使用这条结果" : "历史结果需确认"}</strong>
-        <p>继续操作会把这条研究或草稿带入当前 PostProject。若要从零开始，请先新建项目。</p>
-        {!armed ? (
-          <button className="secondaryButton" onClick={() => setArmed(true)} type="button">
-            使用这条结果
-          </button>
-        ) : null}
-      </div>
-      {armed ? (
+      {requiresConfirmation ? (
+        <div className={armed ? "chatResultGuard ready" : "chatResultGuard"}>
+          <strong>{armed ? "已确认使用这条结果" : "历史结果需确认"}</strong>
+          <p>继续操作会把这条研究或草稿带入当前 PostProject。若要从零开始，请先新建项目。</p>
+          {!armed ? (
+            <button className="secondaryButton" onClick={() => setArmed(true)} type="button">
+              使用这条结果
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      {canUseResult ? (
         <div className="chatResultActions">
           {hasResearch ? (
             <button className="secondaryButton" onClick={() => onCopyStudio(buildCopyCreativeBrief(result))} type="button">
