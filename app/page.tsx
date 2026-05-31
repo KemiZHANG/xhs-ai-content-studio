@@ -30,6 +30,12 @@ import { clientApi, clientFormDataApi } from "@/app/client/api";
 import { useJobStream } from "@/app/hooks/use-job-stream";
 import { useSettingsHealth } from "@/app/hooks/use-settings-health";
 import { defaultSettings } from "@/app/config/default-settings";
+import {
+  buildWorkflowRibbonState,
+  hasRunningJobs as hasRunningJobsInList,
+  selectActiveJob,
+  selectWorkflowResultForDisplay
+} from "@/app/state/page-derived";
 import { noticeForProjectReset, resetWorkflowFormForNewProject } from "@/app/state/project-reset";
 import { canApplyWorkspaceSnapshot, isJobForWorkspace } from "@/lib/jobs/context";
 
@@ -195,13 +201,18 @@ export default function Home() {
   ]);
 
   const latestRun = useMemo(() => runs[0], [runs]);
-  const activeJob = useMemo(
-    () => jobs.find((job) => job.id === activeJobId) ?? jobs[0],
-    [activeJobId, jobs]
-  );
-  const hasRunningJobs = jobs.some((job) => job.status === "queued" || job.status === "running");
-  const workflowResultForDisplay =
-    workflowResult?.status === "research_ready" ? workflowResult : researchResult ?? workflowResult;
+  const activeJob = useMemo(() => selectActiveJob(jobs, activeJobId), [activeJobId, jobs]);
+  const hasRunningJobs = hasRunningJobsInList(jobs);
+  const workflowResultForDisplay = selectWorkflowResultForDisplay({ workflowResult, researchResult });
+  const workflowRibbonState = buildWorkflowRibbonState({
+    researchResult,
+    workflowResult,
+    workspace,
+    currentDraft,
+    publishAssetIds,
+    workflowAssetIds: workflowForm.assetIds,
+    jobs
+  });
 
   async function loadInitial() {
     await Promise.all([
@@ -1281,22 +1292,11 @@ export default function Home() {
       ribbon={
           <WorkflowRibbon
             activeSection={section}
-            researchReady={Boolean(
-              researchResult?.evidence?.length ||
-                workflowResult?.evidence?.length ||
-                (Array.isArray(workspace?.selectedSamples) && workspace.selectedSamples.length)
-            )}
-            draftReady={Boolean(currentDraft || workflowResult?.draft)}
-            imageReady={Boolean(
-              publishAssetIds.length ||
-                workflowForm.assetIds.length ||
-                workspace?.selectedImageIds.length ||
-                currentDraft?.images?.length
-            )}
-            publishReady={Boolean(
-              workspace?.publishPlan && !["blocked", "failed"].includes(workspace.publishPlan.status ?? "")
-            )}
-            runningCount={jobs.filter((job) => job.status === "queued" || job.status === "running").length}
+            researchReady={workflowRibbonState.researchReady}
+            draftReady={workflowRibbonState.draftReady}
+            imageReady={workflowRibbonState.imageReady}
+            publishReady={workflowRibbonState.publishReady}
+            runningCount={workflowRibbonState.runningCount}
             onNavigate={setSection}
           />
       }
