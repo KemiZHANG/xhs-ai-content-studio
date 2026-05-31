@@ -62,6 +62,7 @@ import { buildGeneratedAssetSummary, buildReferenceAssetSummary } from "@/app/co
 import { buildPostNextStepCoach } from "@/app/components/post-next-step-coach";
 import { buildPostFlowSummary, type PostFlowPhase } from "@/app/components/post-flow-summary";
 import { buildPostSideDigest } from "@/app/components/post-side-digest";
+import { selectRunningJobForWorkspace } from "@/app/components/job-display";
 import { buildCreationProvenance, type CreationProvenanceCard } from "@/app/components/creation-provenance";
 import { buildBriefTabSummary, buildImageTabSummary, buildPublishTabSummary, type StudioTabSummary } from "@/app/components/studio-tab-summary";
 import { buildCreatorMemoryDigest } from "@/lib/agent/memory-digest";
@@ -225,7 +226,7 @@ export function PostStudioPanel({
     totalGeneratedCount: generatedAssets.length,
     limit: 4
   });
-  const runningJob = jobs.find((job) => job.status === "queued" || job.status === "running") ?? null;
+  const runningJob = selectRunningJobForWorkspace(jobs, workspace);
   const insights = project?.evidencePack.insights ?? [];
   const viralInsights = insights.filter((insight) => insight.sourceType === "viral_library");
   const focusedEvidenceIds = project?.focusedEvidenceIds ?? [];

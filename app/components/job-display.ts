@@ -11,6 +11,15 @@ export type JobDisplayMeta = {
   resultHint: string;
 };
 
+export function selectRunningJobForWorkspace(
+  jobs: readonly JobRecord[],
+  workspace?: WorkspaceState | null
+): JobRecord | null {
+  return jobs.find((job) =>
+    (job.status === "queued" || job.status === "running") && isJobForWorkspace(job, workspace)
+  ) ?? null;
+}
+
 export function getJobDisplayMeta(job: JobRecord, workspace?: WorkspaceState | null): JobDisplayMeta {
   const hasResult = job.status === "completed" && Boolean(job.result);
   const isCurrent = isJobForWorkspace(job, workspace);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getJobDisplayMeta } from "@/app/components/job-display";
+import { getJobDisplayMeta, selectRunningJobForWorkspace } from "@/app/components/job-display";
 import type { JobRecord, WorkspaceState } from "@/app/types";
 
 const workspace: WorkspaceState = {
@@ -54,5 +54,27 @@ describe("job display meta", () => {
     expect(meta.primaryActionLabel).toBe("查看进度");
     expect(meta.canViewResult).toBe(false);
     expect(meta.canRestoreResult).toBe(false);
+  });
+
+  it("shows only running jobs that belong to the current Post Studio workspace", () => {
+    const current = job({
+      id: "job-current",
+      status: "running",
+      progress: 30,
+      workspaceId: "workspace-current",
+      postProjectId: "post-current",
+      result: undefined
+    });
+    const old = job({
+      id: "job-old",
+      status: "running",
+      progress: 70,
+      workspaceId: "workspace-old",
+      postProjectId: "post-old",
+      result: undefined
+    });
+
+    expect(selectRunningJobForWorkspace([old, current], workspace)?.id).toBe("job-current");
+    expect(selectRunningJobForWorkspace([old], workspace)).toBeNull();
   });
 });
