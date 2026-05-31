@@ -1861,6 +1861,38 @@ textarea {
   margin: 0;
 }
 
+.chatResultGuard {
+  background: rgba(188, 116, 45, 0.08);
+  border: 1px solid rgba(188, 116, 45, 0.22);
+  border-radius: 10px;
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+}
+
+.chatResultGuard.ready {
+  background: rgba(18, 118, 97, 0.08);
+  border-color: rgba(18, 118, 97, 0.22);
+}
+
+.chatResultGuard strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.chatResultGuard p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.chatResultGuard button {
+  justify-self: start;
+  min-height: 34px;
+  padding: 0 12px;
+}
+
 .chatResultActions {
   display: flex;
   flex-wrap: wrap;

@@ -307,6 +307,7 @@ export function ChatWorkflowResultSummary({
   onImageStudio: () => void;
   onOpenPublish: (draft?: NonNullable<WorkflowResult["draft"]>) => void;
 }) {
+  const [armed, setArmed] = useState(false);
   const evidenceCount = result.evidence?.length ?? result.samples.length;
   const imageCount = result.images.length;
   const title = result.draft?.title || (result.status === "research_ready" ? "证据研究已完成" : "工作流结果");
@@ -321,30 +322,41 @@ export function ChatWorkflowResultSummary({
           {evidenceCount} 条证据 · {imageCount} 张图片 · {result.draft ? "已生成草稿" : hasResearch ? "可继续创作" : "等待下一步"}
         </p>
       </div>
-      <div className="chatResultActions">
-        {hasResearch ? (
-          <button className="secondaryButton" onClick={() => onCopyStudio(buildCopyCreativeBrief(result))} type="button">
-            带证据写文案
+      <div className={armed ? "chatResultGuard ready" : "chatResultGuard"}>
+        <strong>{armed ? "已确认使用这条结果" : "历史结果需确认"}</strong>
+        <p>继续操作会把这条研究或草稿带入当前 PostProject。若要从零开始，请先新建项目。</p>
+        {!armed ? (
+          <button className="secondaryButton" onClick={() => setArmed(true)} type="button">
+            使用这条结果
           </button>
         ) : null}
-        <button className="secondaryButton" onClick={onImageStudio} type="button">
-          去生成图片
-        </button>
-        {result.draft ? (
-          <>
-            <button
-              className="secondaryButton"
-              onClick={() => onDraftCommand("请基于当前草稿继续优化标题、正文、标签，让它更像真实小红书分享。")}
-              type="button"
-            >
-              继续改稿
-            </button>
-            <button className="primaryButton" onClick={() => onOpenPublish(result.draft ?? undefined)} type="button">
-              装配发布
-            </button>
-          </>
-        ) : null}
       </div>
+      {armed ? (
+        <div className="chatResultActions">
+          {hasResearch ? (
+            <button className="secondaryButton" onClick={() => onCopyStudio(buildCopyCreativeBrief(result))} type="button">
+              带证据写文案
+            </button>
+          ) : null}
+          <button className="secondaryButton" onClick={onImageStudio} type="button">
+            去生成图片
+          </button>
+          {result.draft ? (
+            <>
+              <button
+                className="secondaryButton"
+                onClick={() => onDraftCommand("请基于当前草稿继续优化标题、正文、标签，让它更像真实小红书分享。")}
+                type="button"
+              >
+                继续改稿
+              </button>
+              <button className="primaryButton" onClick={() => onOpenPublish(result.draft ?? undefined)} type="button">
+                装配发布
+              </button>
+            </>
+          ) : null}
+        </div>
+      ) : null}
     </section>
   );
 }
