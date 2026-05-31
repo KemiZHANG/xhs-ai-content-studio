@@ -3586,6 +3586,65 @@ textarea {
   flex: 0 0 auto;
 }
 
+.studioAccountControl {
+  align-items: stretch;
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(39, 37, 31, 0.08);
+  border-radius: 14px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(180px, 1fr) minmax(120px, auto) auto;
+  padding: 10px;
+}
+
+.studioAccountControl > div:first-child,
+.studioAccountControl label {
+  display: grid;
+  gap: 3px;
+}
+
+.studioAccountControl small,
+.studioAccountControl label span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.studioAccountControl strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.studioAccountControl span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.studioAccountControl select {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink);
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.studioAccountButtons {
+  align-content: center;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, auto));
+}
+
+@media (max-width: 980px) {
+  .studioAccountControl {
+    grid-template-columns: 1fr;
+  }
+
+  .studioAccountButtons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .studioStatusBlockers {
   color: var(--muted);
   display: grid;

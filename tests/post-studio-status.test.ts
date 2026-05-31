@@ -20,6 +20,10 @@ describe("post studio status summary", () => {
     expect(summary.headline).toContain("新建");
     expect(summary.primaryAction).toBe("search_research");
     expect(summary.riskLevel).toBe("warn");
+    expect(summary.accountReady).toBe(false);
+    expect(summary.accountName).toBe(defaultSettings.accounts[0].displayName);
+    expect(summary.accountMcpEndpoint).toBe("localhost:18060");
+    expect(summary.accountCount).toBe(1);
     expect(summary.blockers).toEqual(expect.arrayContaining(["缺少项目主题"]));
     expect(summary.chips.map((item) => item.label)).toEqual(["项目", "账号"]);
   });
@@ -60,6 +64,8 @@ describe("post studio status summary", () => {
 
     expect(summary.headline).toBe("下一步已经明确");
     expect(summary.riskLevel).toBe("warn");
+    expect(summary.accountReady).toBe(false);
+    expect(summary.accountLoginName).toBeUndefined();
     expect(summary.blockers.length).toBeLessThanOrEqual(3);
     expect(summary.blockers.join(" ")).toContain("账号");
     expect(summary.chips.find((item) => item.label === "研究")).toMatchObject({ value: "1 条证据", state: "ok" });
@@ -103,6 +109,60 @@ describe("post studio status summary", () => {
     });
 
     expect(summary.chips.find((item) => item.label === "RAG")).toMatchObject({ value: "1 条爆款库", state: "ok" });
+  });
+
+  it("exposes active account metadata for the Post Studio header controls", () => {
+    const settings = {
+      ...defaultSettings,
+      activeAccountId: "account-b",
+      mcpUrl: "http://localhost:18061/mcp",
+      accounts: [
+        {
+          id: "account-a",
+          displayName: "主账号",
+          mcpUrl: "http://localhost:18060/mcp",
+          status: "unknown" as const,
+          createdAt: "2026-05-31T00:00:00.000Z",
+          updatedAt: "2026-05-31T00:00:00.000Z"
+        },
+        {
+          id: "account-b",
+          displayName: "探店账号",
+          mcpUrl: "http://localhost:18061/mcp",
+          status: "unknown" as const,
+          createdAt: "2026-05-31T00:00:00.000Z",
+          updatedAt: "2026-05-31T00:00:00.000Z"
+        }
+      ]
+    };
+    const summary = buildPostStudioStatusSummary({
+      project: createBlankPostProject({ topic: "广州咖啡馆" }),
+      workspace: null,
+      settings,
+      health: {
+        ok: true,
+        reachable: true,
+        loggedIn: true,
+        message: "已登录",
+        mcpUrl: "http://localhost:18061/mcp",
+        activeAccount: {
+          ...settings.accounts[1],
+          loginName: "xhs-cafe"
+        }
+      },
+      evidenceCount: 0,
+      hasDraft: false,
+      selectedImageCount: 0,
+      canvasDirty: false
+    });
+
+    expect(summary.accountReady).toBe(true);
+    expect(summary.accountName).toBe("探店账号");
+    expect(summary.accountLoginName).toBe("xhs-cafe");
+    expect(summary.accountMcpEndpoint).toBe("localhost:18061");
+    expect(summary.accountCount).toBe(2);
+    expect(summary.accountLine).toContain("探店账号");
+    expect(summary.accountLine).toContain("xhs-cafe");
   });
 });
 

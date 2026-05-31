@@ -115,6 +115,8 @@ export function PostStudioPanel({
   onPreparePublish,
   onVisibilityChange,
   onScheduleAtChange,
+  onRefreshHealth,
+  onSwitchAccount,
   onConfirmPublish,
   onCancelPublish
 }: {
@@ -163,6 +165,8 @@ export function PostStudioPanel({
   onPreparePublish: () => void;
   onVisibilityChange: (value: RedactedSettings["defaultVisibility"]) => void;
   onScheduleAtChange: (value: string) => void;
+  onRefreshHealth: () => void;
+  onSwitchAccount: (accountId: string) => void;
   onConfirmPublish: () => void;
   onCancelPublish: () => void;
 }) {
@@ -411,6 +415,34 @@ export function PostStudioPanel({
             <div className="studioAccountLine">
               <ShieldCheck size={15} />
               <span>{statusSummary.accountLine}</span>
+            </div>
+            <div className="studioAccountControl">
+              <div>
+                <small>发布账号</small>
+                <strong>{statusSummary.accountName}</strong>
+                <span>{statusSummary.accountLoginName ? `登录名：${statusSummary.accountLoginName}` : "登录名待检测"}</span>
+                <span>MCP：{statusSummary.accountMcpEndpoint}</span>
+              </div>
+              {settings.accounts.length > 1 ? (
+                <label>
+                  <span>切换</span>
+                  <select value={settings.activeAccountId} onChange={(event) => onSwitchAccount(event.target.value)}>
+                    {settings.accounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.displayName}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              <div className="studioAccountButtons">
+                <button className="secondaryButton" type="button" onClick={onRefreshHealth}>
+                  检测当前账号
+                </button>
+                <button className="secondaryButton" type="button" onClick={() => onNavigate("settings")}>
+                  账号设置
+                </button>
+              </div>
             </div>
             {statusSummary.blockers.length ? (
               <ul className="studioStatusBlockers">

@@ -1382,6 +1382,8 @@ export default function Home() {
               setPendingPublish(null);
               setPublishScheduleAt(value);
             }}
+            onRefreshHealth={() => void checkHealth()}
+            onSwitchAccount={(accountId) => void switchActiveAccount(accountId)}
             onConfirmPublish={() => void confirmPendingPublish()}
             onCancelPublish={() => cancelPendingPublish()}
             onNavigate={setSection}

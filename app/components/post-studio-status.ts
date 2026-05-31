@@ -14,6 +14,11 @@ export type PostStudioStatusSummary = {
   headline: string;
   detail: string;
   accountLine: string;
+  accountReady: boolean;
+  accountName: string;
+  accountLoginName?: string;
+  accountMcpEndpoint: string;
+  accountCount: number;
   riskLevel: "ok" | "warn" | "neutral";
   primaryAction?: PostAction;
   blockers: string[];
@@ -41,10 +46,14 @@ export function buildPostStudioStatusSummary({
 }): PostStudioStatusSummary {
   const activeAccount = settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
   const accountReady = isHealthForActiveAccount(health, settings);
+  const accountName = activeAccount?.displayName ?? settings.activeAccountId;
+  const accountLoginName = accountReady ? health?.activeAccount?.loginName : undefined;
+  const accountMcpEndpoint = formatMcpEndpoint(activeAccount?.mcpUrl ?? settings.mcpUrl);
+  const accountCount = settings.accounts.length || 1;
   const accountLine = [
     accountReady ? "账号可用" : "账号需确认",
-    activeAccount?.displayName ?? settings.activeAccountId,
-    health?.activeAccount?.loginName ? `登录名 ${health.activeAccount.loginName}` : activeAccountReadinessHint(health, settings)
+    accountName,
+    accountLoginName ? `登录名 ${accountLoginName}` : activeAccountReadinessHint(health, settings)
   ].filter(Boolean).join(" · ");
 
   if (!project) {
@@ -52,6 +61,11 @@ export function buildPostStudioStatusSummary({
       headline: "先新建一个帖子项目",
       detail: "当前还没有 PostProject。先输入主题做研究，后续文案、图片、发布都会绑定到同一个项目。",
       accountLine,
+      accountReady,
+      accountName,
+      accountLoginName,
+      accountMcpEndpoint,
+      accountCount,
       riskLevel: accountReady ? "neutral" : "warn",
       primaryAction: "search_research",
       blockers: ["缺少项目主题", accountReady ? "" : "小红书账号登录状态未确认"].filter(Boolean),
@@ -84,6 +98,11 @@ export function buildPostStudioStatusSummary({
       ? "文案、图片、证据和 Quality Gate 已对齐。最后仍需要人工确认账号、可见范围和发布时间。"
       : blockers[0] ?? readiness.summary,
     accountLine,
+    accountReady,
+    accountName,
+    accountLoginName,
+    accountMcpEndpoint,
+    accountCount,
     riskLevel,
     primaryAction: readiness.nextAction,
     blockers,
@@ -99,4 +118,13 @@ export function buildPostStudioStatusSummary({
 
 function chip(label: string, value: string, state: PostStudioStatusChip["state"]): PostStudioStatusChip {
   return { label, value, state };
+}
+
+function formatMcpEndpoint(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.hostname}:${parsed.port || (parsed.protocol === "https:" ? "443" : "80")}`;
+  } catch {
+    return url || "未配置 MCP";
+  }
 }
