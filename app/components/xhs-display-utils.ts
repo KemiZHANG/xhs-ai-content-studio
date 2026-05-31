@@ -67,7 +67,7 @@ export function sampleToEvidence(sample: WorkflowSample): SampleEvidence {
     cachedImageUrls: [],
     detailText: "",
     commentSnippets: [],
-    reasonHighlights: ["这是旧记录中的样本卡片；后续新运行会保存更完整的正文、评论和图片证据。"]
+    reasonHighlights: ["这是历史记录中的样本卡片；新的研究运行会保存更完整的正文、评论和图片证据。"]
   };
 }
 

@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import {
-  ClipboardList,
   Layers3,
   RefreshCw,
   Settings,
@@ -139,4 +138,3 @@ export function AppShell({
     </main>
   );
 }
-
