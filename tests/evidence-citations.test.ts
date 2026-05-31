@@ -114,6 +114,15 @@ describe("evidence citation report", () => {
     expect(formatted).toContain("viral-insight-visual");
   });
 
+  it("falls back to CreativeBrief evidence when a legacy draft has no citation ids", () => {
+    const report = buildEvidenceCitationReport(project(), []);
+
+    expect(report.allEvidenceIds).toEqual(["insight-live", "insight-user", "viral-insight-visual"]);
+    expect(report.missingEvidenceIds).toEqual([]);
+    expect(report.sections.every((section) => section.insights.length > 0)).toBe(true);
+    expect(report.sections.find((section) => section.field === "imagePrompt")?.evidenceIds).toContain("viral-insight-visual");
+  });
+
   it("builds compact reference summaries for CreativeBrief and visual direction cards", () => {
     const summary = buildEvidenceReferenceSummary(project(), [
       "insight-user",

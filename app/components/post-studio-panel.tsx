@@ -242,10 +242,14 @@ export function PostStudioPanel({
   const copyVersions = project?.copyVersions ?? [];
   const imagePromptVersions = project?.imagePrompts ?? [];
   const draftEvidenceIds = project?.copyDraft?.draft.basedOnEvidenceIds ?? copyVersions.at(-1)?.basedOnEvidenceIds ?? [];
+  const citationEvidenceIds = uniqueStringList([
+    ...draftEvidenceIds,
+    ...(project?.creativeBrief?.basedOnEvidenceIds ?? [])
+  ]);
   const versionStatus = project ? getPostVersionStatus(project) : null;
   const versionDiff = project ? getPostVersionDiffReport(project) : null;
-  const citationReport = project && draftEvidenceIds.length
-    ? buildEvidenceCitationReport(project, draftEvidenceIds, project.copyDraft?.draft.evidenceReferences)
+  const citationReport = project && citationEvidenceIds.length
+    ? buildEvidenceCitationReport(project, citationEvidenceIds, project.copyDraft?.draft.evidenceReferences)
     : null;
   const briefEvidenceSummary = project?.creativeBrief
     ? buildEvidenceReferenceSummary(project, project.creativeBrief.basedOnEvidenceIds)
@@ -599,10 +603,10 @@ export function PostStudioPanel({
                   ))}
                 </section>
               ) : null}
-              {draftEvidenceIds.length ? (
+              {citationEvidenceIds.length ? (
                 <section className="evidenceReferenceStrip" aria-label="文案证据引用">
                   <strong>证据引用</strong>
-                  <span>{draftEvidenceIds.slice(0, 5).join(" / ")}</span>
+                  <span>{citationEvidenceIds.slice(0, 5).join(" / ")}</span>
                 </section>
               ) : null}
             </div>
@@ -1329,6 +1333,10 @@ export function PostStudioPanel({
 
 function hasImageFiles(files: FileList | File[]): boolean {
   return Array.from(files).some((file) => file.type.startsWith("image/"));
+}
+
+function uniqueStringList(values: string[]): string[] {
+  return Array.from(new Set(values.filter(Boolean)));
 }
 
 function AgentStructuredMessage({
