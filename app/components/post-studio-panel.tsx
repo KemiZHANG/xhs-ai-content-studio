@@ -1462,6 +1462,7 @@ export function PostStudioPanel({
             <SideSection icon={ImagePlus} title="图片参考">
               <StudioTaskSummary summary={referenceTabSummary} onQuickAction={onQuickAction} />
               <p className="muted">这里主要放产品原图、参考图和当前选中图。默认不铺开全部素材，更多管理在 Assets。</p>
+              <p className="assetCompressionLine">{referenceAssetSummary.compressionLine}</p>
               <div
                 className="studioReferenceDropzone"
                 onDragOver={(event) => {
@@ -1540,6 +1541,7 @@ export function PostStudioPanel({
               <div className={`assetPanelSummary ${generatedAssetSummary.state}`}>
                 <strong>{generatedAssetSummary.headline}</strong>
                 <p>{generatedAssetSummary.detail}</p>
+                <small>{generatedAssetSummary.compressionLine}</small>
                 <span>{generatedAssetSummary.actionHint}</span>
               </div>
               {generatedAssetSummary.previewAssets.length ? (

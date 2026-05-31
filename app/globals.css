@@ -4828,6 +4828,18 @@ textarea {
   font-weight: 900;
 }
 
+.assetCompressionLine {
+  background: rgba(18, 118, 97, 0.06);
+  border: 1px solid rgba(18, 118, 97, 0.12);
+  border-radius: 10px;
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.45;
+  margin: 0;
+  padding: 8px 10px;
+}
+
 .studioEmpty {
   align-items: center;
   background: var(--surface-subtle);
@@ -6799,6 +6811,13 @@ textarea {
   font-size: 12px;
   line-height: 1.45;
   margin: 0;
+}
+
+.assetPanelSummary small {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.45;
 }
 
 .studioAssetGrid img {

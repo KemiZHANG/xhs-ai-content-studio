@@ -28,6 +28,8 @@ describe("asset panel summary", () => {
     expect(summary.hiddenCount).toBe(3);
     expect(summary.state).toBe("ready");
     expect(summary.actionHint).toContain("Assets");
+    expect(summary.compressionLine).toContain("最多显示 3 张参考/发布候选图");
+    expect(summary.compressionLine).toContain("Assets");
   });
 
   it("summarizes generated assets without filling the panel with history", () => {
@@ -38,9 +40,23 @@ describe("asset panel summary", () => {
       limit: 4
     });
 
-    expect(summary.previewAssets).toHaveLength(4);
-    expect(summary.hiddenCount).toBe(1);
+    expect(summary.previewAssets).toHaveLength(3);
+    expect(summary.hiddenCount).toBe(2);
     expect(summary.state).toBe("needs_selection");
+    expect(summary.compressionLine).toContain("最多显示 3 张生成结果");
+  });
+
+  it("caps image previews at three even when callers request a larger limit", () => {
+    const summary = buildReferenceAssetSummary({
+      selectedAssets: [],
+      referenceAssets: [asset("a", "upload"), asset("b", "upload"), asset("c", "upload"), asset("d", "upload")],
+      totalUploadCount: 4,
+      limit: 10
+    });
+
+    expect(summary.previewAssets.map((item) => item.id)).toEqual(["a", "b", "c"]);
+    expect(summary.hiddenCount).toBe(1);
+    expect(summary.compressionLine).toContain("最多显示 3 张");
   });
 
   it("marks an empty generated panel as empty with a creation hint", () => {
@@ -52,6 +68,7 @@ describe("asset panel summary", () => {
 
     expect(summary.state).toBe("empty");
     expect(summary.headline).toBe("还没有生成图");
+    expect(summary.compressionLine).toContain("最多显示 3 张生成结果");
     expect(summary.actionHint).toContain("Agent");
   });
 });
