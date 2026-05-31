@@ -50,6 +50,7 @@ import { selectStudioChatWindow } from "@/app/components/studio-chat-window";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 import { buildEvidencePanelModel, scoreEvidence, summarizeEvidenceSample } from "@/app/components/evidence-display";
+import { buildViralSaveCandidateModel } from "@/app/components/viral-save-candidates";
 import { buildCanvasVersionDisplay } from "@/app/components/post-version-display";
 import { labelForPostAction } from "@/app/components/post-action-labels";
 import { buildPostStudioStatusSummary } from "@/app/components/post-studio-status";
@@ -248,7 +249,8 @@ export function PostStudioPanel({
   const samples = project?.selectedSamples ?? workflowResult?.evidence ?? workspace?.selectedSamples ?? [];
   const evidenceSamples = samples.filter(isSampleEvidence);
   const evidencePanel = buildEvidencePanelModel(evidenceSamples, 3);
-  const saveableSamples = evidencePanel.visibleSamples;
+  const viralSaveCandidates = buildViralSaveCandidateModel(evidenceSamples, 3);
+  const saveableSamples = viralSaveCandidates.candidates.map((item) => item.sample);
   const allowedPostActions = (project?.allowedActions ?? []) as PostAction[];
   const stageGuidance = getPostStageGuidance(project?.currentStage ?? "empty", allowedPostActions);
   const nextActions = getOrderedPostNextActions(project?.currentStage ?? "empty", allowedPostActions.length ? allowedPostActions : ["search_research"]);
@@ -1013,29 +1015,40 @@ export function PostStudioPanel({
             <SideSection icon={Library} title="研究证据">
               <strong>{evidencePanel.inlineTitle}</strong>
               <p className="muted">这里不会铺开原文、评论和图片；默认只保留可判断价值的摘要，完整内容进抽屉。</p>
+              <div className="viralCandidateIntro">
+                <strong>{viralSaveCandidates.headline}</strong>
+                <p>{viralSaveCandidates.detail}</p>
+                {viralSaveCandidates.rejectedCount ? <small>已过滤 {viralSaveCandidates.rejectedCount} 条证据较薄的样本。</small> : null}
+              </div>
               {saveableSamples.length ? (
                 <>
                   <div className="sideActionStack compact">
                     <button className="secondaryButton fullWidth" type="button" onClick={() => onSaveManyToViralLibrary(saveableSamples)}>
-                      一键沉淀这 {saveableSamples.length} 条高价值样本
+                      {viralSaveCandidates.actionLabel}
                     </button>
                   </div>
                   <div className="miniEvidenceList">
-                    {saveableSamples.map((sample) => (
-                      <article key={sample.id}>
-                        <strong>{sample.title}</strong>
-                        <span>赞 {sample.likes} · 藏 {sample.collects} · 评 {sample.comments}</span>
-                        <p>{summarizeEvidenceSample(sample)}</p>
-                        <div className="evidenceActions">
-                          <button className="textButton" type="button" onClick={() => setSelectedEvidence(sample)}>
-                            查看详情
-                          </button>
-                          <button className="textButton" type="button" onClick={() => onSaveToViralLibrary(sample)}>
-                            保存到爆款库
-                          </button>
-                        </div>
-                      </article>
-                    ))}
+                    {viralSaveCandidates.candidates.map((candidate) => {
+                      const sample = candidate.sample;
+
+                      return (
+                        <article key={sample.id}>
+                          <strong>{sample.title}</strong>
+                          <span>赞 {sample.likes} · 藏 {sample.collects} · 评 {sample.comments}</span>
+                          <p>{summarizeEvidenceSample(sample)}</p>
+                          <small>候选分 {candidate.score} · {candidate.reasons.slice(0, 2).join(" / ")}</small>
+                          {candidate.warnings.length ? <em>{candidate.warnings.slice(0, 2).join(" / ")}</em> : null}
+                          <div className="evidenceActions">
+                            <button className="textButton" type="button" onClick={() => setSelectedEvidence(sample)}>
+                              查看详情
+                            </button>
+                            <button className="textButton" type="button" onClick={() => onSaveToViralLibrary(sample)}>
+                              保存到爆款库
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
                   </div>
                 </>
               ) : null}

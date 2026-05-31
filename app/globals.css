@@ -5082,6 +5082,40 @@ textarea {
   margin: 0;
 }
 
+.miniEvidenceList small,
+.miniEvidenceList em {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.miniEvidenceList em {
+  color: var(--warn);
+}
+
+.viralCandidateIntro {
+  background: rgba(18, 118, 97, 0.06);
+  border: 1px solid rgba(18, 118, 97, 0.16);
+  border-radius: 12px;
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+}
+
+.viralCandidateIntro strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.viralCandidateIntro p,
+.viralCandidateIntro small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
 .miniEvidenceList .keyViralInsight {
   border-color: rgba(18, 118, 97, 0.2);
   background: rgba(18, 118, 97, 0.055);
