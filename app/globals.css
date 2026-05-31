@@ -5823,6 +5823,81 @@ textarea {
   padding: 5px 8px;
 }
 
+.canvasVersionSummary {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.canvasVersionSummary.ok {
+  background: linear-gradient(135deg, rgba(18, 118, 97, 0.1), rgba(255, 255, 255, 0.86));
+  border-color: rgba(18, 118, 97, 0.22);
+}
+
+.canvasVersionSummary.warn {
+  background: linear-gradient(135deg, rgba(190, 122, 20, 0.1), rgba(255, 255, 255, 0.86));
+  border-color: rgba(190, 122, 20, 0.24);
+}
+
+.canvasVersionSummary > div:first-child span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.canvasVersionSummary strong {
+  color: var(--ink);
+  display: block;
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+.canvasVersionSummary p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 4px 0 0;
+}
+
+.canvasVersionLanes {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.canvasVersionLanes span {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--ink);
+  display: grid;
+  font-size: 12px;
+  font-weight: 900;
+  gap: 2px;
+  padding: 8px;
+}
+
+.canvasVersionLanes span.ok {
+  border-color: rgba(18, 118, 97, 0.2);
+}
+
+.canvasVersionLanes span.warn {
+  border-color: rgba(190, 122, 20, 0.28);
+}
+
+.canvasVersionLanes span.empty {
+  color: var(--muted);
+}
+
+.canvasVersionLanes small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
 .versionIntegrity {
   border: 1px solid var(--line);
   border-radius: 12px;

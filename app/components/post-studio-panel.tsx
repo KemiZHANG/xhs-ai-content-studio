@@ -50,6 +50,7 @@ import { selectStudioChatWindow } from "@/app/components/studio-chat-window";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 import { buildEvidencePanelModel, scoreEvidence, summarizeEvidenceSample } from "@/app/components/evidence-display";
+import { buildCanvasVersionDisplay } from "@/app/components/post-version-display";
 import { labelForPostAction } from "@/app/components/post-action-labels";
 import { buildPostStudioStatusSummary } from "@/app/components/post-studio-status";
 import { buildViralApplicationModel } from "@/app/components/viral-application";
@@ -316,6 +317,7 @@ export function PostStudioPanel({
   ]);
   const versionStatus = project ? getPostVersionStatus(project) : null;
   const versionDiff = project ? getPostVersionDiffReport(project) : null;
+  const canvasVersionDisplay = buildCanvasVersionDisplay(versionStatus, versionDiff);
   const citationReport = project && citationEvidenceIds.length
     ? buildEvidenceCitationReport(project, citationEvidenceIds, project.copyDraft?.draft.evidenceReferences)
     : null;
@@ -685,6 +687,21 @@ export function PostStudioPanel({
             </button>
           </div>
           <CreationProvenanceStrip cards={creationProvenance} onOpenEvidence={() => setTab("insights")} />
+          <section className={`canvasVersionSummary ${canvasVersionDisplay.tone}`} aria-label="画布版本同步摘要">
+            <div>
+              <span>版本同步</span>
+              <strong>{canvasDirty ? "画布有未保存修改" : canvasVersionDisplay.label}</strong>
+              <p>{canvasDirty ? "请先保存画布，再组装最终稿或运行发布检查。" : canvasVersionDisplay.detail}</p>
+            </div>
+            <div className="canvasVersionLanes">
+              {canvasVersionDisplay.lanes.map((lane) => (
+                <span className={lane.state} key={lane.id}>
+                  <small>{lane.label}</small>
+                  {lane.value}
+                </span>
+              ))}
+            </div>
+          </section>
 
           <div className="postPreviewShell">
             <div className="postCoverPreview">

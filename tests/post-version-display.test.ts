@@ -31,6 +31,11 @@ describe("post version display", () => {
     expect(display.tone).toBe("ok");
     expect(display.label).toContain("已锁定");
     expect(display.actionLabel).toBeUndefined();
+    expect(display.lanes).toEqual([
+      { id: "copy", label: "文案版本", value: "copy-1", state: "ok" },
+      { id: "images", label: "图片版本", value: "Prompt 1 个", state: "ok" },
+      { id: "final", label: "最终稿", value: "已锁定", state: "ok" }
+    ]);
   });
 
   it("asks the user to reassemble stale final post snapshots", () => {
@@ -47,6 +52,9 @@ describe("post version display", () => {
     expect(display.label).toContain("新版本");
     expect(display.actionLabel).toBe("重新组装帖子");
     expect(display.changedLabels).toEqual(["标题", "图片"]);
+    expect(display.lanes.find((lane) => lane.id === "copy")?.state).toBe("warn");
+    expect(display.lanes.find((lane) => lane.id === "images")?.state).toBe("warn");
+    expect(display.lanes.find((lane) => lane.id === "final")?.value).toBe("需重新组装");
   });
 
   it("distinguishes assembled posts that only need quality gate refresh", () => {
@@ -60,5 +68,9 @@ describe("post version display", () => {
     expect(display.tone).toBe("warn");
     expect(display.label).toContain("发布检查");
     expect(display.actionLabel).toBe("进入发布检查");
+    expect(display.lanes.find((lane) => lane.id === "final")).toMatchObject({
+      value: "待检查",
+      state: "warn"
+    });
   });
 });
