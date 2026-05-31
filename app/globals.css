@@ -3883,8 +3883,8 @@ textarea {
 .studioAgentPane {
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 130px);
-  min-height: min(760px, calc(100vh - 150px));
+  height: calc(100vh - 130px);
+  min-height: 620px;
   overflow: hidden;
   position: sticky;
   top: 20px;
@@ -4027,7 +4027,7 @@ textarea {
   flex: 1;
   gap: 10px;
   margin-top: 12px;
-  min-height: 180px;
+  min-height: 0;
   overscroll-behavior: contain;
   overflow: auto;
   padding: 0 4px 8px 0;
@@ -4482,8 +4482,8 @@ textarea {
 }
 
 .studioComposer textarea {
-  max-height: 132px;
-  min-height: 86px;
+  max-height: 104px;
+  min-height: 58px;
   resize: vertical;
 }
 
