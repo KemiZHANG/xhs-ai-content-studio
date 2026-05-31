@@ -247,7 +247,7 @@ export function PostStudioPanel({
       !citationReport.missingEvidenceIds.length &&
       citationReport.sections.every((section) => section.insights.length)
   );
-  const hasVisualDirection = Boolean(latestImagePrompt || project?.visualDirection);
+  const hasVisualDirection = hasTraceableVisualDirection(project);
   const accountReady = isHealthForActiveAccount(health, settings);
   const accountReadyHint = activeAccountReadinessHint(health, settings);
   const publishReady = Boolean(
@@ -1968,6 +1968,13 @@ function buildPublishReadinessHint({
     missing.push("版本状态：画布改动后需要重新运行 Quality Gate");
   }
   return missing.length ? `还缺：${missing.join("、")}。` : "请先刷新质量检查，再进入人工发布确认。";
+}
+
+function hasTraceableVisualDirection(project: PostProject | null): boolean {
+  if (!project) return false;
+  const visualEvidenceIds = project.visualDirection?.basedOnEvidenceIds ?? [];
+  const promptEvidenceIds = project.imagePrompts.flatMap((prompt) => prompt.basedOnEvidenceIds ?? []);
+  return [...visualEvidenceIds, ...promptEvidenceIds].some((id) => id.trim());
 }
 
 function isSampleEvidence(value: unknown): value is SampleEvidence {

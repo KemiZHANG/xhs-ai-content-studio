@@ -67,7 +67,7 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
   const hasBrief = Boolean(project.creativeBrief);
   const draft = project.copyDraft?.draft;
   const hasCopy = Boolean(draft?.title?.trim() && draft?.content?.trim());
-  const hasVisualPlan = Boolean(project.visualDirection || imagePrompts.length);
+  const hasVisualPlan = hasTraceableVisualPlan(project.visualDirection, imagePrompts);
   const hasImages = selectedImages.length > 0;
   const hasFinalPost = Boolean(project.finalPost);
   const qualityFreshEnough = Boolean(project.qualityCheck?.canPublish);
@@ -106,7 +106,7 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
       id: "visual",
       label: "图片方向",
       ready: hasVisualPlan,
-      detail: hasVisualPlan ? "图片方向或 Prompt 已就绪" : "规划封面、场景、构图和禁用项",
+      detail: hasVisualPlan ? "图片方向或 Prompt 已引用 CreativeBrief / evidencePack 证据" : "规划封面、场景、构图和禁用项，并绑定证据",
       action: actionSet.has("plan_visuals")
         ? "plan_visuals"
         : actionSet.has("generate_image_prompts")
@@ -167,4 +167,14 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
     summary,
     canRequestPublish
   };
+}
+
+function hasTraceableVisualPlan(visualDirection: unknown, imagePrompts: readonly unknown[]): boolean {
+  return Boolean(hasEvidenceIds(visualDirection) || imagePrompts.some(hasEvidenceIds));
+}
+
+function hasEvidenceIds(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const evidenceIds = (value as { basedOnEvidenceIds?: unknown }).basedOnEvidenceIds;
+  return Array.isArray(evidenceIds) && evidenceIds.some((item) => typeof item === "string" && item.trim());
 }

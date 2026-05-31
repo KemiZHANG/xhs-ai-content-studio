@@ -193,6 +193,62 @@ describe("post readiness report", () => {
     expect(report.blockers.map((item) => item.id)).toContain("quality");
     expect(report.items.find((item) => item.id === "quality")?.detail).toContain("图片方向");
   });
+
+  it("does not treat an untraced prompt as confirmed visual direction", () => {
+    const report = buildPostReadinessReport(project({
+      evidencePack: {
+        sampleIds: ["sample-1"],
+        insights: [{
+          id: "insight-1",
+          type: "visual",
+          insight: "图片要有真实自然光",
+          sourceSampleIds: ["sample-1"],
+          confidence: 0.8,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }]
+      },
+      creativeBrief: {
+        audience: "探店人群",
+        painPoint: "选择困难",
+        contentAngle: "咖啡馆清单",
+        emotionalHook: "放松",
+        proofPoints: ["体验"],
+        tone: "真实",
+        visualMood: "自然光",
+        imageMustHave: [],
+        imageMustAvoid: [],
+        platformStyle: "小红书",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      copyDraft: {
+        id: "draft-1",
+        updatedAt: "2026-05-31T00:00:00.000Z",
+        draft: { title: "标题", content: "正文", tags: ["tag"], structure: [], imagePrompt: "手写图片方向", basedOnEvidenceIds: ["insight-1"] },
+        images: [],
+        visibility: "仅自己可见"
+      },
+      imagePrompts: [{
+        id: "prompt-untraced",
+        label: "手写 Prompt",
+        createdAt: "2026-05-31T00:00:00.000Z",
+        basedOnEvidenceIds: [],
+        value: { prompt: "手写图片方向" }
+      }],
+      selectedImages: ["asset-1"],
+      currentStage: "image_ready",
+      allowedActions: ["plan_visuals"]
+    }));
+
+    expect(report.items.find((item) => item.id === "visual")).toMatchObject({
+      ready: false,
+      detail: expect.stringContaining("绑定证据")
+    });
+    expect(report.nextAction).toBe("plan_visuals");
+    expect(report.canRequestPublish).toBe(false);
+  });
+
   it("does not suggest quality gate before the final post is assembled", () => {
     const report = buildPostReadinessReport(project({
       evidencePack: {
