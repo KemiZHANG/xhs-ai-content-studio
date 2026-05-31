@@ -105,6 +105,13 @@ describe("agent publish guardrails", () => {
         finalPostEvidenceIds: []
       }
     });
+    const noImagePromptIntent = createPublishIntent({
+      ...baseIntent(),
+      versionSnapshot: {
+        ...freshVersionSnapshot(),
+        imagePromptVersionIds: []
+      }
+    });
 
     expect(validatePublishIntent(staleIntent)).toEqual(
       expect.arrayContaining([
@@ -118,6 +125,9 @@ describe("agent publish guardrails", () => {
     });
     expect(validatePublishIntent(noEvidenceIntent)).toEqual(
       expect.arrayContaining([expect.stringContaining("final post evidence ids")])
+    );
+    expect(validatePublishIntent(noImagePromptIntent)).toEqual(
+      expect.arrayContaining([expect.stringContaining("image prompt version ids")])
     );
   });
 

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { authorizePublishIntent, buildPublishConfirmationChecklist, createPublishIntent } from "@/lib/agent/guardrails";
 import { updateWorkspaceState } from "@/lib/agent/state";
@@ -296,7 +296,25 @@ async function savePublishIntentNow(intent: PublishIntent): Promise<void> {
   await mkdir(path.dirname(filePath), { recursive: true });
   const tempPath = `${filePath}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`;
   await writeFile(tempPath, `${JSON.stringify(next, null, 2)}\n`, "utf8");
-  await rename(tempPath, filePath);
+  await replaceFileWithRetry(tempPath, filePath);
+}
+
+async function replaceFileWithRetry(tempPath: string, filePath: string): Promise<void> {
+  const maxAttempts = process.platform === "win32" ? 5 : 2;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await rename(tempPath, filePath);
+      return;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      const canRetry = code === "EPERM" || code === "EACCES" || code === "EEXIST";
+      if (!canRetry || attempt === maxAttempts) {
+        throw error;
+      }
+      await rm(filePath, { force: true });
+      await new Promise((resolve) => setTimeout(resolve, attempt * 25));
+    }
+  }
 }
 
 async function queuePublishIntentWrite<T>(operation: () => Promise<T>): Promise<T> {

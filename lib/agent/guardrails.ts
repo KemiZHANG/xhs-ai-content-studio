@@ -219,6 +219,9 @@ function validatePublishVersionSnapshot(snapshot: PublishVersionSnapshot | undef
   if (!snapshot.selectedImageIds.length) {
     errors.push("publish version snapshot must include selected image ids");
   }
+  if (!snapshot.imagePromptVersionIds.length) {
+    errors.push("publish version snapshot must include image prompt version ids");
+  }
   if (!snapshot.finalPostEvidenceIds.length) {
     errors.push("publish version snapshot must include final post evidence ids");
   }
