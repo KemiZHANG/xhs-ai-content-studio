@@ -847,7 +847,7 @@ export function PostStudioPanel({
           ) : null}
 
           {tab === "evidence" ? (
-            <EvidencePanelSummary summary={evidencePanel.summary} detailHint={evidencePanel.detailHint} />
+            <EvidencePanelSummary summary={evidencePanel.summary} detailHint={evidencePanel.detailHint} stats={evidencePanel.stats} />
           ) : null}
 
           {tab === "evidence" ? (
@@ -1935,11 +1935,27 @@ function EvidenceReferenceBox({
   );
 }
 
-function EvidencePanelSummary({ summary, detailHint }: { summary: string; detailHint: string }) {
+function EvidencePanelSummary({
+  summary,
+  detailHint,
+  stats
+}: {
+  summary: string;
+  detailHint: string;
+  stats: Array<{ label: string; value: string }>;
+}) {
   return (
     <article className="evidencePanelSummary">
       <strong>{summary}</strong>
       <p>{detailHint}</p>
+      <div className="evidencePanelStats" aria-label="证据摘要统计">
+        {stats.map((item) => (
+          <span key={item.label}>
+            <small>{item.label}</small>
+            {item.value}
+          </span>
+        ))}
+      </div>
     </article>
   );
 }

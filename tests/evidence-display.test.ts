@@ -48,6 +48,13 @@ describe("evidence display helpers", () => {
 
     expect(panel.visibleSamples).toHaveLength(3);
     expect(panel.hiddenCount).toBe(1);
+    expect(panel.totalCount).toBe(4);
+    expect(panel.visibleCount).toBe(3);
+    expect(panel.stats).toEqual([
+      { label: "摘要", value: "3" },
+      { label: "全部", value: "4" },
+      { label: "折叠", value: "1" }
+    ]);
     expect(panel.summary).toContain("已压缩展示 3 条");
     expect(panel.detailHint).toContain("还有 1 条");
   });
