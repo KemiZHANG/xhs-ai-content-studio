@@ -1234,15 +1234,62 @@ function buildCardsFromTurn(
     });
   }
   if (workspace.publishPlan) {
+    const publishCard = buildPublishCheckCard(workspace.publishPlan, postProject);
     cards.push({
       id: "card-publish-check",
       type: "publish_check",
-      title: "发布确认",
-      summary: `发布状态：${workspace.publishPlan.status}`,
-      data: workspace.publishPlan
+      title: publishCard.title,
+      summary: publishCard.summary,
+      data: publishCard.data
     });
   }
   return cards;
+}
+
+function buildPublishCheckCard(
+  publishPlan: NonNullable<WorkspaceState["publishPlan"]>,
+  postProject?: PostProject | null
+): { title: string; summary: string; data: Record<string, unknown> } {
+  const checklist = publishPlan.confirmationChecklist ?? [];
+  const required = checklist.filter((item) => item.required);
+  const confirmed = required.filter((item) => item.confirmed);
+  const versionSnapshot = publishPlan.versionSnapshot ?? (postProject ? buildPublishVersionSnapshot(postProject) : undefined);
+  const evidenceSummary = publishPlan.evidenceCitationSummary?.summary;
+  const blockers = [
+    ...checklist.filter((item) => item.required && !item.confirmed).map((item) => item.label),
+    ...(versionSnapshot?.warnings ?? [])
+  ].slice(0, 6);
+  const summary = [
+    `状态：${publishPlan.status}`,
+    `人工确认：${confirmed.length}/${required.length}`,
+    versionSnapshot?.qualityGateFresh ? "版本已锁定" : "版本需复核",
+    evidenceSummary ? `证据：${evidenceSummary}` : "",
+    blockers.length ? `待处理：${blockers.slice(0, 3).join("、")}` : ""
+  ].filter(Boolean).join("；");
+  return {
+    title: publishPlan.status === "awaiting_approval" ? "发布确认待人工核对" : "发布确认",
+    summary,
+    data: {
+      publishPlan,
+      confirmation: {
+        requiredCount: required.length,
+        confirmedCount: confirmed.length,
+        pending: checklist.filter((item) => item.required && !item.confirmed)
+      },
+      versionSnapshot,
+      evidenceCitationSummary: publishPlan.evidenceCitationSummary,
+      finalPost: postProject?.finalPost ?? null,
+      selectedImages: postProject?.selectedImages.length
+        ? postProject.selectedImages
+        : versionSnapshot?.selectedImageIds.length
+          ? versionSnapshot.selectedImageIds
+          : publishPlan.images,
+      blockers,
+      nextActions: publishPlan.status === "awaiting_approval"
+        ? ["review_publish_confirmation", "confirm_publish", "cancel_publish"]
+        : ["review_publish_status"]
+    }
+  };
 }
 
 function countEvidenceSources(insights: PostProject["evidencePack"]["insights"]): Record<"realtime" | "viral_library" | "user_input", number> {

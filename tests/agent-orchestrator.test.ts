@@ -1534,6 +1534,25 @@ describe("agent orchestrator", () => {
     expect(result.workspace.publishPlan?.scheduleAt).toMatch(/T20:00:00\+08:00$/);
     expect(result.postProject?.publishPlan?.status).toBe("awaiting_approval");
     expect(result.postProject?.currentStage).toBe("reviewing");
+    const publishCard = result.cards.find((card) => card.id === "card-publish-check");
+    expect(publishCard?.title).toBe("发布确认待人工核对");
+    expect(publishCard?.summary).toContain("人工确认：0/");
+    expect(publishCard?.summary).toContain("待处理");
+    expect(publishCard?.data).toMatchObject({
+      publishPlan: expect.objectContaining({
+        title: "广州周末安静咖啡馆",
+        images: [selectedImagePath]
+      }),
+      confirmation: expect.objectContaining({
+        confirmedCount: 0,
+        pending: expect.arrayContaining([
+          expect.objectContaining({ label: "最终文案版本" }),
+          expect.objectContaining({ label: "最终图片版本" })
+        ])
+      }),
+      selectedImages: ["asset-project-selected"],
+      nextActions: ["review_publish_confirmation", "confirm_publish", "cancel_publish"]
+    });
   });
 
   it("stores standalone image selection on workspace and PostProject", async () => {
