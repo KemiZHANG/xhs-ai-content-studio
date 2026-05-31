@@ -179,6 +179,14 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
     });
   }
 
+  if (isAmbiguousLowSignalRequest(message, lower)) {
+    return buildPlan({
+      intent: "ask",
+      topic: inferTopic(message),
+      steps: [step("askClarifyingQuestion", "The user command is too vague for a safe PostProject action, so clarify before calling tools.")]
+    });
+  }
+
   return buildPlan({
     intent: stage === "empty" && !inferTopic(message) ? "ask" : "answer",
     topic: inferTopic(message),
@@ -186,6 +194,13 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
       ? [step("askClarifyingQuestion", "The user intent is ambiguous and no active PostProject context exists.")]
       : [step("answer", "Answer directly or delegate to the legacy chat agent.")]
   });
+}
+
+function isAmbiguousLowSignalRequest(message: string, lower: string): boolean {
+  const compact = message.replace(/\s+/g, "");
+  if (compact.length > 16) return false;
+  if (lower === "ok" || lower === "thanks" || lower === "thank you") return false;
+  return /^(继续|下一步|帮我弄一下|帮我处理|处理一下|搞一下|优化一下|改一下|再来一下|你看着办|随便弄|安排一下|继续吧|继续做)$/.test(compact);
 }
 
 function buildPlan(input: Omit<AgentPlan, "id">): AgentPlan {

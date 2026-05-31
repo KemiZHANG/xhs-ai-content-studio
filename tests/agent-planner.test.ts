@@ -117,6 +117,22 @@ describe("agent planner", () => {
     expect(plan.steps[0].action).toBe("askClarifyingQuestion");
   });
 
+  it("asks before acting on vague active-project commands", () => {
+    const plan = createAgentPlan({
+      message: "帮我弄一下",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      postStage: "copy_ready",
+      hasEvidence: true,
+      hasCreativeBrief: true,
+      hasSelectedImages: true
+    });
+
+    expect(plan.intent).toBe("ask");
+    expect(plan.steps[0].action).toBe("askClarifyingQuestion");
+    expect(plan.steps[0].reason).toContain("too vague");
+  });
+
   it("asks for evidence or brief context before drafting from an under-specified project", () => {
     const plan = createAgentPlan({
       message: "帮我写一篇小红书笔记",
