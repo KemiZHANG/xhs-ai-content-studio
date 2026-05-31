@@ -7,6 +7,7 @@ import {
   addViralCasesToPostProject,
   addViralCasesToPostProjectWithSummary,
   appendPostProjectMemoryFromTurn,
+  getOrderedPostNextActions,
   getPostStageGuidance,
   getAllowedPostActions,
   postProjectFromWorkspace,
@@ -55,6 +56,20 @@ describe("post project", () => {
     expect(imageGuidance.primaryAction).toBe("assemble_post");
     expect(reviewGuidance.description).toContain("账号");
     expect(reviewGuidance.primaryAction).toBe("request_publish_confirmation");
+  });
+
+  it("orders the primary next action first in Post Studio", () => {
+    expect(getOrderedPostNextActions("copy_ready", getAllowedPostActions("copy_ready")).slice(0, 3)).toEqual([
+      "plan_visuals",
+      "revise_copy",
+      "generate_cards"
+    ]);
+    expect(getOrderedPostNextActions("image_ready", getAllowedPostActions("image_ready")).slice(0, 3)).toEqual([
+      "assemble_post",
+      "select_images",
+      "generate_images"
+    ]);
+    expect(getOrderedPostNextActions("reviewing", getAllowedPostActions("reviewing"))[0]).toBe("request_publish_confirmation");
   });
 
   it("allows card rendering directly from the main Post Studio flow", () => {

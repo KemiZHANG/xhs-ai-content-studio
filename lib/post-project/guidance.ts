@@ -100,3 +100,17 @@ export function getPostStageGuidance(stage: PostStage, allowedActions: PostActio
     primaryAction: fallback
   };
 }
+
+export function getOrderedPostNextActions(
+  stage: PostStage,
+  allowedActions: PostAction[] = [],
+  limit = 3
+): PostAction[] {
+  const guidance = getPostStageGuidance(stage, allowedActions);
+  const actions = allowedActions.length ? allowedActions : guidance.primaryAction ? [guidance.primaryAction] : [];
+  const ordered = [
+    guidance.primaryAction,
+    ...actions
+  ].filter((action): action is PostAction => Boolean(action));
+  return [...new Set(ordered)].slice(0, limit);
+}

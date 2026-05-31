@@ -34,7 +34,7 @@ import type {
   WorkflowResult,
   WorkspaceState
 } from "@/app/types";
-import { getPostStageGuidance } from "@/lib/post-project/guidance";
+import { getOrderedPostNextActions, getPostStageGuidance } from "@/lib/post-project/guidance";
 import { buildEvidenceCitationReport, buildEvidenceReferenceSummary } from "@/lib/post-project/citations";
 import { activeAccountReadinessHint, isHealthForActiveAccount } from "@/app/components/account-readiness";
 import { citationFieldBadges, formatCitationStripSummary } from "@/app/components/evidence-citation-display";
@@ -202,8 +202,8 @@ export function PostStudioPanel({
   const evidenceSamples = samples.filter(isSampleEvidence);
   const saveableSamples = pickEvidenceHighlights(evidenceSamples, 3);
   const allowedPostActions = (project?.allowedActions ?? []) as PostAction[];
-  const nextActions = allowedPostActions.length ? allowedPostActions.slice(0, 3) : (["search_research"] as PostAction[]);
   const stageGuidance = getPostStageGuidance(project?.currentStage ?? "empty", allowedPostActions);
+  const nextActions = getOrderedPostNextActions(project?.currentStage ?? "empty", allowedPostActions.length ? allowedPostActions : ["search_research"]);
   const projectTitle = project?.topic || workspace?.topic || researchForm.topic || "未命名帖子项目";
   const canGenerateCopy = Boolean(insights.length || workflowResult?.researchSummary || workspace?.evidenceSummary);
   const latestImagePrompt = publishDraft.imagePrompt || project?.imagePrompts.at(-1)?.value.prompt || "";
