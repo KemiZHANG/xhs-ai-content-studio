@@ -5170,6 +5170,39 @@ textarea {
   color: var(--warn);
 }
 
+.ragReadinessLine {
+  background: rgba(255, 255, 255, 0.54);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 8px;
+}
+
+.ragReadinessLine strong,
+.ragReadinessLine span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.ragReadinessLine.enough {
+  border-color: rgba(18, 118, 97, 0.22);
+}
+
+.ragReadinessLine.enough strong {
+  color: var(--ok);
+}
+
+.ragReadinessLine.insufficient {
+  border-color: rgba(181, 125, 47, 0.24);
+}
+
+.ragReadinessLine.insufficient strong {
+  color: var(--warn);
+}
+
 .miniEvidenceList .keyViralInsight {
   border-color: rgba(18, 118, 97, 0.2);
   background: rgba(18, 118, 97, 0.055);

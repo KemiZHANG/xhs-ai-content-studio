@@ -1301,6 +1301,11 @@ export function PostStudioPanel({
                   {viralApplication.citedEvidenceIds.length ? (
                     <small>已被当前创作引用：{viralApplication.citedEvidenceIds.slice(0, 4).join(" / ")}</small>
                   ) : null}
+                  <div className={`ragReadinessLine ${viralApplication.ragStatus}`}>
+                    <strong>{viralApplication.ragLine}</strong>
+                    {viralApplication.missingEvidence.length ? <span>缺口：{viralApplication.missingEvidence.slice(0, 3).join(" / ")}</span> : null}
+                    <span>{viralApplication.recommendation}</span>
+                  </div>
                 </div>
                 <div className="viralApplicationRoutes" aria-label="爆款库应用路径">
                   {viralApplication.routes.map((route) => (

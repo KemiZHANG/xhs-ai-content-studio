@@ -20,6 +20,10 @@ export type ViralApplicationRoute = {
 export type ViralApplicationModel = {
   headline: string;
   detail: string;
+  ragStatus: "none" | "insufficient" | "enough";
+  ragLine: string;
+  missingEvidence: string[];
+  recommendation: string;
   evidenceCount: number;
   focusedCount: number;
   citedEvidenceIds: string[];
@@ -32,11 +36,16 @@ export function buildViralApplicationModel(project: PostProject | null | undefin
   const viralInsightIds = new Set(viralInsights.map((insight) => insight.id));
   const focusedViralIds = (project?.focusedEvidenceIds ?? []).filter((id) => viralInsightIds.has(id));
   const fallbackEvidenceIds = (focusedViralIds.length ? focusedViralIds : viralInsights.map((insight) => insight.id)).slice(0, 3);
+  const ragReadiness = extractRagReadiness(project?.evidencePack.summary);
 
   if (!viralInsights.length) {
     return {
       headline: "先把爆款库规律合入当前项目",
       detail: "刷新 RAG 后，Agent 会把标题钩子、正文结构、标签组合和图片风格写入当前 PostProject 的 evidencePack。",
+      ragStatus: ragReadiness.ragStatus,
+      ragLine: ragReadiness.ragLine,
+      missingEvidence: ragReadiness.missingEvidence,
+      recommendation: ragReadiness.recommendation,
       evidenceCount: 0,
       focusedCount: 0,
       citedEvidenceIds: [],
@@ -125,12 +134,20 @@ export function buildViralApplicationModel(project: PostProject | null | undefin
   ];
 
   return {
-    headline: focusedViralIds.length
+    headline: ragReadiness.ragStatus === "insufficient"
+      ? "爆款库证据已接入，但还需要补强"
+      : focusedViralIds.length
       ? "已选择本次重点爆款规律"
       : briefUsesViral ? "爆款库规律已接入创作链路" : "爆款库规律已进入 evidencePack",
-    detail: briefUsesViral
+    detail: ragReadiness.ragStatus === "insufficient"
+      ? "当前可以参考已有规律，但 Agent 不应把不足的历史证据伪装成完整研究结论。建议先补实时样本或继续沉淀爆款库，再生成关键发布稿。"
+      : briefUsesViral
       ? "当前 Brief / 文案 / 图片方向会优先学习这些规律；如果已选重点规律，后续生成会更聚焦，但仍只复用结构、风格和决策逻辑，不复制原文原图。"
       : "下一步建议先选择 1-3 条重点规律并刷新 CreativeBrief，让文案和图片方向共享同一批爆款库证据。",
+    ragStatus: ragReadiness.ragStatus,
+    ragLine: ragReadiness.ragLine,
+    missingEvidence: ragReadiness.missingEvidence,
+    recommendation: ragReadiness.recommendation,
     evidenceCount: viralInsights.length,
     focusedCount: focusedViralIds.length,
     citedEvidenceIds: uniqueStrings([...briefEvidenceIds, ...draftEvidenceIds, ...visualEvidenceIds]),
@@ -145,4 +162,42 @@ function viralEvidenceIds(ids: readonly string[] | undefined, viralInsightIds: S
 
 function uniqueStrings(values: readonly string[]): string[] {
   return Array.from(new Set(values.filter(Boolean)));
+}
+
+function extractRagReadiness(summary: unknown): Pick<ViralApplicationModel, "ragStatus" | "ragLine" | "missingEvidence" | "recommendation"> {
+  const viralKnowledge = isRecord(summary) && isRecord(summary.viralKnowledge) ? summary.viralKnowledge : null;
+  const sufficiency = viralKnowledge && isRecord(viralKnowledge.sufficiency) ? viralKnowledge.sufficiency : null;
+  if (!sufficiency) {
+    return {
+      ragStatus: "none",
+      ragLine: "还没有本次 RAG 充分性评估。",
+      missingEvidence: [],
+      recommendation: "刷新爆款库 RAG 后，再决定是否进入 CreativeBrief、文案和图片方向生成。"
+    };
+  }
+
+  const missing = Array.isArray(sufficiency.missing)
+    ? sufficiency.missing.filter((item): item is string => typeof item === "string" && item.trim().length > 0).slice(0, 5)
+    : [];
+  const recommendation = typeof sufficiency.recommendation === "string" && sufficiency.recommendation.trim()
+    ? sufficiency.recommendation.trim()
+    : missing.length
+      ? "建议继续搜索或补充参考样本。"
+      : "证据足够进入 CreativeBrief、文案和图片方向生成。";
+  const realtimeCount = typeof sufficiency.realtimeCount === "number" ? sufficiency.realtimeCount : 0;
+  const viralCount = typeof sufficiency.viralCount === "number" ? sufficiency.viralCount : 0;
+  const isEnough = sufficiency.isEnough === true;
+
+  return {
+    ragStatus: isEnough ? "enough" : "insufficient",
+    ragLine: isEnough
+      ? `RAG 证据充足：实时 ${realtimeCount} 条，爆款库 ${viralCount} 条。`
+      : `RAG 证据还不够：实时 ${realtimeCount} 条，爆款库 ${viralCount} 条。`,
+    missingEvidence: missing,
+    recommendation
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object";
 }

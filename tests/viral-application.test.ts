@@ -38,8 +38,64 @@ describe("viral application model", () => {
       status: "pending",
       evidenceIds: ["viral-insight-hook"]
     });
+    expect(model.ragStatus).toBe("none");
+    expect(model.ragLine).toContain("还没有");
     expect(model.routes[1].status).toBe("empty");
     expect(model.actions[0]).toMatchObject({ action: "create_creative_brief", primary: true });
+  });
+
+  it("surfaces insufficient RAG evidence before users treat viral knowledge as complete", () => {
+    const project = createBlankPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: {
+        sampleIds: ["viral-case-1"],
+        insights: [viralInsight],
+        summary: {
+          viralKnowledge: {
+            sufficiency: {
+              isEnough: false,
+              realtimeCount: 1,
+              viralCount: 1,
+              missing: ["实时小红书样本不足 3 条", "缺少图片风格规律"],
+              recommendation: "建议继续搜索或补充参考样本。"
+            }
+          }
+        }
+      }
+    });
+    const model = buildViralApplicationModel(project);
+
+    expect(model.ragStatus).toBe("insufficient");
+    expect(model.headline).toContain("需要补强");
+    expect(model.ragLine).toContain("实时 1 条");
+    expect(model.missingEvidence).toEqual(["实时小红书样本不足 3 条", "缺少图片风格规律"]);
+    expect(model.recommendation).toBe("建议继续搜索或补充参考样本。");
+  });
+
+  it("marks RAG as enough when realtime and viral evidence pass sufficiency", () => {
+    const project = createBlankPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: {
+        sampleIds: ["viral-case-1"],
+        insights: [viralInsight],
+        summary: {
+          viralKnowledge: {
+            sufficiency: {
+              isEnough: true,
+              realtimeCount: 4,
+              viralCount: 3,
+              missing: [],
+              recommendation: "证据足够进入 CreativeBrief。"
+            }
+          }
+        }
+      }
+    });
+    const model = buildViralApplicationModel(project);
+
+    expect(model.ragStatus).toBe("enough");
+    expect(model.ragLine).toContain("实时 4 条");
+    expect(model.missingEvidence).toEqual([]);
   });
 
   it("shows when viral evidence has been selected as this post's focus", () => {
