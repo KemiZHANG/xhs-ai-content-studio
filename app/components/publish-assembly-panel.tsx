@@ -135,6 +135,10 @@ export function PublishAssemblyPanel({
                 <small>确认单</small>
                 <strong>{postPlan?.status ? labelForPublishStatus(postPlan.status) : "未生成"}</strong>
               </span>
+              <span>
+                <small>证据快照</small>
+                <strong>{postPlan?.versionSnapshot?.finalPostEvidenceIds.length ?? finalPost?.basedOnEvidenceIds?.length ?? 0} 条</strong>
+              </span>
             </div>
             <div className="publishSafetyGrid" aria-label="发布安全摘要">
               <span className={versionStatus?.qualityGateFresh ? "ok" : "warn"}>

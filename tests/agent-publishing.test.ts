@@ -23,6 +23,7 @@ const versionSnapshot = {
   copyVersionId: "copy-draft-1",
   imagePromptVersionIds: ["prompt-1"],
   selectedImageIds: ["asset-1"],
+  finalPostEvidenceIds: ["insight-1"],
   qualityGateFresh: true,
   qualityCanPublish: true,
   finalPostMatchesCanvas: true,
@@ -169,6 +170,12 @@ describe("agent guarded publishing", () => {
       versionSnapshot: {
         ...versionSnapshot,
         qualityGateFresh: false
+      }
+    })).toBe(false);
+    expect(isPublishIntentConfirmable(result.publishIntent, args, {
+      versionSnapshot: {
+        ...versionSnapshot,
+        finalPostEvidenceIds: ["insight-2"]
       }
     })).toBe(false);
   });

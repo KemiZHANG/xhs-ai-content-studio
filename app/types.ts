@@ -395,6 +395,7 @@ export type WorkspacePublishPlan = {
     copyVersionId?: string;
     imagePromptVersionIds: string[];
     selectedImageIds: string[];
+    finalPostEvidenceIds: string[];
     qualityGateFresh: boolean;
     qualityCanPublish?: boolean;
     finalPostMatchesCanvas: boolean;

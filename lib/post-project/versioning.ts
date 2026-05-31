@@ -104,6 +104,7 @@ export function buildPublishVersionSnapshot(project: Pick<
     copyVersionId: status.activeCopyVersionId,
     imagePromptVersionIds: status.activeImagePromptVersionIds,
     selectedImageIds: Array.isArray(project.selectedImages) ? project.selectedImages : [],
+    finalPostEvidenceIds: project.finalPost?.basedOnEvidenceIds ?? [],
     qualityGateFresh: status.qualityGateFresh,
     qualityCanPublish: project.qualityCheck?.canPublish,
     finalPostMatchesCanvas: status.finalPostMatchesCanvas,

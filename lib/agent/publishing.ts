@@ -234,6 +234,7 @@ function versionSnapshotSignature(snapshot: PublishVersionSnapshot): string {
     copyVersionId: snapshot.copyVersionId ?? "",
     imagePromptVersionIds: [...snapshot.imagePromptVersionIds].sort(),
     selectedImageIds: [...snapshot.selectedImageIds].sort(),
+    finalPostEvidenceIds: [...snapshot.finalPostEvidenceIds].sort(),
     qualityGateFresh: snapshot.qualityGateFresh === true,
     qualityCanPublish: snapshot.qualityCanPublish === true,
     finalPostMatchesCanvas: snapshot.finalPostMatchesCanvas === true,

@@ -33,7 +33,8 @@ const baseProject = {
     imageIds: ["asset-1"],
     coverImageId: "asset-1",
     copyVersionId: "copy-draft-1",
-    imagePromptVersionIds: ["prompt-1"]
+    imagePromptVersionIds: ["prompt-1"],
+    basedOnEvidenceIds: ["insight-1"]
   },
   qualityCheck: {
     titleScore: 100,
@@ -83,6 +84,7 @@ describe("post versioning status", () => {
     expect(snapshot.copyVersionId).toBe("copy-draft-1");
     expect(snapshot.imagePromptVersionIds).toEqual(["prompt-1"]);
     expect(snapshot.selectedImageIds).toEqual(["asset-1"]);
+    expect(snapshot.finalPostEvidenceIds).toEqual(["insight-1"]);
     expect(snapshot.qualityGateFresh).toBe(true);
     expect(snapshot.qualityCanPublish).toBe(true);
     expect(snapshot.finalPostMatchesCanvas).toBe(true);
