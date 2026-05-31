@@ -1342,17 +1342,23 @@ export function PostStudioPanel({
 
           {tab === "publish" ? (
             <SideSection icon={CheckCircle2} title="发布检查">
-              <CheckItem ok={Boolean(publishDraft.title)} label="标题已填写" />
-              <CheckItem ok={Boolean(publishDraft.content)} label="正文已填写" />
-              <CheckItem ok={Boolean(publishDraft.tagsText)} label="标签已填写" />
-              <CheckItem ok={Boolean(selectedAssets.length)} label="已选择图片" />
-              <CheckItem ok={hasVisualDirection} label="图片方向 / Prompt 已确认" />
-              <CheckItem ok={citationTraceReady} label="字段级证据引用可追溯" />
-              <CheckItem ok={versionStatus?.qualityGateFresh === true} label="最终版本与 Quality Gate 一致" />
-              <CheckItem ok={accountReady} label={`账号：${activeAccount?.displayName ?? "未配置"} · ${accountReadyHint}`} />
-              <CheckItem ok={publishVisibility === "仅自己可见"} label={`可见范围：${publishVisibility}`} />
-              <CheckItem ok={!publishScheduleAt || Date.parse(publishScheduleAt) > Date.now()} label={publishScheduleAt ? `定时：${publishScheduleAt}（本地时区）` : "发布时间：立即"} />
-              <CheckItem ok={settings.defaultAutoPublish === false} label="自动发布默认关闭" />
+              <details className="publishChecklistDetails">
+                <summary>
+                  <strong>详细发布检查</strong>
+                  <span>默认收起，关键阻塞项已汇总在确认摘要。</span>
+                </summary>
+                <CheckItem ok={Boolean(publishDraft.title)} label="标题已填写" />
+                <CheckItem ok={Boolean(publishDraft.content)} label="正文已填写" />
+                <CheckItem ok={Boolean(publishDraft.tagsText)} label="标签已填写" />
+                <CheckItem ok={Boolean(selectedAssets.length)} label="已选择图片" />
+                <CheckItem ok={hasVisualDirection} label="图片方向 / Prompt 已确认" />
+                <CheckItem ok={citationTraceReady} label="字段级证据引用可追溯" />
+                <CheckItem ok={versionStatus?.qualityGateFresh === true} label="最终版本与 Quality Gate 一致" />
+                <CheckItem ok={accountReady} label={`账号：${activeAccount?.displayName ?? "未配置"} · ${accountReadyHint}`} />
+                <CheckItem ok={publishVisibility === "仅自己可见"} label={`可见范围：${publishVisibility}`} />
+                <CheckItem ok={!publishScheduleAt || Date.parse(publishScheduleAt) > Date.now()} label={publishScheduleAt ? `定时：${publishScheduleAt}（本地时区）` : "发布时间：立即"} />
+                <CheckItem ok={settings.defaultAutoPublish === false} label="自动发布默认关闭" />
+              </details>
               <div className={`publishFinalSummary ${publishSummary.riskLevel}`}>
                 <div className="publishFinalSummaryHeader">
                   <div>

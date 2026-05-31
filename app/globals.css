@@ -5700,6 +5700,49 @@ textarea {
   padding: 8px 10px;
 }
 
+.publishChecklistDetails {
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+}
+
+.publishChecklistDetails > summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  list-style: none;
+  padding: 10px 12px;
+}
+
+.publishChecklistDetails > summary::-webkit-details-marker {
+  display: none;
+}
+
+.publishChecklistDetails > summary strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.publishChecklistDetails > summary span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.publishChecklistDetails[open] {
+  gap: 8px;
+  padding: 0 10px 10px;
+}
+
+.publishChecklistDetails[open] > summary {
+  border-bottom: 1px solid var(--line);
+  margin: 0 -10px 2px;
+}
+
 .checkItem.ok {
   background: rgba(23, 150, 112, 0.08);
   border-color: rgba(23, 150, 112, 0.22);
