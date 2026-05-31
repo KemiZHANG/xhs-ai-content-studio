@@ -1286,7 +1286,7 @@ export default function Home() {
       if (!isJobForWorkspace(job, workspace)) {
         setActiveJobId(job.id);
         setSection("jobs");
-        setNotice("这个任务属于其他 PostProject，已保留在任务历史中；为避免覆盖当前画布，请先新建/恢复对应项目后再导入结果。");
+        setNotice("这个任务属于其他 PostProject，已保留在任务历史中；点击“恢复为当前项目”后才会导入，避免覆盖当前画布。");
         return;
       }
       setWorkflowResult(job.result);
@@ -1298,6 +1298,43 @@ export default function Home() {
       await loadWorkspace();
       await loadPostProject();
       setNotice("已把任务结果带回 Post Studio，可以继续生成 CreativeBrief、文案或图片。");
+    }
+  }
+
+  async function restoreJobResult(job: JobRecord) {
+    if (!job.result) return;
+    setBusy("jobs");
+    try {
+      const data = (await clientApi(`/api/jobs/${job.id}`, {
+        method: "POST",
+        body: JSON.stringify({ action: "restore" })
+      })) as {
+        job: JobRecord;
+        workspace: WorkspaceState;
+        postProject: PostProject;
+        workflowResult: WorkflowResult;
+      };
+      setWorkspace(data.workspace);
+      setPostProject(data.postProject);
+      setWorkflowResult(data.workflowResult);
+      if (data.workflowResult.status === "research_ready" || data.workflowResult.researchSummary) {
+        setResearchResult(data.workflowResult);
+      }
+      setCurrentDraft(data.workspace.currentDraft ?? null);
+      if (data.workspace.currentDraft) {
+        applyCurrentDraft(data.workspace.currentDraft);
+      } else {
+        setPublishDraft({ title: "", content: "", tagsText: "", imagePrompt: "" });
+      }
+      setPublishAssetIds(data.workspace.selectedImageIds ?? []);
+      setActiveJobId(data.job.id);
+      setAutoReturnJobId(null);
+      setSection("flow");
+      focusPostStudioTab(data.workflowResult.draft ? "generated" : "evidence");
+      await loadJobs();
+      setNotice("已把历史任务恢复为当前 PostProject。现在可以在 Post Studio 继续生成 CreativeBrief、文案、图片或发布检查。");
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -1486,6 +1523,7 @@ export default function Home() {
             activeJob={activeJob}
             onReload={() => void loadJobs()}
             onViewResult={viewJobResult}
+            onRestoreResult={(job) => void restoreJobResult(job)}
             onOpenImageStudio={() => openImageStudioFromEvidence()}
           />
         ) : null}

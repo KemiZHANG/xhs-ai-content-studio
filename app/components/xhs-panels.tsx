@@ -326,12 +326,14 @@ export function JobsPanel({
   activeJob,
   onReload,
   onViewResult,
+  onRestoreResult,
   onOpenImageStudio
 }: {
   jobs: JobRecord[];
   activeJob?: JobRecord;
   onReload: () => void;
   onViewResult: (job: JobRecord) => void;
+  onRestoreResult: (job: JobRecord) => void;
   onOpenImageStudio: () => void;
 }) {
   return (
@@ -376,6 +378,9 @@ export function JobsPanel({
                 <div className="actionRow">
                   <button className="primaryButton" onClick={() => onViewResult(activeJob)} type="button">
                     查看研究结果
+                  </button>
+                  <button className="secondaryButton" onClick={() => onRestoreResult(activeJob)} type="button">
+                    恢复为当前项目
                   </button>
                   <button className="secondaryButton" onClick={onOpenImageStudio} type="button">
                     进入图片创作台

@@ -2360,4 +2360,64 @@ describe("API route contracts", () => {
     expect(response.status).toBe(400);
     expect(payload).toEqual({ error: expect.any(String) });
   });
+
+  it("restores a completed job result as the active PostProject only on explicit action", async () => {
+    const job = {
+      id: "job-old",
+      type: "workflow",
+      title: "research coffee",
+      status: "completed",
+      progress: 100,
+      createdAt: "",
+      updatedAt: "",
+      workspaceId: "workspace-old",
+      postProjectId: "post-old",
+      input: { topic: "coffee" },
+      steps: [],
+      result: { status: "research_ready", evidence: [], researchSummary: null, draft: null, images: [] }
+    };
+    const restored = {
+      workspace: {
+        schemaVersion: 1,
+        workspaceId: "workspace-restored",
+        updatedAt: "",
+        topic: "coffee",
+        selectedSamples: [],
+        selectedImageIds: [],
+        productImageIds: [],
+        recentJobIds: ["job-old"],
+        recentRunIds: [],
+        recentConversationIds: []
+      },
+      postProject: {
+        schemaVersion: 1,
+        id: "post-restored",
+        topic: "coffee",
+        currentStage: "evidence_ready",
+        allowedActions: ["create_creative_brief"]
+      },
+      workflowResult: job.result
+    };
+    const restoreJobResultAsWorkspace = vi.fn(async () => restored);
+
+    vi.doMock("@/lib/jobs/runner", () => ({
+      getJobRunner: () => ({
+        getJob: vi.fn(async () => job)
+      })
+    }));
+    vi.doMock("@/lib/jobs/restore", () => ({ restoreJobResultAsWorkspace }));
+
+    const { POST } = await import("@/app/api/jobs/[id]/route");
+    const response = await POST(jsonRequest({ action: "restore" }), { params: Promise.resolve({ id: "job-old" }) });
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(restoreJobResultAsWorkspace).toHaveBeenCalledWith(job);
+    expect(payload).toEqual(expect.objectContaining({
+      job: expect.objectContaining({ id: "job-old" }),
+      workspace: expect.objectContaining({ workspaceId: "workspace-restored", recentJobIds: ["job-old"] }),
+      postProject: expect.objectContaining({ id: "post-restored", currentStage: "evidence_ready" }),
+      workflowResult: expect.objectContaining({ status: "research_ready" })
+    }));
+  });
 });
