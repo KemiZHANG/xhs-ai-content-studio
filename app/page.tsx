@@ -3,7 +3,6 @@
 import { Database, FileCheck2, MessageSquareText, Rocket } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { buildCopyCreativeBrief, buildDraftPromptFromBrief, buildImageCreativeBrief } from "@/lib/workflows/creative-briefs";
-import { modelProviderPresets } from "@/lib/models/presets";
 import { parseTagsText } from "@/lib/publishing/assembly";
 import {
   AssetsPanel,
@@ -30,6 +29,7 @@ import { AppShell } from "@/app/components/app-shell";
 import { clientApi, clientFormDataApi } from "@/app/client/api";
 import { useJobStream } from "@/app/hooks/use-job-stream";
 import { useSettingsHealth } from "@/app/hooks/use-settings-health";
+import { defaultSettings } from "@/app/config/default-settings";
 import { canApplyWorkspaceSnapshot, isJobForWorkspace } from "@/lib/jobs/context";
 
 import type {
@@ -55,34 +55,6 @@ import type {
   WorkflowRun,
   WorkspaceState
 } from "@/app/types";
-
-const defaultSettings: RedactedSettings = {
-  mcpUrl: "http://localhost:18060/mcp",
-  textBaseUrl: modelProviderPresets.gemini.text.textBaseUrl,
-  textModel: modelProviderPresets.gemini.text.textModel,
-  textApiKey: "missing",
-  imageBaseUrl: modelProviderPresets.gemini.image.imageBaseUrl,
-  imageModel: modelProviderPresets.gemini.image.imageModel,
-  imageApiKey: "missing",
-  actionToken: "",
-  defaultVisibility: "仅自己可见",
-  defaultAutoPublish: false,
-  agentPublishPolicy: "review_required",
-  dailyTextCallLimit: 80,
-  dailyImageCallLimit: 20,
-  maxResearchSamples: 12,
-  activeAccountId: "local-default",
-  accounts: [
-    {
-      id: "local-default",
-      displayName: "默认小红书账号",
-      mcpUrl: "http://localhost:18060/mcp",
-      status: "unknown",
-      createdAt: "2026-05-25T00:00:00.000Z",
-      updatedAt: "2026-05-25T00:00:00.000Z"
-    }
-  ]
-};
 
 export default function Home() {
   const [section, setSection] = useState<Section>("flow");
