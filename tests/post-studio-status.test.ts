@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildPostStudioStatusSummary } from "@/app/components/post-studio-status";
+import { labelForPostAction } from "@/app/components/post-action-labels";
 import { defaultSettings } from "@/app/config/default-settings";
 import { createBlankPostProject } from "@/lib/post-project/store";
 
@@ -102,5 +103,13 @@ describe("post studio status summary", () => {
     });
 
     expect(summary.chips.find((item) => item.label === "RAG")).toMatchObject({ value: "1 条爆款库", state: "ok" });
+  });
+});
+
+describe("post action labels", () => {
+  it("keeps next action buttons readable", () => {
+    expect(labelForPostAction("search_research")).toBe("搜索笔记");
+    expect(labelForPostAction("create_creative_brief")).toBe("生成创作简报");
+    expect(labelForPostAction("request_publish_confirmation")).toBe("生成发布确认单");
   });
 });

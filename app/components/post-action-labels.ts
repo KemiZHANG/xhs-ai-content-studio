@@ -24,4 +24,3 @@ const actionLabels: Record<PostAction, string> = {
 export function labelForPostAction(action: string): string {
   return actionLabels[action as PostAction] ?? action;
 }
-
