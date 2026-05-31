@@ -6,6 +6,54 @@ import type {
   WorkspaceState
 } from "@/app/types";
 
+export type PublishConfirmationReadinessInput = {
+  contentReady: boolean;
+  accountReady: boolean;
+  qualityCanPublish: boolean;
+  qualityGateFresh: boolean;
+  hasScheduleAt: boolean;
+  busy?: boolean;
+};
+
+export type PublishConfirmationReadiness = {
+  canCreateNowConfirmation: boolean;
+  canCreateScheduleConfirmation: boolean;
+  nowButtonLabel: string;
+  scheduleButtonLabel: string;
+  blockingReasons: string[];
+  helperText: string;
+};
+
+export function buildPublishConfirmationReadiness({
+  contentReady,
+  accountReady,
+  qualityCanPublish,
+  qualityGateFresh,
+  hasScheduleAt,
+  busy = false
+}: PublishConfirmationReadinessInput): PublishConfirmationReadiness {
+  const blockingReasons = [
+    contentReady ? "" : "补齐标题、正文、标签和至少一张图片",
+    accountReady ? "" : "检测并确认当前小红书账号已登录",
+    qualityCanPublish ? "" : "运行并通过 Quality Gate",
+    qualityGateFresh ? "" : "当前文案和图片版本变化后，需要重新生成最终帖子并刷新 Quality Gate"
+  ].filter(Boolean);
+  const ready = blockingReasons.length === 0 && !busy;
+
+  return {
+    canCreateNowConfirmation: ready,
+    canCreateScheduleConfirmation: ready && hasScheduleAt,
+    nowButtonLabel: busy ? "生成中" : "生成立即发布确认单",
+    scheduleButtonLabel: busy ? "生成中" : "生成定时发布确认单",
+    blockingReasons,
+    helperText: blockingReasons.length
+      ? `还不能生成发布确认单：${blockingReasons.slice(0, 2).join("；")}${blockingReasons.length > 2 ? "。" : ""}`
+      : hasScheduleAt
+        ? "可以生成立即发布或定时发布确认单；确认前不会提交到小红书。"
+        : "可以生成立即发布确认单；如需定时发布，请先选择发布时间。"
+  };
+}
+
 export function buildPendingPublishFromPlan({
   plan,
   settings,

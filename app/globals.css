@@ -2630,6 +2630,42 @@ textarea {
   padding: 10px 12px;
 }
 
+.publishConfirmHint {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 7px;
+  padding: 12px 14px;
+}
+
+.publishConfirmHint.ok {
+  background: rgba(18, 118, 97, 0.08);
+  border-color: rgba(18, 118, 97, 0.18);
+}
+
+.publishConfirmHint.warn {
+  background: rgba(190, 122, 20, 0.1);
+  border-color: rgba(190, 122, 20, 0.22);
+}
+
+.publishConfirmHint strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.publishConfirmHint p,
+.publishConfirmHint li {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.publishConfirmHint ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
 .publishConfirmBlock {
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(255, 36, 66, 0.07));
   border: 1px solid rgba(146, 64, 14, 0.16);

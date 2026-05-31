@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPendingPublishFromPlan } from "@/app/components/publish-confirmation";
+import { buildPendingPublishFromPlan, buildPublishConfirmationReadiness } from "@/app/components/publish-confirmation";
 import type { Health, RedactedSettings, WorkspacePublishPlan } from "@/app/types";
 
 const settings: RedactedSettings = {
@@ -83,5 +83,42 @@ describe("publish confirmation hydration", () => {
     expect(buildPendingPublishFromPlan({ plan: publishPlan({ requestedBy: "chat" }), settings, health })).toBeNull();
     expect(buildPendingPublishFromPlan({ plan: publishPlan({ status: "published" }), settings, health })).toBeNull();
     expect(buildPendingPublishFromPlan({ plan: publishPlan({ accountId: "account-b" }), settings, health })).toBeNull();
+  });
+
+  it("labels publish actions as confirmation creation instead of direct external publishing", () => {
+    const ready = buildPublishConfirmationReadiness({
+      contentReady: true,
+      accountReady: true,
+      qualityCanPublish: true,
+      qualityGateFresh: true,
+      hasScheduleAt: true
+    });
+
+    expect(ready.canCreateNowConfirmation).toBe(true);
+    expect(ready.canCreateScheduleConfirmation).toBe(true);
+    expect(ready.nowButtonLabel).toBe("生成立即发布确认单");
+    expect(ready.scheduleButtonLabel).toBe("生成定时发布确认单");
+    expect(ready.helperText).toContain("确认前不会提交");
+  });
+
+  it("explains why publish confirmation cannot be created yet", () => {
+    const blocked = buildPublishConfirmationReadiness({
+      contentReady: false,
+      accountReady: false,
+      qualityCanPublish: false,
+      qualityGateFresh: false,
+      hasScheduleAt: false
+    });
+
+    expect(blocked.canCreateNowConfirmation).toBe(false);
+    expect(blocked.canCreateScheduleConfirmation).toBe(false);
+    expect(blocked.blockingReasons).toEqual(
+      expect.arrayContaining([
+        "补齐标题、正文、标签和至少一张图片",
+        "检测并确认当前小红书账号已登录",
+        "运行并通过 Quality Gate"
+      ])
+    );
+    expect(blocked.helperText).toContain("还不能生成发布确认单");
   });
 });

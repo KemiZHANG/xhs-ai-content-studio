@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { parseTagsText } from "@/lib/publishing/assembly";
 import type { AssetRecord, Health, PendingPublishConfirmation, PostProject, PublishDraftState, RedactedSettings } from "@/app/types";
 import { activeAccountReadinessHint, isHealthForActiveAccount } from "@/app/components/account-readiness";
+import { buildPublishConfirmationReadiness } from "@/app/components/publish-confirmation";
 import { formatMcpEndpoint } from "@/app/components/xhs-display-utils";
 import { StatusLine, StatusPill } from "@/app/components/status-badges";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
@@ -64,7 +65,14 @@ export function PublishAssemblyPanel({
   const postPlan = postProject?.publishPlan;
   const versionStatus = postProject ? getPostVersionStatus(postProject) : null;
   const versionDiff = postProject ? getPostVersionDiffReport(postProject) : null;
-  const canSubmit = ready && accountReady && quality?.canPublish === true && versionStatus?.qualityGateFresh === true;
+  const confirmationReadiness = buildPublishConfirmationReadiness({
+    contentReady: ready,
+    accountReady,
+    qualityCanPublish: quality?.canPublish === true,
+    qualityGateFresh: versionStatus?.qualityGateFresh === true,
+    hasScheduleAt: Boolean(scheduleAt),
+    busy
+  });
 
   return (
     <div className="twoColumn wideLeft">
@@ -254,6 +262,18 @@ export function PublishAssemblyPanel({
 
         {status ? <p className="notice inlineNotice">{status}</p> : null}
 
+        <section className={confirmationReadiness.blockingReasons.length ? "publishConfirmHint warn" : "publishConfirmHint ok"}>
+          <strong>发布动作会先生成确认单</strong>
+          <p>{confirmationReadiness.helperText}</p>
+          {confirmationReadiness.blockingReasons.length ? (
+            <ul>
+              {confirmationReadiness.blockingReasons.map((reason) => (
+                <li key={reason}>{reason}</li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+
         {pendingPublish ? (
           <section className="resultBlock publishConfirmBlock">
             <div className="blockTitleRow">
@@ -316,11 +336,11 @@ export function PublishAssemblyPanel({
           <button className="secondaryButton" onClick={onGoCopy} type="button">
             回文案创作台
           </button>
-          <button className="primaryButton" disabled={busy || !canSubmit} onClick={onPublishNow} type="button">
-            {busy ? "发布中" : "立即发布"}
+          <button className="primaryButton" disabled={!confirmationReadiness.canCreateNowConfirmation} onClick={onPublishNow} type="button">
+            {confirmationReadiness.nowButtonLabel}
           </button>
-          <button className="secondaryButton" disabled={busy || !canSubmit || !scheduleAt} onClick={onSchedule} type="button">
-            {busy ? "提交中" : "定时发布"}
+          <button className="secondaryButton" disabled={!confirmationReadiness.canCreateScheduleConfirmation} onClick={onSchedule} type="button">
+            {confirmationReadiness.scheduleButtonLabel}
           </button>
         </div>
       </section>
