@@ -185,6 +185,7 @@ export function createBlankPostProject(seed: Partial<PostProject> = {}): PostPro
     goal: seed.goal,
     tone: seed.tone,
     evidencePack: seed.evidencePack ?? { sampleIds: [], insights: [] },
+    focusedEvidenceIds: Array.isArray(seed.focusedEvidenceIds) ? seed.focusedEvidenceIds : [],
     selectedSamples: Array.isArray(seed.selectedSamples) ? seed.selectedSamples : [],
     creativeBrief: seed.creativeBrief,
     copyDraft: seed.copyDraft ?? null,
@@ -252,6 +253,7 @@ export function postProjectFromWorkspace(workspace: WorkspaceState): PostProject
       summary: workspace.evidenceSummary ?? undefined,
       updatedAt: workspace.updatedAt
     },
+    focusedEvidenceIds: [],
     selectedSamples: samples as SampleEvidence[] | unknown[],
     copyDraft: currentDraft,
     copyVersions,
@@ -288,6 +290,14 @@ function extractViralCasesFromSummary(summary: ResearchSummary | null | undefine
     : [];
 }
 
+function normalizeFocusedEvidenceIds(value: unknown, insights: Array<{ id?: unknown }>): string[] {
+  const validIds = new Set(insights.map((insight) => insight.id).filter((id): id is string => typeof id === "string"));
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.map(String).map((id) => id.trim()).filter(Boolean))]
+    .filter((id) => !validIds.size || validIds.has(id))
+    .slice(0, 8);
+}
+
 function normalizePostProject(project: PostProject): PostProject {
   const inferredStage = inferPostStage(project);
   const currentStage = !project.currentStage || shouldAdvanceStage(project.currentStage, inferredStage)
@@ -313,6 +323,7 @@ function normalizePostProject(project: PostProject): PostProject {
       summary: project.evidencePack?.summary,
       updatedAt: project.evidencePack?.updatedAt
     },
+    focusedEvidenceIds: normalizeFocusedEvidenceIds(project.focusedEvidenceIds, project.evidencePack?.insights ?? []),
     selectedSamples: Array.isArray(project.selectedSamples) ? project.selectedSamples : [],
     creativeBrief: project.creativeBrief,
     copyDraft: project.copyDraft ?? null,

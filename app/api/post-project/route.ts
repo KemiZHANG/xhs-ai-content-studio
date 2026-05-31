@@ -37,6 +37,10 @@ type PostProjectActionBody =
   | {
       action: "select_images";
       selectedImageIds: string[];
+    }
+  | {
+      action: "focus_evidence";
+      focusedEvidenceIds: string[];
     };
 
 export async function GET() {
@@ -125,6 +129,22 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
     const nextProject = await updatePostProject({
       selectedImages: selectedImageIds,
       generatedImages: await mergeSelectedImageRecords(project, selectedImageIds),
+      finalPost: undefined,
+      publishPlan: null,
+      qualityCheck: undefined,
+      auditStatus: "unchecked"
+    });
+    return { project: nextProject };
+  }
+
+  if (body.action === "focus_evidence") {
+    const validIds = new Set(project.evidencePack.insights.map((insight) => insight.id));
+    const focusedEvidenceIds = uniqueStrings(body.focusedEvidenceIds).filter((id: string) => validIds.has(id)).slice(0, 8);
+    const nextProject = await updatePostProject({
+      focusedEvidenceIds,
+      creativeBrief: undefined,
+      visualDirection: undefined,
+      imagePrompts: [],
       finalPost: undefined,
       publishPlan: null,
       qualityCheck: undefined,

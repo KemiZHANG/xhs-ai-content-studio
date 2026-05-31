@@ -9,6 +9,7 @@ function project(overrides: Partial<PostProject> = {}): PostProject {
     topic: "广州咖啡馆",
     productInfo: { referenceAssetIds: [] },
     evidencePack: { sampleIds: [], insights: [] },
+    focusedEvidenceIds: [],
     selectedSamples: [],
     copyVersions: [],
     imagePrompts: [],

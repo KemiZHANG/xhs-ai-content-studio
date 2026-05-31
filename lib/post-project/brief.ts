@@ -11,13 +11,17 @@ import type { DraftRecord } from "@/lib/storage/drafts";
 
 export function deriveCreativeBrief(project: Pick<
   PostProject,
-  "topic" | "productInfo" | "targetAudience" | "goal" | "tone" | "evidencePack" | "creativeBrief"
+  "topic" | "productInfo" | "targetAudience" | "goal" | "tone" | "evidencePack" | "focusedEvidenceIds" | "creativeBrief"
 >): CreativeBrief | undefined {
   if (project.creativeBrief) {
     return project.creativeBrief;
   }
-  const insights = project.evidencePack.insights;
-  if (!insights.length && !project.topic && !project.productInfo.name) {
+  const allInsights = project.evidencePack.insights;
+  const focusedIds = new Set(project.focusedEvidenceIds ?? []);
+  const insights = focusedIds.size
+    ? allInsights.filter((insight) => focusedIds.has(insight.id))
+    : allInsights;
+  if (!allInsights.length && !project.topic && !project.productInfo.name) {
     return undefined;
   }
 
@@ -31,7 +35,7 @@ export function deriveCreativeBrief(project: Pick<
   const painPointInsights = byType(insights, "pain_point");
   const viralStrategy = extractViralStrategy(project.evidencePack.summary);
   const strategyEvidenceIds = viralStrategy
-    ? viralStrategy.evidenceIds.filter((id) => evidenceIds.includes(id))
+    ? viralStrategy.evidenceIds.filter((id) => evidenceIds.includes(id) || (!focusedIds.size && allInsights.some((insight) => insight.id === id)))
     : [];
   const basedOnEvidenceIds = uniqueStrings([...evidenceIds, ...strategyEvidenceIds]);
 

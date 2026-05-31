@@ -17,6 +17,7 @@ describe("viral application model", () => {
     const model = buildViralApplicationModel(createBlankPostProject({ topic: "广州咖啡馆" }));
 
     expect(model.evidenceCount).toBe(0);
+    expect(model.focusedCount).toBe(0);
     expect(model.actions).toEqual([
       { id: "viral-refresh-rag", label: "刷新 RAG 证据", action: "retrieve_viral_knowledge", primary: true }
     ]);
@@ -32,6 +33,18 @@ describe("viral application model", () => {
     expect(model.evidenceCount).toBe(1);
     expect(model.headline).toContain("evidencePack");
     expect(model.actions[0]).toMatchObject({ action: "create_creative_brief", primary: true });
+  });
+
+  it("shows when viral evidence has been selected as this post's focus", () => {
+    const project = createBlankPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: { sampleIds: ["viral-case-1"], insights: [viralInsight] },
+      focusedEvidenceIds: ["viral-insight-hook"]
+    });
+    const model = buildViralApplicationModel(project);
+
+    expect(model.focusedCount).toBe(1);
+    expect(model.headline).toContain("重点");
   });
 
   it("moves users from viral-enhanced Brief to copy and visual planning", () => {

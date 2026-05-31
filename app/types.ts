@@ -484,6 +484,7 @@ export type PostProject = {
     summary?: unknown;
     updatedAt?: string;
   };
+  focusedEvidenceIds: string[];
   selectedSamples: SampleEvidence[] | unknown[];
   creativeBrief?: {
     audience: string;

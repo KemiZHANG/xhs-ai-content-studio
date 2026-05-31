@@ -182,6 +182,7 @@ export type PostProject = {
   goal?: string;
   tone?: string;
   evidencePack: EvidencePack;
+  focusedEvidenceIds: string[];
   selectedSamples: SampleEvidence[] | unknown[];
   creativeBrief?: CreativeBrief;
   copyDraft?: DraftRecord | null;

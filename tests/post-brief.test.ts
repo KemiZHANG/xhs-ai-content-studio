@@ -4,7 +4,7 @@ import type { PostProject } from "@/lib/post-project/types";
 
 function project(overrides: Partial<PostProject> = {}): Pick<
   PostProject,
-  "topic" | "productInfo" | "targetAudience" | "goal" | "tone" | "evidencePack" | "creativeBrief"
+  "topic" | "productInfo" | "targetAudience" | "goal" | "tone" | "evidencePack" | "focusedEvidenceIds" | "creativeBrief"
 > {
   return {
     topic: "Guangzhou coffee shops",
@@ -36,6 +36,7 @@ function project(overrides: Partial<PostProject> = {}): Pick<
       },
       updatedAt: "2026-05-30T00:00:00.000Z"
     },
+    focusedEvidenceIds: [],
     creativeBrief: undefined,
     ...overrides
   };
@@ -64,5 +65,37 @@ describe("PostProject CreativeBrief", () => {
     expect(brief?.contentAngle).toBe("write a realistic cafe shortlist for first-time visitors");
     expect(brief?.tone).toBe("warm and practical");
     expect(brief?.proofPoints).toContain("audience / scene / proof / reminder");
+  });
+
+  it("prioritizes focused evidence ids when deriving a new CreativeBrief", () => {
+    const brief = deriveCreativeBrief(project({
+      focusedEvidenceIds: ["viral-insight-visual"],
+      evidencePack: {
+        sampleIds: ["viral-case-1"],
+        insights: [
+          {
+            id: "viral-insight-hook",
+            sourceType: "viral_library",
+            type: "hook",
+            insight: "Use an avoid-disappointment scene hook",
+            sourceSampleIds: ["viral-case-1"],
+            confidence: 0.82,
+            createdAt: "2026-05-30T00:00:00.000Z"
+          },
+          {
+            id: "viral-insight-visual",
+            sourceType: "viral_library",
+            type: "visual",
+            insight: "Use close-up window light and handwritten checklist cards",
+            sourceSampleIds: ["viral-case-1"],
+            confidence: 0.84,
+            createdAt: "2026-05-30T00:00:00.000Z"
+          }
+        ]
+      }
+    }));
+
+    expect(brief?.visualMood).toBe("Use close-up window light and handwritten checklist cards");
+    expect(brief?.basedOnEvidenceIds).toEqual(["viral-insight-visual"]);
   });
 });

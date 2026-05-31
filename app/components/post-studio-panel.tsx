@@ -99,6 +99,7 @@ export function PostStudioPanel({
   onSelectCopyVersion,
   onSelectImagePromptVersion,
   onSelectPostImages,
+  onFocusEvidenceIds,
   onSaveToViralLibrary,
   onSaveManyToViralLibrary,
   onReloadViralLibrary,
@@ -146,6 +147,7 @@ export function PostStudioPanel({
   onSelectCopyVersion: (versionId: string) => void;
   onSelectImagePromptVersion: (versionId: string) => void;
   onSelectPostImages: (assetIds: string[]) => void;
+  onFocusEvidenceIds: (ids: string[]) => void;
   onSaveToViralLibrary: (sample: SampleEvidence) => void;
   onSaveManyToViralLibrary: (samples: SampleEvidence[]) => void;
   onReloadViralLibrary: () => void;
@@ -193,6 +195,8 @@ export function PostStudioPanel({
   const runningJob = jobs.find((job) => job.status === "queued" || job.status === "running") ?? null;
   const insights = project?.evidencePack.insights ?? [];
   const viralInsights = insights.filter((insight) => insight.sourceType === "viral_library");
+  const focusedEvidenceIds = project?.focusedEvidenceIds ?? [];
+  const focusedEvidenceIdSet = new Set(focusedEvidenceIds);
   const realtimeInsights = insights.filter((insight) => insight.sourceType !== "viral_library");
   const keyLearningInsights = pickKeyLearningInsights(insights);
   const keyViralInsights = pickKeyViralInsights(viralInsights);
@@ -1015,6 +1019,7 @@ export function PostStudioPanel({
                   <strong>{viralApplication.headline}</strong>
                   <p>{viralApplication.detail}</p>
                   {viralApplication.evidenceCount ? <small>当前已接入 {viralApplication.evidenceCount} 条爆款库 evidencePack 结论。</small> : null}
+                  {viralApplication.focusedCount ? <small>本次重点：{viralApplication.focusedCount} 条，生成时会优先引用。</small> : null}
                 </div>
                 <div className="inlineActionGrid">
                   {viralApplication.actions.map((item) => (
@@ -1077,7 +1082,16 @@ export function PostStudioPanel({
                     <article className="keyViralInsight" key={insight.id}>
                       <span>{labelForInsight(insight.type)} · 爆款库 · 置信 {Math.round(insight.confidence * 100)}%</span>
                       <p>{insight.insight}</p>
-                      <small>{insight.id}</small>
+                      <small>{focusedEvidenceIdSet.has(insight.id) ? "本次重点 · " : ""}{insight.id}</small>
+                      <div className="evidenceActions">
+                        <button
+                          className={focusedEvidenceIdSet.has(insight.id) ? "textButton activeTextButton" : "textButton"}
+                          type="button"
+                          onClick={() => onFocusEvidenceIds(toggleFocusedEvidenceId(focusedEvidenceIds, insight.id))}
+                        >
+                          {focusedEvidenceIdSet.has(insight.id) ? "取消重点" : "设为本次重点"}
+                        </button>
+                      </div>
                       {findViralCaseForInsight(insight, viralCaseById) ? (
                         <div className="evidenceActions">
                           <button
@@ -1471,6 +1485,12 @@ function hasImageFiles(files: FileList | File[]): boolean {
 
 function uniqueStringList(values: string[]): string[] {
   return Array.from(new Set(values.filter(Boolean)));
+}
+
+function toggleFocusedEvidenceId(currentIds: string[], id: string): string[] {
+  return currentIds.includes(id)
+    ? currentIds.filter((item) => item !== id)
+    : [...currentIds, id].slice(-8);
 }
 
 function StudioChatBubble({

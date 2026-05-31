@@ -2969,6 +2969,11 @@ textarea {
   text-align: left;
 }
 
+.activeTextButton {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .agentFlow {
   display: grid;
   gap: 18px;

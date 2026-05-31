@@ -508,6 +508,19 @@ export default function Home() {
     setNotice(uniqueSelected.length ? `已选择 ${uniqueSelected.length} 张发布图片。` : "已清空发布图片选择。");
   }
 
+  async function focusEvidenceIds(ids: string[]) {
+    const focusedEvidenceIds = uniqueIds(ids);
+    const data = (await clientApi("/api/post-project", {
+      method: "PATCH",
+      body: JSON.stringify({ action: "focus_evidence", focusedEvidenceIds })
+    })) as { project: PostProject };
+    setPostProject(data.project);
+    setPendingPublish(null);
+    setNotice(focusedEvidenceIds.length
+      ? `已设置 ${focusedEvidenceIds.length} 条本次重点规律，后续 Brief、文案和图片方向会优先围绕它们。`
+      : "已清空本次重点规律。");
+  }
+
   async function saveSampleToViralLibrary(sample: SampleEvidence) {
     await saveSamplesToViralLibrary([sample]);
   }
@@ -1351,6 +1364,7 @@ export default function Home() {
             onSelectCopyVersion={(versionId) => void selectCopyVersion(versionId)}
             onSelectImagePromptVersion={(versionId) => void selectImagePromptVersion(versionId)}
             onSelectPostImages={(ids) => void selectPostImages(ids)}
+            onFocusEvidenceIds={(ids) => void focusEvidenceIds(ids)}
             onSaveToViralLibrary={(sample) => void saveSampleToViralLibrary(sample)}
             onSaveManyToViralLibrary={(samples) => void saveSamplesToViralLibrary(samples)}
             onReloadViralLibrary={() => void loadViralKnowledge()}
