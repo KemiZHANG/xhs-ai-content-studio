@@ -56,6 +56,7 @@ import { buildPublishAuditSafetySummary } from "@/app/components/publish-audit-s
 import { buildPostProjectContextSummary } from "@/app/components/post-project-context";
 import { buildGeneratedAssetSummary, buildReferenceAssetSummary } from "@/app/components/asset-panel-summary";
 import { buildPostNextStepCoach } from "@/app/components/post-next-step-coach";
+import { buildCreatorMemoryDigest } from "@/lib/agent/memory-digest";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
@@ -1884,28 +1885,38 @@ function CreatorMemorySummary({
   memory: CreatorMemoryProfile | null;
   projectMemory: string[];
 }) {
-  const liked = (memory?.liked ?? []).slice(0, 3).map((item) => item.text);
-  const tone = (memory?.tone ?? []).slice(0, 2).map((item) => item.text);
-  const disliked = (memory?.disliked ?? []).slice(0, 2).map((item) => `避免：${item.text}`);
-  const products = (memory?.products ?? []).slice(0, 2).map((item) => item.description);
-  const tags = (memory?.tags ?? []).slice(0, 4).map((item) => `#${item.name}`);
-  const signals = uniqueText([...projectMemory.slice(0, 3), ...liked, ...tone, ...disliked, ...products, ...tags]);
-  if (!signals.length) {
+  const digest = buildCreatorMemoryDigest(memory, projectMemory);
+  if (!digest.active) {
     return (
       <details className="creatorMemorySummary">
         <summary>创作记忆 · 等待沉淀</summary>
-        <p>当你在对话里表达“我喜欢/不要/产品是/语气希望”等偏好时，Agent 会按账号沉淀记忆，但最新指令永远优先。</p>
+        <p>{digest.detail}</p>
       </details>
     );
   }
   return (
     <details className="creatorMemorySummary">
-      <summary>创作记忆 · {signals.length} 条偏好</summary>
-      <div>
-        {signals.slice(0, 6).map((signal) => <span key={signal}>{signal}</span>)}
+      <summary>创作记忆 · {digest.signalCount} 条线索</summary>
+      <p>{digest.detail}</p>
+      <div className="memorySignalGrid">
+        <MemorySignalGroup title="会采用" items={digest.willUse} />
+        <MemorySignalGroup title="会避免" items={digest.willAvoid} />
+        <MemorySignalGroup title="产品线索" items={digest.productHints} />
+        <MemorySignalGroup title="标签线索" items={digest.tagHints} />
       </div>
-      <p>这些偏好只作为当前账号的创作上下文，真实发布仍以当前 PostProject、证据和人工确认为准。</p>
     </details>
+  );
+}
+
+function MemorySignalGroup({ title, items }: { title: string; items: string[] }) {
+  if (!items.length) return null;
+  return (
+    <section>
+      <strong>{title}</strong>
+      <div>
+        {items.slice(0, 4).map((item) => <span key={item}>{item}</span>)}
+      </div>
+    </section>
   );
 }
 
