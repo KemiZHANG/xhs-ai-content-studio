@@ -2,7 +2,7 @@ import { labelForPostAction } from "@/app/components/post-action-labels";
 import type { PostReadinessReport, PostReadinessStepId } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
 
-export type PostFlowPhaseId = "research" | "copy" | "visual" | "assembly" | "publish";
+export type PostFlowPhaseId = "research" | "viral" | "brief" | "copy" | "visual" | "publish";
 
 export type PostFlowPhase = {
   id: PostFlowPhaseId;
@@ -21,9 +21,21 @@ const phaseDefinitions: Array<{
 }> = [
   {
     id: "research",
-    label: "研究策略",
-    stepIds: ["evidence", "brief"],
-    doneDetail: "证据和 Brief 已对齐"
+    label: "实时研究",
+    stepIds: ["evidence"],
+    doneDetail: "真实笔记证据已沉淀"
+  },
+  {
+    id: "viral",
+    label: "爆款库",
+    stepIds: ["viral_rag"],
+    doneDetail: "爆款库规律已合入或设为可选增强"
+  },
+  {
+    id: "brief",
+    label: "Brief",
+    stepIds: ["brief"],
+    doneDetail: "文案和图片共享同一份策略"
   },
   {
     id: "copy",
@@ -38,16 +50,10 @@ const phaseDefinitions: Array<{
     doneDetail: "图片方向和选图已就绪"
   },
   {
-    id: "assembly",
-    label: "成稿检查",
-    stepIds: ["assembly", "quality"],
-    doneDetail: "最终稿与质量检查已同步"
-  },
-  {
     id: "publish",
-    label: "发布确认",
-    stepIds: ["confirmation"],
-    doneDetail: "发布计划已生成"
+    label: "检查发布",
+    stepIds: ["assembly", "quality", "confirmation"],
+    doneDetail: "发布计划已生成或已通过确认"
   }
 ];
 

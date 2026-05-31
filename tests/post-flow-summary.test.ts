@@ -7,7 +7,7 @@ describe("post flow summary", () => {
   it("guides a blank workspace to start with research", () => {
     const phases = buildPostFlowSummary(null);
 
-    expect(phases.map((phase) => phase.label)).toEqual(["研究策略", "文案", "图片", "成稿检查", "发布确认"]);
+    expect(phases.map((phase) => phase.label)).toEqual(["实时研究", "爆款库", "Brief", "文案", "图片", "检查发布"]);
     expect(phases[0]).toMatchObject({
       state: "active",
       detail: "先输入主题并开始研究"
@@ -15,23 +15,37 @@ describe("post flow summary", () => {
     expect(phases.slice(1).every((phase) => phase.state === "todo")).toBe(true);
   });
 
-  it("compresses readiness into one active phase instead of exposing every raw step", () => {
+  it("guides evidence-ready projects to viral RAG before Brief", () => {
     const project = createBlankPostProject({
       topic: "广州咖啡馆",
       currentStage: "evidence_ready",
-      allowedActions: ["create_creative_brief", "search_research"]
+      allowedActions: ["retrieve_viral_knowledge", "create_creative_brief", "search_research"],
+      selectedSamples: [{ id: "note-1" }],
+      evidencePack: {
+        sampleIds: ["note-1"],
+        insights: [{
+          id: "insight-title",
+          sourceType: "realtime",
+          type: "title",
+          insight: "高收藏标题先给场景",
+          sourceSampleIds: ["note-1"],
+          confidence: 0.8,
+          createdAt: "2026-06-01T00:00:00.000Z"
+        }]
+      }
     });
     const readiness = buildPostReadinessReport(project);
     const phases = buildPostFlowSummary(readiness);
 
-    expect(phases).toHaveLength(5);
-    expect(phases[0]).toMatchObject({
-      id: "research",
+    expect(phases).toHaveLength(6);
+    expect(phases[0]).toMatchObject({ id: "research", state: "done" });
+    expect(phases[1]).toMatchObject({
+      id: "viral",
       state: "active",
-      action: "search_research"
+      action: "retrieve_viral_knowledge"
     });
     expect(phases.filter((phase) => phase.state === "active")).toHaveLength(1);
-    expect(phases[0].detail).toContain("先搜索真实笔记");
+    expect(phases[1].detail).toContain("历史爆款库规律");
   });
 
   it("marks early phases done and advances to visual work when copy is ready", () => {
@@ -87,7 +101,7 @@ describe("post flow summary", () => {
     });
     const phases = buildPostFlowSummary(buildPostReadinessReport(project));
 
-    expect(phases.map((phase) => phase.state)).toEqual(["done", "done", "active", "todo", "todo"]);
-    expect(phases[2].action).toBe("plan_visuals");
+    expect(phases.map((phase) => phase.state)).toEqual(["done", "done", "done", "done", "active", "todo"]);
+    expect(phases[4].action).toBe("plan_visuals");
   });
 });
