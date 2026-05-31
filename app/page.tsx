@@ -787,14 +787,16 @@ export default function Home() {
         })
       })) as { asset: AssetRecord; prompt: string };
       await loadAssets();
-      setPublishAssetIds((current) => uniqueIds([data.asset.id, ...current]));
+      const nextSelectedImageIds = uniqueIds([data.asset.id, ...(workspace?.selectedImageIds ?? [])]);
+      setPublishAssetIds(nextSelectedImageIds);
       await patchWorkspace({
-        selectedImageIds: uniqueIds([data.asset.id, ...(workspace?.selectedImageIds ?? [])]),
+        selectedImageIds: nextSelectedImageIds,
         productImageIds: assetIds.length
           ? uniqueIds([...(workspace?.productImageIds ?? []), ...assetIds])
           : workspace?.productImageIds ?? [],
         lastUserIntent: "generate_images"
       });
+      await selectPostImages(nextSelectedImageIds);
       setNotice(assetIds.length ? "产品场景图已生成" : "原创图片已生成");
     } finally {
       setBusy(null);
@@ -829,11 +831,13 @@ export default function Home() {
       })) as { assets: AssetRecord[] };
       const ids = data.assets.map((asset) => asset.id);
       await loadAssets();
-      setPublishAssetIds((current) => uniqueIds([...ids, ...current]));
+      const nextSelectedImageIds = uniqueIds([...ids, ...(workspace?.selectedImageIds ?? [])]);
+      setPublishAssetIds(nextSelectedImageIds);
       await patchWorkspace({
-        selectedImageIds: uniqueIds([...ids, ...(workspace?.selectedImageIds ?? [])]),
+        selectedImageIds: nextSelectedImageIds,
         lastUserIntent: "generate_card_images"
       });
+      await selectPostImages(nextSelectedImageIds);
       setNotice(`已生成 ${ids.length} 张图文卡片，并加入成果画布和发布装配台。`);
     } finally {
       setBusy(null);
