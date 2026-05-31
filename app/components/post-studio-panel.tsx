@@ -59,6 +59,7 @@ import { buildGeneratedAssetSummary, buildReferenceAssetSummary } from "@/app/co
 import { buildPostNextStepCoach } from "@/app/components/post-next-step-coach";
 import { buildPostFlowSummary, type PostFlowPhase } from "@/app/components/post-flow-summary";
 import { buildPostSideDigest } from "@/app/components/post-side-digest";
+import { buildCreationProvenance, type CreationProvenanceCard } from "@/app/components/creation-provenance";
 import { buildCreatorMemoryDigest } from "@/lib/agent/memory-digest";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
@@ -311,6 +312,7 @@ export function PostStudioPanel({
       citationReport.sections.every((section) => section.insights.length)
   );
   const hasVisualDirection = hasTraceableVisualDirection(project);
+  const creationProvenance = buildCreationProvenance(project);
   const accountReady = isHealthForActiveAccount(health, settings);
   const accountReadyHint = activeAccountReadinessHint(health, settings);
   const publishReady = Boolean(
@@ -656,6 +658,7 @@ export function PostStudioPanel({
               生成文案
             </button>
           </div>
+          <CreationProvenanceStrip cards={creationProvenance} onOpenEvidence={() => setTab("insights")} />
 
           <div className="postPreviewShell">
             <div className="postCoverPreview">
@@ -1916,6 +1919,41 @@ function AgentCardInlineDetails({
         </button>
       ) : null}
     </div>
+  );
+}
+
+function CreationProvenanceStrip({
+  cards,
+  onOpenEvidence
+}: {
+  cards: CreationProvenanceCard[];
+  onOpenEvidence: () => void;
+}) {
+  return (
+    <section className="creationProvenanceStrip" aria-label="创作证据追溯">
+      <div className="creationProvenanceHeader">
+        <div>
+          <span>为什么这样创作</span>
+          <strong>Brief、文案和图片方向都要能追溯到 evidencePack</strong>
+        </div>
+        <button className="textButton" type="button" onClick={onOpenEvidence}>
+          查看证据
+        </button>
+      </div>
+      <div className="creationProvenanceGrid">
+        {cards.map((card) => (
+          <article className={`creationProvenanceCard ${card.state}`} key={card.id}>
+            <span>{card.label}</span>
+            <strong>{card.headline}</strong>
+            <p>{card.detail}</p>
+            <small>
+              {card.sourceLine} · 证据 {card.evidenceCount}
+              {card.missingCount ? ` · 待补 ${card.missingCount}` : ""}
+            </small>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 

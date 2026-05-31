@@ -4616,6 +4616,81 @@ textarea {
   justify-items: center;
 }
 
+.creationProvenanceStrip {
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(18, 118, 97, 0.12);
+  border-radius: 14px;
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+}
+
+.creationProvenanceHeader {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.creationProvenanceHeader span {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.creationProvenanceHeader strong {
+  color: var(--ink);
+  display: block;
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+.creationProvenanceGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.creationProvenanceCard {
+  background: rgba(39, 37, 31, 0.035);
+  border: 1px solid rgba(39, 37, 31, 0.08);
+  border-radius: 12px;
+  display: grid;
+  gap: 4px;
+  min-height: 128px;
+  padding: 10px;
+}
+
+.creationProvenanceCard.ready {
+  background: rgba(18, 118, 97, 0.07);
+  border-color: rgba(18, 118, 97, 0.17);
+}
+
+.creationProvenanceCard.warn {
+  background: rgba(190, 122, 20, 0.08);
+  border-color: rgba(190, 122, 20, 0.2);
+}
+
+.creationProvenanceCard span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.creationProvenanceCard strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.creationProvenanceCard p,
+.creationProvenanceCard small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  margin: 0;
+}
+
 .postEditStack textarea {
   max-height: 220px;
   min-height: 120px;
@@ -6509,6 +6584,10 @@ textarea {
   }
 
   .postFlowRail {
+    grid-template-columns: 1fr;
+  }
+
+  .creationProvenanceGrid {
     grid-template-columns: 1fr;
   }
 

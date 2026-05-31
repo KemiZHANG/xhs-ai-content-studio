@@ -1,0 +1,127 @@
+import { buildEvidenceCitationReport, buildEvidenceReferenceSummary } from "@/lib/post-project/citations";
+import type { PostProject } from "@/app/types";
+import type { EvidenceSourceType } from "@/lib/post-project/types";
+
+export type CreationProvenanceCard = {
+  id: "brief" | "copy" | "visual";
+  label: string;
+  headline: string;
+  detail: string;
+  evidenceCount: number;
+  missingCount: number;
+  sourceLine: string;
+  state: "ready" | "warn" | "empty";
+};
+
+export function buildCreationProvenance(project: PostProject | null): CreationProvenanceCard[] {
+  if (!project) {
+    return [
+      emptyCard("brief", "CreativeBrief", "等待研究证据", "先搜索真实笔记或检索爆款库，再生成统一 Brief。"),
+      emptyCard("copy", "文案", "等待草稿", "文案生成后会显示标题、正文、标签分别引用了哪些证据。"),
+      emptyCard("visual", "图片方向", "等待图片策略", "图片方向和 Prompt 会共享 CreativeBrief 的 evidencePack 证据。")
+    ];
+  }
+
+  return [
+    buildBriefCard(project),
+    buildCopyCard(project),
+    buildVisualCard(project)
+  ];
+}
+
+function buildBriefCard(project: PostProject): CreationProvenanceCard {
+  if (!project.creativeBrief) {
+    return emptyCard("brief", "CreativeBrief", "还没有 Brief", "把研究结论压缩成目标人群、内容角度和视觉方向。");
+  }
+  const summary = buildEvidenceReferenceSummary(project, project.creativeBrief.basedOnEvidenceIds);
+  return {
+    id: "brief",
+    label: "CreativeBrief",
+    headline: summary.insights.length ? "Brief 已绑定证据" : "Brief 缺少可见证据",
+    detail: summary.insights.length
+      ? `人群、痛点、角度和视觉 mood 来自 ${summary.insights.length} 条 evidencePack 结论。`
+      : "Brief 存在，但当前 evidencePack 里找不到对应证据。",
+    evidenceCount: summary.insights.length,
+    missingCount: summary.missingEvidenceIds.length,
+    sourceLine: sourceLine(summary.sourceCounts),
+    state: stateFromCounts(summary.insights.length, summary.missingEvidenceIds.length)
+  };
+}
+
+function buildCopyCard(project: PostProject): CreationProvenanceCard {
+  if (!project.copyDraft) {
+    return emptyCard("copy", "文案", "还没有文案草稿", "生成文案后会展示标题、正文、标签、图片方向的字段级证据。");
+  }
+
+  const report = buildEvidenceCitationReport(
+    project,
+    project.copyDraft.draft.basedOnEvidenceIds ?? [],
+    project.copyDraft.draft.evidenceReferences
+  );
+  const boundFields = report.sections.filter((section) => section.insights.length).length;
+  const missingFields = report.sections.length - boundFields;
+  const missingCount = report.missingEvidenceIds.length + missingFields;
+  return {
+    id: "copy",
+    label: "文案",
+    headline: missingCount ? "文案证据还不完整" : "文案字段可追溯",
+    detail: `标题、正文、标签、图片方向 ${boundFields}/${report.sections.length} 个字段已绑定证据。`,
+    evidenceCount: report.allEvidenceIds.length,
+    missingCount,
+    sourceLine: sourceLine(report.sourceCounts),
+    state: stateFromCounts(report.allEvidenceIds.length, missingCount)
+  };
+}
+
+function buildVisualCard(project: PostProject): CreationProvenanceCard {
+  const visualIds = [
+    ...(project.visualDirection?.basedOnEvidenceIds ?? []),
+    ...project.imagePrompts.flatMap((prompt) => prompt.basedOnEvidenceIds ?? [])
+  ];
+  if (!project.visualDirection && !project.imagePrompts.length) {
+    return emptyCard("visual", "图片方向", "还没有图片方向", "规划图片方向后，再确认 Prompt 并生成/选择图片。");
+  }
+
+  const summary = buildEvidenceReferenceSummary(project, visualIds);
+  const confirmed = project.visualDirection?.confirmationStatus === "confirmed" || Boolean(project.visualDirection?.confirmedAt);
+  const missingCount = summary.missingEvidenceIds.length + (confirmed ? 0 : 1);
+  return {
+    id: "visual",
+    label: "图片方向",
+    headline: confirmed ? "图片方向已确认" : "图片方向待人工确认",
+    detail: summary.insights.length
+      ? `封面氛围、构图和 Prompt 引用了 ${summary.insights.length} 条视觉/结构证据。`
+      : "已有图片方向，但缺少可追溯 evidencePack 结论。",
+    evidenceCount: summary.insights.length,
+    missingCount,
+    sourceLine: sourceLine(summary.sourceCounts),
+    state: stateFromCounts(summary.insights.length, missingCount)
+  };
+}
+
+function emptyCard(id: CreationProvenanceCard["id"], label: string, headline: string, detail: string): CreationProvenanceCard {
+  return {
+    id,
+    label,
+    headline,
+    detail,
+    evidenceCount: 0,
+    missingCount: 0,
+    sourceLine: "暂无来源",
+    state: "empty"
+  };
+}
+
+function stateFromCounts(evidenceCount: number, missingCount: number): CreationProvenanceCard["state"] {
+  if (!evidenceCount) return "empty";
+  return missingCount ? "warn" : "ready";
+}
+
+function sourceLine(sourceCounts: Record<EvidenceSourceType, number>): string {
+  const parts = [
+    sourceCounts.realtime ? `实时 ${sourceCounts.realtime}` : "",
+    sourceCounts.viral_library ? `爆款库 ${sourceCounts.viral_library}` : "",
+    sourceCounts.user_input ? `用户输入 ${sourceCounts.user_input}` : ""
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "暂无来源";
+}
