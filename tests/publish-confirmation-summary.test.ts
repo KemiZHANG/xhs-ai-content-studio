@@ -46,7 +46,7 @@ function project(overrides: Partial<PostProject> = {}): PostProject {
       tone: "真实分享",
       visualMood: "暖色自然光",
       imageMustHave: ["咖啡", "店内环境"],
-      imageMustAvoid: ["虚假logo"],
+      imageMustAvoid: ["虚假 logo"],
       platformStyle: "小红书探店",
       tabooWords: [],
       complianceNotes: [],

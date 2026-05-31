@@ -84,7 +84,7 @@ function chip(label: string, value: string, state: "ok" | "warn" | "neutral") {
 
 function shortId(id: string): string {
   if (!id) return "not-created";
-  return id.length > 18 ? `${id.slice(0, 9)}…${id.slice(-6)}` : id;
+  return id.length > 18 ? `${id.slice(0, 9)}...${id.slice(-6)}` : id;
 }
 
 function labelPublishStatus(status: string): string {

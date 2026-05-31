@@ -102,9 +102,7 @@ export function ChatPanel({
 
   useEffect(() => {
     const transcript = transcriptRef.current;
-    if (!transcript) {
-      return;
-    }
+    if (!transcript) return;
     transcript.scrollTo({ top: transcript.scrollHeight, behavior: "smooth" });
   }, [messages.length, busy]);
 
@@ -144,7 +142,7 @@ export function ChatPanel({
               </button>
             ))
           ) : (
-            <p className="muted">暂无对话，发一句问题就会自动保存。</p>
+            <p className="muted">暂无对话，发一句需求就会自动保存。</p>
           )}
         </div>
       </aside>
@@ -152,8 +150,8 @@ export function ChatPanel({
       <section className="panel chatPanel">
         <div className="panelHeader">
           <div>
-            <h2>AI 对话工作台</h2>
-            <p>像 ChatGPT 一样连续追问：搜索真实笔记、查看证据、生成草稿、继续修改、最后发布或定时。</p>
+            <h2>AI 创作工作台</h2>
+            <p>像 ChatGPT 一样连续推进：搜索真实笔记、查看证据、生成草稿、继续修改，最后进入发布确认。</p>
           </div>
         </div>
 
@@ -212,7 +210,7 @@ export function ChatPanel({
               <div className="emptyChatIntro">
                 <MessageSquareText size={28} />
                 <strong>从一个内容任务开始</strong>
-                <p>输入一句话即可；需要产品图时直接拖进下方输入区。</p>
+                <p>输入一句话即可。需要产品图时，直接拖入下方输入区，AI 会带着图片和当前研究证据继续创作。</p>
               </div>
               <div className="promptGrid compactPrompts">
                 <button type="button" onClick={() => onInput("帮我找最近一周广州咖啡馆高收藏笔记，分析标题和图片风格，再生成一篇适合探店账号的图文笔记。")}>
@@ -371,7 +369,7 @@ export function ChatWorkflowResultSummary({
       </div>
       {requiresConfirmation ? (
         <div className={armed ? "chatResultGuard ready" : "chatResultGuard"}>
-          <strong>{armed ? "已确认使用这条结果" : "历史结果需确认"}</strong>
+          <strong>{armed ? "已确认使用这条结果" : "历史结果需要确认"}</strong>
           <p>继续操作会把这条研究或草稿带入当前 PostProject。若要从零开始，请先新建项目。</p>
           {!armed ? (
             <button className="secondaryButton" onClick={() => setArmed(true)} type="button">
