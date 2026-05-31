@@ -59,6 +59,8 @@ describe("evidence display helpers", () => {
     ]);
     expect(panel.summary).toContain("已压缩展示 3 条");
     expect(panel.detailHint).toContain("还有 1 条");
+    expect(panel.compressionLine).toContain("最多保留 3 条高价值摘要");
+    expect(panel.compressionLine).toContain("证据详情");
   });
 
   it("keeps empty research panels action-oriented without showing raw slots", () => {
@@ -67,7 +69,19 @@ describe("evidence display helpers", () => {
     expect(panel.visibleSamples).toEqual([]);
     expect(panel.inlineTitle).toBe("等待研究证据");
     expect(panel.summary).toContain("这里只显示 3 条高价值摘要");
+    expect(panel.compressionLine).toContain("最多保留 3 条摘要");
     expect(panel.primaryActionLabel).toBe("开始主题研究");
+  });
+
+  it("caps main-panel evidence summaries at five even when callers request more", () => {
+    const samples = Array.from({ length: 8 }, (_, index) => sample(String(index), { collects: index + 1 }));
+
+    const panel = buildEvidencePanelModel(samples, 12);
+
+    expect(panel.visibleSamples).toHaveLength(5);
+    expect(panel.hiddenCount).toBe(3);
+    expect(panel.summary).toContain("已压缩展示 5 条");
+    expect(panel.compressionLine).toContain("最多保留 5 条高价值摘要");
   });
 
   it("summarizes missing body text as an interaction/image-style hint", () => {

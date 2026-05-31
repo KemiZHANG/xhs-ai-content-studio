@@ -16,6 +16,7 @@ export type EvidencePanelModel = {
   inlineTitle: string;
   summary: string;
   detailHint: string;
+  compressionLine: string;
   primaryActionLabel: string;
   stats: Array<{
     label: string;
@@ -24,7 +25,8 @@ export type EvidencePanelModel = {
 };
 
 export function buildEvidencePanelModel(samples: SampleEvidence[], visibleLimit = 3): EvidencePanelModel {
-  const visibleSamples = pickEvidenceHighlights(samples, visibleLimit);
+  const displayLimit = Math.min(5, Math.max(0, visibleLimit));
+  const visibleSamples = pickEvidenceHighlights(samples, displayLimit);
   const hiddenCount = Math.max(0, samples.length - visibleSamples.length);
   const topScore = visibleSamples[0] ? scoreEvidence(visibleSamples[0]) : 0;
   return {
@@ -43,6 +45,9 @@ export function buildEvidencePanelModel(samples: SampleEvidence[], visibleLimit 
       : topScore
         ? "当前样本较少，仍可打开详情查看正文、评论和图片。"
         : "暂无可排序样本，先搜索真实笔记。",
+    compressionLine: samples.length
+      ? `主面板最多保留 ${displayLimit} 条高价值摘要；原文、评论、完整图片和低优先级样本都放进证据详情。`
+      : `研究完成后主面板最多保留 ${displayLimit} 条摘要，避免一开始就铺满原始笔记。`,
     primaryActionLabel: samples.length
       ? `打开完整证据目录`
       : "开始主题研究",

@@ -1025,6 +1025,7 @@ export function PostStudioPanel({
 
           {tab === "evidence" ? (
             <EvidencePanelSummary
+              compressionLine={evidencePanel.compressionLine}
               detailHint={evidencePanel.detailHint}
               onPrimaryAction={() => evidenceSamples.length ? setEvidenceCatalogOpen(true) : onNavigate("workflow")}
               primaryActionLabel={evidencePanel.primaryActionLabel}
@@ -2333,12 +2334,14 @@ function EvidenceReferenceBox({
 function EvidencePanelSummary({
   summary,
   detailHint,
+  compressionLine,
   stats,
   primaryActionLabel,
   onPrimaryAction
 }: {
   summary: string;
   detailHint: string;
+  compressionLine: string;
   stats: Array<{ label: string; value: string }>;
   primaryActionLabel: string;
   onPrimaryAction: () => void;
@@ -2348,6 +2351,7 @@ function EvidencePanelSummary({
       <div>
         <strong>{summary}</strong>
         <p>{detailHint}</p>
+        <small>{compressionLine}</small>
       </div>
       <div className="evidencePanelStats" aria-label="证据摘要统计">
         {stats.map((item) => (

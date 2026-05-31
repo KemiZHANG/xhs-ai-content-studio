@@ -1744,6 +1744,15 @@ textarea {
   margin: 0;
 }
 
+.evidencePanelSummary > div > small {
+  color: var(--accent-strong);
+  display: block;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.45;
+  margin-top: 4px;
+}
+
 .studioTaskSummary {
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid var(--line);
