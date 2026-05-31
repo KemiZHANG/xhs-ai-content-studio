@@ -308,6 +308,48 @@ describe("viral knowledge base", () => {
     expect(blocked).toEqual([]);
   });
 
+  it("retrieves cases through structured comment concerns and reusable insight fields", async () => {
+    const commentDrivenCase = await createViralCaseFromEvidence({
+      sample: {
+        ...sample,
+        id: "note-comment-driven",
+        title: "Hidden cafe route",
+        detailText: "A short route note focused on location and opening hours.",
+        commentSnippets: []
+      },
+      topic: "Guangzhou coffee",
+      category: "Cafe review",
+      model: {
+        generateStructuredText: async () => JSON.stringify({
+          titleHooks: ["lead with an unusual decision question"],
+          copyStructures: ["question -> constraints -> recommendation"],
+          tagPatterns: ["city + need state + decision tag"],
+          visualPatterns: ["map cover with one clear route"],
+          audienceSignals: ["people planning pet-friendly weekend trips"],
+          painPoints: ["uncertain about parking and pet access"],
+          emotionalTriggers: ["reduce trip uncertainty"],
+          commentConcerns: ["parking available", "pet friendly terrace"],
+          reusableRules: ["turn comment concerns into FAQ-style decision blocks"],
+          avoidCopying: ["do not copy exact cafe route"]
+        }),
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+    await upsertViralCases([commentDrivenCase]);
+
+    const results = await searchViralCases({
+      query: "pet friendly terrace parking FAQ decision",
+      topic: "Guangzhou coffee",
+      limit: 3
+    });
+
+    expect(results[0].case.id).toBe(commentDrivenCase.id);
+    expect(results[0].reasons.join(" ")).toContain("命中关键词");
+    expect(results[0].case.extractedInsights.commentConcerns).toContain("pet friendly terrace");
+  });
+
   it("filters and sorts by shares, score, tags, and created time", async () => {
     const coffeeCase = await createViralCaseFromEvidence({
       sample,

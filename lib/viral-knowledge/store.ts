@@ -142,7 +142,19 @@ export async function createViralCaseFromEvidence({
     },
     sourceUrl: sample.url,
     createdAt: new Date().toISOString(),
-    embedding: createLocalEmbedding(`${sample.title}\n${bodyExcerpt}\n${creativeSafety.summary}\n${extractedInsights.reusableRules.join("\n")}`),
+    embedding: createLocalEmbedding(buildViralEmbeddingText({
+      title: sample.title,
+      bodyExcerpt,
+      tags: inferTags(sample, topic, category),
+      imageStyle,
+      hookType,
+      contentStructure,
+      painPoint: first(extractedInsights.painPoints) || "用户需要更真实、具体、可执行的判断依据",
+      audience: first(extractedInsights.audienceSignals) || "对该主题感兴趣的小红书用户",
+      emotionalTrigger: first(extractedInsights.emotionalTriggers) || "真实体验、避坑感、可收藏",
+      extractedInsights,
+      creativeSafety
+    })),
     extractedInsights,
     creativeSafety,
     extraction: {
@@ -273,9 +285,13 @@ function normalizeViralCase(item: ViralCase): ViralCase {
     tags: uniqueStrings(item.tags).slice(0, 12),
     imageStyle,
     contentStructure,
-    embedding: Array.isArray(item.embedding) && item.embedding.length
-      ? item.embedding
-      : createLocalEmbedding(`${item.title}\n${item.bodyExcerpt}\n${creativeSafety.summary}`),
+    embedding: createLocalEmbedding(buildViralEmbeddingText({
+      ...item,
+      imageStyle,
+      contentStructure,
+      extractedInsights,
+      creativeSafety
+    })),
     extractedInsights,
     creativeSafety,
     extraction: normalizeExtractionProvenance(item.extraction, item)
@@ -388,6 +404,36 @@ function buildCreativeSafety({
   };
 }
 
+function buildViralEmbeddingText(item: Pick<
+  ViralCase,
+  "title" | "bodyExcerpt" | "tags" | "imageStyle" | "hookType" | "contentStructure" | "painPoint" | "audience" | "emotionalTrigger" | "extractedInsights"
+> & { creativeSafety?: ViralCreativeSafety }): string {
+  return [
+    item.title,
+    item.bodyExcerpt,
+    item.tags.join(" "),
+    item.imageStyle,
+    item.hookType,
+    item.contentStructure.join(" "),
+    item.painPoint,
+    item.audience,
+    item.emotionalTrigger,
+    item.extractedInsights.titleHooks.join(" "),
+    item.extractedInsights.copyStructures.join(" "),
+    item.extractedInsights.tagPatterns.join(" "),
+    item.extractedInsights.visualPatterns.join(" "),
+    item.extractedInsights.audienceSignals.join(" "),
+    item.extractedInsights.painPoints.join(" "),
+    item.extractedInsights.emotionalTriggers.join(" "),
+    item.extractedInsights.commentConcerns.join(" "),
+    item.extractedInsights.reusableRules.join(" "),
+    item.extractedInsights.avoidCopying.join(" "),
+    item.creativeSafety?.summary,
+    item.creativeSafety?.reusablePatterns.join(" "),
+    item.creativeSafety?.transformationGuidance.join(" ")
+  ].filter(Boolean).join("\n");
+}
+
 function normalizeExtractedInsights(value: unknown): ViralExtractedInsights {
   const record = isRecord(value) ? value : {};
   return {
@@ -428,6 +474,7 @@ function scoreViralCase(item: ViralCase, queryTokens: string[], input: ViralSear
     item.topic,
     item.category,
     item.title,
+    item.bodyExcerpt,
     item.tags.join(" "),
     item.imageStyle,
     item.hookType,
@@ -435,6 +482,15 @@ function scoreViralCase(item: ViralCase, queryTokens: string[], input: ViralSear
     item.painPoint,
     item.audience,
     item.emotionalTrigger,
+    item.extractedInsights.titleHooks.join(" "),
+    item.extractedInsights.copyStructures.join(" "),
+    item.extractedInsights.tagPatterns.join(" "),
+    item.extractedInsights.visualPatterns.join(" "),
+    item.extractedInsights.audienceSignals.join(" "),
+    item.extractedInsights.painPoints.join(" "),
+    item.extractedInsights.emotionalTriggers.join(" "),
+    item.extractedInsights.commentConcerns.join(" "),
+    item.extractedInsights.avoidCopying.join(" "),
     item.extractedInsights.reusableRules.join(" "),
     item.creativeSafety?.summary,
     item.creativeSafety?.reusablePatterns.join(" "),
