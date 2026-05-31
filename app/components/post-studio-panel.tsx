@@ -978,6 +978,28 @@ export function PostStudioPanel({
             <SideSection icon={ImagePlus} title="图片参考">
               <strong>{selectedAssets.length ? `已选 ${selectedAssets.length} 张发布图片` : "还没有选中发布图片"}</strong>
               <p className="muted">这里主要放产品原图、参考图和当前选中图。默认不铺开全部素材，更多管理在 Assets。</p>
+              <div
+                className="studioReferenceDropzone"
+                onDragOver={(event) => {
+                  if (hasImageFiles(event.dataTransfer.files)) {
+                    event.preventDefault();
+                  }
+                }}
+                onDrop={(event) => {
+                  if (!hasImageFiles(event.dataTransfer.files)) return;
+                  event.preventDefault();
+                  onUploadReferenceFiles(event.dataTransfer.files);
+                }}
+                onPaste={(event) => {
+                  if (!hasImageFiles(event.clipboardData.files)) return;
+                  event.preventDefault();
+                  onUploadReferenceFiles(event.clipboardData.files);
+                }}
+                tabIndex={0}
+              >
+                <ImagePlus size={18} />
+                <span>拖入或粘贴产品图 / 参考图</span>
+              </div>
               {referenceAssets.length ? (
                 <div className="studioAssetGrid selectable">
                   {referenceAssets.map((asset) => {
@@ -1267,6 +1289,10 @@ export function PostStudioPanel({
       ) : null}
     </div>
   );
+}
+
+function hasImageFiles(files: FileList | File[]): boolean {
+  return Array.from(files).some((file) => file.type.startsWith("image/"));
 }
 
 function AgentStructuredMessage({

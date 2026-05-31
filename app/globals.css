@@ -3806,6 +3806,30 @@ textarea {
   display: none;
 }
 
+.studioReferenceDropzone {
+  align-items: center;
+  background: rgba(18, 118, 97, 0.06);
+  border: 1px dashed rgba(18, 118, 97, 0.24);
+  border-radius: 12px;
+  color: var(--accent-strong);
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  min-height: 74px;
+  outline: none;
+  padding: 12px;
+  text-align: center;
+}
+
+.studioReferenceDropzone:focus-visible {
+  box-shadow: 0 0 0 3px rgba(18, 118, 97, 0.14);
+}
+
+.studioReferenceDropzone span {
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .studioEmpty {
   align-items: center;
   background: var(--surface-subtle);
