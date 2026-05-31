@@ -385,11 +385,12 @@ describe("agent orchestrator", () => {
       runChatAgentImpl: vi.fn(async () => ({ answer: "legacy answer" }))
     });
 
-    expect(result.quickActions.map((action) => action.action).slice(0, 3)).toEqual([
+    expect(result.quickActions.map((action) => action.action).slice(0, 2)).toEqual([
       "select_images",
-      "run_quality_gate",
-      "request_publish_confirmation"
+      "revise_copy"
     ]);
+    expect(result.quickActions.map((action) => action.action)).not.toContain("run_quality_gate");
+    expect(result.quickActions.map((action) => action.action)).not.toContain("request_publish_confirmation");
     const stageCardData = result.cards.find((card) => card.type === "stage_guidance")?.data as
       | { readiness?: { nextAction?: string; blockers?: Array<{ id: string }> } }
       | undefined;

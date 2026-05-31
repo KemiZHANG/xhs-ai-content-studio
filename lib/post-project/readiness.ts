@@ -71,6 +71,7 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
   const hasImages = selectedImages.length > 0;
   const hasFinalPost = Boolean(project.finalPost);
   const qualityFreshEnough = Boolean(project.qualityCheck?.canPublish);
+  const canRunQualityGate = hasFinalPost && hasImages && hasCopy && actionSet.has("run_quality_gate");
   const canRequestPublish = qualityFreshEnough && hasFinalPost && hasImages && hasCopy;
   const hasPublishConfirmation = Boolean(
     project.publishPlan?.status === "awaiting_approval" ||
@@ -139,7 +140,7 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
       detail: qualityFreshEnough
         ? "质量门通过"
         : project.qualityCheck?.issues.slice(0, 2).join("；") || "运行证据、原创性和发布风险检查",
-      action: qualityFreshEnough ? undefined : "run_quality_gate"
+      action: qualityFreshEnough || !canRunQualityGate ? undefined : "run_quality_gate"
     },
     {
       id: "confirmation",

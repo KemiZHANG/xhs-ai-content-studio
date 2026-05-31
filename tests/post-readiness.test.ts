@@ -193,4 +193,53 @@ describe("post readiness report", () => {
     expect(report.blockers.map((item) => item.id)).toContain("quality");
     expect(report.items.find((item) => item.id === "quality")?.detail).toContain("图片方向");
   });
+  it("does not suggest quality gate before the final post is assembled", () => {
+    const report = buildPostReadinessReport(project({
+      evidencePack: {
+        sampleIds: ["sample-1"],
+        insights: [
+          {
+            id: "insight-1",
+            type: "copy",
+            insight: "正文要保留真实体验",
+            sourceSampleIds: ["sample-1"],
+            confidence: 0.8,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }
+        ]
+      },
+      creativeBrief: {
+        audience: "探店人群",
+        painPoint: "选择困难",
+        contentAngle: "咖啡馆清单",
+        emotionalHook: "放松",
+        proofPoints: ["体验"],
+        tone: "真实",
+        visualMood: "自然光",
+        imageMustHave: [],
+        imageMustAvoid: [],
+        platformStyle: "小红书",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      copyDraft: {
+        id: "draft-1",
+        updatedAt: "2026-05-31T00:00:00.000Z",
+        draft: { title: "标题", content: "正文", tags: ["tag"], structure: [], imagePrompt: "图片方向", basedOnEvidenceIds: ["insight-1"] },
+        images: [],
+        visibility: "仅自己可见"
+      },
+      selectedImages: ["asset-1"],
+      currentStage: "assembling",
+      allowedActions: ["run_quality_gate"]
+    }));
+
+    expect(report.items.find((item) => item.id === "assembly")).toMatchObject({
+      ready: false
+    });
+    expect(report.items.find((item) => item.id === "quality")?.action).toBeUndefined();
+    expect(report.nextAction).toBeUndefined();
+    expect(report.canRequestPublish).toBe(false);
+  });
 });

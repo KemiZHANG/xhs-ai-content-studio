@@ -1268,12 +1268,23 @@ function buildPostProjectQuickActions(postProject?: PostProject | null): AgentQu
     ...readinessActions,
     ...postProject.allowedActions.filter((action) => action !== "recover")
   ];
-  const actions = uniquePostActions(preferred.length ? preferred : postProject.allowedActions);
+  const actions = uniquePostActions(preferred.length ? preferred : postProject.allowedActions)
+    .filter((action) => canSurfacePostAction(action, readiness));
   return actions.slice(0, 4).map(actionToQuickAction);
 }
 
 function uniquePostActions(actions: PostAction[]): PostAction[] {
   return [...new Set(actions)];
+}
+
+function canSurfacePostAction(action: PostAction, readiness: ReturnType<typeof buildPostReadinessReport>): boolean {
+  if (action === "run_quality_gate" || action === "request_publish_confirmation") {
+    return readiness.items.some((item) => item.action === action);
+  }
+  if (action === "schedule_publish" || action === "publish_now") {
+    return readiness.canRequestPublish;
+  }
+  return true;
 }
 
 function buildQuickActions(plan: AgentPlan, workspace: WorkspaceState, postProject?: PostProject | null) {
