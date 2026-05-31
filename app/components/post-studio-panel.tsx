@@ -38,6 +38,7 @@ import { getPostStageGuidance } from "@/lib/post-project/guidance";
 import { buildEvidenceCitationReport, buildEvidenceReferenceSummary } from "@/lib/post-project/citations";
 import { activeAccountReadinessHint, isHealthForActiveAccount } from "@/app/components/account-readiness";
 import { citationFieldBadges, formatCitationStripSummary } from "@/app/components/evidence-citation-display";
+import { isHighPriorityAgentCard, pickVisibleAgentCards } from "@/app/components/agent-card-visibility";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 import { pickEvidenceHighlights, scoreEvidence, summarizeEvidenceSample } from "@/app/components/evidence-display";
@@ -1535,39 +1536,6 @@ function CreatorMemorySummary({
       <p>这些偏好只作为当前账号的创作上下文，真实发布仍以当前 PostProject、证据和人工确认为准。</p>
     </details>
   );
-}
-
-function pickVisibleAgentCards(cards: AgentResponseCard[]): AgentResponseCard[] {
-  const priority: AgentResponseCard["type"][] = [
-    "quality_check",
-    "publish_check",
-    "copy_draft",
-    "creative_brief",
-    "visual_direction",
-    "image_prompt",
-    "evidence_citations",
-    "viral_knowledge",
-    "evidence_summary",
-    "stage_guidance"
-  ];
-  const sorted = [...cards].sort((left, right) => {
-    const leftRank = priority.indexOf(left.type);
-    const rightRank = priority.indexOf(right.type);
-    return (leftRank === -1 ? 99 : leftRank) - (rightRank === -1 ? 99 : rightRank);
-  });
-  const selected: AgentResponseCard[] = [];
-  const usedTypes = new Set<string>();
-  for (const card of sorted) {
-    if (selected.length >= 4) break;
-    if (usedTypes.has(card.type) && selected.length < 3) continue;
-    selected.push(card);
-    usedTypes.add(card.type);
-  }
-  return selected.length ? selected : cards.slice(0, 4);
-}
-
-function isHighPriorityAgentCard(type: AgentResponseCard["type"]): boolean {
-  return type === "quality_check" || type === "publish_check" || type === "copy_draft" || type === "creative_brief";
 }
 
 function extractEvidenceIdsFromAgentCard(card: AgentResponseCard): string[] {
