@@ -18,6 +18,7 @@ import type {
 import { readPostProject, resetPostProject, updatePostProject } from "@/lib/post-project/store";
 import { copyVersionFromDraft, deriveCreativeBrief, deriveFinalPost, deriveImagePromptVersion, deriveVisualDirection } from "@/lib/post-project/brief";
 import { buildEvidenceCitationReport, buildEvidenceReferenceSummary, formatEvidenceCitationReport } from "@/lib/post-project/citations";
+import { buildEvidenceReferenceNote, labelForEvidenceSource } from "@/lib/post-project/evidence-note";
 import { insightsFromUserBriefInput, mergeEvidenceInsights } from "@/lib/post-project/evidence";
 import { getPostStageGuidance } from "@/lib/post-project/guidance";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
@@ -667,19 +668,14 @@ function appendEvidenceReferenceNote(answer: string, plan: AgentPlan, postProjec
   if (!shouldAppendEvidenceReference(plan)) {
     return answer;
   }
-  const insights = (postProject?.evidencePack.insights ?? [])
-    .filter((insight) => insight.insight.trim())
-    .slice(0, 5);
+  const insights = postProject?.evidencePack.insights ?? [];
   if (!insights.length || answer.includes("参考证据")) {
     if (!insights.length && !answer.includes("证据状态")) {
-      return `${answer}\n\n证据状态：当前 PostProject 没有可追溯 evidencePack 结论；以上只能作为临时创作建议，不能当作小红书研究结论或发布依据。请先搜索真实笔记、保存爆款库样本，或补充用户输入证据。`;
+      return `${answer}\n\n${buildEvidenceReferenceNote(insights)}`;
     }
     return answer;
   }
-  const note = insights
-    .map((insight) => `- ${insight.id}｜${labelForEvidenceSource(insight.sourceType)}｜${insight.type}: ${insight.insight}`)
-    .join("\n");
-  return `${answer}\n\n参考证据：\n${note}`;
+  return `${answer}\n\n${buildEvidenceReferenceNote(insights)}`;
 }
 
 function shouldAppendEvidenceReference(plan: AgentPlan): boolean {
@@ -695,12 +691,6 @@ function shouldAppendEvidenceReference(plan: AgentPlan): boolean {
     }
     return /evidence|CreativeBrief|visual|image prompt|draft|quality gate|证据|图片方向|文案|草稿/i.test(step.reason);
   });
-}
-
-function labelForEvidenceSource(sourceType?: string): string {
-  if (sourceType === "viral_library") return "爆款库";
-  if (sourceType === "user_input") return "用户输入";
-  return "实时研究";
 }
 
 function buildStructuredAgentResponse({
