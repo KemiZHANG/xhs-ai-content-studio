@@ -134,6 +134,13 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
   }
 
   if (isViralKnowledgeRequest(message, lower)) {
+    if (isViralKnowledgeSaveRequest(message, lower)) {
+      return buildPlan({
+        intent: "save_viral_knowledge",
+        topic: inferTopic(message),
+        steps: [step("saveViralKnowledge", "Save high-value realtime research samples as structured viral-library patterns.", "knowledge.saveViralCase")]
+      });
+    }
     return buildPlan({
       intent: "retrieve_viral_knowledge",
       topic: inferTopic(message),
@@ -265,6 +272,10 @@ function hasExplicitResearchSignal(message: string, lower: string): boolean {
 
 function isViralKnowledgeRequest(message: string, lower: string): boolean {
   return /爆款库|RAG|历史爆款|爆款规律|可复用规律|刷新爆款|检索爆款库/.test(message) || lower.includes("viral knowledge") || lower.includes("rag");
+}
+
+function isViralKnowledgeSaveRequest(message: string, lower: string): boolean {
+  return /保存.*爆款库|存.*爆款库|加入.*爆款库|入库|沉淀.*爆款|把.*样本.*爆款库|save.*viral/i.test(message) || lower.includes("save viral");
 }
 
 function isImageGenerationRequest(message: string, lower: string): boolean {

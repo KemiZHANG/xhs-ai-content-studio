@@ -1477,6 +1477,74 @@ describe("agent orchestrator", () => {
     expect(result.cards.map((card) => card.type)).toContain("evidence_citations");
   });
 
+  it("saves current realtime research samples into the viral knowledge base from chat", async () => {
+    const sample: SampleEvidence = {
+      id: "note-save-viral-chat",
+      title: "广州咖啡馆高收藏拍照座位",
+      author: "author",
+      likes: 1400,
+      collects: 1800,
+      comments: 96,
+      shares: 24,
+      score: 3200,
+      url: "https://www.xiaohongshu.com/explore/note-save-viral-chat",
+      imageUrls: ["https://example.com/save.jpg"],
+      cachedImageUrls: [],
+      detailText: "先讲适合人群，再写窗边座位、光线、人均和周末排队，最后给避峰建议。",
+      commentSnippets: ["想知道哪张桌子出片", "人均多少"],
+      reasonHighlights: []
+    };
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      goal: "探店",
+      evidencePack: {
+        sampleIds: [sample.id],
+        insights: [{
+          id: "insight-save-title",
+          sourceType: "realtime",
+          type: "title",
+          insight: "标题突出高收藏拍照座位和避峰信息",
+          sourceSampleIds: [sample.id],
+          confidence: 0.82,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }]
+      },
+      selectedSamples: [sample],
+      currentStage: "evidence_ready"
+    });
+
+    const result = await runAgentTurn({
+      message: "把这些高收藏样本保存到爆款库",
+      conversationId: "chat-save-viral",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(result.intent).toBe("save_viral_knowledge");
+    expect(result.answer).toContain("保存进爆款库");
+    expect(result.postProject?.evidencePack.insights.some((insight) => insight.sourceType === "viral_library")).toBe(true);
+    expect(result.cards.map((card) => card.type)).toContain("viral_knowledge");
+    expect(result.toolTrace).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        label: "knowledge.saveViralCase",
+        status: "running"
+      })
+    ]));
+  });
+
   it("applies planner RAG filters after legacy research workflows", async () => {
     const highSample: SampleEvidence = {
       id: "note-high-filtered",

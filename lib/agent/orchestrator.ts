@@ -31,7 +31,9 @@ import type { ModelProvider } from "@/lib/models/provider";
 import { createAssetRecord, getAsset, saveAsset } from "@/lib/storage/assets";
 import { createDraftRecord, type DraftRecord } from "@/lib/storage/drafts";
 import { summarizeViralRetrievalFilters, type RagSufficiency, type ViralKnowledgePack } from "@/lib/rag/viral";
+import { reviewViralSaveCandidate } from "@/lib/viral-knowledge/store";
 import type { GeneratedDraft, XhsMcpWorkflowClient } from "@/lib/workflows/one-click";
+import type { SampleEvidence } from "@/lib/workflows/one-click";
 
 export type RunAgentTurnInput = AgentRuntimeContext & {
   message: string;
@@ -215,6 +217,41 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
         agentRun,
         trace,
         postProject: viralKnowledgeTurn.postProject
+      });
+    }
+
+    const viralKnowledgeSaveTurn = await maybeHandleViralKnowledgeSaveTurn(input, plan, initialPostProject);
+    if (viralKnowledgeSaveTurn) {
+      trace = addTraceEvent(trace, {
+        type: "tool_called",
+        label: "knowledge.saveViralCase",
+        detail: "Saved selected realtime research samples as structured viral-library patterns.",
+        metadata: {
+          savedCount: viralKnowledgeSaveTurn.savedCount,
+          skippedSampleIds: viralKnowledgeSaveTurn.skippedSampleIds,
+          addedInsightIds: viralKnowledgeSaveTurn.addedInsightIds
+        }
+      });
+      trace = addTraceEvent(trace, {
+        type: "workspace_updated",
+        label: "Workspace updated",
+        detail: "Attached saved viral-library patterns to the active PostProject evidencePack."
+      });
+      agentRun = completeRun(agentRun);
+      trace = addTraceEvent(trace, {
+        type: "run_completed",
+        label: "Agent run completed",
+        detail: "Agent turn completed after saving viral-library knowledge."
+      });
+      await persistAgentTrace(trace);
+      return buildAgentTurnResult({
+        answer: viralKnowledgeSaveTurn.answer,
+        plan,
+        workspace: viralKnowledgeSaveTurn.workspace,
+        currentDraft: input.currentDraft ?? undefined,
+        agentRun,
+        trace,
+        postProject: viralKnowledgeSaveTurn.postProject
       });
     }
 
@@ -1300,7 +1337,7 @@ function shouldShowAgentPlanCard(plan: AgentPlan): boolean {
   if (plan.intent === "ask") return false;
   if (plan.steps.length >= 3) return true;
   return plan.steps.some((step) =>
-    ["createCreativeBrief", "planVisuals", "assemblePost", "runQualityGate", "schedulePublish"].includes(step.action)
+    ["saveViralKnowledge", "createCreativeBrief", "planVisuals", "assemblePost", "runQualityGate", "schedulePublish"].includes(step.action)
   );
 }
 
@@ -1309,6 +1346,7 @@ function labelForAgentPlanAction(action: AgentAction): string {
     startProject: "新建项目",
     research: "搜索真实笔记",
     retrieveViralKnowledge: "检索爆款库",
+    saveViralKnowledge: "保存爆款规律",
     summarizeEvidence: "总结证据",
     createCreativeBrief: "生成 CreativeBrief",
     generateDraft: "生成文案",
@@ -2596,6 +2634,100 @@ async function maybeHandleGuardedPublishTurn(
   };
 }
 
+async function maybeHandleViralKnowledgeSaveTurn(
+  input: RunAgentTurnInput,
+  plan: ReturnType<typeof createAgentPlan>,
+  postProject: PostProject
+): Promise<{
+  answer: string;
+  workspace: WorkspaceState;
+  postProject: PostProject;
+  savedCount: number;
+  skippedSampleIds: string[];
+  addedInsightIds: string[];
+} | null> {
+  if (plan.intent !== "save_viral_knowledge") {
+    return null;
+  }
+  const samples = postProject.selectedSamples.filter(isSampleEvidenceLike) as SampleEvidence[];
+  if (!samples.length) {
+    const workspace = await updateWorkspaceState({ lastUserIntent: "save_viral_knowledge" });
+    return {
+      answer: "当前 PostProject 还没有可保存的实时研究样本。请先搜索/研究小红书笔记，拿到真实样本后再保存进爆款库。",
+      workspace,
+      postProject,
+      savedCount: 0,
+      skippedSampleIds: [],
+      addedInsightIds: []
+    };
+  }
+
+  const force = /强制|全部|低质量|也保存|force/i.test(input.message);
+  const registry = createAgentToolRegistry();
+  const candidates = samples
+    .map((sample) => ({
+      sample,
+      review: reviewViralSaveCandidate(sample)
+    }))
+    .sort((a, b) => b.review.score - a.review.score)
+    .slice(0, force ? 5 : 3);
+  const results = [];
+  const skippedSampleIds: string[] = [];
+
+  for (const item of candidates) {
+    try {
+      const result = await registry.call("knowledge.saveViralCase", {
+        sample: item.sample,
+        topic: postProject.topic ?? plan.topic ?? item.sample.title,
+        category: postProject.goal ?? "小红书图文",
+        model: input.settings.textApiKey.trim() ? input.model : undefined,
+        force
+      });
+      results.push(result);
+      const skipped = isRecord(result) && isRecord(result.data) && Array.isArray(result.data.skippedSampleIds)
+        ? result.data.skippedSampleIds.map(String)
+        : [];
+      skippedSampleIds.push(...skipped);
+    } catch (error) {
+      skippedSampleIds.push(item.sample.id);
+    }
+  }
+
+  const savedResults = results.filter((result) => isRecord(result) && result.ok === true);
+  const addedInsightIds = uniqueIds(savedResults.flatMap((result) =>
+    isRecord(result) && isRecord(result.data) && Array.isArray(result.data.addedInsightIds)
+      ? result.data.addedInsightIds.map(String)
+      : []
+  ));
+  const updatedProject = await readPostProject();
+  const workspace = await updateWorkspaceState({
+    topic: updatedProject.topic,
+    evidenceSummary: updatedProject.evidencePack.summary ?? postProject.evidencePack.summary,
+    selectedSamples: updatedProject.selectedSamples.length ? updatedProject.selectedSamples : postProject.selectedSamples,
+    lastUserIntent: "save_viral_knowledge"
+  });
+  const savedCount = savedResults.length;
+  const reviewLines = candidates.slice(0, 5).map((item) =>
+    `- ${item.sample.title}：质量分 ${item.review.score}/100；${item.review.reasons.slice(0, 2).join("；") || "可作为轻量参考"}`
+  );
+  return {
+    answer: [
+      savedCount
+        ? `已把 ${savedCount} 条高价值研究样本保存进爆款库，并为当前 PostProject 增加 ${addedInsightIds.length} 条可追溯爆款库证据。`
+        : "这批样本暂时没有达到爆款库入库门槛，所以没有写入长期爆款库。",
+      "入库只保存标题钩子、正文结构、标签组合、图片风格、痛点和评论关注点等规律，不会把原文当作仿写素材。",
+      reviewLines.length ? `样本评估：\n${reviewLines.join("\n")}` : "",
+      skippedSampleIds.length ? `跳过样本：${uniqueIds(skippedSampleIds).join("、")}` : "",
+      savedCount ? "下一步建议刷新 CreativeBrief，让文案和图片方向共享这些爆款库规律。" : "可以继续扩大样本数，或明确说“强制保存”把低分样本作为弱参考入库。"
+    ].filter(Boolean).join("\n"),
+    workspace,
+    postProject: updatedProject,
+    savedCount,
+    skippedSampleIds: uniqueIds(skippedSampleIds),
+    addedInsightIds
+  };
+}
+
 function projectWithMorePublishContext(project: PostProject, fallbackProject?: PostProject): PostProject {
   if (!fallbackProject) {
     return project;
@@ -3081,4 +3213,8 @@ function uniqueIds(ids: string[]): string[] {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object";
+}
+
+function isSampleEvidenceLike(value: unknown): value is SampleEvidence {
+  return isRecord(value) && typeof value.id === "string" && typeof value.title === "string";
 }

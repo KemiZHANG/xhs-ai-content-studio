@@ -113,6 +113,20 @@ describe("agent planner", () => {
     expect(plan.steps[0].toolName).toBe("knowledge.retrieveViralPatterns");
   });
 
+  it("plans saving current research samples into the viral library", () => {
+    const plan = createAgentPlan({
+      message: "把这些高收藏样本保存到爆款库，沉淀成可复用规律",
+      hasCurrentDraft: false,
+      attachedAssetCount: 0,
+      postStage: "evidence_ready",
+      hasEvidence: true
+    });
+
+    expect(plan.intent).toBe("save_viral_knowledge");
+    expect(plan.steps.map((step) => step.action)).toEqual(["saveViralKnowledge"]);
+    expect(plan.steps[0].toolName).toBe("knowledge.saveViralCase");
+  });
+
   it("plans product image generation when the user refers to uploaded product images", () => {
     const plan = createAgentPlan({
       message: "用我上传的产品图生成小红书场景图",
