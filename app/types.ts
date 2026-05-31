@@ -317,6 +317,9 @@ export type ChatMessage = {
   intentConfidence?: number;
   needsUserInput?: boolean;
   stage?: PostStage;
+  postProjectId?: string;
+  postProjectStage?: PostStage;
+  evidenceIds?: string[];
 };
 
 export type AgentResponseCardType =

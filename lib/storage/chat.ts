@@ -18,6 +18,9 @@ export type StoredChatMessage = {
   intentConfidence?: number;
   needsUserInput?: boolean;
   stage?: string;
+  postProjectId?: string;
+  postProjectStage?: string;
+  evidenceIds?: string[];
 };
 
 export type ChatConversation = {
@@ -33,7 +36,20 @@ type AppendChatTurnInput = {
   userContent: string;
   assistantContent: string;
   workflowResult?: OneClickResult;
-  assistantMeta?: Pick<StoredChatMessage, "cards" | "quickActions" | "toolTrace" | "questions" | "intent" | "intentConfidence" | "needsUserInput" | "stage">;
+  assistantMeta?: Pick<
+    StoredChatMessage,
+    | "cards"
+    | "quickActions"
+    | "toolTrace"
+    | "questions"
+    | "intent"
+    | "intentConfidence"
+    | "needsUserInput"
+    | "stage"
+    | "postProjectId"
+    | "postProjectStage"
+    | "evidenceIds"
+  >;
 };
 
 const MAX_CONVERSATIONS = 60;

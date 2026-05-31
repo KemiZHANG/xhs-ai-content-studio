@@ -55,6 +55,9 @@ describe("chat history storage", () => {
         intentConfidence: 0.66,
         needsUserInput: true,
         stage: "copy_ready",
+        postProjectId: "post-1",
+        postProjectStage: "copy_ready",
+        evidenceIds: ["insight-title", "insight-visual"],
         questions: ["请确认目标人群"],
         cards: [{
           id: "card-copy",
@@ -88,5 +91,8 @@ describe("chat history storage", () => {
     expect(assistant?.intentConfidence).toBe(0.66);
     expect(assistant?.needsUserInput).toBe(true);
     expect(assistant?.stage).toBe("copy_ready");
+    expect(assistant?.postProjectId).toBe("post-1");
+    expect(assistant?.postProjectStage).toBe("copy_ready");
+    expect(assistant?.evidenceIds).toEqual(["insight-title", "insight-visual"]);
   });
 });

@@ -491,6 +491,13 @@ describe("API route contracts", () => {
       topic: "coffee",
       currentStage: "researching"
     }));
+    expect(appendChatTurn).toHaveBeenCalledWith(expect.objectContaining({
+      assistantMeta: expect.objectContaining({
+        postProjectId: "post-test",
+        postProjectStage: "researching",
+        evidenceIds: []
+      })
+    }));
   });
 
   it("does not infer job publishing from default auto-publish or legacy autoPublish flags", async () => {

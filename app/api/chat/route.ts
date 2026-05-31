@@ -77,7 +77,7 @@ export async function POST(request: Request) {
         lastUserIntent: intent,
         recentConversationIds: conversationId ? [conversationId] : []
       });
-      await resetPostProject({
+      const queuedPostProject = await resetPostProject({
         id: initialWorkspace.workspaceId === "local-default"
           ? "post-local-default"
           : initialWorkspace.workspaceId.replace(/^workspace-/, "post-"),
@@ -92,7 +92,13 @@ export async function POST(request: Request) {
       const conversation = await appendChatTurn({
         conversationId,
         userContent: message,
-        assistantContent: answer
+        assistantContent: answer,
+        assistantMeta: {
+          stage: "researching",
+          postProjectId: queuedPostProject.id,
+          postProjectStage: queuedPostProject.currentStage,
+          evidenceIds: []
+        }
       });
       await updateCreatorMemoryFromTurn({
         accountId: settings.activeAccountId,
@@ -238,7 +244,10 @@ export async function POST(request: Request) {
         intent: result.intent,
         intentConfidence: result.intentConfidence,
         needsUserInput: result.needsUserInput,
-        stage: result.stage
+        stage: result.stage,
+        postProjectId: result.postProject?.id,
+        postProjectStage: result.postProject?.currentStage,
+        evidenceIds: result.postProject?.evidencePack?.insights?.map((insight) => insight.id).slice(0, 20)
       }
     });
 

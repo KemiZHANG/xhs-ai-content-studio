@@ -159,7 +159,10 @@ export function ChatPanel({
                 {message.workflowResult ? (
                   <ChatWorkflowResultSummary
                     result={message.workflowResult}
-                    requiresConfirmation={!isLatestConversation || index !== latestWorkflowResultIndex}
+                    requiresConfirmation={
+                      !(message.postProjectId && postProject?.id && message.postProjectId === postProject.id) &&
+                      (!isLatestConversation || index !== latestWorkflowResultIndex)
+                    }
                     onDraftCommand={onDraftCommand}
                     onCopyStudio={onOpenCopyWorkspace}
                     onImageStudio={() => onOpenImageStudio()}
