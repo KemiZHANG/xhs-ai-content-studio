@@ -269,6 +269,7 @@ export type AgentResponseCardType =
   | "evidence_summary"
   | "viral_knowledge"
   | "evidence_citations"
+  | "creation_provenance"
   | "creative_brief"
   | "copy_draft"
   | "visual_direction"

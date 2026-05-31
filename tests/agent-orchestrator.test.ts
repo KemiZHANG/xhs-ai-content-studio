@@ -1368,11 +1368,13 @@ describe("agent orchestrator", () => {
     expect(result.answer).toContain("文案直接引用的证据");
     expect(result.answer).toContain("实时研究");
     expect(result.answer).toContain("爆款库补充规律");
+    expect(result.answer).toContain("创作依据");
     expect(result.answer).toContain("下一步建议");
     expect(result.answer).toContain("图片方向");
     expect(result.quickActions.map((action) => action.action)).toContain("plan_visuals");
     expect(result.cards.map((card) => card.type)).toContain("copy_draft");
     expect(result.cards.map((card) => card.type)).toContain("evidence_citations");
+    expect(result.cards.map((card) => card.type)).toContain("creation_provenance");
     expect(result.cards.find((card) => card.type === "evidence_summary")).toMatchObject({
       summary: expect.stringContaining("爆款库"),
       data: expect.objectContaining({

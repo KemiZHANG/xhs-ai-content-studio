@@ -23,6 +23,7 @@ import { buildEvidenceReferenceNote, labelForEvidenceSource } from "@/lib/post-p
 import { insightsFromUserBriefInput, mergeEvidenceInsights } from "@/lib/post-project/evidence";
 import { getPostStageGuidance } from "@/lib/post-project/guidance";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
+import { buildCreationProvenanceSummary, formatCreationProvenanceForReply } from "@/lib/post-project/provenance";
 import { runPostQualityGate } from "@/lib/post-project/quality";
 import { buildPublishVersionSnapshot } from "@/lib/post-project/versioning";
 import type { PostAction, PostProject, ProductInfo } from "@/lib/post-project/types";
@@ -751,7 +752,12 @@ function buildAgentTurnResult({
   postProject?: PostProject | null;
 }): AgentTurnResult {
   const cards = buildCardsFromTurn(workspace, currentDraft, postProject, plan);
-  const evidenceAwareAnswer = appendEvidenceReferenceNote(answer, plan, postProject);
+  const evidenceAwareAnswer = appendCreationProvenanceNote(
+    appendEvidenceReferenceNote(answer, plan, postProject),
+    plan,
+    postProject,
+    currentDraft ?? null
+  );
   const structured = buildStructuredAgentResponse({
     answer: evidenceAwareAnswer,
     plan,
@@ -782,6 +788,31 @@ function appendEvidenceReferenceNote(answer: string, plan: AgentPlan, postProjec
     return answer;
   }
   return `${answer}\n\n${buildEvidenceReferenceNote(insights)}`;
+}
+
+function appendCreationProvenanceNote(
+  answer: string,
+  plan: AgentPlan,
+  postProject?: PostProject | null,
+  currentDraft?: DraftRecord | null
+): string {
+  if (!shouldAppendCreationProvenance(plan)) {
+    return answer;
+  }
+  if (/创作依据：|为什么这样创作/.test(answer)) {
+    return answer;
+  }
+  const provenance = buildCreationProvenanceSummary(postProject, currentDraft ?? postProject?.copyDraft ?? null);
+  if (!provenance.canExplainCreation && answer.includes("证据状态")) {
+    return answer;
+  }
+  return `${answer}\n\n${formatCreationProvenanceForReply(provenance)}`;
+}
+
+function shouldAppendCreationProvenance(plan: AgentPlan): boolean {
+  return plan.steps.some((step) =>
+    ["generateDraft", "reviseDraft", "planVisuals", "generateImages", "generateCards", "assemblePost", "runQualityGate"].includes(step.action)
+  );
 }
 
 function shouldAppendEvidenceReference(plan: AgentPlan): boolean {
@@ -1379,6 +1410,16 @@ function buildCardsFromTurn(
   }
 
   const draft = currentDraft ?? workspace.currentDraft;
+  if (postProject?.creativeBrief || draft || postProject?.visualDirection || postProject?.imagePrompts.length) {
+    const provenance = buildCreationProvenanceSummary(postProject, draft);
+    cards.push({
+      id: "card-creation-provenance",
+      type: "creation_provenance",
+      title: provenance.headline,
+      summary: provenance.detail,
+      data: provenance
+    });
+  }
   if (draft) {
     const citationReport =
       postProject
