@@ -4352,6 +4352,15 @@ textarea {
   padding: 12px;
 }
 
+.publishIntentSummary.stale {
+  background: rgba(190, 122, 20, 0.08);
+  border-color: rgba(190, 122, 20, 0.26);
+}
+
+.publishIntentSummary.stale strong {
+  color: #8c5412;
+}
+
 .publishIntentSummary strong {
   color: var(--ink);
   font-size: 13px;

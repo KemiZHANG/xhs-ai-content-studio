@@ -37,6 +37,7 @@ import type {
 import { getOrderedPostNextActions, getPostStageGuidance } from "@/lib/post-project/guidance";
 import { buildEvidenceCitationReport, buildEvidenceReferenceSummary } from "@/lib/post-project/citations";
 import { activeAccountReadinessHint, isHealthForActiveAccount } from "@/app/components/account-readiness";
+import { isPublishPlanForActiveAccount } from "@/app/components/publish-confirmation";
 import { citationFieldBadges, formatCitationStripSummary } from "@/app/components/evidence-citation-display";
 import { isHighPriorityAgentCard, pickVisibleAgentCards } from "@/app/components/agent-card-visibility";
 import { buildAgentTraceSummary } from "@/app/components/agent-trace-summary";
@@ -212,6 +213,10 @@ export function PostStudioPanel({
   const quality = project?.qualityCheck;
   const brief = project?.creativeBrief;
   const activeAccount = settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
+  const projectPublishPlanMatchesActiveAccount = isPublishPlanForActiveAccount(project?.publishPlan, settings.activeAccountId);
+  const staleAccountPublishPlan = project?.publishPlan && !projectPublishPlanMatchesActiveAccount
+    ? project.publishPlan
+    : null;
   const activePublishPlan = pendingPublish
     ? {
         status: "awaiting_approval",
@@ -225,7 +230,7 @@ export function PostStudioPanel({
         confirmationChecklist: project?.publishPlan?.confirmationChecklist ?? [],
         versionSnapshot: project?.publishPlan?.versionSnapshot
       }
-    : project?.publishPlan
+    : project?.publishPlan && projectPublishPlanMatchesActiveAccount
       ? {
           status: project.publishPlan.status,
           visibility: project.publishPlan.visibility,
@@ -1285,6 +1290,15 @@ export function PostStudioPanel({
                       </button>
                     </div>
                   ) : null}
+                </div>
+              ) : null}
+              {staleAccountPublishPlan ? (
+                <div className="publishIntentSummary stale">
+                  <strong>发布确认单已与当前账号不匹配</strong>
+                  <p>
+                    这张确认单属于账号 {staleAccountPublishPlan.accountId ?? "未知账号"}，
+                    当前账号是 {activeAccount?.displayName ?? settings.activeAccountId}。为了避免误发，请重新生成发布确认单。
+                  </p>
                 </div>
               ) : null}
               {quality ? (

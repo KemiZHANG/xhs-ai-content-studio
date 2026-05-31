@@ -73,7 +73,7 @@ export function buildPendingPublishFromPlan({
   if (!plan.title || !plan.content || !Array.isArray(plan.tags) || !Array.isArray(plan.images)) {
     return null;
   }
-  if (plan.accountId && plan.accountId !== settings.activeAccountId) {
+  if (!isPublishPlanForActiveAccount(plan, settings.activeAccountId)) {
     return null;
   }
   if (plan.versionSnapshot && !isFreshPublishVersionSnapshot(plan.versionSnapshot)) {
@@ -105,6 +105,13 @@ export function buildPendingPublishFromPlan({
     mcpUrl: plan.mcpUrl ?? activeAccount?.mcpUrl ?? settings.mcpUrl,
     loginName: health?.activeAccount?.loginName
   };
+}
+
+export function isPublishPlanForActiveAccount(
+  plan: WorkspaceState["publishPlan"] | PostProject["publishPlan"] | null | undefined,
+  activeAccountId: string
+): boolean {
+  return Boolean(plan && (!plan.accountId || plan.accountId === activeAccountId));
 }
 
 export function isFreshPublishVersionSnapshot(snapshot: PublishVersionSnapshotView): boolean {

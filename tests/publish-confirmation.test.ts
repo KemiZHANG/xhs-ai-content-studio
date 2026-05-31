@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPendingPublishFromPlan, buildPublishConfirmationReadiness } from "@/app/components/publish-confirmation";
+import { buildPendingPublishFromPlan, buildPublishConfirmationReadiness, isPublishPlanForActiveAccount } from "@/app/components/publish-confirmation";
 import type { Health, RedactedSettings, WorkspacePublishPlan } from "@/app/types";
 
 const settings: RedactedSettings = {
@@ -98,6 +98,13 @@ describe("publish confirmation hydration", () => {
     expect(buildPendingPublishFromPlan({ plan: publishPlan({ requestedBy: "chat" }), settings, health })).toBeNull();
     expect(buildPendingPublishFromPlan({ plan: publishPlan({ status: "published" }), settings, health })).toBeNull();
     expect(buildPendingPublishFromPlan({ plan: publishPlan({ accountId: "account-b" }), settings, health })).toBeNull();
+  });
+
+  it("marks publish plans from another Xiaohongshu account as inactive for the current workspace", () => {
+    expect(isPublishPlanForActiveAccount(publishPlan({ accountId: "account-a" }), "account-a")).toBe(true);
+    expect(isPublishPlanForActiveAccount(publishPlan({ accountId: "account-b" }), "account-a")).toBe(false);
+    expect(isPublishPlanForActiveAccount(publishPlan({ accountId: undefined }), "account-a")).toBe(true);
+    expect(isPublishPlanForActiveAccount(null, "account-a")).toBe(false);
   });
 
   it("does not hydrate a publish confirmation when its version snapshot is stale", () => {
