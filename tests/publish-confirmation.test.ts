@@ -61,6 +61,21 @@ function publishPlan(overrides: Partial<WorkspacePublishPlan> = {}): WorkspacePu
   };
 }
 
+function versionSnapshot(overrides: Partial<NonNullable<WorkspacePublishPlan["versionSnapshot"]>> = {}): NonNullable<WorkspacePublishPlan["versionSnapshot"]> {
+  return {
+    copyVersionId: "copy-draft-1",
+    imagePromptVersionIds: ["prompt-1"],
+    selectedImageIds: ["asset-1"],
+    finalPostEvidenceIds: ["insight-1"],
+    qualityGateFresh: true,
+    qualityCanPublish: true,
+    finalPostMatchesCanvas: true,
+    summary: "版本已锁定",
+    warnings: [],
+    ...overrides
+  };
+}
+
 describe("publish confirmation hydration", () => {
   it("rebuilds a pending confirmation from a persisted manual publish plan", () => {
     const pending = buildPendingPublishFromPlan({ plan: publishPlan(), settings, health });
@@ -83,6 +98,25 @@ describe("publish confirmation hydration", () => {
     expect(buildPendingPublishFromPlan({ plan: publishPlan({ requestedBy: "chat" }), settings, health })).toBeNull();
     expect(buildPendingPublishFromPlan({ plan: publishPlan({ status: "published" }), settings, health })).toBeNull();
     expect(buildPendingPublishFromPlan({ plan: publishPlan({ accountId: "account-b" }), settings, health })).toBeNull();
+  });
+
+  it("does not hydrate a publish confirmation when its version snapshot is stale", () => {
+    expect(
+      buildPendingPublishFromPlan({
+        plan: publishPlan({ versionSnapshot: versionSnapshot({ qualityGateFresh: false, warnings: ["Quality Gate 已失效"] }) }),
+        settings,
+        health
+      })
+    ).toBeNull();
+
+    expect(
+      buildPendingPublishFromPlan({
+        plan: publishPlan({ versionSnapshot: versionSnapshot() }),
+        currentVersionSnapshot: versionSnapshot({ selectedImageIds: ["asset-2"] }),
+        settings,
+        health
+      })
+    ).toBeNull();
   });
 
   it("labels publish actions as confirmation creation instead of direct external publishing", () => {

@@ -39,6 +39,7 @@ import {
 import { shouldAutoOpenLatestConversation } from "@/app/state/chat-history-selection";
 import { noticeForProjectReset, resetWorkflowFormForNewProject } from "@/app/state/project-reset";
 import { canApplyWorkspaceSnapshot, isJobForWorkspace } from "@/lib/jobs/context";
+import { buildPublishVersionSnapshot } from "@/lib/post-project/versioning";
 
 import type {
   AssetRecord,
@@ -182,9 +183,14 @@ export default function Home() {
     const hydrated = buildPendingPublishFromPlan({
       plan: postProject?.publishPlan ?? workspace?.publishPlan ?? null,
       settings,
-      health
+      health,
+      currentVersionSnapshot: postProject ? buildPublishVersionSnapshot(postProject) : undefined
     });
-    if (!hydrated || hydrated.publishIntentId === dismissedPublishIntentId) {
+    if (!hydrated) {
+      setPendingPublish(null);
+      return;
+    }
+    if (hydrated.publishIntentId === dismissedPublishIntentId) {
       return;
     }
     setPendingPublish((current) =>
@@ -193,6 +199,10 @@ export default function Home() {
   }, [
     dismissedPublishIntentId,
     health?.activeAccount?.loginName,
+    postProject?.copyDraft?.id,
+    postProject?.finalPost?.copyVersionId,
+    postProject?.qualityCheck?.checkedAt,
+    postProject?.selectedImages.join("|"),
     postProject?.publishPlan?.id,
     postProject?.publishPlan?.status,
     settings.activeAccountId,

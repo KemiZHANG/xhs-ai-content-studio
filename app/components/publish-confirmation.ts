@@ -24,6 +24,8 @@ export type PublishConfirmationReadiness = {
   helperText: string;
 };
 
+type PublishVersionSnapshotView = NonNullable<NonNullable<WorkspaceState["publishPlan"]>["versionSnapshot"]>;
+
 export function buildPublishConfirmationReadiness({
   contentReady,
   accountReady,
@@ -57,11 +59,13 @@ export function buildPublishConfirmationReadiness({
 export function buildPendingPublishFromPlan({
   plan,
   settings,
-  health
+  health,
+  currentVersionSnapshot
 }: {
   plan: WorkspaceState["publishPlan"] | PostProject["publishPlan"] | null | undefined;
   settings: RedactedSettings;
   health: Health | null;
+  currentVersionSnapshot?: PublishVersionSnapshotView;
 }): PendingPublishConfirmation | null {
   if (!plan || plan.status !== "awaiting_approval" || plan.requestedBy !== "manual" || !plan.id) {
     return null;
@@ -70,6 +74,16 @@ export function buildPendingPublishFromPlan({
     return null;
   }
   if (plan.accountId && plan.accountId !== settings.activeAccountId) {
+    return null;
+  }
+  if (plan.versionSnapshot && !isFreshPublishVersionSnapshot(plan.versionSnapshot)) {
+    return null;
+  }
+  if (
+    plan.versionSnapshot &&
+    currentVersionSnapshot &&
+    !publishVersionSnapshotMatches(plan.versionSnapshot, currentVersionSnapshot)
+  ) {
     return null;
   }
   const activeAccount = settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
@@ -91,6 +105,30 @@ export function buildPendingPublishFromPlan({
     mcpUrl: plan.mcpUrl ?? activeAccount?.mcpUrl ?? settings.mcpUrl,
     loginName: health?.activeAccount?.loginName
   };
+}
+
+export function isFreshPublishVersionSnapshot(snapshot: PublishVersionSnapshotView): boolean {
+  return Boolean(snapshot.qualityGateFresh && snapshot.qualityCanPublish && snapshot.finalPostMatchesCanvas && !snapshot.warnings.length);
+}
+
+export function publishVersionSnapshotMatches(
+  left: PublishVersionSnapshotView,
+  right: PublishVersionSnapshotView
+): boolean {
+  return publishVersionSnapshotSignature(left) === publishVersionSnapshotSignature(right);
+}
+
+function publishVersionSnapshotSignature(snapshot: PublishVersionSnapshotView): string {
+  return JSON.stringify({
+    copyVersionId: snapshot.copyVersionId ?? "",
+    imagePromptVersionIds: [...snapshot.imagePromptVersionIds].sort(),
+    selectedImageIds: [...snapshot.selectedImageIds].sort(),
+    finalPostEvidenceIds: [...snapshot.finalPostEvidenceIds].sort(),
+    qualityGateFresh: snapshot.qualityGateFresh === true,
+    qualityCanPublish: snapshot.qualityCanPublish === true,
+    finalPostMatchesCanvas: snapshot.finalPostMatchesCanvas === true,
+    warnings: [...snapshot.warnings].sort()
+  });
 }
 
 function isPublishVisibilityLabel(value: unknown): value is RedactedSettings["defaultVisibility"] {
