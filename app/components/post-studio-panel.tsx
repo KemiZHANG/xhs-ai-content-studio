@@ -333,7 +333,7 @@ export function PostStudioPanel({
               <span style={{ width: `${readiness.progress}%` }} />
             </div>
             <div className="postReadinessSteps">
-              {readiness.items.slice(0, 6).map((item) => (
+              {readiness.visibleItems.map((item) => (
                 <ReadinessStep item={item} key={item.id} onQuickAction={onQuickAction} />
               ))}
             </div>

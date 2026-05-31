@@ -126,6 +126,9 @@ describe("post readiness report", () => {
     expect(report.blockers).toEqual([
       expect.objectContaining({ id: "confirmation" })
     ]);
+    expect(report.visibleItems.map((item) => item.id)).toContain("confirmation");
+    expect(report.visibleItems.map((item) => item.id)).toContain("quality");
+    expect(report.visibleItems.length).toBeLessThanOrEqual(5);
   });
 
   it("shows quality issues before allowing publish confirmation", () => {
@@ -192,6 +195,7 @@ describe("post readiness report", () => {
     expect(report.canRequestPublish).toBe(false);
     expect(report.blockers.map((item) => item.id)).toContain("quality");
     expect(report.items.find((item) => item.id === "quality")?.detail).toContain("图片方向");
+    expect(report.visibleItems.map((item) => item.id)).toContain("quality");
   });
 
   it("does not treat an untraced prompt as confirmed visual direction", () => {

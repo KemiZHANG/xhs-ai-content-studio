@@ -21,6 +21,7 @@ export type PostReadinessItem = {
 
 export type PostReadinessReport = {
   items: PostReadinessItem[];
+  visibleItems: PostReadinessItem[];
   blockers: PostReadinessItem[];
   nextAction?: PostAction;
   progress: number;
@@ -161,12 +162,40 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
 
   return {
     items,
+    visibleItems: selectVisibleReadinessItems(items, blockers),
     blockers,
     nextAction,
     progress,
     summary,
     canRequestPublish
   };
+}
+
+function selectVisibleReadinessItems(items: PostReadinessItem[], blockers: PostReadinessItem[]): PostReadinessItem[] {
+  const byId = new Map(items.map((item) => [item.id, item]));
+  const pinnedIds = [
+    blockers[0]?.id,
+    items.find((item) => item.action)?.id,
+    "quality",
+    "confirmation"
+  ].filter((id): id is PostReadinessStepId => Boolean(id));
+  const visible: PostReadinessItem[] = [];
+
+  for (const id of pinnedIds) {
+    const item = byId.get(id);
+    if (item && !visible.some((existing) => existing.id === item.id)) {
+      visible.push(item);
+    }
+  }
+
+  for (const item of items) {
+    if (visible.length >= 5) break;
+    if (!visible.some((existing) => existing.id === item.id)) {
+      visible.push(item);
+    }
+  }
+
+  return visible.sort((left, right) => items.indexOf(left) - items.indexOf(right));
 }
 
 function hasTraceableVisualPlan(visualDirection: unknown, imagePrompts: readonly unknown[]): boolean {
