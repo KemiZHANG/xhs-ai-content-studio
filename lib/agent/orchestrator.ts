@@ -653,7 +653,7 @@ function buildAgentTurnResult({
     workspace,
     postProject,
     cards,
-    traceItems: buildToolTraceItems(trace)
+    traceItems: buildToolTraceItems(trace, plan)
   });
   return {
     ...structured,
@@ -1598,14 +1598,26 @@ function buildQuickActions(plan: AgentPlan, workspace: WorkspaceState, postProje
   ];
 }
 
-function buildToolTraceItems(trace: ReturnType<typeof createTrace>): AgentToolTraceItem[] {
-  return trace.events.map((event) => ({
+function buildToolTraceItems(trace: ReturnType<typeof createTrace>, plan?: AgentPlan): AgentToolTraceItem[] {
+  const eventLabels = new Set(trace.events.map((event) => event.label));
+  const plannedAt = trace.events[0]?.createdAt ?? new Date().toISOString();
+  const plannedItems: AgentToolTraceItem[] = plan?.steps
+    .filter((step) => step.toolName && !eventLabels.has(step.toolName))
+    .map((step, index) => ({
+      id: `planned-${index + 1}-${step.action}`,
+      label: step.toolName as string,
+      status: "planned" as const,
+      detail: step.reason,
+      createdAt: plannedAt
+    })) ?? [];
+  const eventItems = trace.events.map((event) => ({
     id: event.id,
     label: event.label,
     status: statusForTraceEvent(event.type),
     detail: event.detail,
     createdAt: event.createdAt
   }));
+  return [...plannedItems, ...eventItems];
 }
 
 function statusForTraceEvent(eventType: ReturnType<typeof createTrace>["events"][number]["type"]): AgentToolTraceItem["status"] {

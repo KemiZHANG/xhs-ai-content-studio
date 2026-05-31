@@ -116,6 +116,16 @@ describe("agent orchestrator", () => {
       ])
     });
     expect(result.intent).toBe("research_to_draft");
+    expect(result.toolTrace).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        label: "project.createCreativeBrief",
+        status: "planned"
+      }),
+      expect.objectContaining({
+        label: "workflow.planVisuals",
+        status: "planned"
+      })
+    ]));
   });
 
   it("asks stage-aware questions before drafting without evidence or CreativeBrief", async () => {
