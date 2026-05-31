@@ -44,6 +44,7 @@ import { isHighPriorityAgentCard, pickVisibleAgentCards } from "@/app/components
 import { buildAgentMessageDisplay } from "@/app/components/agent-message-display";
 import { buildAgentTraceSummary } from "@/app/components/agent-trace-summary";
 import { extractStageGuidanceDisplay } from "@/app/components/agent-stage-guidance";
+import { extractAgentDirectorSummaryDisplay } from "@/app/components/agent-director-summary-display";
 import { extractAgentCreationProvenanceDisplay } from "@/app/components/agent-creation-provenance-display";
 import { selectStudioChatWindow } from "@/app/components/studio-chat-window";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
@@ -1895,8 +1896,35 @@ function AgentCardInlineDetails({
   card: AgentResponseCard;
   onQuickAction: (action: string) => void;
 }) {
+  const directorSummary = extractAgentDirectorSummaryDisplay(card);
   const stageGuidance = extractStageGuidanceDisplay(card);
   const provenance = extractAgentCreationProvenanceDisplay(card);
+  if (directorSummary) {
+    return (
+      <div className="agentDirectorMini">
+        <div className="agentDirectorReason">
+          <span>{directorSummary.needsUserInput ? "需要补充" : "阶段判断"}</span>
+          <strong>{directorSummary.stageTitle}</strong>
+          <p>{directorSummary.stageDescription}</p>
+        </div>
+        <div className="agentDirectorWhy">
+          <span>为什么这样做</span>
+          <p>{directorSummary.why}</p>
+        </div>
+        <div className="agentDirectorStats">
+          <span>进度 <b>{directorSummary.progress ?? 0}%</b></span>
+          <span>证据 <b>{directorSummary.evidenceCount}</b></span>
+          <span>草稿 <b>{directorSummary.hasDraft ? "已建立" : "待生成"}</b></span>
+          <span>阻塞 <b>{directorSummary.blockerCount}</b></span>
+        </div>
+        {directorSummary.nextAction ? (
+          <button className="miniActionButton primaryInline" type="button" onClick={() => onQuickAction(directorSummary.nextAction!)}>
+            建议下一步：{directorSummary.nextActionLabel}
+          </button>
+        ) : null}
+      </div>
+    );
+  }
   if (provenance) {
     return (
       <div className="agentProvenanceMini">

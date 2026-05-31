@@ -4249,6 +4249,75 @@ textarea {
   border-color: rgba(18, 118, 97, 0.18);
 }
 
+.agentMiniCard.director_summary {
+  background: linear-gradient(145deg, rgba(18, 118, 97, 0.1), rgba(255, 255, 255, 0.74));
+  border-color: rgba(18, 118, 97, 0.24);
+}
+
+.agentDirectorMini {
+  border-top: 1px solid rgba(24, 28, 24, 0.08);
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 8px;
+}
+
+.agentDirectorReason,
+.agentDirectorWhy {
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(24, 28, 24, 0.08);
+  border-radius: 8px;
+  display: grid;
+  gap: 3px;
+  padding: 7px;
+}
+
+.agentDirectorReason span,
+.agentDirectorWhy span {
+  color: var(--accent-strong);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.agentDirectorReason strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.agentDirectorReason p,
+.agentDirectorWhy p {
+  color: var(--muted);
+  display: block;
+  font-size: 11px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.agentDirectorStats {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.agentDirectorStats span {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(24, 28, 24, 0.08);
+  border-radius: 8px;
+  color: var(--muted);
+  display: flex;
+  font-size: 10px;
+  font-weight: 800;
+  justify-content: space-between;
+  padding: 6px 7px;
+  text-transform: none;
+}
+
+.agentDirectorStats b {
+  color: var(--accent-strong);
+  font-weight: 900;
+}
+
 .agentStageMiniFlow {
   border-top: 1px solid rgba(24, 28, 24, 0.08);
   display: grid;
