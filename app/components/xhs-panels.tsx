@@ -27,6 +27,7 @@ import type {
   WorkflowRun,
   WorkspaceState
 } from "@/app/types";
+import { getJobDisplayMeta } from "@/app/components/job-display";
 import { modeLabel } from "@/app/components/xhs-display-utils";
 import { Metric, StatusPill } from "@/app/components/status-badges";
 import { WorkflowResultView } from "@/app/components/workflow-result-view";
@@ -324,18 +325,24 @@ export function PublishAuditPanel({
 export function JobsPanel({
   jobs,
   activeJob,
+  workspace,
   onReload,
+  onSelectJob,
   onViewResult,
   onRestoreResult,
   onOpenImageStudio
 }: {
   jobs: JobRecord[];
   activeJob?: JobRecord;
+  workspace?: WorkspaceState | null;
   onReload: () => void;
+  onSelectJob: (job: JobRecord) => void;
   onViewResult: (job: JobRecord) => void;
   onRestoreResult: (job: JobRecord) => void;
   onOpenImageStudio: () => void;
 }) {
+  const activeJobMeta = activeJob ? getJobDisplayMeta(activeJob, workspace) : null;
+
   return (
     <div className="twoColumn wideLeft">
       <section className="panel">
@@ -357,7 +364,10 @@ export function JobsPanel({
                 <strong>{activeJob.title}</strong>
                 <span>{new Date(activeJob.createdAt).toLocaleString()}</span>
               </div>
-              <StatusPill ok={activeJob.status === "completed"} label={`${activeJob.status} · ${activeJob.progress}%`} />
+              <div className="jobTitlePills">
+                <StatusPill ok={activeJob.status === "completed"} label={activeJobMeta?.statusLabel ?? `${activeJob.status} · ${activeJob.progress}%`} />
+                {activeJobMeta ? <StatusPill ok={activeJobMeta.scopeTone === "current"} label={activeJobMeta.scopeLabel} /> : null}
+              </div>
             </div>
             <div className="progressTrack">
               <i style={{ width: `${activeJob.progress}%` }} />
@@ -374,12 +384,12 @@ export function JobsPanel({
             {activeJob.status === "completed" && activeJob.result ? (
               <section className="resultBlock jobCompletionActions">
                 <h3>任务已完成</h3>
-                <p>研究结果已经准备好，可以回到主题研究台查看证据，也可以继续进入图片创作台。</p>
+                <p>{activeJobMeta?.resultHint ?? "研究结果已经准备好，可以回到 Post Studio 查看证据，也可以继续进入图片创作台。"}</p>
                 <div className="actionRow">
-                  <button className="primaryButton" onClick={() => onViewResult(activeJob)} type="button">
+                  <button className="primaryButton" disabled={!activeJobMeta?.canViewResult} onClick={() => onViewResult(activeJob)} type="button">
                     查看研究结果
                   </button>
-                  <button className="secondaryButton" onClick={() => onRestoreResult(activeJob)} type="button">
+                  <button className="secondaryButton" disabled={!activeJobMeta?.canRestoreResult} onClick={() => onRestoreResult(activeJob)} type="button">
                     恢复为当前项目
                   </button>
                   <button className="secondaryButton" onClick={onOpenImageStudio} type="button">
@@ -410,18 +420,34 @@ export function JobsPanel({
         </div>
         <div className="historyList">
           {jobs.length ? (
-            jobs.map((job) => (
-              <article className="historyItem" key={job.id}>
-                <div>
-                  <span>{new Date(job.updatedAt).toLocaleString()}</span>
-                  <h3>{job.title}</h3>
-                  <p>{job.status} · {job.progress}%</p>
-                </div>
-                <div className="historyMeta">
-                  <span>{job.type}</span>
-                </div>
-              </article>
-            ))
+            jobs.map((job) => {
+              const meta = getJobDisplayMeta(job, workspace);
+              return (
+                <article className={activeJob?.id === job.id ? "historyItem active jobHistoryItem" : "historyItem jobHistoryItem"} key={job.id}>
+                  <div>
+                    <span>{new Date(job.updatedAt).toLocaleString()}</span>
+                    <h3>{job.title}</h3>
+                    <p>{meta.statusLabel}</p>
+                    <p className="jobResultHint">{meta.resultHint}</p>
+                  </div>
+                  <div className="historyMeta jobHistoryMeta">
+                    <span>{job.type}</span>
+                    <span className={`jobScopeBadge ${meta.scopeTone}`}>{meta.scopeLabel}</span>
+                  </div>
+                  <div className="jobHistoryActions">
+                    <button className="secondaryButton" onClick={() => onSelectJob(job)} type="button">
+                      {meta.primaryActionLabel}
+                    </button>
+                    <button className="secondaryButton" disabled={!meta.canViewResult} onClick={() => onViewResult(job)} type="button">
+                      查看结果
+                    </button>
+                    <button className="secondaryButton" disabled={!meta.canRestoreResult} onClick={() => onRestoreResult(job)} type="button">
+                      恢复
+                    </button>
+                  </div>
+                </article>
+              );
+            })
           ) : (
             <p className="muted">暂无任务。</p>
           )}

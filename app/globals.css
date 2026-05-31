@@ -1597,6 +1597,14 @@ textarea {
   justify-content: space-between;
 }
 
+.jobTitlePills {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .canvasReadinessHeader strong {
   background: rgba(18, 118, 97, 0.1);
   border: 1px solid rgba(18, 118, 97, 0.18);
@@ -2735,6 +2743,44 @@ textarea {
   padding: 8px 10px;
 }
 
+.jobHistoryItem {
+  display: grid;
+  gap: 12px;
+}
+
+.jobHistoryMeta {
+  align-content: start;
+}
+
+.jobResultHint {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.jobHistoryActions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.jobHistoryActions .secondaryButton {
+  min-height: 34px;
+  padding-inline: 10px;
+}
+
+.jobScopeBadge.current {
+  background: rgba(18, 118, 97, 0.1);
+  border-color: rgba(18, 118, 97, 0.22);
+  color: var(--accent-strong);
+}
+
+.jobScopeBadge.foreign,
+.jobScopeBadge.legacy {
+  background: rgba(190, 122, 20, 0.1);
+  border-color: rgba(190, 122, 20, 0.22);
+  color: #8a5a10;
+}
+
 .jobDetail {
   display: grid;
   gap: 14px;
@@ -2750,6 +2796,14 @@ textarea {
 .jobTitleRow div {
   display: grid;
   gap: 5px;
+}
+
+.jobTitleRow .jobTitlePills {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .jobTitleRow span {

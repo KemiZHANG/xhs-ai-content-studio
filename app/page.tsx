@@ -1495,7 +1495,9 @@ export default function Home() {
           <JobsPanel
             jobs={jobs}
             activeJob={activeJob}
+            workspace={workspace}
             onReload={() => void loadJobs()}
+            onSelectJob={(job) => setActiveJobId(job.id)}
             onViewResult={viewJobResult}
             onRestoreResult={(job) => void restoreJobResult(job)}
             onOpenImageStudio={() => openImageStudioFromEvidence()}
