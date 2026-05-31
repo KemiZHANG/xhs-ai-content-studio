@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { authorizePublishIntent, buildPublishConfirmationChecklist, createPublishIntent } from "@/lib/agent/guardrails";
+import { authorizePublishIntent, buildPublishConfirmationChecklist, confirmPublishIntentChecklist, createPublishIntent } from "@/lib/agent/guardrails";
 import { updateWorkspaceState } from "@/lib/agent/state";
 import type { PublishEvidenceCitationSummary, PublishIntent, PublishIntentStatus, PublishPolicy, PublishVersionSnapshot } from "@/lib/agent/types";
 import { appendPublishAudit } from "@/lib/storage/publish-audit";
@@ -75,6 +75,10 @@ export async function executeGuardedPublish({
       reasons: publishIntent.guardrailResults,
       publishIntent
     };
+  }
+
+  if (policy.confirmed) {
+    publishIntent = confirmPublishIntentChecklist(publishIntent);
   }
 
   const decision = authorizePublishIntent(publishIntent, policy);

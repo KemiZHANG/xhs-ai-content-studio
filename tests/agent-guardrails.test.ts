@@ -2,6 +2,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   authorizePublishIntent,
+  confirmPublishIntentChecklist,
   createPublishIntent,
   isSafePublishImagePath,
   validatePublishIntent
@@ -56,7 +57,7 @@ describe("agent publish guardrails", () => {
   });
 
   it("allows publish-ready content after explicit confirmation", () => {
-    const intent = baseIntent();
+    const intent = confirmPublishIntentChecklist(baseIntent());
     const decision = authorizePublishIntent(intent, { mode: "auto_publish_allowed", confirmed: true });
 
     expect(decision.allowed).toBe(true);
@@ -64,6 +65,15 @@ describe("agent publish guardrails", () => {
     expect((intent.confirmationChecklist ?? []).map((item) => item.label)).toEqual(
       expect.arrayContaining(["最终文案版本", "最终图片版本", "图片方向 / Prompt", "发布账号", "可见范围", "Quality Gate"])
     );
+  });
+
+  it("blocks explicit confirmation when required checklist items are still unchecked", () => {
+    const intent = baseIntent();
+    const decision = authorizePublishIntent(intent, { mode: "auto_publish_allowed", confirmed: true });
+
+    expect(decision.allowed).toBe(false);
+    expect(decision.status).toBe("blocked");
+    expect(decision.reasons.join(" ")).toContain("confirmation checklist");
   });
 
   it("requires confirming visual direction before real external publishing", () => {

@@ -242,6 +242,27 @@ function validatePublishEvidenceCitations(summary: PublishEvidenceCitationSummar
   return errors;
 }
 
+function validatePublishConfirmationChecklist(intent: PublishIntent): string[] {
+  const requiredItems = (intent.confirmationChecklist ?? []).filter((item) => item.required);
+  if (!requiredItems.length) {
+    return ["publish confirmation checklist is required"];
+  }
+  const missingItems = requiredItems.filter((item) => item.confirmed !== true);
+  return missingItems.length
+    ? [`publish confirmation checklist must confirm ${missingItems.map((item) => item.id).join(", ")}`]
+    : [];
+}
+
+export function confirmPublishIntentChecklist(intent: PublishIntent): PublishIntent {
+  return {
+    ...intent,
+    confirmationChecklist: buildPublishConfirmationChecklist({
+      ...intent,
+      confirmed: true
+    })
+  };
+}
+
 export function authorizePublishIntent(intent: PublishIntent, policy: PublishPolicy): PublishDecision {
   if (policy.mode === "draft_only") {
     return {
@@ -251,7 +272,10 @@ export function authorizePublishIntent(intent: PublishIntent, policy: PublishPol
     };
   }
 
-  const validationErrors = validatePublishIntent(intent);
+  const validationErrors = [
+    ...validatePublishIntent(intent),
+    ...(policy.confirmed ? validatePublishConfirmationChecklist(intent) : [])
+  ];
   if (validationErrors.length && policy.confirmed) {
     return {
       allowed: false,
