@@ -105,7 +105,7 @@ export async function createViralCaseFromEvidence({
   model?: ModelProvider;
 }): Promise<ViralCase> {
   const extracted = await extractViralInsights({ sample, topic, category, model });
-  const extractedInsights = extracted.insights;
+  const extractedInsights = decontaminateViralInsights(extracted.insights, sample);
   const hookType = first(extractedInsights.titleHooks) || inferHookType(sample.title);
   const bodyExcerpt = summarizeBody(sample.detailText);
   const contentStructure = extractedInsights.copyStructures.length
@@ -448,6 +448,105 @@ function normalizeExtractedInsights(value: unknown): ViralExtractedInsights {
     reusableRules: stringArray(record.reusableRules),
     avoidCopying: stringArray(record.avoidCopying)
   };
+}
+
+function decontaminateViralInsights(insights: ViralExtractedInsights, sample: SampleEvidence): ViralExtractedInsights {
+  const sourceTexts = buildSourceTextsForLeakCheck(sample);
+  const clean = (values: string[]) => values.filter((value) => !looksLikeCopiedSource(value, sourceTexts));
+  const removed = [
+    ...insights.titleHooks,
+    ...insights.copyStructures,
+    ...insights.tagPatterns,
+    ...insights.visualPatterns,
+    ...insights.audienceSignals,
+    ...insights.painPoints,
+    ...insights.emotionalTriggers,
+    ...insights.reusableRules
+  ].filter((value) => looksLikeCopiedSource(value, sourceTexts));
+  const removedWarnings = removed.length
+    ? [
+        "模型返回内容中存在接近原帖的表达，已从可学习规律中移除。",
+        "不要复制或近似改写原样本标题、正文句子、评论表达或画面构图。"
+      ]
+    : [];
+  return normalizeExtractedInsights({
+    titleHooks: clean(insights.titleHooks),
+    copyStructures: clean(insights.copyStructures),
+    tagPatterns: clean(insights.tagPatterns),
+    visualPatterns: clean(insights.visualPatterns),
+    audienceSignals: clean(insights.audienceSignals),
+    painPoints: clean(insights.painPoints),
+    emotionalTriggers: clean(insights.emotionalTriggers),
+    commentConcerns: transformCommentConcerns(insights.commentConcerns, sourceTexts),
+    reusableRules: uniqueStrings([
+      ...clean(insights.reusableRules),
+      removed.length ? "只保留创作方法、信息层级和用户洞察，不保留原帖具体表达。" : ""
+    ]),
+    avoidCopying: uniqueStrings([
+      ...insights.avoidCopying,
+      ...removedWarnings,
+      "禁止把爆款库样本的标题、正文句子、评论表达或图片构图当作可复用素材。"
+    ])
+  });
+}
+
+function transformCommentConcerns(values: string[], normalizedSourceTexts: string[]): string[] {
+  return uniqueStrings(values.map((value) => {
+    if (!looksLikeCopiedSource(value, normalizedSourceTexts)) return value;
+    return generalizeCommentConcern(value);
+  })).filter(Boolean);
+}
+
+function generalizeCommentConcern(value: string): string {
+  if (/价格|预算|人均|费用|average|spend|price|cost/i.test(value)) return "评论关注价格、人均、预算或费用透明度";
+  if (/排队|拥挤|人多|周末|crowd|queue|weekend/i.test(value)) return "评论关注排队、客流高峰和周末体验";
+  if (/地址|位置|交通|停车|地铁|location|parking|metro/i.test(value)) return "评论关注位置、交通和到达成本";
+  if (/预约|营业|时间|open|hour|book/i.test(value)) return "评论关注营业时间、预约方式和可执行安排";
+  return "评论关注可帮助用户决策的具体信息，需要转化为互动问题或补充说明";
+}
+
+function buildSourceTextsForLeakCheck(sample: SampleEvidence): string[] {
+  return uniqueStrings([
+    sample.title,
+    sample.detailText,
+    ...sample.commentSnippets,
+    ...sample.reasonHighlights
+  ].map((value) => normalizeLeakText(value)).filter((value) => value.length >= 12));
+}
+
+function looksLikeCopiedSource(value: string, normalizedSourceTexts: string[]): boolean {
+  const normalized = normalizeLeakText(value);
+  if (normalized.length < 12) return false;
+  return normalizedSourceTexts.some((source) => {
+    if (!source) return false;
+    if (source === normalized) return true;
+    if (normalized.length >= 18 && source.includes(normalized)) return true;
+    if (source.length >= 18 && normalized.includes(source)) return true;
+    return longestSharedSubstringLength(normalized, source) >= Math.min(36, Math.max(18, Math.floor(normalized.length * 0.72)));
+  });
+}
+
+function normalizeLeakText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\u4e00-\u9fa5]+/gu, "")
+    .trim();
+}
+
+function longestSharedSubstringLength(left: string, right: string): number {
+  if (!left || !right) return 0;
+  const previous = Array.from({ length: right.length + 1 }, () => 0);
+  let best = 0;
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+    let diagonal = 0;
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      const saved = previous[rightIndex];
+      previous[rightIndex] = left[leftIndex - 1] === right[rightIndex - 1] ? diagonal + 1 : 0;
+      if (previous[rightIndex] > best) best = previous[rightIndex];
+      diagonal = saved;
+    }
+  }
+  return best;
 }
 
 function extractViralInsightsHeuristically(sample: SampleEvidence): ViralExtractedInsights {

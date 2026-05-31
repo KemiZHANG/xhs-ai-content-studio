@@ -108,6 +108,44 @@ describe("viral knowledge base", () => {
     expect(viralCase.creativeSafety?.reusablePatterns.join(" ")).toContain("Turn interaction questions into decision criteria");
   });
 
+  it("removes model-extracted source wording before storing reusable viral knowledge", async () => {
+    const viralCase = await createViralCaseFromEvidence({
+      sample,
+      topic: "Guangzhou coffee",
+      category: "Cafe review",
+      model: {
+        generateStructuredText: async () => JSON.stringify({
+          titleHooks: [sample.title, "Lead with a concrete decision scenario"],
+          copyStructures: [sample.detailText, "Open with user scenario -> compare decision details -> close with warning"],
+          tagPatterns: ["city tag + scene tag + decision tag"],
+          visualPatterns: ["Natural light cover with clear subject"],
+          audienceSignals: ["weekend cafe reviewers"],
+          painPoints: ["afraid of wasting time in crowded cafes"],
+          emotionalTriggers: ["honest avoidance guidance"],
+          commentConcerns: [sample.commentSnippets[0], "whether weekends are crowded"],
+          reusableRules: [sample.detailText, "Convert comments into decision criteria"],
+          avoidCopying: []
+        }),
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    const storedKnowledge = [
+      ...viralCase.extractedInsights.titleHooks,
+      ...viralCase.extractedInsights.copyStructures,
+      ...viralCase.extractedInsights.commentConcerns,
+      ...viralCase.extractedInsights.reusableRules
+    ].join("\n");
+    expect(storedKnowledge).not.toContain(sample.title);
+    expect(storedKnowledge).not.toContain(sample.detailText);
+    expect(storedKnowledge).not.toContain(sample.commentSnippets[0]);
+    expect(viralCase.extractedInsights.titleHooks).toContain("Lead with a concrete decision scenario");
+    expect(viralCase.extractedInsights.reusableRules.join(" ")).toContain("只保留创作方法");
+    expect(viralCase.extractedInsights.avoidCopying.join(" ")).toContain("已从可学习规律中移除");
+  });
+
   it("keeps a fallback reason when model extraction fails", async () => {
     const viralCase = await createViralCaseFromEvidence({
       sample,
