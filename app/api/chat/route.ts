@@ -6,7 +6,7 @@ import { classifyChatRequest } from "@/lib/chat/router";
 import { getJobRunner } from "@/lib/jobs/runner";
 import { createModelProvider } from "@/lib/models/provider";
 import { createXhsMcpClient } from "@/lib/mcp/xhs";
-import { appendPostProjectMemoryFromTurn, resetPostProject, updatePostProject } from "@/lib/post-project/store";
+import { appendPostProjectMemoryFromTurn, resetPostProject, syncPostProjectFromWorkspace, updatePostProject } from "@/lib/post-project/store";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { createDraftRecord, readCurrentDraft, writeCurrentDraft } from "@/lib/storage/drafts";
 import { appendChatTurn, getChatConversation } from "@/lib/storage/chat";
@@ -210,6 +210,7 @@ export async function POST(request: Request) {
       if (persisted.currentDraft) {
         result.currentDraft = persisted.currentDraft;
       }
+      result.postProject = persisted.postProject;
     }
 
     if (result.currentDraft) {
@@ -297,7 +298,10 @@ async function persistWorkflowResult(
   input: OneClickInput,
   workflowResult: OneClickResult,
   settings: Awaited<ReturnType<typeof readSettings>>
-): Promise<{ currentDraft: Awaited<ReturnType<typeof writeCurrentDraft>> | null }> {
+): Promise<{
+  currentDraft: Awaited<ReturnType<typeof writeCurrentDraft>> | null;
+  postProject: Awaited<ReturnType<typeof syncPostProjectFromWorkspace>>;
+}> {
   const run = await appendHistory(input, workflowResult);
   const registeredImages = await upsertGeneratedAssetPaths(workflowResult.images, {
     prompt: workflowResult.draft?.imagePrompt,
@@ -318,7 +322,7 @@ async function persistWorkflowResult(
       throw new Error("Failed to persist workflow draft");
     }
     const workspace = await readWorkspaceState();
-    await updateWorkspaceState({
+    const updatedWorkspace = await updateWorkspaceState({
       topic: input.topic,
       researchRunId: run.id,
       evidenceSummary: workflowResult.researchSummary,
@@ -328,18 +332,20 @@ async function persistWorkflowResult(
       selectedImageIds: registeredImages.length ? registeredImages.map((asset) => asset.id) : undefined,
       recentRunIds: [run.id, ...workspace.recentRunIds.filter((id) => id !== run.id)].slice(0, 20)
     });
-    return { currentDraft };
+    const postProject = await syncPostProjectFromWorkspace(updatedWorkspace);
+    return { currentDraft, postProject };
   }
 
   const workspace = await readWorkspaceState();
-  await updateWorkspaceState({
+  const updatedWorkspace = await updateWorkspaceState({
     topic: input.topic,
     researchRunId: run.id,
     evidenceSummary: workflowResult.researchSummary,
     selectedSamples: workflowResult.evidence,
     recentRunIds: [run.id, ...workspace.recentRunIds.filter((id) => id !== run.id)].slice(0, 20)
   });
-  return { currentDraft: null };
+  const postProject = await syncPostProjectFromWorkspace(updatedWorkspace);
+  return { currentDraft: null, postProject };
 }
 
 function summarizeWorkflowForChat(result: OneClickResult): string {

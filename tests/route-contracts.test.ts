@@ -340,6 +340,142 @@ describe("API route contracts", () => {
     );
   });
 
+  it("syncs direct chat workflow results into PostProject before returning the response", async () => {
+    const conversation = { id: "chat-1", title: "coffee", createdAt: "", updatedAt: "", messages: [] };
+    const draftRecord = {
+      id: "draft-1",
+      updatedAt: "2026-05-31T00:00:00.000Z",
+      draft: {
+        title: "Coffee guide",
+        content: "Useful body",
+        tags: ["coffee"],
+        structure: [],
+        imagePrompt: "warm cafe"
+      },
+      images: [{ path: path.join(process.cwd(), "generated-assets", "generated", "cover.png") }],
+      visibility: defaultSettings.defaultVisibility
+    };
+    const workflowResult = {
+      status: "draft",
+      samples: [{ id: "sample-1" }],
+      evidence: [{ id: "sample-1", title: "sample" }],
+      researchSummary: {
+        contentStrengths: ["标题前置可收藏场景"],
+        learningsForContent: ["正文先讲场景再给标准"],
+        imageStrengths: ["封面主体清晰"],
+        learningsForImages: ["保留自然光"],
+        nextQuestions: []
+      },
+      draft: draftRecord.draft,
+      images: draftRecord.images,
+      steps: []
+    };
+    const syncedPostProject = {
+      id: "post-synced",
+      currentStage: "brief_ready",
+      evidencePack: {
+        insights: [{ id: "insight-title-1", insight: "标题前置可收藏场景" }]
+      }
+    };
+    const runAgentTurn = vi.fn(async () => ({
+      answer: "agent workflow answer",
+      workflowResult
+    }));
+    const appendChatTurn = vi.fn(async () => conversation);
+    const appendHistory = vi.fn(async () => ({ id: "run-1" }));
+    const writeCurrentDraft = vi.fn(async (record) => ({ ...draftRecord, ...record, id: record.id ?? "draft-1" }));
+    const updateWorkspaceState = vi.fn(async (patch) => ({
+      schemaVersion: 1,
+      workspaceId: "workspace-chat",
+      updatedAt: "2026-05-31T00:00:00.000Z",
+      selectedSamples: [],
+      selectedImageIds: [],
+      productImageIds: [],
+      recentJobIds: [],
+      recentRunIds: [],
+      recentConversationIds: [],
+      ...patch
+    }));
+    const syncPostProjectFromWorkspace = vi.fn(async () => syncedPostProject);
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings,
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/storage/history", () => ({
+      listHistory: async () => [],
+      appendHistory
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      readCurrentDraft: async () => null,
+      writeCurrentDraft,
+      createDraftRecord: vi.fn((input) => ({ id: "draft-1", updatedAt: "2026-05-31T00:00:00.000Z", ...input }))
+    }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: vi.fn(),
+      upsertGeneratedAssetPaths: vi.fn(async () => [{ id: "asset-1" }])
+    }));
+    vi.doMock("@/lib/agent/state", () => ({
+      readWorkspaceState: vi.fn(async () => ({
+        recentRunIds: [],
+        recentConversationIds: [],
+        selectedImageIds: [],
+        productImageIds: [],
+        recentJobIds: []
+      })),
+      updateWorkspaceState
+    }));
+    vi.doMock("@/lib/chat/router", () => ({
+      classifyChatRequest: () => ({ kind: "direct" })
+    }));
+    vi.doMock("@/lib/agent/memory", () => ({
+      readCreatorMemoryProfile: vi.fn(async () => null),
+      updateCreatorMemoryFromTurn: vi.fn(async () => null)
+    }));
+    vi.doMock("@/lib/agent/orchestrator", () => ({
+      runAgentTurn
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      appendPostProjectMemoryFromTurn: vi.fn(async () => syncedPostProject),
+      resetPostProject: vi.fn(),
+      syncPostProjectFromWorkspace,
+      updatePostProject: vi.fn()
+    }));
+    vi.doMock("@/lib/storage/chat", () => ({
+      appendChatTurn,
+      getChatConversation: vi.fn(async () => conversation)
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({})
+    }));
+    vi.doMock("@/lib/models/provider", () => ({
+      createModelProvider: () => ({})
+    }));
+
+    const { POST } = await import("@/app/api/chat/route");
+    const response = await POST(jsonRequest({ message: "直接生成一篇咖啡笔记", conversationId: "chat-1" }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(syncPostProjectFromWorkspace).toHaveBeenCalledWith(expect.objectContaining({
+      topic: "Coffee guide",
+      researchRunId: "run-1",
+      currentDraftId: "draft-1",
+      selectedImageIds: ["asset-1"]
+    }));
+    expect(payload.postProject).toEqual(expect.objectContaining({
+      id: "post-synced",
+      currentStage: "brief_ready"
+    }));
+    expect(appendChatTurn).toHaveBeenCalledWith(expect.objectContaining({
+      assistantMeta: expect.objectContaining({
+        postProjectId: "post-synced",
+        postProjectStage: "brief_ready",
+        evidenceIds: ["insight-title-1"]
+      })
+    }));
+  });
+
   it("queues long chat workflow requests as background jobs", async () => {
     const conversation = { id: "chat-1", title: "coffee", createdAt: "", updatedAt: "", messages: [] };
     const enqueueWorkflow = vi.fn(async () => ({
