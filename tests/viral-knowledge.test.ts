@@ -7,6 +7,7 @@ import { ACTION_TOKEN_HEADER, getLocalActionToken } from "@/lib/security/action-
 import {
   createViralCaseFromEvidence,
   listViralCases,
+  reviewViralSaveCandidate,
   searchViralCases,
   searchViralCasesFusion,
   upsertViralCases,
@@ -497,6 +498,85 @@ describe("viral knowledge base", () => {
     expect(payload.addedInsights.every((insight) => insight.sourceType === "viral_library")).toBe(true);
     expect(payload.readiness.progress).toBeGreaterThan(0);
     expect(Array.isArray(payload.readiness.blockers)).toBe(true);
+  });
+
+  it("reviews research sample quality before saving to the viral knowledge API", async () => {
+    const review = reviewViralSaveCandidate(sample);
+
+    expect(review.shouldSave).toBe(true);
+    expect(review.score).toBeGreaterThanOrEqual(45);
+    expect(review.reasons.length).toBeGreaterThan(0);
+  });
+
+  it("rejects weak research samples unless explicitly forced", async () => {
+    const token = await getLocalActionToken();
+    const weakSample: SampleEvidence = {
+      id: "weak-note",
+      title: "Short note",
+      author: "author",
+      likes: 0,
+      collects: 0,
+      comments: 0,
+      shares: 0,
+      score: 0,
+      url: "",
+      imageUrls: [],
+      cachedImageUrls: [],
+      detailText: "",
+      commentSnippets: [],
+      reasonHighlights: []
+    };
+
+    const rejected = await POST(new Request("http://localhost/api/viral-knowledge", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        [ACTION_TOKEN_HEADER]: token
+      },
+      body: JSON.stringify({
+        sample: weakSample,
+        topic: "Weak topic",
+        category: "Cafe review",
+        useModel: false
+      })
+    }));
+    const rejectedPayload = await rejected.json() as {
+      error: string;
+      candidateReviews: Array<{ sampleId: string; shouldSave: boolean; warnings: string[] }>;
+      skippedSampleIds: string[];
+    };
+
+    expect(rejected.status).toBe(422);
+    expect(rejectedPayload.candidateReviews[0]).toMatchObject({ sampleId: "weak-note", shouldSave: false });
+    expect(rejectedPayload.candidateReviews[0].warnings.length).toBeGreaterThan(0);
+    expect(rejectedPayload.skippedSampleIds).toEqual(["weak-note"]);
+    await expect(listViralCases()).resolves.toHaveLength(0);
+
+    const forced = await POST(new Request("http://localhost/api/viral-knowledge", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        [ACTION_TOKEN_HEADER]: token
+      },
+      body: JSON.stringify({
+        sample: weakSample,
+        topic: "Weak topic",
+        category: "Cafe review",
+        useModel: false,
+        force: true
+      })
+    }));
+    const forcedPayload = await forced.json() as {
+      cases: Array<{ sourceSampleId: string }>;
+      candidateReviews: Array<{ sampleId: string; shouldSave: boolean }>;
+      skippedSampleIds: string[];
+    };
+
+    expect(forced.status).toBe(200);
+    expect(forcedPayload.cases).toHaveLength(1);
+    expect(forcedPayload.cases[0].sourceSampleId).toBe("weak-note");
+    expect(forcedPayload.candidateReviews[0].shouldSave).toBe(false);
+    expect(forcedPayload.skippedSampleIds).toEqual([]);
   });
 
   it("saves multiple research samples through the API and attaches deduped evidence", async () => {

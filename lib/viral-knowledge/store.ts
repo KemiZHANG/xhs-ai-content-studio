@@ -24,7 +24,105 @@ type ViralKnowledgeFile = {
   cases: ViralCase[];
 };
 
+export type ViralSaveCandidateReview = {
+  sampleId: string;
+  shouldSave: boolean;
+  score: number;
+  reasons: string[];
+  warnings: string[];
+};
+
 const viralKnowledgePath = () => path.join(process.cwd(), "data", "viral-knowledge.json");
+
+export function reviewViralSaveCandidate(sample: SampleEvidence): ViralSaveCandidateReview {
+  const reasons: string[] = [];
+  const warnings: string[] = [];
+  let score = 0;
+  const engagementScore = Number(sample.score ?? 0);
+  const likes = Number(sample.likes ?? 0);
+  const collects = Number(sample.collects ?? 0);
+  const comments = Number(sample.comments ?? 0);
+  const shares = Number(sample.shares ?? 0);
+  const detailLength = (sample.detailText ?? "").trim().length;
+  const imageCount = (sample.cachedImageUrls?.length ?? 0) + (sample.imageUrls?.length ?? 0);
+  const commentCount = sample.commentSnippets?.filter(Boolean).length ?? 0;
+
+  if (engagementScore >= 1000 || likes + collects >= 1000) {
+    score += 30;
+    reasons.push("互动数据达到高价值样本门槛");
+  } else if (engagementScore >= 300 || likes + collects >= 300) {
+    score += 18;
+    reasons.push("互动数据具备参考价值");
+  } else if (likes + collects + comments + shares > 0) {
+    score += 8;
+    reasons.push("有基础互动数据");
+  } else {
+    warnings.push("缺少点赞、收藏、评论、分享等互动数据");
+  }
+
+  if (collects >= 300) {
+    score += 15;
+    reasons.push("收藏量较高，适合沉淀可复用选题规律");
+  } else if (collects > 0 && collects < 50) {
+    warnings.push("收藏量偏低，可能不是强参考样本");
+  }
+
+  if (comments >= 20) {
+    score += 10;
+    reasons.push("评论量足够，可辅助提取用户关注点");
+  } else if (comments === 0) {
+    warnings.push("缺少评论数据，用户关注点可信度较弱");
+  }
+
+  if (shares >= 5) {
+    score += 5;
+    reasons.push("分享数据可作为传播性参考");
+  }
+
+  if (detailLength >= 80) {
+    score += 20;
+    reasons.push("正文细节充足，可提取结构和表达规律");
+  } else if (detailLength >= 30) {
+    score += 10;
+    reasons.push("正文有一定细节，可做轻量参考");
+  } else {
+    warnings.push("正文内容过短，难以提取可靠创作规律");
+  }
+
+  if (imageCount >= 3) {
+    score += 12;
+    reasons.push("图片样本较完整，可用于视觉风格分析");
+  } else if (imageCount > 0) {
+    score += 7;
+    reasons.push("包含图片，可提供基础视觉参考");
+  } else {
+    warnings.push("缺少图片，无法沉淀视觉规律");
+  }
+
+  if (commentCount >= 2) {
+    score += 6;
+    reasons.push("评论片段可补充痛点和问题意识");
+  }
+
+  if (sample.url) {
+    score += 4;
+  } else {
+    warnings.push("缺少来源链接，后续追溯能力较弱");
+  }
+
+  if (!sample.title?.trim()) {
+    warnings.push("缺少标题，无法提取标题钩子");
+  }
+
+  const normalizedScore = Math.min(100, Math.max(0, Math.round(score)));
+  return {
+    sampleId: sample.id,
+    shouldSave: normalizedScore >= 45,
+    score: normalizedScore,
+    reasons: uniqueStrings(reasons).slice(0, 6),
+    warnings: uniqueStrings(warnings).slice(0, 6)
+  };
+}
 
 export async function listViralCases(filters: ViralCaseFilters = {}): Promise<ViralCase[]> {
   const file = await readViralKnowledgeFile();

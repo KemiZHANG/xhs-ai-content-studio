@@ -5,7 +5,7 @@ import { addViralCasesToPostProjectWithSummary } from "@/lib/post-project/store"
 import { extractViralRetrievalFilters, summarizeViralRetrievalFilters } from "@/lib/rag/viral";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { readSettings } from "@/lib/storage/settings";
-import { createViralCaseFromEvidence, listViralCases, searchViralCasesFusion, upsertViralCases } from "@/lib/viral-knowledge/store";
+import { createViralCaseFromEvidence, listViralCases, reviewViralSaveCandidate, searchViralCasesFusion, upsertViralCases } from "@/lib/viral-knowledge/store";
 import type { ViralCaseFilters } from "@/lib/viral-knowledge/types";
 import type { SampleEvidence } from "@/lib/workflows/one-click";
 
@@ -74,6 +74,8 @@ export async function POST(request: Request) {
       topic?: string;
       category?: string;
       useModel?: boolean;
+      force?: boolean;
+      allowLowQuality?: boolean;
     };
     const samples = (body.samples?.length ? body.samples : body.sample ? [body.sample] : [])
       .filter((sample): sample is SampleEvidence => Boolean(sample?.id && sample.title));
@@ -81,9 +83,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "缺少可入库的研究样本" }, { status: 400 });
     }
 
+    const forceSave = Boolean(body.force || body.allowLowQuality);
+    const candidateReviews = samples.map(reviewViralSaveCandidate);
+    const approvedSampleIds = new Set(candidateReviews.filter((review) => review.shouldSave).map((review) => review.sampleId));
+    const approvedSamples = forceSave ? samples : samples.filter((sample) => approvedSampleIds.has(sample.id));
+    const skippedSampleIds = forceSave ? [] : samples.filter((sample) => !approvedSampleIds.has(sample.id)).map((sample) => sample.id);
+
+    if (!approvedSamples.length) {
+      return NextResponse.json(
+        {
+          error: "没有达到爆款库入库质量门槛的样本",
+          candidateReviews,
+          skippedSampleIds
+        },
+        { status: 422 }
+      );
+    }
+
     const settings = await readSettings();
     const model = body.useModel === false || !settings.textApiKey.trim() ? undefined : createModelProvider(settings);
-    const viralCases = await Promise.all(samples.map((sample) =>
+    const viralCases = await Promise.all(approvedSamples.map((sample) =>
       createViralCaseFromEvidence({
         sample,
         topic: body.topic || "未分类主题",
@@ -100,7 +119,9 @@ export async function POST(request: Request) {
       readiness: buildPostReadinessReport(result.project),
       addedInsightIds: result.addedInsightIds,
       addedInsights: result.addedInsights,
-      addedSampleIds: result.addedSampleIds
+      addedSampleIds: result.addedSampleIds,
+      candidateReviews,
+      skippedSampleIds
     });
   } catch (error) {
     return NextResponse.json(
