@@ -3687,7 +3687,7 @@ textarea {
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 130px);
-  min-height: calc(100vh - 150px);
+  min-height: min(760px, calc(100vh - 150px));
   overflow: hidden;
   position: sticky;
   top: 20px;
@@ -3825,13 +3825,16 @@ textarea {
 }
 
 .studioChatList {
+  align-content: start;
   display: grid;
   flex: 1;
   gap: 10px;
   margin-top: 12px;
   min-height: 180px;
+  overscroll-behavior: contain;
   overflow: auto;
-  padding-right: 4px;
+  padding: 0 4px 8px 0;
+  scrollbar-gutter: stable;
 }
 
 .studioChatBubble {
@@ -4245,14 +4248,19 @@ textarea {
 .studioComposer {
   background: color-mix(in srgb, var(--surface) 94%, white);
   border-top: 1px solid var(--line);
+  box-shadow: 0 -18px 32px color-mix(in srgb, var(--surface) 90%, transparent);
+  flex: 0 0 auto;
   margin-top: 12px;
   padding-top: 12px;
   position: sticky;
   bottom: 0;
+  z-index: 4;
 }
 
 .studioComposer textarea {
+  max-height: 132px;
   min-height: 86px;
+  resize: vertical;
 }
 
 .postPreviewShell {
@@ -5638,6 +5646,21 @@ textarea {
     max-height: none;
     min-height: auto;
     position: static;
+  }
+
+  .studioAgentPane {
+    overflow: visible;
+  }
+
+  .studioChatList {
+    max-height: min(52vh, 520px);
+  }
+
+  .studioComposer {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    bottom: 12px;
+    padding: 10px;
   }
 
   .postReadinessSteps {

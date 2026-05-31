@@ -43,6 +43,7 @@ import { isHighPriorityAgentCard, pickVisibleAgentCards } from "@/app/components
 import { buildAgentMessageDisplay } from "@/app/components/agent-message-display";
 import { buildAgentTraceSummary } from "@/app/components/agent-trace-summary";
 import { extractStageGuidanceDisplay } from "@/app/components/agent-stage-guidance";
+import { selectStudioChatWindow } from "@/app/components/studio-chat-window";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 import { buildEvidencePanelModel, scoreEvidence, summarizeEvidenceSample } from "@/app/components/evidence-display";
@@ -468,7 +469,7 @@ export function PostStudioPanel({
           ) : null}
 
           <div className="studioChatList">
-            {messages.slice(-6).map((message, index) => (
+            {selectStudioChatWindow(messages).map((message, index) => (
               <StudioChatBubble
                 index={index}
                 key={message.id ?? `${message.role}-${index}`}

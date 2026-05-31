@@ -62,6 +62,45 @@ describe("post studio status summary", () => {
     expect(summary.blockers.length).toBeLessThanOrEqual(3);
     expect(summary.blockers.join(" ")).toContain("账号");
     expect(summary.chips.find((item) => item.label === "研究")).toMatchObject({ value: "1 条证据", state: "ok" });
+    expect(summary.chips.find((item) => item.label === "RAG")).toMatchObject({ value: "待检索", state: "neutral" });
     expect(summary.chips.find((item) => item.label === "文案")).toMatchObject({ value: "待生成", state: "warn" });
+  });
+
+  it("surfaces viral-library RAG evidence in the project header", () => {
+    const project = createBlankPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: {
+        sampleIds: ["viral-case-1"],
+        insights: [{
+          id: "viral-insight-1",
+          type: "hook",
+          sourceType: "viral_library",
+          insight: "爆款标题先给可收藏结论，再说明适用场景",
+          sourceSampleIds: ["viral-case-1"],
+          confidence: 0.86,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }]
+      },
+      currentStage: "evidence_ready"
+    });
+
+    const summary = buildPostStudioStatusSummary({
+      project,
+      workspace: null,
+      settings: defaultSettings,
+      health: {
+        ok: true,
+        reachable: true,
+        loggedIn: true,
+        message: "ok",
+        mcpUrl: defaultSettings.mcpUrl
+      },
+      evidenceCount: 1,
+      hasDraft: false,
+      selectedImageCount: 0,
+      canvasDirty: false
+    });
+
+    expect(summary.chips.find((item) => item.label === "RAG")).toMatchObject({ value: "1 条爆款库", state: "ok" });
   });
 });
