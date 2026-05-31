@@ -7,6 +7,7 @@ export type CreationProvenanceItem = {
   label: string;
   status: "ready" | "warn" | "empty";
   summary: string;
+  originalityLine?: string;
   sourceCounts: Record<EvidenceSourceType, number>;
   evidenceCount: number;
   missingCount: number;
@@ -64,7 +65,7 @@ export function formatCreationProvenanceForReply(summary: CreationProvenanceSumm
   return [
     `创作依据：${summary.detail}`,
     ...visible.map((item) =>
-      `- ${item.label}｜${labelForStatus(item.status)}｜${formatSourceLine(item.sourceCounts)}｜证据 ${item.evidenceCount}${item.missingCount ? `｜待补 ${item.missingCount}` : ""}：${item.summary}`
+      `- ${item.label}｜${labelForStatus(item.status)}｜${formatSourceLine(item.sourceCounts)}｜证据 ${item.evidenceCount}${item.missingCount ? `｜待补 ${item.missingCount}` : ""}：${item.summary}${item.originalityLine ? `；${item.originalityLine}` : ""}`
     )
   ].join("\n");
 }
@@ -80,6 +81,7 @@ function briefProvenance(project: PostProject): CreationProvenanceItem {
     evidenceCount: reference.insights.length,
     missingCount: reference.missingEvidenceIds.length,
     sourceCounts: reference.sourceCounts,
+    originalityLine: viralOriginalityLine(project, reference.sourceCounts),
     summary: reference.insights.length
       ? "目标人群、痛点、内容角度和视觉 mood 已绑定 evidencePack。"
       : "Brief 存在，但对应 evidencePack 证据不足。"
@@ -99,6 +101,7 @@ function copyProvenance(project: PostProject, draft?: DraftRecord | null): Creat
     evidenceCount: report.allEvidenceIds.length,
     missingCount,
     sourceCounts: report.sourceCounts,
+    originalityLine: viralOriginalityLine(project, report.sourceCounts),
     summary: `标题、正文、标签、图片方向 ${report.sections.length - fieldGaps}/${report.sections.length} 个字段可追溯。`
   });
 }
@@ -120,6 +123,7 @@ function visualProvenance(project: PostProject): CreationProvenanceItem {
     evidenceCount: reference.insights.length,
     missingCount,
     sourceCounts: reference.sourceCounts,
+    originalityLine: viralOriginalityLine(project, reference.sourceCounts),
     summary: confirmed
       ? "图片方向已人工确认，Prompt 可继续用于生图/卡片。"
       : "图片方向还需要人工确认后再进入生图或发布。"
@@ -158,4 +162,49 @@ function labelForStatus(status: CreationProvenanceItem["status"]): string {
   if (status === "ready") return "已追溯";
   if (status === "warn") return "需复核";
   return "待建立";
+}
+
+function viralOriginalityLine(project: PostProject, sourceCounts: Record<EvidenceSourceType, number>): string | undefined {
+  if (!sourceCounts.viral_library) {
+    return undefined;
+  }
+
+  const summary = isRecord(project.evidencePack.summary) ? project.evidencePack.summary : {};
+  const viralKnowledge = isRecord(summary.viralKnowledge) ? summary.viralKnowledge : {};
+  const strategyReport = isRecord(viralKnowledge.strategyReport) ? viralKnowledge.strategyReport : {};
+  const rules = [
+    ...stringArray(strategyReport.originalityRules),
+    ...stringArray(strategyReport.rewriteGuidance),
+    ...extractCaseSafetyRules(viralKnowledge)
+  ]
+    .map((item) => item.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  const uniqueRules = Array.from(new Set(rules));
+
+  if (uniqueRules.length) {
+    return `爆款库原创边界：${uniqueRules.slice(0, 2).join(" / ")}`;
+  }
+  return "爆款库原创边界：只学习结构、钩子和视觉规律，不复制原文、原图或具体个人经历";
+}
+
+function extractCaseSafetyRules(viralKnowledge: Record<string, unknown>): string[] {
+  const results = Array.isArray(viralKnowledge.results) ? viralKnowledge.results : [];
+  return results.flatMap((item) => {
+    if (!isRecord(item) || !isRecord(item.case)) return [];
+    const extractedInsights = isRecord(item.case.extractedInsights) ? item.case.extractedInsights : {};
+    const creativeSafety = isRecord(item.case.creativeSafety) ? item.case.creativeSafety : {};
+    return [
+      ...stringArray(extractedInsights.avoidCopying),
+      ...stringArray(creativeSafety.doNotCopy),
+      ...stringArray(creativeSafety.transformationGuidance)
+    ];
+  });
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.map((item) => String(item)).filter(Boolean) : [];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object";
 }

@@ -8,6 +8,14 @@ describe("post project creation provenance", () => {
       topic: "广州咖啡馆",
       evidencePack: {
         sampleIds: ["note-1"],
+        summary: {
+          viralKnowledge: {
+            strategyReport: {
+              originalityRules: ["只学习爆款钩子，不复制来源表达"],
+              rewriteGuidance: ["替换为自己的真实探店经历"]
+            }
+          }
+        },
         insights: [
           insight("insight-title", "realtime", "title", "标题突出城市和安静场景"),
           insight("insight-copy", "realtime", "copy", "正文先写体验再写适合人群"),
@@ -73,7 +81,10 @@ describe("post project creation provenance", () => {
     expect(summary.headline).toBe("创作依据完整");
     expect(summary.items.map((item) => item.status)).toEqual(["ready", "ready", "ready"]);
     expect(summary.items.find((item) => item.id === "copy")?.summary).toContain("4/4");
+    expect(summary.items.find((item) => item.id === "brief")?.originalityLine).toContain("不复制来源表达");
+    expect(summary.items.find((item) => item.id === "copy")?.originalityLine).toContain("真实探店经历");
     expect(formatCreationProvenanceForReply(summary)).toContain("爆款库");
+    expect(formatCreationProvenanceForReply(summary)).toContain("爆款库原创边界");
   });
 
   it("does not pretend empty projects have research evidence", () => {

@@ -16,7 +16,14 @@ describe("creation provenance", () => {
       topic: "广州咖啡馆",
       evidencePack: {
         sampleIds: ["note-1"],
-        summary: "证据摘要",
+        summary: {
+          viralKnowledge: {
+            strategyReport: {
+              originalityRules: ["只学习结构，不复制原文表达"],
+              rewriteGuidance: ["换成自己的产品场景和真实体验"]
+            }
+          }
+        },
         insights: [
           insight("insight-title", "realtime", "title", "标题用具体城市和场景"),
           insight("insight-copy", "realtime", "copy", "正文先写真实体验再给收藏理由"),
@@ -85,8 +92,12 @@ describe("creation provenance", () => {
     expect(cards.map((card) => card.state)).toEqual(["ready", "ready", "ready"]);
     expect(cards[0].sourceLine).toContain("实时");
     expect(cards[0].sourceLine).toContain("爆款库");
+    expect(cards[0].safetyLine).toContain("原创边界");
+    expect(cards[0].safetyLine).toContain("不复制原文");
     expect(cards[1].detail).toContain("4/4");
+    expect(cards[1].safetyLine).toContain("自己的产品场景");
     expect(cards[2].headline).toBe("图片方向已确认");
+    expect(cards[2].safetyLine).toContain("原创边界");
   });
 
   it("warns when a draft cites missing evidence or visual direction is unconfirmed", () => {

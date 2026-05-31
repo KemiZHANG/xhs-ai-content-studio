@@ -2127,6 +2127,7 @@ function CreationProvenanceStrip({
             <span>{card.label}</span>
             <strong>{card.headline}</strong>
             <p>{card.detail}</p>
+            {card.safetyLine ? <p className="creationProvenanceSafety">{card.safetyLine}</p> : null}
             <small>
               {card.sourceLine} · 证据 {card.evidenceCount}
               {card.missingCount ? ` · 待补 ${card.missingCount}` : ""}

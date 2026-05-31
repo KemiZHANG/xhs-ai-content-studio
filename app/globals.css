@@ -4907,6 +4907,15 @@ textarea {
   margin: 0;
 }
 
+.creationProvenanceCard .creationProvenanceSafety {
+  background: rgba(18, 118, 97, 0.08);
+  border: 1px solid rgba(18, 118, 97, 0.12);
+  border-radius: 8px;
+  color: var(--accent-strong);
+  font-weight: 760;
+  padding: 5px 6px;
+}
+
 .postEditStack textarea {
   max-height: 220px;
   min-height: 120px;

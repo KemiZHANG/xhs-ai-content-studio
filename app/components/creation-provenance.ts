@@ -7,6 +7,7 @@ export type CreationProvenanceCard = {
   label: string;
   headline: string;
   detail: string;
+  safetyLine?: string;
   evidenceCount: number;
   missingCount: number;
   sourceLine: string;
@@ -41,6 +42,7 @@ function buildBriefCard(project: PostProject): CreationProvenanceCard {
     detail: summary.insights.length
       ? `人群、痛点、角度和视觉 mood 来自 ${summary.insights.length} 条 evidencePack 结论。`
       : "Brief 存在，但当前 evidencePack 里找不到对应证据。",
+    safetyLine: viralSafetyLine(project, summary.sourceCounts),
     evidenceCount: summary.insights.length,
     missingCount: summary.missingEvidenceIds.length,
     sourceLine: sourceLine(summary.sourceCounts),
@@ -66,6 +68,7 @@ function buildCopyCard(project: PostProject): CreationProvenanceCard {
     label: "文案",
     headline: missingCount ? "文案证据还不完整" : "文案字段可追溯",
     detail: `标题、正文、标签、图片方向 ${boundFields}/${report.sections.length} 个字段已绑定证据。`,
+    safetyLine: viralSafetyLine(project, report.sourceCounts),
     evidenceCount: report.allEvidenceIds.length,
     missingCount,
     sourceLine: sourceLine(report.sourceCounts),
@@ -92,6 +95,7 @@ function buildVisualCard(project: PostProject): CreationProvenanceCard {
     detail: summary.insights.length
       ? `封面氛围、构图和 Prompt 引用了 ${summary.insights.length} 条视觉/结构证据。`
       : "已有图片方向，但缺少可追溯 evidencePack 结论。",
+    safetyLine: viralSafetyLine(project, summary.sourceCounts),
     evidenceCount: summary.insights.length,
     missingCount,
     sourceLine: sourceLine(summary.sourceCounts),
@@ -105,6 +109,7 @@ function emptyCard(id: CreationProvenanceCard["id"], label: string, headline: st
     label,
     headline,
     detail,
+    safetyLine: undefined,
     evidenceCount: 0,
     missingCount: 0,
     sourceLine: "暂无来源",
@@ -124,4 +129,30 @@ function sourceLine(sourceCounts: Record<EvidenceSourceType, number>): string {
     sourceCounts.user_input ? `用户输入 ${sourceCounts.user_input}` : ""
   ].filter(Boolean);
   return parts.length ? parts.join(" · ") : "暂无来源";
+}
+
+function viralSafetyLine(project: PostProject, sourceCounts: Record<EvidenceSourceType, number>): string | undefined {
+  if (!sourceCounts.viral_library) {
+    return undefined;
+  }
+  const summary = isRecord(project.evidencePack.summary) ? project.evidencePack.summary : {};
+  const viralKnowledge = isRecord(summary.viralKnowledge) ? summary.viralKnowledge : {};
+  const strategyReport = isRecord(viralKnowledge.strategyReport) ? viralKnowledge.strategyReport : {};
+  const rules = [
+    ...stringArray(strategyReport.originalityRules),
+    ...stringArray(strategyReport.rewriteGuidance)
+  ]
+    .map((item) => item.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  return rules.length
+    ? `原创边界：${Array.from(new Set(rules)).slice(0, 2).join(" / ")}`
+    : "原创边界：只学习爆款结构、钩子和视觉规律，不复制原文或原图。";
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.map((item) => String(item)).filter(Boolean) : [];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object";
 }
