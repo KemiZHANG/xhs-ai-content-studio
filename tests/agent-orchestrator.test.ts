@@ -1860,6 +1860,151 @@ describe("agent orchestrator", () => {
     expect(result.quickActions[1].label).toBe("确认定时发布");
   });
 
+  it("prepares scheduled publish from finalPost when no chat draft is active", async () => {
+    const selectedImagePath = path.join(tempDir, "generated-assets", "uploads", "final-selected.png");
+    await mkdir(path.join(tempDir, "data"), { recursive: true });
+    await writeFile(
+      path.join(tempDir, "data", "assets.json"),
+      JSON.stringify([
+        {
+          id: "asset-final-selected",
+          kind: "upload",
+          name: "final-selected",
+          originalName: "final-selected.png",
+          absolutePath: selectedImagePath,
+          mimeType: "image/png",
+          size: 10,
+          createdAt: "2026-05-30T00:00:00.000Z",
+          promptVersionId: "prompt-final",
+          basedOnEvidenceIds: ["insight-1"]
+        }
+      ])
+    );
+    await resetPostProject({
+      topic: "Guangzhou coffee",
+      evidencePack: {
+        sampleIds: ["note-1"],
+        insights: [{
+          id: "insight-1",
+          sourceType: "realtime",
+          type: "copy",
+          insight: "Open with a direct recommendation and include who it is for.",
+          sourceSampleIds: ["note-1"],
+          confidence: 0.82,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }]
+      },
+      creativeBrief: {
+        audience: "coffee lovers",
+        painPoint: "hard to pick a weekend cafe",
+        contentAngle: "honest cafe guide",
+        emotionalHook: "start with a clear verdict",
+        proofPoints: ["queue", "budget"],
+        tone: "warm and practical",
+        visualMood: "natural light",
+        imageMustHave: ["storefront"],
+        imageMustAvoid: ["fake badges"],
+        platformStyle: "xiaohongshu",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      imagePrompts: [{
+        id: "prompt-final",
+        createdAt: "2026-05-30T00:00:00.000Z",
+        label: "final prompt",
+        value: {
+          prompt: "Natural light cafe storefront with warm tabletop details"
+        },
+        basedOnEvidenceIds: ["insight-1"]
+      }],
+      generatedImages: [{
+        id: "image-final",
+        assetId: "asset-final-selected",
+        promptVersionId: "prompt-final",
+        basedOnEvidenceIds: ["insight-1"],
+        createdAt: "2026-05-30T00:00:00.000Z",
+        selected: true
+      }],
+      selectedImages: ["asset-final-selected"],
+      finalPost: {
+        title: "Guangzhou weekend coffee guide",
+        content: "This is a useful guide for people choosing a quiet weekend cafe. It starts with the verdict, then explains budget, queue, seat comfort, and who should avoid it.",
+        tags: ["GuangzhouCoffee", "CafeGuide"],
+        imageIds: ["asset-final-selected"],
+        imagePromptVersionIds: ["prompt-final"],
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      qualityCheck: {
+        titleScore: 86,
+        copyScore: 88,
+        visualConsistencyScore: 90,
+        platformFitScore: 87,
+        complianceScore: 92,
+        canPublish: true,
+        issues: [],
+        suggestions: [],
+        evidenceReview: {
+          referencedEvidenceIds: ["insight-1"],
+          realtimeEvidenceIds: ["insight-1"],
+          viralEvidenceIds: [],
+          missingEvidenceIds: [],
+          summary: "Evidence is covered."
+        },
+        evidenceAlignment: {
+          copyEvidenceIds: ["insight-1"],
+          visualEvidenceIds: ["insight-1"],
+          sharedEvidenceIds: ["insight-1"],
+          isAligned: true,
+          summary: "Copy and visual direction are aligned."
+        },
+        originalityReview: {
+          rules: [],
+          sourceSampleIds: ["note-1"],
+          riskSamples: [],
+          isSafe: true,
+          summary: "Safe."
+        },
+        checkedAt: "2026-05-30T00:00:00.000Z"
+      },
+      currentStage: "reviewing"
+    });
+
+    const result = await runAgentTurn({
+      message: "schedule at 2099-05-22T20:00:00+08:00",
+      conversationId: "chat-publish-final-post",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => {
+          throw new Error("should not publish before review");
+        }
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(result.intent).toBe("schedule_publish");
+    expect(result.currentDraft?.id).toMatch(/^draft-final-/);
+    expect(result.currentDraft?.draft.title).toBe("Guangzhou weekend coffee guide");
+    expect(result.workspace.publishPlan?.status).toBe("awaiting_approval");
+    expect(result.workspace.publishPlan?.title).toBe("Guangzhou weekend coffee guide");
+    expect(result.workspace.publishPlan?.images).toEqual([selectedImagePath]);
+    expect(result.workspace.publishPlan?.scheduleAt).toBe("2099-05-22T20:00:00+08:00");
+    expect(result.workspace.publishPlan?.versionSnapshot?.finalPostEvidenceIds).toEqual(["insight-1"]);
+    expect(result.workspace.publishPlan?.versionSnapshot?.imagePromptVersionIds).toEqual(["prompt-final"]);
+    expect(result.postProject?.publishPlan?.status).toBe("awaiting_approval");
+    expect(result.postProject?.currentStage).toBe("reviewing");
+  });
+
   it("stores standalone image selection on workspace and PostProject", async () => {
     await resetPostProject({
       topic: "广州咖啡馆",

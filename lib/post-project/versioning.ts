@@ -35,15 +35,21 @@ export function getPostVersionStatus(project: Pick<
   const selectedImages = Array.isArray(project.selectedImages) ? project.selectedImages : [];
   const imagePrompts = Array.isArray(project.imagePrompts) ? project.imagePrompts : [];
   const activeImagePromptVersionIds = getActiveImagePromptVersionIds(imagePrompts);
+  const finalPost = project.finalPost;
+  const copyMatchesFinalPost = Boolean(
+    finalPost &&
+      (project.copyDraft
+        ? finalPost.copyVersionId === activeCopyVersionId &&
+          finalPost.title === project.copyDraft.draft.title &&
+          finalPost.content === project.copyDraft.draft.content &&
+          finalPost.tags.join("|") === project.copyDraft.draft.tags.join("|")
+        : !finalPost.copyVersionId)
+  );
   const finalPostMatchesCanvas = Boolean(
-    project.finalPost &&
-      activeCopyVersionId &&
-      project.finalPost.copyVersionId === activeCopyVersionId &&
-      project.finalPost.title === project.copyDraft?.draft.title &&
-      project.finalPost.content === project.copyDraft?.draft.content &&
-      project.finalPost.tags.join("|") === project.copyDraft?.draft.tags.join("|") &&
-      sameStringSet(project.finalPost.imageIds ?? [], selectedImages) &&
-      sameStringSet(safeStringArray(project.finalPost.imagePromptVersionIds), activeImagePromptVersionIds)
+    finalPost &&
+      copyMatchesFinalPost &&
+      sameStringSet(finalPost.imageIds ?? [], selectedImages) &&
+      sameStringSet(safeStringArray(finalPost.imagePromptVersionIds), activeImagePromptVersionIds)
   );
   const qualityGateFresh = Boolean(project.qualityCheck && finalPostMatchesCanvas);
   const warnings = [

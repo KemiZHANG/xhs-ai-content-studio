@@ -43,7 +43,7 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
   const initialPostProject = await readPostProject();
   const plan = createAgentPlan({
     message: input.message,
-    hasCurrentDraft: Boolean(input.currentDraft ?? initialPostProject.copyDraft),
+    hasCurrentDraft: Boolean(input.currentDraft ?? initialPostProject.copyDraft ?? initialPostProject.finalPost),
     attachedAssetCount: input.attachedAssets.length,
     postStage: initialPostProject.currentStage,
     allowedActions: initialPostProject.allowedActions,
@@ -292,7 +292,7 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
       });
     }
 
-    const guardedPublishTurn = await maybeHandleGuardedPublishTurn(input, plan);
+    const guardedPublishTurn = await maybeHandleGuardedPublishTurn(input, plan, initialPostProject);
     if (guardedPublishTurn) {
       trace = addTraceEvent(trace, {
         type: "tool_called",
@@ -1609,7 +1609,12 @@ async function maybeHandleCardGenerationTurn(
 
   const existing = await readWorkspaceState();
   const activeProject = await readPostProject();
-  const currentDraft = input.currentDraft ?? existing.currentDraft ?? activeProject.copyDraft ?? null;
+  const currentDraft =
+    input.currentDraft ??
+    existing.currentDraft ??
+    activeProject.copyDraft ??
+    draftFromFinalPost(activeProject, input.settings.defaultVisibility) ??
+    null;
   if (!currentDraft) {
     const workspace = await updateWorkspaceState({ lastUserIntent: plan.intent });
     return {
@@ -2268,7 +2273,12 @@ async function maybeHandleImageGenerationTurn(
 
   const existing = await readWorkspaceState();
   const activeProject = await readPostProject();
-  const currentDraft = input.currentDraft ?? existing.currentDraft ?? activeProject.copyDraft ?? null;
+  const currentDraft =
+    input.currentDraft ??
+    existing.currentDraft ??
+    activeProject.copyDraft ??
+    draftFromFinalPost(activeProject, input.settings.defaultVisibility) ??
+    null;
   if (!currentDraft) {
     const workspace = await updateWorkspaceState({ lastUserIntent: plan.intent });
     return {
@@ -2379,15 +2389,21 @@ async function maybeHandleImageGenerationTurn(
 
 async function maybeHandleGuardedPublishTurn(
   input: RunAgentTurnInput,
-  plan: ReturnType<typeof createAgentPlan>
+  plan: ReturnType<typeof createAgentPlan>,
+  fallbackProject?: PostProject
 ): Promise<Pick<AgentTurnResult, "answer" | "currentDraft" | "workspace"> | null> {
   if (plan.intent !== "prepare_publish" && plan.intent !== "schedule_publish") {
     return null;
   }
 
   const existing = await readWorkspaceState();
-  const activeProject = await readPostProject();
-  const currentDraft = input.currentDraft ?? existing.currentDraft ?? activeProject.copyDraft ?? null;
+  const activeProject = projectWithMorePublishContext(await readPostProject(), fallbackProject);
+  const currentDraft =
+    input.currentDraft ??
+    existing.currentDraft ??
+    activeProject.copyDraft ??
+    draftFromFinalPost(activeProject, input.settings.defaultVisibility) ??
+    null;
   if (!currentDraft) {
     const workspace = await updateWorkspaceState({ lastUserIntent: plan.intent });
     return {
@@ -2450,7 +2466,7 @@ async function maybeHandleGuardedPublishTurn(
       mcpUrl: input.settings.mcpUrl
     },
     publishContext: {
-      versionSnapshot: buildPublishVersionSnapshot(activeProject)
+      versionSnapshot: buildPublishVersionSnapshot(projectWithPublishDraft(activeProject, currentDraft))
     },
     publish: (args) => input.mcp.publishContent(args)
   });
@@ -2483,6 +2499,63 @@ async function maybeHandleGuardedPublishTurn(
             : `发布准备未通过安全检查。\n标题：${currentDraft.draft.title}\n原因：${guardedPublish.reasons.join("；")}`,
     currentDraft,
     workspace
+  };
+}
+
+function projectWithMorePublishContext(project: PostProject, fallbackProject?: PostProject): PostProject {
+  if (!fallbackProject) {
+    return project;
+  }
+  if (project.finalPost || !fallbackProject.finalPost) {
+    return project;
+  }
+  return fallbackProject;
+}
+
+function projectWithPublishDraft(project: PostProject, draft: DraftRecord): PostProject {
+  if (!project.finalPost) {
+    return project;
+  }
+  const copyVersionId = `copy-${draft.id}`;
+  return {
+    ...project,
+    copyDraft: draft,
+    finalPost: {
+      ...project.finalPost,
+      copyVersionId
+    }
+  };
+}
+
+function draftFromFinalPost(project: PostProject, visibility: DraftRecord["visibility"]): DraftRecord | null {
+  const finalPost = project.finalPost;
+  if (!finalPost) {
+    return null;
+  }
+
+  const matchingPrompt =
+    project.imagePrompts.find((prompt) => finalPost.imagePromptVersionIds.includes(prompt.id)) ??
+    project.imagePrompts.at(-1);
+  const basedOnEvidenceIds = uniqueIds([
+    ...(finalPost.basedOnEvidenceIds ?? []),
+    ...(project.copyDraft?.draft.basedOnEvidenceIds ?? []),
+    ...(project.creativeBrief?.basedOnEvidenceIds ?? [])
+  ]);
+
+  return {
+    id: `draft-final-${project.id}`,
+    updatedAt: project.updatedAt,
+    draft: {
+      title: finalPost.title,
+      content: finalPost.content,
+      tags: finalPost.tags,
+      structure: project.copyDraft?.draft.structure ?? [],
+      imagePrompt: matchingPrompt?.value.prompt ?? project.copyDraft?.draft.imagePrompt ?? "",
+      basedOnEvidenceIds,
+      evidenceReferences: project.copyDraft?.draft.evidenceReferences
+    },
+    images: [],
+    visibility
   };
 }
 
