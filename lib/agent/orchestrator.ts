@@ -2476,6 +2476,33 @@ async function maybeHandleQualityCheckTurn(
     imagePrompts: postProject.imagePrompts,
     finalPost: undefined
   });
+  if (plan.intent === "assemble_post") {
+    const updatedProject = await updatePostProject({
+      copyDraft: currentDraft,
+      selectedImages,
+      finalPost,
+      qualityCheck: undefined,
+      auditStatus: "unchecked",
+      currentStage: "assembling"
+    });
+    const workspace = await updateWorkspaceState({
+      currentDraftId: currentDraft.id,
+      currentDraft,
+      selectedImageIds: selectedImages,
+      lastUserIntent: plan.intent
+    });
+    return {
+      answer: [
+        "已把当前文案和选中图片组装成最终发布预览，尚未运行 Quality Gate。",
+        `标题：${currentDraft.draft.title}`,
+        `图片：${selectedImages.length} 张`,
+        "下一步建议：运行发布前检查，确认图文一致、证据追溯、夸张词和发布风险。"
+      ].join("\n"),
+      workspace,
+      postProject: updatedProject
+    };
+  }
+
   const qualityCheck = runPostQualityGate({
     ...postProject,
     copyDraft: currentDraft,

@@ -64,6 +64,16 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
     });
   }
 
+  if (isAssemblePostRequest(message, lower) && input.hasCurrentDraft) {
+    return buildPlan({
+      intent: "assemble_post",
+      topic: inferTopic(message),
+      steps: [
+        step("assemblePost", "Assemble current draft and selected images into the final post preview.", "project.assemblePost")
+      ]
+    });
+  }
+
   if (isQualityCheckRequest(message, lower) && input.hasCurrentDraft) {
     return buildPlan({
       intent: "quality_check",
@@ -311,6 +321,12 @@ function isImageSelectionRequest(message: string, lower: string): boolean {
 
 function isQualityCheckRequest(message: string, lower: string): boolean {
   return /发布检查|质量检查|检查发布|进入发布检查|组合(?:成)?(?:最终)?帖子|组装(?:成)?(?:最终)?帖子|生成确认单|发布前检查/.test(message) || lower.includes("quality gate");
+}
+
+function isAssemblePostRequest(message: string, lower: string): boolean {
+  const wantsAssembly = /组合(?:成)?(?:最终)?帖子|组装(?:成)?(?:最终)?帖子|生成(?:最终)?发布预览|发布预览|最终稿/.test(message) || lower.includes("assemble post");
+  const wantsQuality = /发布检查|质量检查|检查发布|进入发布检查|生成确认单|发布前检查|quality gate/i.test(message);
+  return wantsAssembly && !wantsQuality;
 }
 
 function isDraftRevisionRequest(message: string, lower: string): boolean {

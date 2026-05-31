@@ -314,4 +314,19 @@ describe("agent planner", () => {
     expect(plan.intent).toBe("quality_check");
     expect(plan.steps.map((step) => step.action)).toEqual(["assemblePost", "runQualityGate"]);
   });
+
+  it("plans final post assembly without Quality Gate when the user only asks for a preview", () => {
+    const plan = createAgentPlan({
+      message: "把当前文案和图片组装成最终帖子",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      hasSelectedImages: true,
+      postStage: "image_ready",
+      allowedActions: ["assemble_post"]
+    });
+
+    expect(plan.intent).toBe("assemble_post");
+    expect(plan.steps.map((step) => step.action)).toEqual(["assemblePost"]);
+    expect(plan.steps[0].toolName).toBe("project.assemblePost");
+  });
 });
