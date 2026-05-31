@@ -1446,7 +1446,7 @@ function canSurfacePostAction(action: PostAction, readiness: ReturnType<typeof b
     return readiness.items.some((item) => item.action === action);
   }
   if (action === "schedule_publish" || action === "publish_now") {
-    return readiness.canRequestPublish;
+    return false;
   }
   return true;
 }

@@ -580,6 +580,101 @@ describe("agent orchestrator", () => {
     expect(stageCardData?.readiness?.blockers?.map((item) => item.id)).toContain("images");
   });
 
+  it("does not surface direct publish actions before a confirmation intent exists", async () => {
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: {
+        sampleIds: ["note-1"],
+        insights: [{
+          id: "insight-title",
+          sourceType: "realtime",
+          type: "title",
+          insight: "标题先给场景和收益",
+          sourceSampleIds: ["note-1"],
+          confidence: 0.8,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }]
+      },
+      creativeBrief: {
+        audience: "探店账号粉丝",
+        painPoint: "不知道周末去哪",
+        contentAngle: "真实探店建议",
+        emotionalHook: "周末避坑",
+        proofPoints: ["真实体验"],
+        tone: "生活化",
+        visualMood: "自然光",
+        imageMustHave: ["咖啡杯"],
+        imageMustAvoid: ["广告感"],
+        platformStyle: "小红书探店",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-title"]
+      },
+      copyDraft: {
+        id: "draft-ready",
+        updatedAt: "2026-05-31T00:00:00.000Z",
+        draft: {
+          title: "广州周末安静咖啡馆",
+          content: "适合坐一下午的真实探店清单。",
+          tags: ["广州咖啡"],
+          structure: [],
+          imagePrompt: "自然光咖啡桌面",
+          basedOnEvidenceIds: ["insight-title"]
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      },
+      finalPost: {
+        title: "广州周末安静咖啡馆",
+        content: "适合坐一下午的真实探店清单。",
+        tags: ["广州咖啡"],
+        imageIds: ["asset-1"],
+        coverImageId: "asset-1",
+        imagePromptVersionIds: [],
+        basedOnEvidenceIds: ["insight-title"]
+      },
+      selectedImages: ["asset-1"],
+      qualityCheck: {
+        titleScore: 90,
+        copyScore: 90,
+        visualConsistencyScore: 90,
+        platformFitScore: 90,
+        complianceScore: 90,
+        canPublish: true,
+        issues: [],
+        suggestions: [],
+        checkedAt: "2026-05-31T00:00:00.000Z"
+      },
+      currentStage: "reviewing"
+    });
+
+    const result = await runAgentTurn({
+      message: "继续下一步",
+      conversationId: "chat-reviewing-actions",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      },
+      runChatAgentImpl: vi.fn(async () => ({ answer: "legacy answer" }))
+    });
+
+    const actions = result.quickActions.map((action) => action.action);
+    expect(actions).toContain("request_publish_confirmation");
+    expect(actions).not.toContain("schedule_publish");
+    expect(actions).not.toContain("publish_now");
+  });
+
   it("plans visual direction from the active PostProject before image generation", async () => {
     await resetPostProject({
       topic: "广州咖啡馆",
