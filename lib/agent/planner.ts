@@ -136,6 +136,22 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
     });
   }
 
+  if (
+    isDraftRevisionRequest(message, lower) &&
+    !input.hasCurrentDraft &&
+    !hasExplicitResearchSignal(message, lower) &&
+    !isPublishRequest(message, lower) &&
+    !isImageGenerationRequest(message, lower) &&
+    !isCreativeBriefRequest(message, lower) &&
+    !isViralKnowledgeRequest(message, lower)
+  ) {
+    return buildPlan({
+      intent: "ask",
+      topic: inferTopic(message),
+      steps: [step("askClarifyingQuestion", "The user wants to revise copy, but there is no current draft in the active PostProject.")]
+    });
+  }
+
   if (isCreativeBriefRequest(message, lower)) {
     if (input.hasEvidence || input.hasCreativeBrief || input.postStage === "briefing" || input.allowedActions?.includes("create_creative_brief")) {
       return buildPlan({

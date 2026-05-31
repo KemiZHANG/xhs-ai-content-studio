@@ -498,6 +498,77 @@ describe("agent orchestrator", () => {
     expect(runChatAgent).not.toHaveBeenCalled();
   });
 
+  it("asks which draft to revise instead of delegating vague revision when no draft exists", async () => {
+    const runChatAgent = vi.fn(async () => ({ answer: "legacy answer" }));
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      creativeBrief: {
+        audience: "周末探店人群",
+        painPoint: "不知道去哪家咖啡馆",
+        contentAngle: "真实探店建议",
+        emotionalHook: "先给结论",
+        proofPoints: ["位置", "氛围"],
+        tone: "生活化",
+        visualMood: "自然光",
+        imageMustHave: ["咖啡", "空间"],
+        imageMustAvoid: ["虚假 logo"],
+        platformStyle: "小红书探店",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-title-1"]
+      },
+      evidencePack: {
+        sampleIds: ["sample-1"],
+        insights: [{
+          id: "insight-title-1",
+          sourceType: "realtime",
+          type: "title",
+          insight: "标题用具体地点和收藏理由提高点击",
+          sourceSampleIds: ["sample-1"],
+          confidence: 0.8,
+          createdAt: "2026-05-21T00:00:00.000Z"
+        }]
+      },
+      currentStage: "brief_ready"
+    });
+
+    const result = await runAgentTurn({
+      message: "把标题再优化一下，正文更生活化",
+      conversationId: "chat-revise-missing-draft",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => {
+          throw new Error("should not search");
+        },
+        getFeedDetail: async () => null,
+        publishContent: async () => {
+          throw new Error("should not publish");
+        }
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      },
+      runChatAgentImpl: runChatAgent
+    });
+
+    expect(result.intent).toBe("ask");
+    expect(result.needsUserInput).toBe(true);
+    expect(result.answer).toContain("还没有可修改的文案草稿");
+    expect(result.questions.join(" ")).toContain("先基于现有证据生成一版");
+    expect(result.quickActions.map((action) => action.action)).toEqual([
+      "generate_copy",
+      "select_images",
+      "assemble_post"
+    ]);
+    expect(runChatAgent).not.toHaveBeenCalled();
+  });
+
   it("generates images from the current draft inside the agent turn and updates workspace state", async () => {
     const imagePath = path.join(tempDir, "generated-assets", "generated", "agent-image.png");
     let prompt = "";

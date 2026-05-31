@@ -899,6 +899,11 @@ async function maybeHandleClarifyingTurn(
 
 function buildClarifyingQuestions(plan: AgentPlan, workspace: WorkspaceState, postProject?: PostProject | null): string[] {
   const questions: string[] = [];
+  if (isRevisionWithoutDraftPlan(plan, workspace, postProject)) {
+    questions.push("当前还没有可修改的文案草稿或最终帖子。你想先基于现有证据生成一版，还是重新做主题研究？");
+    questions.push("如果你要修改某段已有内容，请把那段标题/正文/标签贴进来，或先在画布里选择要修改的草稿版本。");
+    return questions;
+  }
   if (isPublishWithoutDraftPlan(plan, workspace, postProject)) {
     questions.push("当前还没有可发布的草稿或最终帖子。请先生成文案并选择图片，或告诉我用哪一篇草稿发布。");
     questions.push("发布前你希望先做哪一步：生成文案、选择图片、组装最终帖子，还是重新研究主题？");
@@ -945,9 +950,17 @@ function isDraftRequestWithoutEvidence(plan: AgentPlan, postProject?: PostProjec
 
 function isPublishWithoutDraftPlan(plan: AgentPlan, workspace: WorkspaceState, postProject?: PostProject | null): boolean {
   const asksPublishWithoutDraft = plan.intent === "ask" && plan.steps.some((step) =>
-    step.action === "askClarifyingQuestion" && /publish|current draft|assembled post/i.test(step.reason)
+    step.action === "askClarifyingQuestion" && /publish|assembled post/i.test(step.reason)
   );
   if (!asksPublishWithoutDraft) return false;
+  return !workspace.currentDraft && !postProject?.copyDraft && !postProject?.finalPost;
+}
+
+function isRevisionWithoutDraftPlan(plan: AgentPlan, workspace: WorkspaceState, postProject?: PostProject | null): boolean {
+  const asksRevisionWithoutDraft = plan.intent === "ask" && plan.steps.some((step) =>
+    step.action === "askClarifyingQuestion" && /revise copy/i.test(step.reason)
+  );
+  if (!asksRevisionWithoutDraft) return false;
   return !workspace.currentDraft && !postProject?.copyDraft && !postProject?.finalPost;
 }
 
@@ -1876,6 +1889,25 @@ function buildQuickActions(plan: AgentPlan, workspace: WorkspaceState, postProje
       : [
           { id: "qa-research-before-publish", label: "先搜索真实笔记", action: "search_research" },
           { id: "qa-add-brief-before-publish", label: "补充创作需求", action: "update_brief_inputs" }
+        ];
+  }
+  if (isRevisionWithoutDraftPlan(plan, workspace, postProject)) {
+    const hasEvidenceOrBrief = Boolean(
+      postProject?.creativeBrief ||
+        postProject?.evidencePack.insights.length ||
+        postProject?.selectedSamples.length ||
+        workspace.evidenceSummary ||
+        workspace.selectedSamples.length
+    );
+    return hasEvidenceOrBrief
+      ? [
+          { id: "qa-generate-copy-before-revise", label: "先生成一版草稿", action: "generate_copy" },
+          { id: "qa-select-images-before-revise", label: "选择图片", action: "select_images" },
+          { id: "qa-assemble-before-revise", label: "组装发布稿", action: "assemble_post" }
+        ]
+      : [
+          { id: "qa-research-before-revise", label: "先搜索真实笔记", action: "search_research" },
+          { id: "qa-add-brief-before-revise", label: "补充创作需求", action: "update_brief_inputs" }
         ];
   }
   if (plan.intent !== "ask" && postProjectActions.length) {

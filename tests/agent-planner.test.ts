@@ -271,6 +271,21 @@ describe("agent planner", () => {
     expect(plan.steps[0].reason).toContain("does not have enough evidence");
   });
 
+  it("asks for a draft before revising copy when no draft is active", () => {
+    const plan = createAgentPlan({
+      message: "把标题再优化一下，正文更生活化",
+      hasCurrentDraft: false,
+      attachedAssetCount: 0,
+      postStage: "brief_ready",
+      hasEvidence: true,
+      hasCreativeBrief: true
+    });
+
+    expect(plan.intent).toBe("ask");
+    expect(plan.steps[0].action).toBe("askClarifyingQuestion");
+    expect(plan.steps[0].reason).toContain("revise copy");
+  });
+
   it("plans card rendering from the current draft", () => {
     const plan = createAgentPlan({
       message: "把当前草稿生成小红书图文卡片",
