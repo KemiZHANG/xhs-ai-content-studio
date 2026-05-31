@@ -43,7 +43,7 @@ export function getPostVersionStatus(project: Pick<
       project.finalPost.content === project.copyDraft?.draft.content &&
       project.finalPost.tags.join("|") === project.copyDraft?.draft.tags.join("|") &&
       sameStringSet(project.finalPost.imageIds ?? [], selectedImages) &&
-      sameStringSet(project.finalPost.imagePromptVersionIds, activeImagePromptVersionIds)
+      sameStringSet(safeStringArray(project.finalPost.imagePromptVersionIds), activeImagePromptVersionIds)
   );
   const qualityGateFresh = Boolean(project.qualityCheck && finalPostMatchesCanvas);
   const warnings = [
@@ -81,8 +81,8 @@ export function getPostVersionDiffReport(project: Pick<
     diffItem("title", "标题", finalPost?.title ?? "", draft?.title ?? ""),
     diffItem("content", "正文", finalPost?.content ?? "", draft?.content ?? ""),
     diffItem("tags", "标签", finalPost?.tags.join(" / ") ?? "", draft?.tags.join(" / ") ?? ""),
-    diffItem("images", "图片", (finalPost?.imageIds ?? []).join(" / "), project.selectedImages.join(" / ")),
-    diffItem("imagePrompts", "图片 Prompt", (finalPost?.imagePromptVersionIds ?? []).join(" / "), activePromptIds.join(" / "))
+    diffItem("images", "图片", safeStringArray(finalPost?.imageIds).join(" / "), safeStringArray(project.selectedImages).join(" / ")),
+    diffItem("imagePrompts", "图片 Prompt", safeStringArray(finalPost?.imagePromptVersionIds).join(" / "), activePromptIds.join(" / "))
   ];
   const changedFields = changes.filter((item) => item.changed).map((item) => item.field);
   return {
@@ -103,7 +103,7 @@ export function buildPublishVersionSnapshot(project: Pick<
   return {
     copyVersionId: status.activeCopyVersionId,
     imagePromptVersionIds: status.activeImagePromptVersionIds,
-    selectedImageIds: Array.isArray(project.selectedImages) ? project.selectedImages : [],
+    selectedImageIds: safeStringArray(project.selectedImages),
     finalPostEvidenceIds: project.finalPost?.basedOnEvidenceIds ?? [],
     qualityGateFresh: status.qualityGateFresh,
     qualityCanPublish: project.qualityCheck?.canPublish,
@@ -136,6 +136,12 @@ export function compareTextVersion<T extends { title?: string; content?: string;
 
 function getActiveImagePromptVersionIds(imagePrompts: PostProject["imagePrompts"]): string[] {
   return imagePrompts.length ? [imagePrompts[imagePrompts.length - 1].id] : [];
+}
+
+function safeStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.map((item) => String(item).trim()).filter(Boolean)
+    : [];
 }
 
 function sameStringSet(left: string[], right: string[]): boolean {

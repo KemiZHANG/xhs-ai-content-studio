@@ -162,6 +162,30 @@ describe("post versioning status", () => {
     expect(report.changes.find((item) => item.field === "title")?.afterSummary).toContain("Updated commuter");
   });
 
+  it("tolerates legacy finalPost snapshots without image prompt version ids", () => {
+    const legacyProject = {
+      ...baseProject,
+      finalPost: {
+        title: baseProject.copyDraft.draft.title,
+        content: baseProject.copyDraft.draft.content,
+        tags: baseProject.copyDraft.draft.tags,
+        imageIds: baseProject.selectedImages,
+        coverImageId: "asset-1",
+        copyVersionId: "copy-draft-1",
+        basedOnEvidenceIds: ["insight-1"]
+      } as unknown as typeof baseProject.finalPost
+    };
+
+    const status = getPostVersionStatus(legacyProject);
+    const diff = getPostVersionDiffReport(legacyProject);
+    const snapshot = buildPublishVersionSnapshot(legacyProject);
+
+    expect(status.finalPostMatchesCanvas).toBe(false);
+    expect(status.summary).toContain("重新组装");
+    expect(diff.changedFields).toEqual(["imagePrompts"]);
+    expect(snapshot.imagePromptVersionIds).toEqual(["prompt-1"]);
+  });
+
   it("compares two copy versions before rollback", () => {
     const report = compareTextVersion(
       baseProject.copyDraft.draft,
