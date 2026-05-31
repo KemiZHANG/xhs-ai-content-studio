@@ -2572,6 +2572,8 @@ function buildPublishReadinessHint({
 
 function hasTraceableVisualDirection(project: PostProject | null): boolean {
   if (!project) return false;
+  const isConfirmed = project.visualDirection?.confirmationStatus === "confirmed" || Boolean(project.visualDirection?.confirmedAt);
+  if (!isConfirmed) return false;
   const visualEvidenceIds = project.visualDirection?.basedOnEvidenceIds ?? [];
   const promptEvidenceIds = project.imagePrompts.flatMap((prompt) => prompt.basedOnEvidenceIds ?? []);
   return [...visualEvidenceIds, ...promptEvidenceIds].some((id) => id.trim());
