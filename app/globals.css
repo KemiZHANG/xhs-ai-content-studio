@@ -3803,6 +3803,66 @@ textarea {
   border-color: rgba(190, 122, 20, 0.18);
 }
 
+.agentStageMiniFlow {
+  border-top: 1px solid rgba(24, 28, 24, 0.08);
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 8px;
+}
+
+.agentStageProgress {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.agentStageProgress span,
+.agentStageChecklist div > span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.agentStageProgress strong {
+  color: var(--accent-strong);
+  font-size: 12px;
+}
+
+.agentStageChecklist {
+  display: grid;
+  gap: 6px;
+}
+
+.agentStageChecklist div {
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(24, 28, 24, 0.08);
+  border-radius: 8px;
+  display: grid;
+  gap: 3px;
+  padding: 7px;
+}
+
+.agentStageChecklist div.ready {
+  background: rgba(18, 118, 97, 0.07);
+}
+
+.agentStageChecklist div.todo {
+  background: rgba(190, 122, 20, 0.08);
+}
+
+.agentStageChecklist button {
+  background: transparent;
+  border: 0;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 900;
+  justify-self: start;
+  padding: 0;
+}
+
 .agentHiddenCards {
   background: rgba(255, 255, 255, 0.56);
   border: 1px solid var(--line);
@@ -3953,6 +4013,13 @@ textarea {
 .miniActionButton:hover {
   border-color: rgba(18, 118, 97, 0.32);
   color: var(--accent-strong);
+}
+
+.miniActionButton.primaryInline {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  justify-self: start;
 }
 
 .inlineActionGrid {

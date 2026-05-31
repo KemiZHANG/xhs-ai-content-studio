@@ -40,6 +40,7 @@ import { activeAccountReadinessHint, isHealthForActiveAccount } from "@/app/comp
 import { citationFieldBadges, formatCitationStripSummary } from "@/app/components/evidence-citation-display";
 import { isHighPriorityAgentCard, pickVisibleAgentCards } from "@/app/components/agent-card-visibility";
 import { buildAgentTraceSummary } from "@/app/components/agent-trace-summary";
+import { extractStageGuidanceDisplay } from "@/app/components/agent-stage-guidance";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 import { pickEvidenceHighlights, scoreEvidence, summarizeEvidenceSample } from "@/app/components/evidence-display";
@@ -1432,6 +1433,7 @@ function AgentStructuredMessage({
               <span>{labelForAgentCard(card.type)}</span>
               <strong>{card.title}</strong>
               <p>{card.summary}</p>
+              <AgentCardInlineDetails card={card} onQuickAction={onQuickAction} />
               {extractEvidenceIdsFromAgentCard(card).length ? (
                 <small>证据：{extractEvidenceIdsFromAgentCard(card).slice(0, 3).join(" / ")}</small>
               ) : null}
@@ -1483,6 +1485,44 @@ function AgentStructuredMessage({
             </button>
           ))}
         </div>
+      ) : null}
+    </div>
+  );
+}
+
+function AgentCardInlineDetails({
+  card,
+  onQuickAction
+}: {
+  card: AgentResponseCard;
+  onQuickAction: (action: string) => void;
+}) {
+  const stageGuidance = extractStageGuidanceDisplay(card);
+  if (!stageGuidance) return null;
+  return (
+    <div className="agentStageMiniFlow">
+      <div className="agentStageProgress">
+        <span>进度</span>
+        <strong>{stageGuidance.progress ?? 0}%</strong>
+      </div>
+      <div className="agentStageChecklist">
+        {stageGuidance.items.map((item) => (
+          <div className={item.ready ? "ready" : "todo"} key={`${item.label}-${item.action ?? item.detail}`}>
+            <span>{item.ready ? "已完成" : "下一步"}</span>
+            <strong>{item.label}</strong>
+            <p>{item.detail}</p>
+            {!item.ready && item.action ? (
+              <button type="button" onClick={() => onQuickAction(item.action!)}>
+                {labelForPostAction(item.action)}
+              </button>
+            ) : null}
+          </div>
+        ))}
+      </div>
+      {stageGuidance.primaryAction ? (
+        <button className="miniActionButton primaryInline" type="button" onClick={() => onQuickAction(stageGuidance.primaryAction!)}>
+          建议下一步：{labelForPostAction(stageGuidance.primaryAction)}
+        </button>
       ) : null}
     </div>
   );
