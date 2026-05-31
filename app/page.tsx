@@ -30,6 +30,7 @@ import { clientApi, clientFormDataApi } from "@/app/client/api";
 import { useJobStream } from "@/app/hooks/use-job-stream";
 import { useSettingsHealth } from "@/app/hooks/use-settings-health";
 import { defaultSettings } from "@/app/config/default-settings";
+import { noticeForProjectReset, resetWorkflowFormForNewProject } from "@/app/state/project-reset";
 import { canApplyWorkspaceSnapshot, isJobForWorkspace } from "@/lib/jobs/context";
 
 import type {
@@ -964,21 +965,22 @@ export default function Home() {
     setPublishDraft({ title: "", content: "", tagsText: "", imagePrompt: "" });
     setCanvasDirty(false);
     setPublishAssetIds([]);
+    setPublishVisibility(settings.defaultVisibility);
     setPublishScheduleAt("");
     setPublishStatus("");
     setPendingPublish(null);
+    setDismissedPublishIntentId(null);
     setActiveJobId(null);
+    setSelectedRunId(null);
+    setPostStudioFocus(null);
     setAutoReturnJobId(null);
     setAutoReturnTarget("flow");
-    setWorkflowForm((current) => ({
-      ...current,
-      topic: seed.topic ?? "",
-      requirements: "",
-      assetIds: [],
-      productName: "",
-      sellingPoints: "",
-      extraImagePrompt: ""
-    }));
+    setWorkflowForm((current) =>
+      resetWorkflowFormForNewProject(current, {
+        topic: seed.topic,
+        defaultVisibility: settings.defaultVisibility
+      })
+    );
     setAssetForm((current) => ({
       ...current,
       productName: "",
@@ -1002,7 +1004,7 @@ export default function Home() {
     setMessages([]);
     setChatInput("");
     setSection("chat");
-    setNotice("已开启干净的新对话，并清空当前工作区草稿、证据和发布计划。");
+    setNotice(noticeForProjectReset("conversation"));
   }
 
   async function startNewProject() {
@@ -1010,7 +1012,7 @@ export default function Home() {
     setActiveConversationId(null);
     setMessages([]);
     setSection("flow");
-    setNotice("已新建干净的创作项目：研究证据、草稿、图片选择和发布计划已清空。");
+    setNotice(noticeForProjectReset("project"));
   }
 
   async function rememberCurrentPreference(text: string) {
