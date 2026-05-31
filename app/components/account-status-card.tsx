@@ -1,6 +1,7 @@
 "use client";
 
 import { RefreshCw, Settings, UserRound } from "lucide-react";
+import { activeAccountReadinessHint, isHealthForActiveAccount } from "@/app/components/account-readiness";
 import type { Health, RedactedSettings } from "@/app/types";
 
 const fallbackAccount = {
@@ -29,15 +30,17 @@ export function AccountStatusCard({
 }) {
   const accounts = settings.accounts?.length ? settings.accounts : [fallbackAccount];
   const activeAccount = accounts.find((account) => account.id === settings.activeAccountId) ?? accounts[0];
-  const loginName = health?.activeAccount?.loginName;
-  const state = !health ? "unknown" : health.loggedIn ? "ok" : health.reachable ? "warn" : "offline";
-  const stateLabel = !health
-    ? "待检测"
-    : health.loggedIn
-      ? "已登录"
+  const ready = isHealthForActiveAccount(health, settings);
+  const loginName = ready ? health?.activeAccount?.loginName : undefined;
+  const state = ready ? "ok" : health?.reachable ? "warn" : health ? "offline" : "unknown";
+  const stateLabel = ready
+    ? "已登录"
+    : !health
+      ? "待检测"
       : health.reachable
-        ? "未登录"
+        ? "需检测当前账号"
         : "MCP 未连接";
+  const hint = activeAccountReadinessHint(health, settings);
 
   return (
     <section className="accountStatusCard" aria-label="小红书账号状态">
@@ -56,8 +59,9 @@ export function AccountStatusCard({
       </div>
 
       <div className="accountDetails">
-        <span>{loginName ? `登录名：${loginName}` : "登录名：检测后显示"}</span>
-        <span title={activeAccount.mcpUrl}>{formatMcpEndpoint(activeAccount.mcpUrl)}</span>
+        <span>{loginName ? `登录名：${loginName}` : "登录名：检测当前账号后显示"}</span>
+        <span title={activeAccount.mcpUrl}>MCP：{formatMcpEndpoint(activeAccount.mcpUrl)}</span>
+        <span>{accounts.length > 1 ? `${accounts.length} 个账号档案` : "1 个账号档案"}</span>
       </div>
 
       {accounts.length > 1 ? (
@@ -71,19 +75,22 @@ export function AccountStatusCard({
             ))}
           </select>
         </label>
-      ) : null}
+      ) : (
+        <p className="accountHint">需要多账号时，在账号设置里添加另一个 MCP 地址，例如 18061。</p>
+      )}
 
       <div className="accountActions">
         <button className="sidebarMiniButton" disabled={busy} onClick={onRefresh} type="button">
           <RefreshCw size={14} className={busy ? "spin" : ""} />
-          检测
+          检测当前账号
         </button>
         <button className="sidebarMiniButton" onClick={onManage} type="button">
           <Settings size={14} />
-          管理
+          账号设置
         </button>
       </div>
-      {!health?.loggedIn ? <p className="accountHint">未登录时运行 .\login-xhs.ps1 完成登录，再点击检测。</p> : null}
+      <p className="accountHint">{hint}</p>
+      {!ready ? <p className="accountHint">未登录时运行 .\login-xhs.ps1 完成登录，再点击检测当前账号。</p> : null}
     </section>
   );
 }
