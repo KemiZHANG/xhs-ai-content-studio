@@ -1744,6 +1744,51 @@ textarea {
   margin: 0;
 }
 
+.studioTaskSummary {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.studioTaskSummary.ready {
+  background: linear-gradient(135deg, rgba(18, 118, 97, 0.1), rgba(255, 255, 255, 0.86));
+  border-color: rgba(18, 118, 97, 0.22);
+}
+
+.studioTaskSummary.warn {
+  background: linear-gradient(135deg, rgba(190, 122, 20, 0.1), rgba(255, 255, 255, 0.86));
+  border-color: rgba(190, 122, 20, 0.24);
+}
+
+.studioTaskSummary.empty {
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.studioTaskSummary span,
+.studioTaskSummary small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.studioTaskSummary strong {
+  color: var(--ink);
+  display: block;
+  font-size: 13px;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.studioTaskSummary p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 4px 0 0;
+}
+
 .evidencePanelStats {
   display: grid;
   gap: 8px;

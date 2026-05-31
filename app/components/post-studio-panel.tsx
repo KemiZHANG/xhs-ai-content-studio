@@ -62,6 +62,7 @@ import { buildPostNextStepCoach } from "@/app/components/post-next-step-coach";
 import { buildPostFlowSummary, type PostFlowPhase } from "@/app/components/post-flow-summary";
 import { buildPostSideDigest } from "@/app/components/post-side-digest";
 import { buildCreationProvenance, type CreationProvenanceCard } from "@/app/components/creation-provenance";
+import { buildBriefTabSummary, buildImageTabSummary, buildPublishTabSummary, type StudioTabSummary } from "@/app/components/studio-tab-summary";
 import { buildCreatorMemoryDigest } from "@/lib/agent/memory-digest";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
@@ -254,6 +255,23 @@ export function PostStudioPanel({
   const latestImagePrompt = publishDraft.imagePrompt || project?.imagePrompts.at(-1)?.value.prompt || "";
   const quality = project?.qualityCheck;
   const brief = project?.creativeBrief;
+  const briefTabSummary = buildBriefTabSummary({
+    project,
+    evidenceCount: insights.length,
+    viralEvidenceCount: viralInsights.length
+  });
+  const referenceTabSummary = buildImageTabSummary({
+    selectedCount: referenceAssetSummary.selectedCount,
+    previewCount: referenceAssetSummary.previewAssets.length,
+    hiddenCount: referenceAssetSummary.hiddenCount,
+    mode: "reference"
+  });
+  const generatedTabSummary = buildImageTabSummary({
+    selectedCount: generatedAssetSummary.selectedCount,
+    previewCount: generatedAssetSummary.previewAssets.length,
+    hiddenCount: generatedAssetSummary.hiddenCount,
+    mode: "generated"
+  });
   const activeAccount = settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
   const projectPublishPlanMatchesActiveAccount = isPublishPlanForActiveAccount(project?.publishPlan, settings.activeAccountId);
   const staleAccountPublishPlan = project?.publishPlan && !projectPublishPlanMatchesActiveAccount
@@ -345,6 +363,12 @@ export function PostStudioPanel({
     accountReady,
     hasVisualDirection,
     qualityGateFresh: versionStatus?.qualityGateFresh === true
+  });
+  const publishTabSummary = buildPublishTabSummary({
+    publishReady,
+    pendingConfirmation: Boolean(pendingPublish || activePublishPlan?.status === "awaiting_approval"),
+    blockerCount: publishSummary.blockers.length,
+    riskLevel: publishSummary.riskLevel
   });
   const auditSummary = buildPublishAuditSafetySummary({
     audits: publishAudits,
@@ -933,6 +957,7 @@ export function PostStudioPanel({
 
           {tab === "brief" ? (
             <SideSection icon={Sparkles} title="CreativeBrief">
+              <StudioTaskSummary summary={briefTabSummary} onQuickAction={onQuickAction} />
               {brief ? (
                 <div className="briefStack">
                   <BriefLine label="人群" value={brief.audience} />
@@ -1357,7 +1382,7 @@ export function PostStudioPanel({
 
           {tab === "references" ? (
             <SideSection icon={ImagePlus} title="图片参考">
-              <strong>{selectedAssets.length ? `已选 ${selectedAssets.length} 张发布图片` : "还没有选中发布图片"}</strong>
+              <StudioTaskSummary summary={referenceTabSummary} onQuickAction={onQuickAction} />
               <p className="muted">这里主要放产品原图、参考图和当前选中图。默认不铺开全部素材，更多管理在 Assets。</p>
               <div
                 className="studioReferenceDropzone"
@@ -1433,6 +1458,7 @@ export function PostStudioPanel({
 
           {tab === "generated" ? (
             <SideSection icon={ImagePlus} title="已生成素材">
+              <StudioTaskSummary summary={generatedTabSummary} onQuickAction={onQuickAction} />
               <div className={`assetPanelSummary ${generatedAssetSummary.state}`}>
                 <strong>{generatedAssetSummary.headline}</strong>
                 <p>{generatedAssetSummary.detail}</p>
@@ -1481,6 +1507,7 @@ export function PostStudioPanel({
 
           {tab === "publish" ? (
             <SideSection icon={CheckCircle2} title="发布检查">
+              <StudioTaskSummary summary={publishTabSummary} onQuickAction={onQuickAction} />
               <details className="publishChecklistDetails">
                 <summary>
                   <strong>详细发布检查</strong>
@@ -2235,6 +2262,31 @@ function EvidencePanelSummary({
       <button className="secondaryButton fullWidth" type="button" onClick={onPrimaryAction}>
         {primaryActionLabel}
       </button>
+    </article>
+  );
+}
+
+function StudioTaskSummary({
+  summary,
+  onQuickAction
+}: {
+  summary: StudioTabSummary;
+  onQuickAction: (action: string) => void;
+}) {
+  return (
+    <article className={`studioTaskSummary ${summary.state}`}>
+      <div>
+        <span>当前状态</span>
+        <strong>{summary.headline}</strong>
+        <p>{summary.detail}</p>
+      </div>
+      {summary.primaryAction ? (
+        <button className="secondaryButton fullWidth" type="button" onClick={() => onQuickAction(summary.primaryAction!)}>
+          {summary.primaryActionLabel}
+        </button>
+      ) : (
+        <small>{summary.primaryActionLabel}</small>
+      )}
     </article>
   );
 }
