@@ -3898,6 +3898,30 @@ textarea {
   margin-top: 6px;
 }
 
+.agentLongMessage {
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(24, 28, 24, 0.08);
+  border-radius: 10px;
+  padding: 7px 9px;
+}
+
+.agentLongMessage summary {
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.agentLongMessage p {
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 12px;
+  line-height: 1.58;
+  margin-top: 8px;
+  max-height: min(320px, 42vh);
+  overflow: auto;
+  padding-right: 4px;
+}
+
 .agentQuestionBox {
   background: rgba(190, 122, 20, 0.09);
   border: 1px solid rgba(190, 122, 20, 0.2);

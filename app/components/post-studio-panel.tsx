@@ -40,6 +40,7 @@ import { activeAccountReadinessHint, isHealthForActiveAccount } from "@/app/comp
 import { isPublishPlanForActiveAccount } from "@/app/components/publish-confirmation";
 import { citationFieldBadges, formatCitationStripSummary } from "@/app/components/evidence-citation-display";
 import { isHighPriorityAgentCard, pickVisibleAgentCards } from "@/app/components/agent-card-visibility";
+import { buildAgentMessageDisplay } from "@/app/components/agent-message-display";
 import { buildAgentTraceSummary } from "@/app/components/agent-trace-summary";
 import { extractStageGuidanceDisplay } from "@/app/components/agent-stage-guidance";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
@@ -432,23 +433,12 @@ export function PostStudioPanel({
 
           <div className="studioChatList">
             {messages.slice(-6).map((message, index) => (
-              <article className={message.role === "user" ? "studioChatBubble user" : "studioChatBubble"} key={message.id ?? `${message.role}-${index}`}>
-                <div className="chatBubbleHeader">
-                  <strong>{message.role === "user" ? "你" : "AI Agent"}</strong>
-                  {message.role === "assistant" ? (
-                    <AgentIntentBadge
-                      confidence={message.intentConfidence}
-                      intent={message.intent}
-                      needsUserInput={message.needsUserInput}
-                      stage={message.stage}
-                    />
-                  ) : null}
-                </div>
-                <p>{message.content}</p>
-                {message.role === "assistant" ? (
-                  <AgentStructuredMessage message={message} onQuickAction={onQuickAction} />
-                ) : null}
-              </article>
+              <StudioChatBubble
+                index={index}
+                key={message.id ?? `${message.role}-${index}`}
+                message={message}
+                onQuickAction={onQuickAction}
+              />
             ))}
             {!messages.length ? (
               <div className="studioEmpty">
@@ -1419,6 +1409,47 @@ function hasImageFiles(files: FileList | File[]): boolean {
 
 function uniqueStringList(values: string[]): string[] {
   return Array.from(new Set(values.filter(Boolean)));
+}
+
+function StudioChatBubble({
+  message,
+  index,
+  onQuickAction
+}: {
+  message: ChatMessage;
+  index: number;
+  onQuickAction: (action: string) => void;
+}) {
+  const display = buildAgentMessageDisplay(message.content, {
+    maxChars: message.role === "assistant" ? 420 : 260,
+    maxLines: message.role === "assistant" ? 7 : 4
+  });
+
+  return (
+    <article className={message.role === "user" ? "studioChatBubble user" : "studioChatBubble"} data-message-index={index}>
+      <div className="chatBubbleHeader">
+        <strong>{message.role === "user" ? "你" : "AI Agent"}</strong>
+        {message.role === "assistant" ? (
+          <AgentIntentBadge
+            confidence={message.intentConfidence}
+            intent={message.intent}
+            needsUserInput={message.needsUserInput}
+            stage={message.stage}
+          />
+        ) : null}
+      </div>
+      {display.visibleText ? <p>{display.visibleText}</p> : null}
+      {display.truncated ? (
+        <details className="agentLongMessage">
+          <summary>{message.role === "assistant" ? "展开完整回复" : "展开完整输入"}</summary>
+          <p>{display.fullText}</p>
+        </details>
+      ) : null}
+      {message.role === "assistant" ? (
+        <AgentStructuredMessage message={message} onQuickAction={onQuickAction} />
+      ) : null}
+    </article>
+  );
 }
 
 function AgentStructuredMessage({
