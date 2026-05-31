@@ -57,6 +57,7 @@ import { buildPublishAuditSafetySummary } from "@/app/components/publish-audit-s
 import { buildPostProjectContextSummary } from "@/app/components/post-project-context";
 import { buildGeneratedAssetSummary, buildReferenceAssetSummary } from "@/app/components/asset-panel-summary";
 import { buildPostNextStepCoach } from "@/app/components/post-next-step-coach";
+import { buildPostFlowSummary, type PostFlowPhase } from "@/app/components/post-flow-summary";
 import { buildCreatorMemoryDigest } from "@/lib/agent/memory-digest";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
@@ -348,6 +349,7 @@ export function PostStudioPanel({
   });
   const readiness = project ? buildPostReadinessReport(project) : null;
   const nextStepCoach = buildPostNextStepCoach({ guidance: stageGuidance, readiness, nextActions });
+  const flowSummary = buildPostFlowSummary(readiness);
   const statusSummary = buildPostStudioStatusSummary({
     project,
     workspace,
@@ -472,15 +474,15 @@ export function PostStudioPanel({
             ) : null}
           </div>
         </div>
-        <div className="postStageStrip">
-          <StagePill label="阶段" value={labelForStage(project?.currentStage ?? "empty")} />
-          <StagePill label="研究" value={samples.length ? `${samples.length} 条证据` : "待研究"} />
-          <StagePill label="文案" value={publishDraft.title ? "可编辑" : "待生成"} />
-          <StagePill label="图片" value={selectedAssets.length ? `${selectedAssets.length} 张` : "待选择"} />
-          <StagePill label="保存" value={labelForCanvasSaveStatus(canvasDirty, versionStatus)} />
-          <StagePill label="版本" value={labelForVersionLockStatus(versionStatus)} />
-          <StagePill label="检查" value={labelForQualityStatus(quality, versionStatus?.qualityGateFresh === true)} />
-          <StagePill label="发布" value={publishStatusLabel} />
+        <div className="postFlowRail" aria-label="帖子创作流程">
+          {flowSummary.map((phase, index) => (
+            <PostFlowPhaseItem
+              index={index}
+              key={phase.id}
+              phase={phase}
+              onQuickAction={onQuickAction}
+            />
+          ))}
         </div>
         <div className="nextActionBar">
           <span className="nextActionEyebrow">下一步建议</span>
@@ -1970,12 +1972,28 @@ function isRecordValue(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function StagePill({ label, value }: { label: string; value: string }) {
+function PostFlowPhaseItem({
+  phase,
+  index,
+  onQuickAction
+}: {
+  phase: PostFlowPhase;
+  index: number;
+  onQuickAction: (action: string) => void;
+}) {
   return (
-    <span>
-      <em>{label}</em>
-      <strong>{value}</strong>
-    </span>
+    <article className={`postFlowPhase ${phase.state}`}>
+      <span className="postFlowIndex">{index + 1}</span>
+      <div>
+        <strong>{phase.label}</strong>
+        <p>{phase.detail}</p>
+      </div>
+      {phase.state === "active" && phase.action ? (
+        <button type="button" onClick={() => onQuickAction(phase.action!)}>
+          {phase.actionLabel}
+        </button>
+      ) : null}
+    </article>
   );
 }
 

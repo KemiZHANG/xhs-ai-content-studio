@@ -3695,28 +3695,85 @@ textarea {
   padding: 0;
 }
 
-.postStageStrip {
-  display: none;
+.postFlowRail {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
-.postStageStrip span,
+.postFlowPhase,
 .nextActionBar {
   background: var(--surface-subtle);
   border: 1px solid var(--line);
   border-radius: 12px;
-  display: grid;
-  gap: 4px;
   min-height: 64px;
   padding: 10px 12px;
 }
 
-.postStageStrip em {
-  color: var(--muted);
-  font-size: 12px;
-  font-style: normal;
+.postFlowPhase {
+  align-items: flex-start;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr);
+  position: relative;
 }
 
-.postStageStrip strong,
+.postFlowPhase.done {
+  background: rgba(18, 118, 97, 0.07);
+  border-color: rgba(18, 118, 97, 0.16);
+}
+
+.postFlowPhase.active {
+  background: rgba(255, 255, 255, 0.76);
+  border-color: rgba(18, 118, 97, 0.28);
+  box-shadow: 0 12px 28px rgba(39, 37, 31, 0.08);
+}
+
+.postFlowIndex {
+  align-items: center;
+  background: rgba(39, 37, 31, 0.08);
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 900;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+}
+
+.postFlowPhase.done .postFlowIndex,
+.postFlowPhase.active .postFlowIndex {
+  background: var(--accent);
+  color: white;
+}
+
+.postFlowPhase strong {
+  color: var(--ink);
+  display: block;
+  font-size: 13px;
+}
+
+.postFlowPhase p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  margin: 2px 0 0;
+}
+
+.postFlowPhase button {
+  background: rgba(18, 118, 97, 0.1);
+  border: 1px solid rgba(18, 118, 97, 0.18);
+  border-radius: 999px;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 900;
+  grid-column: 1 / -1;
+  justify-self: start;
+  padding: 5px 8px;
+}
+
 .nextActionBar strong {
   color: var(--ink);
   font-size: 14px;
@@ -3725,6 +3782,8 @@ textarea {
 .nextActionBar {
   align-content: center;
   align-self: stretch;
+  display: grid;
+  gap: 4px;
 }
 
 .nextActionEyebrow {
@@ -6367,6 +6426,10 @@ textarea {
 
   .postReadinessSteps {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .postFlowRail {
+    grid-template-columns: 1fr;
   }
 
   .spanTwo {
