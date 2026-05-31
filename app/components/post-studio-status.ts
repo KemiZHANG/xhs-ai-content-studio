@@ -10,6 +10,14 @@ export type PostStudioStatusChip = {
   state: "ok" | "warn" | "neutral";
 };
 
+export type PostStudioAccountOption = {
+  id: string;
+  label: string;
+  detail: string;
+  isActive: boolean;
+  isReady: boolean;
+};
+
 export type PostStudioStatusSummary = {
   headline: string;
   detail: string;
@@ -19,6 +27,8 @@ export type PostStudioStatusSummary = {
   accountLoginName?: string;
   accountMcpEndpoint: string;
   accountCount: number;
+  accountOptions: PostStudioAccountOption[];
+  accountSwitchHint: string;
   riskLevel: "ok" | "warn" | "neutral";
   primaryAction?: PostAction;
   blockers: string[];
@@ -50,6 +60,31 @@ export function buildPostStudioStatusSummary({
   const accountLoginName = accountReady ? health?.activeAccount?.loginName : undefined;
   const accountMcpEndpoint = formatMcpEndpoint(activeAccount?.mcpUrl ?? settings.mcpUrl);
   const accountCount = settings.accounts.length || 1;
+  const accountOptions = settings.accounts.length
+    ? settings.accounts.map((account) => {
+        const isActive = account.id === settings.activeAccountId;
+        const isReady = isActive && accountReady;
+        const status = isReady
+          ? `已登录${accountLoginName ? ` · ${accountLoginName}` : ""}`
+          : account.status === "logged_in"
+            ? "上次显示已登录，切换后需重检"
+            : account.status === "logged_out"
+              ? "未登录"
+              : "待检测";
+        return {
+          id: account.id,
+          label: `${account.displayName} · ${formatMcpEndpoint(account.mcpUrl)}`,
+          detail: `${isActive ? "当前账号" : "可切换账号"} · ${status}`,
+          isActive,
+          isReady
+        };
+      })
+    : [];
+  const accountSwitchHint = accountCount > 1
+    ? accountReady
+      ? "切换账号会清空本次登录检测，并要求重新检测后才能发布。"
+      : "请选择账号并检测登录状态；确认单只绑定检测通过的当前账号。"
+    : "可在设置里添加更多账号，每个账号可绑定不同 MCP 地址。";
   const accountLine = [
     accountReady ? "账号可用" : "账号需确认",
     accountName,
@@ -66,6 +101,8 @@ export function buildPostStudioStatusSummary({
       accountLoginName,
       accountMcpEndpoint,
       accountCount,
+      accountOptions,
+      accountSwitchHint,
       riskLevel: accountReady ? "neutral" : "warn",
       primaryAction: "search_research",
       blockers: ["缺少项目主题", accountReady ? "" : "小红书账号登录状态未确认"].filter(Boolean),
@@ -103,6 +140,8 @@ export function buildPostStudioStatusSummary({
     accountLoginName,
     accountMcpEndpoint,
     accountCount,
+    accountOptions,
+    accountSwitchHint,
     riskLevel,
     primaryAction: readiness.nextAction,
     blockers,

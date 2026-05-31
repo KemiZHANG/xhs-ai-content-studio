@@ -49,6 +49,34 @@ describe("agent publish guardrails", () => {
     expect((intent.confirmationChecklist ?? []).filter((item) => item.required).every((item) => item.confirmed === false)).toBe(true);
   });
 
+  it("shows a readable account label in publish confirmations without changing idempotency", () => {
+    const base = baseIntent();
+    const labeled = createPublishIntent({
+      title: base.title,
+      content: base.content,
+      tags: base.tags,
+      images: base.images,
+      visibility: base.visibility,
+      accountId: "account-a",
+      accountLabel: "探店账号",
+      mcpUrl: "http://localhost:18060/mcp",
+      requestedBy: "chat"
+    });
+    const unlabeled = createPublishIntent({
+      title: base.title,
+      content: base.content,
+      tags: base.tags,
+      images: base.images,
+      visibility: base.visibility,
+      accountId: "account-a",
+      mcpUrl: "http://localhost:18060/mcp",
+      requestedBy: "chat"
+    });
+
+    expect(labeled.confirmationChecklist?.find((item) => item.id === "account")?.detail).toContain("探店账号");
+    expect(labeled.idempotencyKey).toBe(unlabeled.idempotencyKey);
+  });
+
   it("still requires a one-time approval in auto-publish mode", () => {
     const decision = authorizePublishIntent(baseIntent(), { mode: "auto_publish_allowed" });
 

@@ -10,6 +10,7 @@ export type CreatePublishIntentInput = {
   images: string[];
   visibility: AppSettings["defaultVisibility"];
   accountId?: string;
+  accountLabel?: string;
   mcpUrl?: string;
   requestedBy: PublishIntent["requestedBy"];
   mode?: PublishIntent["mode"];
@@ -38,6 +39,7 @@ export function createPublishIntent(input: CreatePublishIntentInput): PublishInt
     images: input.images,
     visibility: input.visibility,
     accountId: input.accountId,
+    accountLabel: input.accountLabel,
     mcpUrl: input.mcpUrl,
     mode,
     scheduleAt: input.scheduleAt,
@@ -63,6 +65,7 @@ export function createPublishIntent(input: CreatePublishIntentInput): PublishInt
     images: input.images,
     visibility: input.visibility,
     accountId: input.accountId,
+    accountLabel: input.accountLabel,
     mcpUrl: input.mcpUrl,
     requestedBy: input.requestedBy,
     requestedAt,
@@ -81,6 +84,7 @@ export function buildPublishConfirmationChecklist({
   images,
   visibility,
   accountId,
+  accountLabel,
   mcpUrl,
   mode,
   scheduleAt,
@@ -93,6 +97,7 @@ export function buildPublishConfirmationChecklist({
   images: string[];
   visibility: AppSettings["defaultVisibility"];
   accountId?: string;
+  accountLabel?: string;
   mcpUrl?: string;
   mode: PublishIntent["mode"];
   scheduleAt?: string;
@@ -133,7 +138,7 @@ export function buildPublishConfirmationChecklist({
       label: "发布账号",
       required: true,
       confirmed,
-      detail: accountId || mcpUrl || "使用当前 MCP 账号"
+      detail: [accountLabel, accountId, mcpUrl].filter(Boolean).join(" · ") || "使用当前 MCP 账号"
     },
     {
       id: "visibility",

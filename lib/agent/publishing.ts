@@ -23,6 +23,7 @@ export type GuardedPublishArgs = {
 
 export type PublishAccountContext = {
   accountId?: string;
+  accountLabel?: string;
   mcpUrl?: string;
 };
 
@@ -56,6 +57,7 @@ export async function executeGuardedPublish({
     requestedBy,
     mode: args.scheduleAt ? "scheduled" : "manual",
     accountId: auditContext?.accountId,
+    accountLabel: auditContext?.accountLabel,
     mcpUrl: auditContext?.mcpUrl,
     evidenceCitationSummary: publishContext?.evidenceCitationSummary,
     versionSnapshot: publishContext?.versionSnapshot

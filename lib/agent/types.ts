@@ -144,6 +144,7 @@ export type PublishIntent = {
   images: string[];
   visibility: AppSettings["defaultVisibility"];
   accountId?: string;
+  accountLabel?: string;
   mcpUrl?: string;
   requestedBy: "chat" | "workflow" | "manual" | "job";
   requestedAt: string;

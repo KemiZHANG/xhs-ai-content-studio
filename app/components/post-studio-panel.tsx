@@ -440,9 +440,9 @@ export function PostStudioPanel({
                 <label>
                   <span>切换</span>
                   <select value={settings.activeAccountId} onChange={(event) => onSwitchAccount(event.target.value)}>
-                    {settings.accounts.map((account) => (
+                    {statusSummary.accountOptions.map((account) => (
                       <option key={account.id} value={account.id}>
-                        {account.displayName}
+                        {account.label}
                       </option>
                     ))}
                   </select>
@@ -456,6 +456,14 @@ export function PostStudioPanel({
                   账号设置
                 </button>
               </div>
+              <div className="studioAccountOptionList" aria-label="账号切换状态">
+                {statusSummary.accountOptions.slice(0, 3).map((account) => (
+                  <span className={account.isReady ? "ready" : account.isActive ? "active" : ""} key={account.id}>
+                    {account.detail}
+                  </span>
+                ))}
+              </div>
+              <small className="studioAccountSwitchHint">{statusSummary.accountSwitchHint}</small>
             </div>
             {statusSummary.blockers.length ? (
               <ul className="studioStatusBlockers">

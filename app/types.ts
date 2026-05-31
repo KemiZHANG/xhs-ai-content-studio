@@ -404,6 +404,7 @@ export type WorkspacePublishPlan = {
   requestedAt?: string;
   requestedBy?: string;
   accountId?: string;
+  accountLabel?: string;
   mcpUrl?: string;
   confirmationChecklist?: Array<{
     id: string;

@@ -2849,6 +2849,7 @@ async function maybeHandleGuardedPublishTurn(
     },
     auditContext: {
       accountId: input.settings.activeAccountId,
+      accountLabel: input.settings.accounts.find((account) => account.id === input.settings.activeAccountId)?.displayName,
       mcpUrl: input.settings.mcpUrl
     },
     publishContext: {

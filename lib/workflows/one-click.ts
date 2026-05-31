@@ -603,6 +603,7 @@ async function maybePublish({
     },
     auditContext: {
       accountId: settings.activeAccountId,
+      accountLabel: settings.accounts.find((account) => account.id === settings.activeAccountId)?.displayName,
       mcpUrl: settings.mcpUrl
     },
     publish: (args) => mcp.publishContent(args)

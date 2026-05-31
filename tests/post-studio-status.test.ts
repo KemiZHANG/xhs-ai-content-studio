@@ -24,6 +24,12 @@ describe("post studio status summary", () => {
     expect(summary.accountName).toBe(defaultSettings.accounts[0].displayName);
     expect(summary.accountMcpEndpoint).toBe("localhost:18060");
     expect(summary.accountCount).toBe(1);
+    expect(summary.accountOptions[0]).toMatchObject({
+      id: defaultSettings.activeAccountId,
+      isActive: true,
+      isReady: false
+    });
+    expect(summary.accountSwitchHint).toContain("添加更多账号");
     expect(summary.blockers).toEqual(expect.arrayContaining(["缺少项目主题"]));
     expect(summary.chips.map((item) => item.label)).toEqual(["项目", "账号"]);
   });
@@ -161,6 +167,23 @@ describe("post studio status summary", () => {
     expect(summary.accountLoginName).toBe("xhs-cafe");
     expect(summary.accountMcpEndpoint).toBe("localhost:18061");
     expect(summary.accountCount).toBe(2);
+    expect(summary.accountOptions).toEqual([
+      expect.objectContaining({
+        id: "account-a",
+        label: "主账号 · localhost:18060",
+        detail: expect.stringContaining("可切换账号"),
+        isActive: false,
+        isReady: false
+      }),
+      expect.objectContaining({
+        id: "account-b",
+        label: "探店账号 · localhost:18061",
+        detail: expect.stringContaining("已登录 · xhs-cafe"),
+        isActive: true,
+        isReady: true
+      })
+    ]);
+    expect(summary.accountSwitchHint).toContain("重新检测");
     expect(summary.accountLine).toContain("探店账号");
     expect(summary.accountLine).toContain("xhs-cafe");
   });

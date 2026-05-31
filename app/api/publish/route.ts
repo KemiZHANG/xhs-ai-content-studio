@@ -44,6 +44,8 @@ export async function POST(request: Request) {
 
     const body = (await request.json()) as PublishBody;
     const settings = await readSettings();
+    const activeAccount =
+      settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
     const assets = Array.isArray(body.assetIds)
       ? (await Promise.all(body.assetIds.map((id) => getAsset(String(id))))).filter(
           (asset): asset is AssetRecord => Boolean(asset)
@@ -66,6 +68,7 @@ export async function POST(request: Request) {
         requestedBy: "manual",
         mode: publishArgs.scheduleAt ? "scheduled" : "manual",
         accountId: settings.activeAccountId,
+        accountLabel: activeAccount?.displayName,
         mcpUrl: settings.mcpUrl,
         evidenceCitationSummary: qualityReview.evidenceCitationSummary,
         versionSnapshot: qualityReview.versionSnapshot
@@ -165,6 +168,7 @@ export async function POST(request: Request) {
       },
       auditContext: {
         accountId: settings.activeAccountId,
+        accountLabel: activeAccount?.displayName,
         mcpUrl: settings.mcpUrl
       },
       publishContext: {
