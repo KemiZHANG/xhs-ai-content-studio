@@ -1473,7 +1473,8 @@ async function maybeHandleCardGenerationTurn(
   }
 
   const existing = await readWorkspaceState();
-  const currentDraft = input.currentDraft ?? existing.currentDraft ?? null;
+  const activeProject = await readPostProject();
+  const currentDraft = input.currentDraft ?? existing.currentDraft ?? activeProject.copyDraft ?? null;
   if (!currentDraft) {
     const workspace = await updateWorkspaceState({ lastUserIntent: plan.intent });
     return {
@@ -2233,7 +2234,8 @@ async function maybeHandleGuardedPublishTurn(
   }
 
   const existing = await readWorkspaceState();
-  const currentDraft = input.currentDraft ?? existing.currentDraft ?? null;
+  const activeProject = await readPostProject();
+  const currentDraft = input.currentDraft ?? existing.currentDraft ?? activeProject.copyDraft ?? null;
   if (!currentDraft) {
     const workspace = await updateWorkspaceState({ lastUserIntent: plan.intent });
     return {
@@ -2243,7 +2245,6 @@ async function maybeHandleGuardedPublishTurn(
     };
   }
 
-  const activeProject = await readPostProject();
   const selectedAssetIds = activeProject.selectedImages.length ? activeProject.selectedImages : existing.selectedImageIds;
   const selectedAssetImages = await resolveSelectedPublishImages(selectedAssetIds);
   const draftImages = currentDraft.images.flatMap((image) => [image.path, image.url].filter(Boolean) as string[]);

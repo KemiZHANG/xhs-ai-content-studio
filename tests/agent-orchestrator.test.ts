@@ -1459,6 +1459,83 @@ describe("agent orchestrator", () => {
     expect(result.postProject?.currentStage).toBe("reviewing");
   });
 
+  it("prepares scheduled publish from the active PostProject draft when chat has no currentDraft", async () => {
+    const selectedImagePath = path.join(tempDir, "generated-assets", "uploads", "project-selected.png");
+    await mkdir(path.join(tempDir, "data"), { recursive: true });
+    await writeFile(
+      path.join(tempDir, "data", "assets.json"),
+      JSON.stringify([
+        {
+          id: "asset-project-selected",
+          kind: "upload",
+          name: "project-selected",
+          originalName: "project-selected.png",
+          absolutePath: selectedImagePath,
+          mimeType: "image/png",
+          size: 10,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }
+      ])
+    );
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      copyDraft: {
+        id: "draft-project-publish",
+        updatedAt: "2026-05-30T00:00:00.000Z",
+        draft: {
+          title: "广州周末安静咖啡馆",
+          content: "这家适合周末坐一下午。",
+          tags: ["广州咖啡馆", "周末探店"],
+          structure: ["场景", "体验", "建议"],
+          imagePrompt: "自然光咖啡馆桌面",
+          basedOnEvidenceIds: ["insight-1"],
+          evidenceReferences: {
+            title: ["insight-1"],
+            content: ["insight-1"],
+            tags: ["insight-1"],
+            imagePrompt: ["insight-1"]
+          }
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      },
+      selectedImages: ["asset-project-selected"],
+      currentStage: "image_ready"
+    });
+
+    const result = await runAgentTurn({
+      message: "今晚八点发",
+      conversationId: "chat-publish-project-draft",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => {
+          throw new Error("should not publish before review");
+        }
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(result.intent).toBe("schedule_publish");
+    expect(result.currentDraft?.id).toBe("draft-project-publish");
+    expect(result.workspace.currentDraftId).toBe("draft-project-publish");
+    expect(result.workspace.publishPlan?.status).toBe("awaiting_approval");
+    expect(result.workspace.publishPlan?.title).toBe("广州周末安静咖啡馆");
+    expect(result.workspace.publishPlan?.images).toEqual([selectedImagePath]);
+    expect(result.workspace.publishPlan?.scheduleAt).toMatch(/T20:00:00\+08:00$/);
+    expect(result.postProject?.publishPlan?.status).toBe("awaiting_approval");
+    expect(result.postProject?.currentStage).toBe("reviewing");
+  });
+
   it("stores standalone image selection on workspace and PostProject", async () => {
     await resetPostProject({
       topic: "广州咖啡馆",
