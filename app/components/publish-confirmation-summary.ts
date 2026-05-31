@@ -46,11 +46,14 @@ export type PublishConfirmationSummary = {
   detail: string;
   modeLabel: string;
   accountLine: string;
+  accountSafetyLine: string;
   timingLine: string;
   visibilityLine: string;
   contentLine: string;
   imageLine: string;
   evidenceLine: string;
+  evidenceSourceLine: string;
+  versionLine: string;
   qualityLine: string;
   checklistLine: string;
   riskLevel: "ok" | "warn" | "blocked";
@@ -79,14 +82,24 @@ export function buildPublishConfirmationSummary({
   const planImages = pendingPublish?.payload.assetIds ?? activePlan?.images ?? [];
   const planTags = pendingPublish?.payload.tags ?? activePlan?.tags ?? parseTags(draft.tagsText);
   const quality = project?.qualityCheck;
+  const snapshot = activePlan?.versionSnapshot;
   const evidenceIds = uniqueStrings([
     ...(project?.finalPost?.basedOnEvidenceIds ?? []),
     ...(project?.copyDraft?.draft.basedOnEvidenceIds ?? []),
     ...(project?.visualDirection?.basedOnEvidenceIds ?? []),
     ...(project?.creativeBrief?.basedOnEvidenceIds ?? [])
   ]);
+  const evidenceSourceCounts = countEvidenceSources(project);
   const requiredChecklist = activePlan?.confirmationChecklist?.filter((item) => item.required) ?? [];
   const confirmedChecklist = requiredChecklist.filter((item) => item.confirmed).length;
+  const pendingChecklistLabels = requiredChecklist
+    .filter((item) => !item.confirmed)
+    .map((item) => item.label?.trim())
+    .filter(Boolean) as string[];
+  const accountLine = formatAccountLine({
+    accountName: pendingPublish?.accountDisplayName ?? activePlan?.accountName ?? activeAccountName,
+    loginName: pendingPublish?.loginName ?? activePlan?.loginName ?? activeLoginName
+  });
   const blockers = buildBlockers({
     draft,
     selectedImageCount,
@@ -96,8 +109,9 @@ export function buildPublishConfirmationSummary({
     canvasDirty,
     accountReady,
     hasVisualDirection,
-    qualityCanPublish: quality?.canPublish === true,
-    qualityGateFresh: activePlan?.versionSnapshot?.qualityGateFresh ?? qualityGateFresh,
+    qualityCanPublish: snapshot?.qualityCanPublish ?? (quality?.canPublish === true),
+    qualityGateFresh: snapshot?.qualityGateFresh ?? qualityGateFresh,
+    finalPostMatchesCanvas: snapshot?.finalPostMatchesCanvas ?? true,
     scheduleAt: planScheduleAt
   });
   const hasPendingConfirmation = Boolean(pendingPublish || activePlan?.status === "awaiting_approval");
@@ -119,9 +133,10 @@ export function buildPublishConfirmationSummary({
         ? "下一步会生成确认单，确认单通过后才允许立即发布或定时发布。"
         : "先补齐下方阻塞项，再生成发布确认单。",
     modeLabel: planScheduleAt ? "定时发布" : "立即发布",
-    accountLine: formatAccountLine({
-      accountName: pendingPublish?.accountDisplayName ?? activePlan?.accountName ?? activeAccountName,
-      loginName: pendingPublish?.loginName ?? activePlan?.loginName ?? activeLoginName
+    accountLine,
+    accountSafetyLine: formatAccountSafetyLine({
+      accountLine,
+      mcpUrl: pendingPublish?.mcpUrl ?? activePlan?.mcpUrl
     }),
     timingLine: planScheduleAt ? `${planScheduleAt}（本地时区）` : "确认后立即发布",
     visibilityLine: planVisibility || "未选择",
@@ -130,11 +145,15 @@ export function buildPublishConfirmationSummary({
     evidenceLine: citationTraceReady
       ? `字段级证据可追溯，引用 ${evidenceIds.length} 条证据`
       : "字段级证据引用还未通过",
+    evidenceSourceLine: formatEvidenceSourceLine(evidenceSourceCounts),
+    versionLine: formatVersionLine(snapshot, Boolean(project?.finalPost)),
     qualityLine: quality
       ? `${quality.canPublish ? "Quality Gate 通过" : "Quality Gate 未通过"}：标题 ${quality.titleScore} / 正文 ${quality.copyScore} / 合规 ${quality.complianceScore}`
       : "尚未运行 Quality Gate",
     checklistLine: requiredChecklist.length
-      ? `人工确认 ${confirmedChecklist}/${requiredChecklist.length} 项`
+      ? pendingChecklistLabels.length
+        ? `人工确认 ${confirmedChecklist}/${requiredChecklist.length} 项，待确认：${pendingChecklistLabels.slice(0, 2).join("、")}`
+        : `人工确认 ${confirmedChecklist}/${requiredChecklist.length} 项，全部必填项已确认`
       : "尚未生成确认清单",
     riskLevel,
     blockers
@@ -152,6 +171,7 @@ function buildBlockers({
   hasVisualDirection,
   qualityCanPublish,
   qualityGateFresh,
+  finalPostMatchesCanvas,
   scheduleAt
 }: {
   draft: PublishDraftState;
@@ -164,6 +184,7 @@ function buildBlockers({
   hasVisualDirection: boolean;
   qualityCanPublish: boolean;
   qualityGateFresh: boolean;
+  finalPostMatchesCanvas: boolean;
   scheduleAt?: string;
 }): string[] {
   const blockers: string[] = [];
@@ -177,11 +198,52 @@ function buildBlockers({
   if (canvasDirty) blockers.push("画布有未保存修改");
   if (!qualityCanPublish) blockers.push("Quality Gate 未通过");
   if (!qualityGateFresh) blockers.push("最终版本与 Quality Gate 需要重新同步");
+  if (!finalPostMatchesCanvas) blockers.push("发布确认单版本快照已失效");
   if (scheduleAt && Number.isNaN(Date.parse(scheduleAt))) blockers.push("定时时间格式无效");
   if (scheduleAt && !Number.isNaN(Date.parse(scheduleAt)) && Date.parse(scheduleAt) <= Date.now()) {
     blockers.push("定时时间必须晚于当前时间");
   }
   return blockers;
+}
+
+function formatAccountSafetyLine({ accountLine, mcpUrl }: { accountLine: string; mcpUrl?: string }): string {
+  const endpoint = mcpUrl?.trim();
+  return endpoint ? `${accountLine} · MCP ${endpoint}` : `${accountLine} · MCP 未在确认单中锁定`;
+}
+
+function formatEvidenceSourceLine(counts: { realtime: number; viral: number; userInput: number }): string {
+  const parts = [
+    `实时 ${counts.realtime}`,
+    `爆款库 ${counts.viral}`,
+    `用户输入 ${counts.userInput}`
+  ];
+  return `证据来源：${parts.join(" / ")}`;
+}
+
+function formatVersionLine(
+  snapshot: PublishConfirmationSummaryPlan["versionSnapshot"] | undefined,
+  hasFinalPost: boolean
+): string {
+  if (!snapshot) {
+    return hasFinalPost ? "最终帖子已装配，发布前会生成版本快照" : "尚未装配最终帖子";
+  }
+
+  const warnings = snapshot.warnings?.filter(Boolean) ?? [];
+  const safe = snapshot.qualityGateFresh && snapshot.qualityCanPublish && snapshot.finalPostMatchesCanvas && !warnings.length;
+  if (safe) {
+    return `版本快照已锁定：${snapshot.summary?.trim() || "最终稿、画布和 Quality Gate 一致"}`;
+  }
+  return `版本快照需复核：${warnings.slice(0, 2).join(" / ") || "最终稿、画布或 Quality Gate 不一致"}`;
+}
+
+function countEvidenceSources(project: PostProject | null): { realtime: number; viral: number; userInput: number } {
+  const counts = { realtime: 0, viral: 0, userInput: 0 };
+  for (const insight of project?.evidencePack.insights ?? []) {
+    if (insight.sourceType === "viral_library") counts.viral += 1;
+    else if (insight.sourceType === "user_input") counts.userInput += 1;
+    else counts.realtime += 1;
+  }
+  return counts;
 }
 
 function formatAccountLine({ accountName, loginName }: { accountName?: string; loginName?: string }): string {

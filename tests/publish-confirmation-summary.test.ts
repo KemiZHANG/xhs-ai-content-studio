@@ -185,7 +185,111 @@ describe("publish confirmation summary", () => {
     expect(summary.headline).toBe("发布确认单已生成，等待人工确认");
     expect(summary.modeLabel).toBe("定时发布");
     expect(summary.riskLevel).toBe("warn");
-    expect(summary.checklistLine).toBe("人工确认 1/2 项");
+    expect(summary.checklistLine).toBe("人工确认 1/2 项，待确认：确认图片");
+    expect(summary.accountSafetyLine).toContain("http://localhost:18060/mcp");
+    expect(summary.versionLine).toContain("版本快照已锁定");
+  });
+
+  it("summarizes evidence sources across realtime, viral library and user input", () => {
+    const summary = buildPublishConfirmationSummary({
+      draft: readyDraft,
+      selectedImageCount: 1,
+      activePlan: null,
+      pendingPublish: null,
+      project: project({
+        evidencePack: {
+          sampleIds: ["sample-1"],
+          insights: [
+            {
+              id: "insight-1",
+              sourceType: "realtime",
+              type: "title",
+              insight: "标题使用城市 + 场景 + 收藏理由。",
+              sourceSampleIds: ["sample-1"],
+              confidence: 0.88,
+              createdAt: "2026-05-31T00:00:00.000Z"
+            },
+            {
+              id: "viral-1",
+              sourceType: "viral_library",
+              type: "structure",
+              insight: "爆款库显示先给结论再补路线更容易收藏。",
+              sourceSampleIds: ["case-1"],
+              confidence: 0.8,
+              createdAt: "2026-05-31T00:00:00.000Z"
+            },
+            {
+              id: "user-1",
+              sourceType: "user_input",
+              type: "audience",
+              insight: "用户希望面向周末约会人群。",
+              sourceSampleIds: [],
+              confidence: 1,
+              createdAt: "2026-05-31T00:00:00.000Z"
+            }
+          ]
+        }
+      }),
+      activeAccountName: "主账号",
+      activeLoginName: "xhs-user",
+      visibility: "仅自己可见",
+      scheduleAt: "",
+      publishReady: true,
+      citationTraceReady: true,
+      canvasDirty: false,
+      accountReady: true,
+      hasVisualDirection: true,
+      qualityGateFresh: true
+    });
+
+    expect(summary.evidenceSourceLine).toBe("证据来源：实时 1 / 爆款库 1 / 用户输入 1");
+  });
+
+  it("blocks stale publish confirmations when the version snapshot no longer matches the canvas", () => {
+    const summary = buildPublishConfirmationSummary({
+      draft: readyDraft,
+      selectedImageCount: 1,
+      activePlan: {
+        status: "awaiting_approval",
+        visibility: "仅自己可见",
+        scheduleAt: "2099-05-31T20:00:00+08:00",
+        images: ["asset-1"],
+        tags: ["广州咖啡", "探店"],
+        accountName: "主账号",
+        loginName: "xhs-user",
+        confirmationChecklist: [
+          { required: true, confirmed: true, label: "确认账号" },
+          { required: true, confirmed: true, label: "确认图片" }
+        ],
+        versionSnapshot: {
+          qualityGateFresh: false,
+          qualityCanPublish: true,
+          finalPostMatchesCanvas: false,
+          warnings: ["画布在确认单生成后发生变化"]
+        }
+      },
+      pendingPublish: null,
+      project: project(),
+      activeAccountName: "主账号",
+      activeLoginName: "xhs-user",
+      visibility: "仅自己可见",
+      scheduleAt: "",
+      publishReady: true,
+      citationTraceReady: true,
+      canvasDirty: false,
+      accountReady: true,
+      hasVisualDirection: true,
+      qualityGateFresh: true
+    });
+
+    expect(summary.riskLevel).toBe("blocked");
+    expect(summary.versionLine).toContain("版本快照需复核");
+    expect(summary.blockers).toEqual(
+      expect.arrayContaining([
+        "最终版本与 Quality Gate 需要重新同步",
+        "发布确认单版本快照已失效"
+      ])
+    );
   });
 
   it("lists concrete blockers for unsafe publish states", () => {

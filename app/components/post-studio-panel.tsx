@@ -1501,11 +1501,14 @@ export function PostStudioPanel({
                 </div>
                 <div className="publishFinalSummaryGrid">
                   <span>账号 <b>{publishSummary.accountLine}</b></span>
+                  <span>连接 <b>{publishSummary.accountSafetyLine}</b></span>
                   <span>时间 <b>{publishSummary.timingLine}</b></span>
                   <span>可见 <b>{publishSummary.visibilityLine}</b></span>
                   <span>内容 <b>{publishSummary.contentLine}</b></span>
                   <span>图片 <b>{publishSummary.imageLine}</b></span>
                   <span>证据 <b>{publishSummary.evidenceLine}</b></span>
+                  <span>来源 <b>{publishSummary.evidenceSourceLine}</b></span>
+                  <span>版本 <b>{publishSummary.versionLine}</b></span>
                   <span>质量 <b>{publishSummary.qualityLine}</b></span>
                   <span>确认 <b>{publishSummary.checklistLine}</b></span>
                 </div>
