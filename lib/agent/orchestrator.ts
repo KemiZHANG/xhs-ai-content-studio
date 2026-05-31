@@ -1442,6 +1442,26 @@ function canSurfacePostAction(action: PostAction, readiness: ReturnType<typeof b
 
 function buildQuickActions(plan: AgentPlan, workspace: WorkspaceState, postProject?: PostProject | null) {
   const postProjectActions = buildPostProjectQuickActions(postProject);
+  if (workspace.publishPlan?.status === "awaiting_approval") {
+    return [
+      { id: "qa-review-publish-confirmation", label: "查看发布确认单", action: "review_publish_confirmation" },
+      { id: "qa-confirm-publish", label: workspace.publishPlan.scheduleAt ? "确认定时发布" : "确认立即发布", action: "confirm_publish" },
+      { id: "qa-cancel-publish", label: "取消确认单", action: "cancel_publish" }
+    ];
+  }
+  if (workspace.publishPlan?.status === "blocked" || workspace.publishPlan?.status === "failed") {
+    return [
+      { id: "qa-run-quality-gate-after-block", label: "重新发布检查", action: "run_quality_gate" },
+      { id: "qa-revise-copy-after-block", label: "修改当前文案", action: "revise_copy" },
+      { id: "qa-select-images-after-block", label: "重新选图", action: "select_images" }
+    ];
+  }
+  if (workspace.publishPlan?.status === "scheduled" || workspace.publishPlan?.status === "published") {
+    return [
+      { id: "qa-view-publish-status", label: "查看发布记录", action: "view_publish_history" },
+      { id: "qa-start-next-project", label: "开始下一篇", action: "start_project" }
+    ];
+  }
   if (isPublishWithoutDraftPlan(plan, workspace, postProject)) {
     const hasEvidenceOrBrief = Boolean(
       postProject?.creativeBrief ||

@@ -1553,6 +1553,12 @@ describe("agent orchestrator", () => {
       selectedImages: ["asset-project-selected"],
       nextActions: ["review_publish_confirmation", "confirm_publish", "cancel_publish"]
     });
+    expect(result.quickActions.map((action) => action.action)).toEqual([
+      "review_publish_confirmation",
+      "confirm_publish",
+      "cancel_publish"
+    ]);
+    expect(result.quickActions[1].label).toBe("确认定时发布");
   });
 
   it("stores standalone image selection on workspace and PostProject", async () => {
