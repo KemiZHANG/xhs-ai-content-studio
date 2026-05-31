@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { JobRecord, WorkspaceState } from "@/app/types";
+import type { JobRecord, PostProject, WorkspaceState } from "@/app/types";
 
 type JobStreamOptions = {
   enabled: boolean;
-  onSnapshot: (jobs: JobRecord[], workspace?: WorkspaceState) => void | Promise<void>;
+  onSnapshot: (jobs: JobRecord[], workspace?: WorkspaceState, postProject?: PostProject) => void | Promise<void>;
   onFallbackPoll: () => void | Promise<void>;
 };
 
@@ -27,8 +27,9 @@ export function useJobStream({ enabled, onSnapshot, onFallbackPoll }: JobStreamO
         const payload = JSON.parse((event as MessageEvent).data) as {
           jobs: JobRecord[];
           workspace?: WorkspaceState;
+          postProject?: PostProject;
         };
-        void onSnapshotRef.current(payload.jobs, payload.workspace);
+        void onSnapshotRef.current(payload.jobs, payload.workspace, payload.postProject);
       } catch {
         void onFallbackPollRef.current();
       }

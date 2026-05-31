@@ -6,7 +6,7 @@ describe("jobs stream route", () => {
     vi.clearAllMocks();
   });
 
-  it("streams the latest jobs and workspace snapshot as SSE", async () => {
+  it("streams the latest jobs, workspace, and PostProject snapshot as SSE", async () => {
     vi.doMock("@/lib/storage/jobs", () => ({
       listJobs: vi.fn(async () => [
         {
@@ -35,6 +35,15 @@ describe("jobs stream route", () => {
         recentConversationIds: []
       }))
     }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: vi.fn(async () => ({
+        schemaVersion: 1,
+        id: "post-1",
+        topic: "广州咖啡馆",
+        currentStage: "researching",
+        allowedActions: []
+      }))
+    }));
 
     const { GET } = await import("@/app/api/jobs/stream/route");
     const response = await GET();
@@ -54,5 +63,7 @@ describe("jobs stream route", () => {
     expect(text).toContain("event: jobs");
     expect(text).toContain("\"id\":\"job-1\"");
     expect(text).toContain("\"workspaceId\":\"workspace-1\"");
+    expect(text).toContain("\"id\":\"post-1\"");
+    expect(text).toContain("\"topic\":\"广州咖啡馆\"");
   });
 });

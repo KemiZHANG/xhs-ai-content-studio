@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { resetWorkspaceState } from "@/lib/agent/state";
+import { readWorkspaceState, resetWorkspaceState } from "@/lib/agent/state";
 import { getJobRunner } from "@/lib/jobs/runner";
-import { resetPostProject } from "@/lib/post-project/store";
+import { readPostProject, resetPostProject } from "@/lib/post-project/store";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { isPublishVisibility, readSettings } from "@/lib/storage/settings";
 import type { OneClickInput, PublishMode } from "@/lib/workflows/one-click";
@@ -9,8 +9,12 @@ import type { OneClickInput, PublishMode } from "@/lib/workflows/one-click";
 export const runtime = "nodejs";
 
 export async function GET() {
-  const jobs = await getJobRunner().listJobs();
-  return NextResponse.json({ jobs });
+  const [jobs, workspace, postProject] = await Promise.all([
+    getJobRunner().listJobs(),
+    readWorkspaceState(),
+    readPostProject()
+  ]);
+  return NextResponse.json({ jobs, workspace, postProject });
 }
 
 export async function POST(request: Request) {

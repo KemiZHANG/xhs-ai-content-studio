@@ -1,4 +1,5 @@
 import { readWorkspaceState } from "@/lib/agent/state";
+import { readPostProject } from "@/lib/post-project/store";
 import { listJobs } from "@/lib/storage/jobs";
 
 export const runtime = "nodejs";
@@ -11,9 +12,13 @@ export async function GET() {
     async start(controller) {
       const sendSnapshot = async () => {
         try {
-          const [jobs, workspace] = await Promise.all([listJobs(), readWorkspaceState()]);
+          const [jobs, workspace, postProject] = await Promise.all([
+            listJobs(),
+            readWorkspaceState(),
+            readPostProject()
+          ]);
           controller.enqueue(
-            encoder.encode(`event: jobs\ndata: ${JSON.stringify({ jobs, workspace })}\n\n`)
+            encoder.encode(`event: jobs\ndata: ${JSON.stringify({ jobs, workspace, postProject })}\n\n`)
           );
         } catch (error) {
           controller.enqueue(

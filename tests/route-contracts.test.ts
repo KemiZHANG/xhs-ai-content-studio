@@ -730,9 +730,11 @@ describe("API route contracts", () => {
       getJobRunner: () => ({ enqueueWorkflow })
     }));
     vi.doMock("@/lib/agent/state", () => ({
+      readWorkspaceState: vi.fn(),
       resetWorkspaceState
     }));
     vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: vi.fn(),
       resetPostProject
     }));
 

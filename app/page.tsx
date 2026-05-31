@@ -246,8 +246,12 @@ export default function Home() {
   }
 
   async function loadJobs() {
-    const data = (await clientApi("/api/jobs")) as { jobs: JobRecord[] };
-    await applyJobsSnapshot(data.jobs);
+    const data = (await clientApi("/api/jobs")) as {
+      jobs: JobRecord[];
+      workspace?: WorkspaceState;
+      postProject?: PostProject;
+    };
+    await applyJobsSnapshot(data.jobs, data.workspace, data.postProject);
   }
 
   async function loadPublishAudit() {
@@ -255,7 +259,7 @@ export default function Home() {
     setPublishAudits(data.audit);
   }
 
-  async function applyJobsSnapshot(nextJobs: JobRecord[], streamedWorkspace?: WorkspaceState) {
+  async function applyJobsSnapshot(nextJobs: JobRecord[], streamedWorkspace?: WorkspaceState, streamedPostProject?: PostProject) {
     setJobs(nextJobs);
     const activeRecentJobIds = streamedWorkspace?.recentJobIds ?? workspace?.recentJobIds;
     if (streamedWorkspace) {
@@ -267,6 +271,9 @@ export default function Home() {
         setPublishDraft({ title: "", content: "", tagsText: "", imagePrompt: "" });
       }
       setPublishAssetIds(streamedWorkspace.selectedImageIds ?? []);
+    }
+    if (streamedPostProject) {
+      setPostProject(streamedPostProject);
     }
     const autoReturnJob = autoReturnJobId ? nextJobs.find((job) => job.id === autoReturnJobId) : null;
     if (autoReturnJob?.status === "completed" && autoReturnJob.result) {
