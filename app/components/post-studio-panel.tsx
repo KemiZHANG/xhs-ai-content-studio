@@ -540,6 +540,7 @@ export function PostStudioPanel({
                     <span>文案版本：{project.finalPost.copyVersionId ?? "当前画布"}</span>
                     <span>图片：{project.finalPost.imageIds.length} 张</span>
                     <span>Prompt：{project.finalPost.imagePromptVersionIds.length} 个</span>
+                    <span>证据：{project.finalPost.basedOnEvidenceIds?.length ?? 0} 条</span>
                   </div>
                 </section>
               ) : null}

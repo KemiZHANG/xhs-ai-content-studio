@@ -130,6 +130,7 @@ export type FinalPost = {
   coverImageId?: string;
   copyVersionId?: string;
   imagePromptVersionIds: string[];
+  basedOnEvidenceIds?: string[];
 };
 
 export type QualityCheck = {

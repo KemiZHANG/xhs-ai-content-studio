@@ -520,6 +520,7 @@ export type PostProject = {
     coverImageId?: string;
     copyVersionId?: string;
     imagePromptVersionIds: string[];
+    basedOnEvidenceIds?: string[];
   };
   publishPlan?: WorkspacePublishPlan | null;
   agentMemory: string[];

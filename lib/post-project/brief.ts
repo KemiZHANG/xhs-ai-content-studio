@@ -123,7 +123,11 @@ export function deriveFinalPost(project: Pick<PostProject, "copyDraft" | "select
     imageIds: project.selectedImages,
     coverImageId: project.selectedImages[0],
     copyVersionId: `copy-${draft.id}`,
-    imagePromptVersionIds: project.imagePrompts.map((prompt) => prompt.id)
+    imagePromptVersionIds: project.imagePrompts.map((prompt) => prompt.id),
+    basedOnEvidenceIds: uniqueStrings([
+      ...(draft.draft.basedOnEvidenceIds ?? []),
+      ...project.imagePrompts.flatMap((prompt) => prompt.basedOnEvidenceIds ?? [])
+    ])
   };
 }
 

@@ -338,7 +338,8 @@ function finalPostFromDraft(project: Pick<PostProject, "copyDraft" | "selectedIm
     imageIds: project.selectedImages,
     coverImageId: project.selectedImages[0],
     copyVersionId: `copy-${project.copyDraft.id}`,
-    imagePromptVersionIds: []
+    imagePromptVersionIds: [],
+    basedOnEvidenceIds: project.copyDraft.draft.basedOnEvidenceIds ?? []
   };
 }
 

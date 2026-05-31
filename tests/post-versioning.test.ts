@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { deriveFinalPost } from "@/lib/post-project/brief";
 import { buildPublishVersionSnapshot, compareTextVersion, getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 import type { PostProject } from "@/lib/post-project/types";
 
@@ -86,6 +87,26 @@ describe("post versioning status", () => {
     expect(snapshot.qualityCanPublish).toBe(true);
     expect(snapshot.finalPostMatchesCanvas).toBe(true);
     expect(snapshot.summary).toContain("Quality Gate");
+  });
+
+  it("stores evidence ids on the assembled final post snapshot", () => {
+    const finalPost = deriveFinalPost({
+      copyDraft: baseProject.copyDraft,
+      selectedImages: baseProject.selectedImages,
+      imagePrompts: [
+        ...baseProject.imagePrompts,
+        {
+          id: "prompt-visual",
+          createdAt: "2026-05-30T00:00:00.000Z",
+          label: "Visual Prompt",
+          value: { prompt: "more visual detail" },
+          basedOnEvidenceIds: ["insight-visual"]
+        }
+      ],
+      finalPost: undefined
+    });
+
+    expect(finalPost?.basedOnEvidenceIds).toEqual(["insight-1", "insight-visual"]);
   });
 
   it("summarizes differences between the final post snapshot and current canvas", () => {
