@@ -4,6 +4,7 @@ import { ClipboardEvent, DragEvent, FormEvent, useEffect, useRef, useState } fro
 import { MessageSquareText, Search, Upload, X } from "lucide-react";
 import { buildCopyCreativeBrief } from "@/lib/workflows/creative-briefs";
 import { WorkspaceCanvas } from "@/app/components/workspace-canvas";
+import { canShowCurrentDraftInConversation, getConversationContextWarning, getConversationProjectContext } from "@/app/components/chat-context";
 import type {
   AssetRecord,
   ChatConversation,
@@ -68,11 +69,25 @@ export function ChatPanel({
   onOpenPublishFromWorkspace: () => void;
 }) {
   const attachedAssets = assets.filter((asset) => attachedAssetIds.includes(asset.id));
-  const showCurrentDraftStrip = Boolean(currentDraft && (activeConversationId || messages.length));
   const [showComposerContext, setShowComposerContext] = useState(false);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const latestConversationId = conversations[0]?.id ?? activeConversationId;
   const isLatestConversation = !activeConversationId || activeConversationId === latestConversationId;
+  const conversationContext = getConversationProjectContext(messages);
+  const conversationWarning = getConversationContextWarning({
+    isLatestConversation,
+    conversationPostProjectId: conversationContext.postProjectId,
+    currentPostProjectId: postProject?.id
+  });
+  const showCurrentDraftStrip = Boolean(
+    currentDraft &&
+      canShowCurrentDraftInConversation({
+        hasCurrentDraft: Boolean(currentDraft),
+        isLatestConversation,
+        conversationPostProjectId: conversationContext.postProjectId,
+        currentPostProjectId: postProject?.id
+      })
+  );
   const latestWorkflowResultIndex = messages.reduce((latest, message, index) => (message.workflowResult ? index : latest), -1);
 
   useEffect(() => {
@@ -131,6 +146,13 @@ export function ChatPanel({
             <p>像 ChatGPT 一样连续追问：搜索真实笔记、查看证据、生成草稿、继续修改、最后发布或定时。</p>
           </div>
         </div>
+
+        {conversationWarning ? (
+          <section className="contextWarning">
+            <strong>历史对话上下文</strong>
+            <p>{conversationWarning}</p>
+          </section>
+        ) : null}
 
         {currentDraft && showCurrentDraftStrip ? (
           <section className="currentDraftStrip">

@@ -2060,6 +2060,27 @@ textarea {
   margin: 6px 0 0;
 }
 
+.contextWarning {
+  background: rgba(190, 128, 28, 0.1);
+  border: 1px solid rgba(190, 128, 28, 0.28);
+  border-radius: 8px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+}
+
+.contextWarning strong {
+  color: #8a5a10;
+  display: block;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.contextWarning p {
+  color: var(--text);
+  line-height: 1.55;
+  margin: 0;
+}
+
 .composerDock {
   background:
     linear-gradient(180deg, rgba(252, 255, 253, 0.92), rgba(243, 247, 246, 0.96)),
