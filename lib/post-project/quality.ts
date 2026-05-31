@@ -31,6 +31,7 @@ export function runPostQualityGate(project: Pick<
   const evidenceAlignment = buildEvidenceAlignment(draftEvidenceIds, visualEvidenceIds, Boolean(project.visualDirection));
   const evidenceReview = buildEvidenceReview(project, draftEvidenceIds) as NonNullable<QualityCheck["evidenceReview"]>;
   const evidencePack = project.evidencePack;
+  const ragSufficiencyIssue = getRagSufficiencyIssue(evidencePack?.summary);
   const citationReport = project.copyDraft && evidencePack?.insights.length
     ? buildEvidenceCitationReport({ evidencePack, creativeBrief: project.creativeBrief }, draftEvidenceIds, project.copyDraft.draft.evidenceReferences)
     : null;
@@ -53,6 +54,10 @@ export function runPostQualityGate(project: Pick<
   }
   if (project.copyDraft && evidenceReview.realtimeEvidenceIds.length && !evidenceReview.viralEvidenceIds.length) {
     suggestions.push("当前发布稿只引用了实时研究，建议补充爆款库长期规律来校准标题钩子、正文结构和图片风格。");
+  }
+  if (ragSufficiencyIssue) {
+    issues.push(ragSufficiencyIssue);
+    suggestions.push("请继续搜索实时小红书笔记或补充爆款库样本，等证据充足后再生成最终稿和发布检查。");
   }
   const invalidEvidenceIds = draftEvidenceIds.filter((id) => !evidenceIds.has(id));
   if (invalidEvidenceIds.length) {
@@ -151,7 +156,8 @@ export function runPostQualityGate(project: Pick<
       ? !draftEvidenceIds.length ||
         invalidEvidenceIds.length > 0 ||
         Boolean(citationReport?.missingEvidenceIds.length) ||
-        (evidenceReview.referencedEvidenceIds.length > 0 && !evidenceReview.realtimeEvidenceIds.length)
+        (evidenceReview.referencedEvidenceIds.length > 0 && !evidenceReview.realtimeEvidenceIds.length) ||
+        Boolean(ragSufficiencyIssue)
       : false
   ]);
   const visualConsistencyScore = scoreFromIssues([
@@ -184,6 +190,7 @@ export function runPostQualityGate(project: Pick<
       productMutationRisk ||
       copiedSampleTitle ||
       !originalityReview.isSafe ||
+      ragSufficiencyIssue ||
       (project.copyDraft
         ? !draftEvidenceIds.length ||
           invalidEvidenceIds.length > 0 ||
@@ -229,6 +236,21 @@ function findGeneratedImageProvenanceIssues(
       if (!image.basedOnEvidenceIds?.length) missing.push("basedOnEvidenceIds");
       return missing.length ? [`${label} 缺少 ${missing.join("/")}`] : [];
     });
+}
+
+function getRagSufficiencyIssue(summary: unknown): string | null {
+  if (!isRecord(summary) || !isRecord(summary.viralKnowledge)) return null;
+  const sufficiency = summary.viralKnowledge.sufficiency;
+  if (!isRecord(sufficiency) || sufficiency.isEnough !== false) return null;
+  const missing = Array.isArray(sufficiency.missing)
+    ? sufficiency.missing.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    : [];
+  const recommendation = typeof sufficiency.recommendation === "string" ? sufficiency.recommendation.trim() : "";
+  return [
+    "爆款库 RAG 证据不足，不能直接进入发布",
+    missing.length ? `缺口：${missing.slice(0, 3).join("、")}` : "",
+    recommendation
+  ].filter(Boolean).join("；");
 }
 
 function findProductMutationRisk(

@@ -772,6 +772,103 @@ describe("post project", () => {
     expect(quality.evidenceReview?.realtimeEvidenceIds).toEqual([]);
   });
 
+  it("blocks publish when viral RAG sufficiency explicitly says evidence is not enough", () => {
+    const longContent = "这篇笔记面向周末想找安静咖啡馆的人，先说明适合人群，再补充座位、光线、饮品体验和避坑提醒，最后用一个轻互动问题收尾，确保内容来自当前证据而不是凭空生成。";
+    const quality = runPostQualityGate({
+      creativeBrief: {
+        audience: "广州咖啡爱好者",
+        painPoint: "不知道周末去哪家咖啡馆更稳",
+        contentAngle: "真实探店避坑",
+        emotionalHook: "先给结论",
+        proofPoints: ["座位", "光线", "饮品"],
+        tone: "真实",
+        visualMood: "自然光",
+        imageMustHave: ["窗边座位"],
+        imageMustAvoid: [],
+        platformStyle: "小红书真实分享",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-live", "viral-insight-style"]
+      },
+      visualDirection: {
+        mood: "自然光",
+        composition: "窗边座位和咖啡杯",
+        colorPalette: "暖色",
+        mustHave: ["窗边座位"],
+        mustAvoid: [],
+        basedOnEvidenceIds: ["insight-live", "viral-insight-style"]
+      },
+      imagePrompts: [{
+        id: "prompt-1",
+        label: "封面方向",
+        createdAt: "2026-05-30T00:00:00.000Z",
+        value: { prompt: "窗边自然光咖啡馆封面图" },
+        basedOnEvidenceIds: ["insight-live", "viral-insight-style"]
+      }],
+      selectedImages: ["asset-1"],
+      evidencePack: {
+        sampleIds: ["note-1", "viral-1"],
+        insights: [
+          {
+            id: "insight-live",
+            sourceType: "realtime",
+            type: "copy",
+            insight: "实时样本会先说明适合人群，再补充座位和避坑提醒",
+            sourceSampleIds: ["note-1"],
+            confidence: 0.82,
+            createdAt: "2026-05-30T00:00:00.000Z"
+          },
+          {
+            id: "viral-insight-style",
+            sourceType: "viral_library",
+            type: "visual",
+            insight: "爆款库规律建议用自然光和座位细节做封面",
+            sourceSampleIds: ["viral-1"],
+            confidence: 0.8,
+            createdAt: "2026-05-30T00:00:00.000Z"
+          }
+        ],
+        summary: {
+          viralKnowledge: {
+            sufficiency: {
+              isEnough: false,
+              missing: ["爆款库匹配样本不足 2 条"],
+              recommendation: "建议继续搜索或保存更多高质量样本",
+              realtimeCount: 3,
+              viralCount: 1
+            }
+          }
+        }
+      },
+      finalPost: {
+        title: "广州周末咖啡馆真实探店",
+        content: longContent,
+        tags: ["广州咖啡馆", "周末探店"],
+        imageIds: ["asset-1"],
+        imagePromptVersionIds: ["prompt-1"],
+        basedOnEvidenceIds: ["insight-live", "viral-insight-style"]
+      },
+      copyDraft: {
+        id: "draft-rag-sufficiency",
+        updatedAt: "2026-05-30T00:00:00.000Z",
+        draft: {
+          title: "广州周末咖啡馆真实探店",
+          content: longContent,
+          tags: ["广州咖啡馆", "周末探店"],
+          structure: ["适合谁", "真实体验", "避坑提醒"],
+          imagePrompt: "窗边自然光咖啡馆封面图",
+          basedOnEvidenceIds: ["insight-live", "viral-insight-style"]
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      }
+    });
+
+    expect(quality.canPublish).toBe(false);
+    expect(quality.issues.join(" ")).toContain("爆款库 RAG 证据不足");
+    expect(quality.suggestions.join(" ")).toContain("继续搜索");
+  });
+
   it("blocks publish when copy and visual direction cite different evidence", () => {
     const longContent = "这篇笔记面向周末想找安静咖啡馆的人，先说明适合的人群和真实体验，再补充座位、光线、人均、排队时间和避坑提醒，最后用一个轻互动问题收尾。";
     const quality = runPostQualityGate({
