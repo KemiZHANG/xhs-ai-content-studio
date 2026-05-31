@@ -42,7 +42,8 @@ export function createPublishIntent(input: CreatePublishIntentInput): PublishInt
     mode,
     scheduleAt: input.scheduleAt,
     confirmed: false,
-    evidenceCitationSummary: input.evidenceCitationSummary
+    evidenceCitationSummary: input.evidenceCitationSummary,
+    versionSnapshot: input.versionSnapshot
   }).map((item) =>
     item.id === "quality" && input.evidenceCitationSummary
       ? {
@@ -84,7 +85,8 @@ export function buildPublishConfirmationChecklist({
   mode,
   scheduleAt,
   confirmed,
-  evidenceCitationSummary
+  evidenceCitationSummary,
+  versionSnapshot
 }: {
   title: string;
   content: string;
@@ -96,6 +98,7 @@ export function buildPublishConfirmationChecklist({
   scheduleAt?: string;
   confirmed: boolean;
   evidenceCitationSummary?: PublishEvidenceCitationSummary;
+  versionSnapshot?: PublishVersionSnapshot;
 }): PublishConfirmationItem[] {
   const checklist: PublishConfirmationItem[] = [
     {
@@ -103,21 +106,27 @@ export function buildPublishConfirmationChecklist({
       label: "最终文案版本",
       required: true,
       confirmed,
-      detail: `${title.trim().length} 字标题，正文 ${content.trim().length} 字`
+      detail: versionSnapshot?.copyVersionId
+        ? `${title.trim().length} 字标题，正文 ${content.trim().length} 字；文案版本 ${versionSnapshot.copyVersionId}`
+        : `${title.trim().length} 字标题，正文 ${content.trim().length} 字`
     },
     {
       id: "images",
       label: "最终图片版本",
       required: true,
       confirmed,
-      detail: `${images.length} 张图片`
+      detail: versionSnapshot
+        ? `${images.length} 张图片；选中版本 ${versionSnapshot.selectedImageIds.length} 张图`
+        : `${images.length} 张图片`
     },
     {
       id: "visual",
       label: "图片方向 / Prompt",
       required: true,
       confirmed,
-      detail: "图片方向已和最终文案、CreativeBrief、证据包对齐"
+      detail: versionSnapshot
+        ? `Prompt 版本 ${versionSnapshot.imagePromptVersionIds.length} 个；图片方向已和最终文案、CreativeBrief、证据包对齐`
+        : "图片方向已和最终文案、CreativeBrief、证据包对齐"
     },
     {
       id: "account",
@@ -174,6 +183,7 @@ export function validatePublishIntent(
     errors.push("image path must come from the workspace asset folders");
   }
   errors.push(...validatePublishEvidenceCitations(intent.evidenceCitationSummary));
+  errors.push(...validatePublishVersionSnapshot(intent.versionSnapshot));
 
   if (intent.mode === "scheduled") {
     if (!intent.scheduleAt) {
@@ -194,6 +204,27 @@ export function validatePublishIntent(
   return errors;
 }
 
+function validatePublishVersionSnapshot(snapshot: PublishVersionSnapshot | undefined): string[] {
+  if (!snapshot) return [];
+  const errors: string[] = [];
+  if (!snapshot.finalPostMatchesCanvas) {
+    errors.push("final post version snapshot must match the current PostProject canvas");
+  }
+  if (!snapshot.qualityGateFresh || snapshot.qualityCanPublish !== true) {
+    errors.push("quality gate must be fresh and publishable for the selected final post version");
+  }
+  if (snapshot.warnings.length) {
+    errors.push("publish version snapshot has unresolved warnings");
+  }
+  if (!snapshot.selectedImageIds.length) {
+    errors.push("publish version snapshot must include selected image ids");
+  }
+  if (!snapshot.finalPostEvidenceIds.length) {
+    errors.push("publish version snapshot must include final post evidence ids");
+  }
+  return errors;
+}
+
 function validatePublishEvidenceCitations(summary: PublishEvidenceCitationSummary | undefined): string[] {
   if (!summary) return [];
   const errors: string[] = [];
@@ -209,8 +240,16 @@ function validatePublishEvidenceCitations(summary: PublishEvidenceCitationSummar
 }
 
 export function authorizePublishIntent(intent: PublishIntent, policy: PublishPolicy): PublishDecision {
+  if (policy.mode === "draft_only") {
+    return {
+      allowed: false,
+      status: "blocked",
+      reasons: ["draft only mode blocks external publishing"]
+    };
+  }
+
   const validationErrors = validatePublishIntent(intent);
-  if (validationErrors.length) {
+  if (validationErrors.length && policy.confirmed) {
     return {
       allowed: false,
       status: "blocked",
@@ -219,18 +258,12 @@ export function authorizePublishIntent(intent: PublishIntent, policy: PublishPol
   }
 
   switch (policy.mode) {
-    case "draft_only":
-      return {
-        allowed: false,
-        status: "blocked",
-        reasons: ["draft only mode blocks external publishing"]
-      };
     case "review_required":
       if (!policy.confirmed) {
         return {
           allowed: false,
           status: "awaiting_approval",
-          reasons: ["review required before external publishing"]
+          reasons: ["review required before external publishing", ...validationErrors]
         };
       }
       return {
@@ -243,7 +276,7 @@ export function authorizePublishIntent(intent: PublishIntent, policy: PublishPol
         return {
           allowed: false,
           status: "awaiting_approval",
-          reasons: ["one-time confirmation required before external publishing"]
+          reasons: ["one-time confirmation required before external publishing", ...validationErrors]
         };
       }
       return {

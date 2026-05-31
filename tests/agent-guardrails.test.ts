@@ -18,6 +18,18 @@ const baseIntent = () =>
     requestedBy: "chat"
   });
 
+const freshVersionSnapshot = () => ({
+  copyVersionId: "copy-draft-1",
+  imagePromptVersionIds: ["prompt-1"],
+  selectedImageIds: ["image-1"],
+  finalPostEvidenceIds: ["insight-1"],
+  qualityGateFresh: true,
+  qualityCanPublish: true,
+  finalPostMatchesCanvas: true,
+  summary: "版本已锁定",
+  warnings: []
+});
+
 describe("agent publish guardrails", () => {
   it("blocks direct publishing in draft-only mode", () => {
     const decision = authorizePublishIntent(baseIntent(), { mode: "draft_only" });
@@ -64,6 +76,49 @@ describe("agent publish guardrails", () => {
       confirmed: false
     });
     expect(visualItem?.detail).toContain("CreativeBrief");
+  });
+
+  it("stores final copy, image, and prompt version details in the confirmation checklist", () => {
+    const intent = createPublishIntent({
+      ...baseIntent(),
+      versionSnapshot: freshVersionSnapshot()
+    });
+
+    expect(intent.confirmationChecklist?.find((item) => item.id === "copy")?.detail).toContain("copy-draft-1");
+    expect(intent.confirmationChecklist?.find((item) => item.id === "images")?.detail).toContain("1 张图");
+    expect(intent.confirmationChecklist?.find((item) => item.id === "visual")?.detail).toContain("Prompt 版本 1");
+  });
+
+  it("blocks publish intents when the version snapshot is stale or incomplete", () => {
+    const staleIntent = createPublishIntent({
+      ...baseIntent(),
+      versionSnapshot: {
+        ...freshVersionSnapshot(),
+        finalPostMatchesCanvas: false,
+        warnings: ["最终帖子快照已落后"]
+      }
+    });
+    const noEvidenceIntent = createPublishIntent({
+      ...baseIntent(),
+      versionSnapshot: {
+        ...freshVersionSnapshot(),
+        finalPostEvidenceIds: []
+      }
+    });
+
+    expect(validatePublishIntent(staleIntent)).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("current PostProject canvas"),
+        expect.stringContaining("unresolved warnings")
+      ])
+    );
+    expect(authorizePublishIntent(staleIntent, { mode: "auto_publish_allowed", confirmed: true })).toMatchObject({
+      allowed: false,
+      status: "blocked"
+    });
+    expect(validatePublishIntent(noEvidenceIntent)).toEqual(
+      expect.arrayContaining([expect.stringContaining("final post evidence ids")])
+    );
   });
 
   it("stores evidence citation summaries on publish intents", () => {
