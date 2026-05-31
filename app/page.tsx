@@ -27,6 +27,7 @@ import {
 } from "@/app/components/xhs-panels";
 import { AccountStatusCard } from "@/app/components/account-status-card";
 import { buildPendingPublishFromPlan } from "@/app/components/publish-confirmation";
+import { buildViralKnowledgeSearchParams, type ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import { PostStudioPanel, type StudioTab } from "@/app/components/post-studio-panel";
 import { ChatPanel } from "@/app/components/chat-workbench";
 import { StatusPill } from "@/app/components/status-badges";
@@ -377,35 +378,8 @@ export default function Home() {
     return data.project;
   }
 
-  async function loadViralKnowledge(filters: {
-    query?: string;
-    category?: string;
-    tags?: string;
-    audience?: string;
-    painPoint?: string;
-    minLikes?: string;
-    minCollects?: string;
-    minScore?: string;
-    sortBy?: "createdAt" | "likes" | "collects" | "score";
-  } = {}) {
-    const params = new URLSearchParams({ limit: "12" });
-    const query = filters.query?.trim();
-    const category = filters.category?.trim();
-    const tags = filters.tags?.trim();
-    const audience = filters.audience?.trim();
-    const painPoint = filters.painPoint?.trim();
-    const minLikes = filters.minLikes?.trim();
-    const minCollects = filters.minCollects?.trim();
-    const minScore = filters.minScore?.trim();
-    if (query) params.set("q", query);
-    if (category) params.set("category", category);
-    if (tags) params.set("tags", tags);
-    if (audience) params.set("audience", audience);
-    if (painPoint) params.set("painPoint", painPoint);
-    if (minLikes && Number.isFinite(Number(minLikes))) params.set("minLikes", minLikes);
-    if (minCollects && Number.isFinite(Number(minCollects))) params.set("minCollects", minCollects);
-    if (minScore && Number.isFinite(Number(minScore))) params.set("minScore", minScore);
-    if (filters.sortBy) params.set("sortBy", filters.sortBy);
+  async function loadViralKnowledge(filters: ViralLibrarySearchFilters = {}) {
+    const params = buildViralKnowledgeSearchParams(filters, 12);
     const data = (await clientApi(`/api/viral-knowledge?${params.toString()}`)) as { cases: ViralCase[] };
     setViralCases(data.cases ?? []);
   }

@@ -40,6 +40,7 @@ import { activeAccountReadinessHint, isHealthForActiveAccount } from "@/app/comp
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 import { pickEvidenceHighlights, scoreEvidence, summarizeEvidenceSample } from "@/app/components/evidence-display";
+import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
 
@@ -138,17 +139,7 @@ export function PostStudioPanel({
   onSaveToViralLibrary: (sample: SampleEvidence) => void;
   onSaveManyToViralLibrary: (samples: SampleEvidence[]) => void;
   onReloadViralLibrary: () => void;
-  onSearchViralLibrary: (filters: {
-    query?: string;
-    category?: string;
-    tags?: string;
-    audience?: string;
-    painPoint?: string;
-    minLikes?: string;
-    minCollects?: string;
-    minScore?: string;
-    sortBy?: "createdAt" | "likes" | "collects" | "score";
-  }) => void;
+  onSearchViralLibrary: (filters: ViralLibrarySearchFilters) => void;
   onRefreshViralEvidence: () => void;
   onOpenImageStudio: () => void;
   onUploadReferenceFiles: (files: FileList | File[]) => void;
@@ -169,10 +160,15 @@ export function PostStudioPanel({
     tags: "",
     audience: "",
     painPoint: "",
+    createdAfter: "",
+    createdBefore: "",
     minLikes: "",
     minCollects: "",
+    minComments: "",
+    minShares: "",
     minScore: "",
-    sortBy: "score" as "createdAt" | "likes" | "collects" | "score"
+    sortBy: "score" as NonNullable<ViralLibrarySearchFilters["sortBy"]>,
+    sortOrder: "desc" as NonNullable<ViralLibrarySearchFilters["sortOrder"]>
   });
   useEffect(() => {
     if (focusTab?.tab) {
@@ -778,10 +774,15 @@ export function PostStudioPanel({
                     tags: viralSearchForm.tags,
                     audience: viralSearchForm.audience,
                     painPoint: viralSearchForm.painPoint,
+                    createdAfter: viralSearchForm.createdAfter,
+                    createdBefore: viralSearchForm.createdBefore,
                     minLikes: viralSearchForm.minLikes,
                     minCollects: viralSearchForm.minCollects,
+                    minComments: viralSearchForm.minComments,
+                    minShares: viralSearchForm.minShares,
                     minScore: viralSearchForm.minScore,
-                    sortBy: viralSearchForm.sortBy
+                    sortBy: viralSearchForm.sortBy,
+                    sortOrder: viralSearchForm.sortOrder
                   });
                 }}
               >
@@ -831,6 +832,22 @@ export function PostStudioPanel({
                   <summary>高级过滤</summary>
                   <div className="viralSearchGrid">
                     <label>
+                      <span>入库开始日期</span>
+                      <input
+                        type="date"
+                        value={viralSearchForm.createdAfter}
+                        onChange={(event) => setViralSearchForm((current) => ({ ...current, createdAfter: event.target.value }))}
+                      />
+                    </label>
+                    <label>
+                      <span>入库结束日期</span>
+                      <input
+                        type="date"
+                        value={viralSearchForm.createdBefore}
+                        onChange={(event) => setViralSearchForm((current) => ({ ...current, createdBefore: event.target.value }))}
+                      />
+                    </label>
+                    <label>
                       <span>最低点赞</span>
                       <input
                         inputMode="numeric"
@@ -849,6 +866,24 @@ export function PostStudioPanel({
                     />
                   </label>
                     <label>
+                      <span>最低评论</span>
+                      <input
+                        inputMode="numeric"
+                        value={viralSearchForm.minComments}
+                        onChange={(event) => setViralSearchForm((current) => ({ ...current, minComments: event.target.value }))}
+                        placeholder="可选"
+                      />
+                    </label>
+                    <label>
+                      <span>最低分享</span>
+                      <input
+                        inputMode="numeric"
+                        value={viralSearchForm.minShares}
+                        onChange={(event) => setViralSearchForm((current) => ({ ...current, minShares: event.target.value }))}
+                        placeholder="可选"
+                      />
+                    </label>
+                    <label>
                       <span>最低评分</span>
                       <input
                         inputMode="decimal"
@@ -866,7 +901,19 @@ export function PostStudioPanel({
                         <option value="score">综合分</option>
                         <option value="collects">收藏</option>
                         <option value="likes">点赞</option>
+                        <option value="comments">评论</option>
+                        <option value="shares">分享</option>
                         <option value="createdAt">入库时间</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>排序方向</span>
+                      <select
+                        value={viralSearchForm.sortOrder}
+                        onChange={(event) => setViralSearchForm((current) => ({ ...current, sortOrder: event.target.value as typeof current.sortOrder }))}
+                      >
+                        <option value="desc">高到低 / 最新</option>
+                        <option value="asc">低到高 / 最早</option>
                       </select>
                     </label>
                   </div>
@@ -883,10 +930,15 @@ export function PostStudioPanel({
                         tags: "",
                         audience: "",
                         painPoint: "",
+                        createdAfter: "",
+                        createdBefore: "",
                         minLikes: "",
                         minCollects: "",
+                        minComments: "",
+                        minShares: "",
                         minScore: "",
-                        sortBy: "score"
+                        sortBy: "score",
+                        sortOrder: "desc"
                       });
                       onReloadViralLibrary();
                     }}
