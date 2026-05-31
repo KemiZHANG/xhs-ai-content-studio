@@ -4,7 +4,12 @@ import { ClipboardEvent, DragEvent, FormEvent, useEffect, useRef, useState } fro
 import { MessageSquareText, Search, Upload, X } from "lucide-react";
 import { buildCopyCreativeBrief } from "@/lib/workflows/creative-briefs";
 import { WorkspaceCanvas } from "@/app/components/workspace-canvas";
-import { canShowCurrentDraftInConversation, getConversationContextWarning, getConversationProjectContext } from "@/app/components/chat-context";
+import {
+  canShowCurrentDraftInConversation,
+  getConversationContextWarning,
+  getConversationProjectContext,
+  getConversationSubmitGuard
+} from "@/app/components/chat-context";
 import type {
   AssetRecord,
   ChatConversation,
@@ -75,6 +80,11 @@ export function ChatPanel({
   const isLatestConversation = !activeConversationId || activeConversationId === latestConversationId;
   const conversationContext = getConversationProjectContext(messages);
   const conversationWarning = getConversationContextWarning({
+    isLatestConversation,
+    conversationPostProjectId: conversationContext.postProjectId,
+    currentPostProjectId: postProject?.id
+  });
+  const submitGuard = getConversationSubmitGuard({
     isLatestConversation,
     conversationPostProjectId: conversationContext.postProjectId,
     currentPostProjectId: postProject?.id
@@ -151,6 +161,10 @@ export function ChatPanel({
           <section className="contextWarning">
             <strong>历史对话上下文</strong>
             <p>{conversationWarning}</p>
+            {submitGuard.reason ? <p>{submitGuard.reason}</p> : null}
+            <button className="secondaryButton" onClick={onNewConversation} type="button">
+              新建干净对话
+            </button>
           </section>
         ) : null}
 
@@ -290,6 +304,7 @@ export function ChatPanel({
 
           <form className="chatInput" onSubmit={onSubmit}>
             <textarea
+              disabled={submitGuard.blocked || busy}
               placeholder="输入下一步，例如：把标题更生活化 / 用第二张图 / 今晚 8 点发布"
               rows={2}
               value={input}
@@ -301,9 +316,9 @@ export function ChatPanel({
                 }
               }}
             />
-            <button className="primaryButton" disabled={busy} type="submit">
+            <button className="primaryButton" disabled={busy || submitGuard.blocked} type="submit">
               <Search size={16} />
-              {busy ? "处理中" : "发送"}
+              {submitGuard.blocked ? "只读" : busy ? "处理中" : "发送"}
             </button>
           </form>
         </div>

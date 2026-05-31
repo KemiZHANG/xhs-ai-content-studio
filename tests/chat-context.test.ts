@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   canShowCurrentDraftInConversation,
   getConversationContextWarning,
-  getConversationProjectContext
+  getConversationProjectContext,
+  getConversationSubmitGuard
 } from "@/app/components/chat-context";
 import type { ChatMessage } from "@/app/types";
 
@@ -57,5 +58,21 @@ describe("chat conversation project context", () => {
     expect(getConversationContextWarning({
       isLatestConversation: false
     })).toContain("旧版历史对话");
+  });
+
+  it("blocks submitting from historical conversations that do not own the current project", () => {
+    expect(getConversationSubmitGuard({
+      isLatestConversation: false,
+      conversationPostProjectId: "post-old",
+      currentPostProjectId: "post-new"
+    })).toMatchObject({
+      blocked: true
+    });
+
+    expect(getConversationSubmitGuard({
+      isLatestConversation: false,
+      conversationPostProjectId: "post-new",
+      currentPostProjectId: "post-new"
+    })).toEqual({ blocked: false });
   });
 });

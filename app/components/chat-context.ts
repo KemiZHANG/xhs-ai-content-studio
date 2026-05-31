@@ -60,3 +60,28 @@ export function getConversationContextWarning({
 
   return null;
 }
+
+export function getConversationSubmitGuard({
+  isLatestConversation,
+  conversationPostProjectId,
+  currentPostProjectId
+}: {
+  isLatestConversation: boolean;
+  conversationPostProjectId?: string;
+  currentPostProjectId?: string;
+}): { blocked: boolean; reason?: string } {
+  const warning = getConversationContextWarning({
+    isLatestConversation,
+    conversationPostProjectId,
+    currentPostProjectId
+  });
+
+  if (!warning) {
+    return { blocked: false };
+  }
+
+  return {
+    blocked: true,
+    reason: "这段历史对话当前为只读，避免把旧项目内容误写入正在编辑的 PostProject。请新建对话继续，或从任务/项目历史恢复对应项目。"
+  };
+}
