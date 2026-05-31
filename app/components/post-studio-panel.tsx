@@ -44,6 +44,7 @@ import { isHighPriorityAgentCard, pickVisibleAgentCards } from "@/app/components
 import { buildAgentMessageDisplay } from "@/app/components/agent-message-display";
 import { buildAgentTraceSummary } from "@/app/components/agent-trace-summary";
 import { extractStageGuidanceDisplay } from "@/app/components/agent-stage-guidance";
+import { extractAgentCreationProvenanceDisplay } from "@/app/components/agent-creation-provenance-display";
 import { selectStudioChatWindow } from "@/app/components/studio-chat-window";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
@@ -1892,6 +1893,30 @@ function AgentCardInlineDetails({
   onQuickAction: (action: string) => void;
 }) {
   const stageGuidance = extractStageGuidanceDisplay(card);
+  const provenance = extractAgentCreationProvenanceDisplay(card);
+  if (provenance) {
+    return (
+      <div className="agentProvenanceMini">
+        <div className="agentProvenanceHeader">
+          <span>{provenance.headline}</span>
+          <p>{provenance.detail}</p>
+        </div>
+        <div className="agentProvenanceItems">
+          {provenance.items.map((item) => (
+            <div className={item.status} key={item.id}>
+              <span>{item.status === "ready" ? "已追溯" : item.status === "warn" ? "需复核" : "待建立"}</span>
+              <strong>{item.label}</strong>
+              <p>{item.summary}</p>
+              <small>
+                {item.sourceLine} · 证据 {item.evidenceCount}
+                {item.missingCount ? ` · 待补 ${item.missingCount}` : ""}
+              </small>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   if (!stageGuidance) return null;
   return (
     <div className="agentStageMiniFlow">
