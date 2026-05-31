@@ -727,7 +727,7 @@ function buildStructuredAgentResponse({
   return {
     answer,
     reply: answer,
-    stage: workspace.publishPlan ? inferStageFromWorkspace(workspace) : postProject?.currentStage ?? inferStageFromWorkspace(workspace),
+    stage: getActivePublishPlan(workspace, postProject) ? inferStageFromActiveState(workspace, postProject) : postProject?.currentStage ?? inferStageFromWorkspace(workspace),
     intent: plan.intent,
     intentConfidence: inferIntentConfidence(plan, workspace),
     needsUserInput,
@@ -1267,8 +1267,9 @@ function buildCardsFromTurn(
       }
     });
   }
-  if (workspace.publishPlan) {
-    const publishCard = buildPublishCheckCard(workspace.publishPlan, postProject);
+  const activePublishPlan = getActivePublishPlan(workspace, postProject);
+  if (activePublishPlan) {
+    const publishCard = buildPublishCheckCard(activePublishPlan, postProject);
     cards.push({
       id: "card-publish-check",
       type: "publish_check",
@@ -1487,21 +1488,22 @@ function canSurfacePostAction(action: PostAction, readiness: ReturnType<typeof b
 
 function buildQuickActions(plan: AgentPlan, workspace: WorkspaceState, postProject?: PostProject | null) {
   const postProjectActions = buildPostProjectQuickActions(postProject);
-  if (workspace.publishPlan?.status === "awaiting_approval") {
+  const activePublishPlan = getActivePublishPlan(workspace, postProject);
+  if (activePublishPlan?.status === "awaiting_approval") {
     return [
       { id: "qa-review-publish-confirmation", label: "查看发布确认单", action: "review_publish_confirmation" },
-      { id: "qa-confirm-publish", label: workspace.publishPlan.scheduleAt ? "确认定时发布" : "确认立即发布", action: "confirm_publish" },
+      { id: "qa-confirm-publish", label: activePublishPlan.scheduleAt ? "确认定时发布" : "确认立即发布", action: "confirm_publish" },
       { id: "qa-cancel-publish", label: "取消确认单", action: "cancel_publish" }
     ];
   }
-  if (workspace.publishPlan?.status === "blocked" || workspace.publishPlan?.status === "failed") {
+  if (activePublishPlan?.status === "blocked" || activePublishPlan?.status === "failed") {
     return [
       { id: "qa-run-quality-gate-after-block", label: "重新发布检查", action: "run_quality_gate" },
       { id: "qa-revise-copy-after-block", label: "修改当前文案", action: "revise_copy" },
       { id: "qa-select-images-after-block", label: "重新选图", action: "select_images" }
     ];
   }
-  if (workspace.publishPlan?.status === "scheduled" || workspace.publishPlan?.status === "published") {
+  if (activePublishPlan?.status === "scheduled" || activePublishPlan?.status === "published") {
     return [
       { id: "qa-view-publish-status", label: "查看发布记录", action: "view_publish_history" },
       { id: "qa-start-next-project", label: "开始下一篇", action: "start_project" }
@@ -1573,6 +1575,21 @@ function inferStageFromWorkspace(workspace: WorkspaceState): AgentTurnResult["st
   if (workspace.evidenceSummary || workspace.selectedSamples.length) return "evidence_ready";
   if (workspace.topic) return "briefing";
   return "empty";
+}
+
+function inferStageFromActiveState(workspace: WorkspaceState, postProject?: PostProject | null): AgentTurnResult["stage"] {
+  const activePublishPlan = getActivePublishPlan(workspace, postProject);
+  if (activePublishPlan?.status === "published") return "published";
+  if (activePublishPlan?.status === "scheduled") return "scheduled";
+  if (activePublishPlan) return "reviewing";
+  return postProject?.currentStage ?? inferStageFromWorkspace(workspace);
+}
+
+function getActivePublishPlan(
+  workspace: WorkspaceState,
+  postProject?: PostProject | null
+): WorkspaceState["publishPlan"] | NonNullable<PostProject["publishPlan"]> | null {
+  return postProject?.publishPlan ?? workspace.publishPlan ?? null;
 }
 
 function inferIntentConfidence(plan: AgentPlan, workspace: WorkspaceState): number {
