@@ -28,19 +28,53 @@ describe("agent planner", () => {
       "research",
       "retrieveViralKnowledge",
       "summarizeEvidence",
-      "generateDraft"
+      "createCreativeBrief",
+      "generateDraft",
+      "planVisuals"
     ]);
     expect(plan.steps.map((step) => step.toolName)).toEqual([
       "workflow.searchRank",
       "knowledge.retrieveViralPatterns",
       "workflow.summarizeEvidence",
-      "workflow.generateDraft"
+      "project.createCreativeBrief",
+      "workflow.generateDraft",
+      "workflow.planVisuals"
     ]);
     expect(plan.topic).toContain("广州咖啡馆");
     expect(plan.timeRange).toBe("一周内");
     expect(plan.ragFilters?.sortBy).toBe("collects");
     expect(plan.ragFilters?.sortOrder).toBe("desc");
     expect(plan.ragFilters?.createdAfter).toBeTruthy();
+  });
+
+  it("adds publish assembly and Quality Gate when a full research request asks for publish review", () => {
+    const plan = createAgentPlan({
+      message: "帮我找最近一周广州咖啡馆高收藏笔记，分析标题和图片风格，生成图文笔记，然后进入发布检查",
+      hasCurrentDraft: false,
+      attachedAssetCount: 0
+    });
+
+    expect(plan.intent).toBe("research_to_draft");
+    expect(plan.steps.map((step) => step.action)).toEqual([
+      "research",
+      "retrieveViralKnowledge",
+      "summarizeEvidence",
+      "createCreativeBrief",
+      "generateDraft",
+      "planVisuals",
+      "assemblePost",
+      "runQualityGate"
+    ]);
+    expect(plan.steps.map((step) => step.toolName)).toEqual([
+      "workflow.searchRank",
+      "knowledge.retrieveViralPatterns",
+      "workflow.summarizeEvidence",
+      "project.createCreativeBrief",
+      "workflow.generateDraft",
+      "workflow.planVisuals",
+      "project.assemblePost",
+      "project.runQualityGate"
+    ]);
   });
 
   it("extracts viral RAG metric and tag filters from natural language", () => {
@@ -102,7 +136,8 @@ describe("agent planner", () => {
     });
 
     expect(plan.intent).toBe("answer");
-    expect(plan.steps[0].reason).toContain("image prompts");
+    expect(plan.steps.map((step) => step.action)).toEqual(["planVisuals"]);
+    expect(plan.steps[0].toolName).toBe("workflow.planVisuals");
   });
 
   it("asks a clarifying question for ambiguous text on an empty project", () => {

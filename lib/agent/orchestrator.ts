@@ -686,7 +686,7 @@ function shouldAppendEvidenceReference(plan: AgentPlan): boolean {
     return true;
   }
   return plan.steps.some((step) => {
-    if (["generateDraft", "summarizeEvidence", "runQualityGate", "assemblePost", "generateImages", "generateCards"].includes(step.action)) {
+    if (["createCreativeBrief", "generateDraft", "planVisuals", "summarizeEvidence", "runQualityGate", "assemblePost", "generateImages", "generateCards"].includes(step.action)) {
       return true;
     }
     return /evidence|CreativeBrief|visual|image prompt|draft|quality gate|证据|图片方向|文案|草稿/i.test(step.reason);
@@ -1678,7 +1678,10 @@ async function maybeHandleVisualPlanningTurn(
 ): Promise<{ answer: string; workspace: WorkspaceState; postProject: PostProject } | null> {
   const wantsVisualPlan =
     plan.intent === "answer" &&
-    plan.steps.some((step) => step.action === "answer" && /visual|image prompt|图片|Prompt/i.test(step.reason));
+    plan.steps.some((step) =>
+      step.action === "planVisuals" ||
+      (step.action === "answer" && /visual|image prompt|图片|Prompt/i.test(step.reason))
+    );
   if (!wantsVisualPlan) {
     return null;
   }

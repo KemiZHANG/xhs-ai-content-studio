@@ -163,6 +163,16 @@ function defaultToolDefinitions(): AgentToolDefinition[] {
       supportsDryRun: true
     },
     {
+      name: "project.createCreativeBrief",
+      description: "Compress realtime evidence and viral-library patterns into the shared CreativeBrief that drives copy and visuals.",
+      risk: "local_write",
+      profile: "research",
+      requiresConfirmation: false,
+      requiresModel: true,
+      requiresMcp: false,
+      supportsDryRun: true
+    },
+    {
       name: "project.selectImages",
       description: "Bind selected generated, uploaded, or card-rendered assets to the active PostProject for publishing.",
       risk: "local_write",
@@ -218,6 +228,16 @@ function defaultToolDefinitions(): AgentToolDefinition[] {
       description: "Generate an original Xiaohongshu draft from summarized evidence and user requirements.",
       risk: "local_write",
       profile: "research",
+      requiresConfirmation: false,
+      requiresModel: true,
+      requiresMcp: false,
+      supportsDryRun: true
+    },
+    {
+      name: "workflow.planVisuals",
+      description: "Plan image direction and image prompts from the same CreativeBrief and evidencePack used by the copy.",
+      risk: "local_write",
+      profile: "assets",
       requiresConfirmation: false,
       requiresModel: true,
       requiresMcp: false,

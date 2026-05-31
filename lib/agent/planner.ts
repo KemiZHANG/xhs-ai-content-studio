@@ -88,7 +88,7 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
       return buildPlan({
         intent: "answer",
         topic: inferTopic(message),
-        steps: [step("answer", "Plan visual direction and image prompts from the current CreativeBrief.")]
+        steps: [step("planVisuals", "Plan visual direction and image prompts from the current CreativeBrief.", "workflow.planVisuals")]
       });
     }
     const needsProductAsset = /产品图|商品图|参考图|上传|换.*背景|背景/.test(message) && input.attachedAssetCount === 0;
@@ -142,7 +142,7 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
     });
   }
 
-  if (isPublishRequest(message, lower)) {
+  if (isPublishRequest(message, lower) && !(hasExplicitResearchSignal(message, lower) && isDraftOutputRequest(message))) {
     if (!input.hasCurrentDraft) {
       return buildPlan({
         intent: "ask",
@@ -158,19 +158,32 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
   }
 
   if (isResearchRequest(message, lower)) {
-    const wantsDraft = /生成|写|文案|笔记|标题|正文|标签|草稿|图文/.test(message);
+    const wantsDraft = isDraftOutputRequest(message);
+    const wantsVisualPlan = wantsDraft && isVisualPlanningRequest(message, lower);
+    const wantsPublishCheck = isQualityCheckRequest(message, lower) || /发布检查|质量检查|确认单|发布前|quality gate/i.test(message);
+    const researchToDraftSteps: AgentPlanStep[] = [
+      step("research", "Search and collect Xiaohongshu evidence.", "workflow.searchRank"),
+      step("retrieveViralKnowledge", "Retrieve reusable patterns from the viral knowledge base.", "knowledge.retrieveViralPatterns"),
+      step("summarizeEvidence", "Summarize evidence into title, body, tag, and image insights.", "workflow.summarizeEvidence"),
+      step("createCreativeBrief", "Compress realtime and viral evidence into a shared CreativeBrief for copy and visuals.", "project.createCreativeBrief"),
+      step("generateDraft", "Generate an original draft from the shared CreativeBrief and summarized evidence.", "workflow.generateDraft")
+    ];
+    if (wantsVisualPlan) {
+      researchToDraftSteps.push(step("planVisuals", "Plan image direction and prompts from the same CreativeBrief used by the copy.", "workflow.planVisuals"));
+    }
+    if (wantsPublishCheck) {
+      researchToDraftSteps.push(
+        step("assemblePost", "Assemble the generated copy and selected images into a publish preview.", "project.assemblePost"),
+        step("runQualityGate", "Run Quality Gate before any publish confirmation is created.", "project.runQualityGate")
+      );
+    }
     return buildPlan({
       intent: wantsDraft ? "research_to_draft" : "research_only",
       topic: inferTopic(message),
       timeRange: inferTimeRange(message),
       ragFilters: inferRagFilters(message),
       steps: wantsDraft
-        ? [
-            step("research", "Search and collect Xiaohongshu evidence.", "workflow.searchRank"),
-            step("retrieveViralKnowledge", "Retrieve reusable patterns from the viral knowledge base.", "knowledge.retrieveViralPatterns"),
-            step("summarizeEvidence", "Summarize evidence into title, body, tag, and image insights.", "workflow.summarizeEvidence"),
-            step("generateDraft", "Generate an original draft from summarized evidence.", "workflow.generateDraft")
-          ]
+        ? researchToDraftSteps
         : [
             step("research", "Search and collect Xiaohongshu evidence.", "workflow.searchRank"),
             step("retrieveViralKnowledge", "Retrieve reusable patterns from the viral knowledge base.", "knowledge.retrieveViralPatterns"),
@@ -194,6 +207,14 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
       ? [step("askClarifyingQuestion", "The user intent is ambiguous and no active PostProject context exists.")]
       : [step("answer", "Answer directly or delegate to the legacy chat agent.")]
   });
+}
+
+function isDraftOutputRequest(message: string): boolean {
+  return /生成|写|文案|笔记|标题|正文|标签|草稿|图文/.test(message);
+}
+
+function isVisualPlanningRequest(message: string, lower: string): boolean {
+  return /图片风格|图片方向|视觉|封面|配图|图文|提示词|场景图|产品图/.test(message) || lower.includes("visual") || lower.includes("image prompt");
 }
 
 function isAmbiguousLowSignalRequest(message: string, lower: string): boolean {
