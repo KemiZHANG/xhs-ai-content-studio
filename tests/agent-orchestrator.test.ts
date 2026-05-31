@@ -297,15 +297,40 @@ describe("agent orchestrator", () => {
       },
       evidencePack: {
         sampleIds: ["sample-1"],
-        insights: [{
-          id: "insight-visual",
-          sourceType: "realtime",
-          type: "visual",
-          insight: "Use warm coffee table light",
-          sourceSampleIds: ["sample-1"],
-          confidence: 0.9,
-          createdAt: "2026-05-31T00:00:00.000Z"
-        }]
+        insights: [
+          {
+            id: "insight-visual",
+            sourceType: "realtime",
+            type: "visual",
+            insight: "Use warm coffee table light",
+            sourceSampleIds: ["sample-1"],
+            confidence: 0.9,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          },
+          {
+            id: "viral-insight-visual",
+            sourceType: "viral_library",
+            type: "visual",
+            insight: "学习自然光和信息层级，但不要复刻原图构图",
+            sourceSampleIds: ["viral-case-1"],
+            confidence: 0.75,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }
+        ],
+        summary: {
+          viralKnowledge: {
+            results: [{
+              case: {
+                id: "viral-case-1",
+                extractedInsights: { avoidCopying: ["不要盗用原图构图"] },
+                creativeSafety: {
+                  doNotCopy: ["不要复制竞品图片布局"],
+                  transformationGuidance: ["只学习光线、信息层级和情绪氛围"]
+                }
+              }
+            }]
+          }
+        }
       },
       imagePrompts: [{
         id: "prompt-v1",
@@ -352,6 +377,9 @@ describe("agent orchestrator", () => {
     });
 
     expect(prompt).toContain("warm coffee shop cover image");
+    expect(prompt).toContain("Viral library originality boundaries");
+    expect(prompt).toContain("不要复制竞品图片布局");
+    expect(prompt).toContain("只学习光线");
     expect(result.answer).toContain("图片");
     expect(result.currentDraft?.images).toEqual([{ path: imagePath }]);
     expect(result.workspace.selectedImageIds.length).toBe(1);

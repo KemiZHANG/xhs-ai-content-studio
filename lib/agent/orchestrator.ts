@@ -2466,6 +2466,7 @@ function buildAgentImagePrompt({
   evidenceSummary: unknown;
   postProject?: PostProject;
 }): string {
+  const viralSafetyContext = postProject ? buildViralSafetyContextForPrompt(postProject) : null;
   const keyInsights = postProject?.evidencePack.insights
     .slice(0, 8)
     .map((insight) => `${insight.id} [${insight.sourceType ?? "realtime"}/${insight.type}]: ${insight.insight}`)
@@ -2487,6 +2488,7 @@ function buildAgentImagePrompt({
     `Draft image prompt: ${draft.draft.imagePrompt}`,
     `Tags: ${draft.draft.tags.join(", ")}`,
     keyInsights ? `Traceable evidence insights:\n${keyInsights}` : "",
+    viralSafetyContext ? `Viral library originality boundaries:\n${JSON.stringify(viralSafetyContext, null, 2)}` : "",
     evidenceSummary ? `Evidence summary: ${JSON.stringify(evidenceSummary).slice(0, 1600)}` : "",
     "Do not copy competitor images. If product reference images are provided, preserve the product subject, package shape, label position, color, and material. Do not invent unreadable brand text, false logos, certifications, or exaggerated claims."
   ]
