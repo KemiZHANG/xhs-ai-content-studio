@@ -2122,6 +2122,24 @@ describe("API route contracts", () => {
     vi.doMock("@/lib/storage/settings", () => ({
       readSettings: async () => defaultSettings
     }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: async (id: string) =>
+        id === "asset-2"
+          ? {
+              id: "asset-2",
+              kind: "generated",
+              name: "generated-cover",
+              originalName: "generated-cover.png",
+              absolutePath: "C:\\Users\\someone\\xhs\\generated-assets\\generated\\generated-cover.png",
+              mimeType: "image/png",
+              size: 128,
+              createdAt: "2026-05-31T00:00:00.000Z",
+              promptVersionId: "prompt-asset",
+              basedOnEvidenceIds: ["asset-visual-insight"],
+              sourceAssetIds: ["product-asset"]
+            }
+          : null
+    }));
     vi.doMock("@/lib/storage/drafts", () => ({
       createDraftRecord: vi.fn(),
       writeCurrentDraft: vi.fn()
@@ -2149,9 +2167,10 @@ describe("API route contracts", () => {
         expect.objectContaining({
           id: "asset-2",
           assetId: "asset-2",
-          promptVersionId: "prompt-v1",
-          basedOnEvidenceIds: ["visual-insight", "brief-insight"],
-          sourceAssetIds: [],
+          path: "C:\\Users\\someone\\xhs\\generated-assets\\generated\\generated-cover.png",
+          promptVersionId: "prompt-asset",
+          basedOnEvidenceIds: ["asset-visual-insight"],
+          sourceAssetIds: ["product-asset"],
           selected: true
         })
       ],

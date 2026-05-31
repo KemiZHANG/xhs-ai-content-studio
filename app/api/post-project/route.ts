@@ -7,6 +7,7 @@ import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import type { PostReadinessReport } from "@/lib/post-project/readiness";
 import { readPostProject, updatePostProject } from "@/lib/post-project/store";
 import { createDraftRecord, writeCurrentDraft, type DraftRecord } from "@/lib/storage/drafts";
+import { getAsset } from "@/lib/storage/assets";
 import { readSettings } from "@/lib/storage/settings";
 import type { PostProject } from "@/lib/post-project/types";
 
@@ -123,7 +124,7 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
     await updateWorkspaceState({ selectedImageIds, publishPlan: null });
     const nextProject = await updatePostProject({
       selectedImages: selectedImageIds,
-      generatedImages: mergeSelectedImageRecords(project, selectedImageIds),
+      generatedImages: await mergeSelectedImageRecords(project, selectedImageIds),
       finalPost: undefined,
       publishPlan: null,
       qualityCheck: undefined,
@@ -238,9 +239,14 @@ function getCurrentEvidenceIds(project: PostProject): string[] {
     : project.creativeBrief?.basedOnEvidenceIds ?? project.evidencePack.insights.map((insight) => insight.id);
 }
 
-function mergeSelectedImageRecords(project: PostProject, selectedImageIds: string[]): PostProject["generatedImages"] {
+async function mergeSelectedImageRecords(project: PostProject, selectedImageIds: string[]): Promise<PostProject["generatedImages"]> {
   const selected = uniqueStrings(selectedImageIds);
   const existingById = new Map(project.generatedImages.map((image) => [image.assetId ?? image.id, image]));
+  const assetsById = new Map(
+    (await Promise.all(selected.map(async (id) => [id, await getAsset(id)] as const))).filter(
+      (entry): entry is readonly [string, NonNullable<Awaited<ReturnType<typeof getAsset>>>] => Boolean(entry[1])
+    )
+  );
   const activePrompt = project.imagePrompts.at(-1);
   const fallbackEvidenceIds = uniqueStrings([
     ...(activePrompt?.basedOnEvidenceIds ?? []),
@@ -249,16 +255,21 @@ function mergeSelectedImageRecords(project: PostProject, selectedImageIds: strin
   ]).slice(0, 12);
   return selected.map((id) => {
     const existing = existingById.get(id);
+    const asset = assetsById.get(id);
     return {
       id: existing?.id ?? id,
       assetId: existing?.assetId ?? id,
-      path: existing?.path,
+      path: existing?.path ?? asset?.absolutePath,
       url: existing?.url,
-      promptId: existing?.promptId ?? activePrompt?.id,
-      promptVersionId: existing?.promptVersionId ?? existing?.promptId ?? activePrompt?.id,
-      basedOnEvidenceIds: existing?.basedOnEvidenceIds?.length ? existing.basedOnEvidenceIds : fallbackEvidenceIds,
-      sourceAssetIds: existing?.sourceAssetIds ?? [],
-      createdAt: existing?.createdAt ?? new Date().toISOString(),
+      promptId: existing?.promptId ?? asset?.promptVersionId ?? activePrompt?.id,
+      promptVersionId: existing?.promptVersionId ?? asset?.promptVersionId ?? existing?.promptId ?? activePrompt?.id,
+      basedOnEvidenceIds: existing?.basedOnEvidenceIds?.length
+        ? existing.basedOnEvidenceIds
+        : asset?.basedOnEvidenceIds?.length
+          ? asset.basedOnEvidenceIds
+          : fallbackEvidenceIds,
+      sourceAssetIds: existing?.sourceAssetIds?.length ? existing.sourceAssetIds : asset?.sourceAssetIds ?? [],
+      createdAt: existing?.createdAt ?? asset?.createdAt ?? new Date().toISOString(),
       selected: true
     };
   });
