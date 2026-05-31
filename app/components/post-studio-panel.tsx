@@ -39,6 +39,7 @@ import { buildEvidenceCitationReport, buildEvidenceReferenceSummary } from "@/li
 import { activeAccountReadinessHint, isHealthForActiveAccount } from "@/app/components/account-readiness";
 import { citationFieldBadges, formatCitationStripSummary } from "@/app/components/evidence-citation-display";
 import { isHighPriorityAgentCard, pickVisibleAgentCards } from "@/app/components/agent-card-visibility";
+import { buildAgentTraceSummary } from "@/app/components/agent-trace-summary";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 import { pickEvidenceHighlights, scoreEvidence, summarizeEvidenceSample } from "@/app/components/evidence-display";
@@ -1415,7 +1416,8 @@ function AgentStructuredMessage({
   const allCards = message.cards ?? [];
   const cards = pickVisibleAgentCards(allCards);
   const hiddenCards = allCards.filter((card) => !cards.some((visible) => visible.id === card.id));
-  const trace = (message.toolTrace ?? []).slice(-4);
+  const traceSummary = buildAgentTraceSummary(message.toolTrace ?? []);
+  const trace = traceSummary.visibleTrace;
   const actions = (message.quickActions ?? []).slice(0, 3);
   if (!cards.length && !trace.length && !actions.length && !message.questions?.length) {
     return null;
@@ -1456,13 +1458,14 @@ function AgentStructuredMessage({
 
       {trace.length ? (
         <details className="agentTraceMini">
-          <summary>工具轨迹 · {trace.length}</summary>
+          <summary>工具轨迹 · {traceSummary.summaryLabel}</summary>
           {trace.map((item) => (
             <div key={item.id}>
               <span className={`traceStatus ${item.status}`}>{labelForTraceStatus(item.status)}</span>
               <p>{item.label}：{item.detail}</p>
             </div>
           ))}
+          {traceSummary.recoveryHint ? <p className="traceRecoveryHint">{traceSummary.recoveryHint}</p> : null}
         </details>
       ) : null}
 

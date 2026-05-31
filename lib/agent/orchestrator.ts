@@ -1552,10 +1552,16 @@ function buildToolTraceItems(trace: ReturnType<typeof createTrace>): AgentToolTr
   return trace.events.map((event) => ({
     id: event.id,
     label: event.label,
-    status: event.type === "run_failed" ? "failed" : event.type === "run_started" ? "running" : "completed",
+    status: statusForTraceEvent(event.type),
     detail: event.detail,
     createdAt: event.createdAt
   }));
+}
+
+function statusForTraceEvent(eventType: ReturnType<typeof createTrace>["events"][number]["type"]): AgentToolTraceItem["status"] {
+  if (eventType === "run_failed") return "failed";
+  if (eventType === "run_started" || eventType === "tool_called") return "running";
+  return "completed";
 }
 
 function inferStageFromWorkspace(workspace: WorkspaceState): AgentTurnResult["stage"] {

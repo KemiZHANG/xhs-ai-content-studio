@@ -3886,6 +3886,15 @@ textarea {
   margin: 0;
 }
 
+.agentTraceMini .traceRecoveryHint {
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  margin-top: 8px;
+  padding: 7px 8px;
+}
+
 .agentQuickActionRow {
   display: flex;
   flex-wrap: wrap;
