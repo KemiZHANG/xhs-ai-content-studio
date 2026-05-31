@@ -480,6 +480,54 @@ describe("agent orchestrator", () => {
     expect(result.answer).toContain("insight-visual");
   });
 
+  it("labels generated planning as non-research advice when the project has no traceable evidence", async () => {
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      creativeBrief: {
+        audience: "广州咖啡爱好者",
+        painPoint: "不知道哪家店适合安静办公",
+        contentAngle: "真实探店避坑",
+        emotionalHook: "先给适用人群",
+        proofPoints: ["座位", "价格"],
+        tone: "生活化",
+        visualMood: "窗边自然光",
+        imageMustHave: ["咖啡杯"],
+        imageMustAvoid: ["夸张广告"],
+        platformStyle: "小红书探店",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: []
+      },
+      evidencePack: { sampleIds: [], insights: [] },
+      currentStage: "brief_ready"
+    });
+
+    const result = await runAgentTurn({
+      message: "请基于当前 CreativeBrief 生成图片方向和图片提示词",
+      conversationId: "chat-visual-no-evidence",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(result.answer).toContain("图片方向");
+    expect(result.answer).toContain("证据状态");
+    expect(result.answer).toContain("不能当作小红书研究结论");
+    expect(result.postProject?.evidencePack.insights).toEqual([]);
+  });
+
   it("updates PostProject brief slots from natural-language requirements before asking more questions", async () => {
     const runChatAgent = vi.fn(async () => ({ answer: "legacy answer" }));
     const result = await runAgentTurn({
