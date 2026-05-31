@@ -803,8 +803,17 @@ describe("agent orchestrator", () => {
           sourceSampleIds: ["note-1"],
           confidence: 0.82,
           createdAt: "2026-05-30T00:00:00.000Z"
+        }, {
+          id: "viral-insight-cover",
+          sourceType: "viral_library",
+          type: "visual",
+          insight: "封面使用近景主体加手写清单感，更适合收藏型探店笔记",
+          sourceSampleIds: ["viral-case-cover"],
+          confidence: 0.86,
+          createdAt: "2026-05-30T00:00:00.000Z"
         }]
       },
+      focusedEvidenceIds: ["viral-insight-cover"],
       creativeBrief: {
         audience: "广州咖啡爱好者",
         painPoint: "不知道哪家店适合安静办公",
@@ -855,11 +864,15 @@ describe("agent orchestrator", () => {
     expect(result.cards.find((card) => card.type === "evidence_summary")).toMatchObject({
       summary: expect.stringContaining("可追溯结论"),
       data: expect.objectContaining({
-        insightCount: 1,
+        insightCount: 2,
         sourceCounts: expect.objectContaining({
-          realtime: 1
+          realtime: 1,
+          viral_library: 1
         }),
-        keyInsights: [expect.objectContaining({ id: "insight-visual" })]
+        keyInsights: expect.arrayContaining([
+          expect.objectContaining({ id: "insight-visual" }),
+          expect.objectContaining({ id: "viral-insight-cover" })
+        ])
       })
     });
     expect(result.cards.find((card) => card.type === "visual_direction")?.data).toMatchObject({
@@ -871,6 +884,7 @@ describe("agent orchestrator", () => {
     expect(result.quickActions.map((action) => action.action)).toContain("generate_images");
     expect(result.answer).toContain("参考证据");
     expect(result.answer).toContain("insight-visual");
+    expect(result.answer).toContain("viral-insight-cover");
   });
 
   it("labels generated planning as non-research advice when the project has no traceable evidence", async () => {
@@ -1180,8 +1194,93 @@ describe("agent orchestrator", () => {
     });
     expect(result.cards.find((card) => card.type === "evidence_citations")?.summary).toContain("实时研究");
     expect(writerPrompt).toContain("爆款库原创边界");
+    expect(writerPrompt).toContain("本次重点规律");
     expect(writerPrompt).toContain("只学习规律");
     expect(writerPrompt).toContain("不要复制");
+  });
+
+  it("passes selected focus evidence into the Writer prompt", async () => {
+    await resetPostProject({
+      topic: "通勤包",
+      evidencePack: {
+        sampleIds: ["viral-case-bag"],
+        insights: [{
+          id: "viral-insight-focus",
+          sourceType: "viral_library",
+          type: "hook",
+          insight: "标题用真实通勤场景加收纳痛点开头",
+          sourceSampleIds: ["viral-case-bag"],
+          confidence: 0.86,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }, {
+          id: "viral-insight-extra",
+          sourceType: "viral_library",
+          type: "visual",
+          insight: "图片使用桌面平铺展示容量",
+          sourceSampleIds: ["viral-case-bag"],
+          confidence: 0.78,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }]
+      },
+      focusedEvidenceIds: ["viral-insight-focus"],
+      creativeBrief: {
+        audience: "上班族",
+        painPoint: "东西太多不好拿",
+        contentAngle: "真实通勤收纳分享",
+        emotionalHook: "早高峰不狼狈",
+        proofPoints: ["容量", "重量"],
+        tone: "真实生活化",
+        visualMood: "干净桌面",
+        imageMustHave: ["通勤包", "日常物品"],
+        imageMustAvoid: ["夸张容量"],
+        platformStyle: "xiaohongshu",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["viral-insight-focus"]
+      },
+      currentStage: "brief_ready"
+    });
+    let writerPrompt = "";
+
+    const result = await runAgentTurn({
+      message: "基于重点规律生成文案",
+      conversationId: "chat-focused-evidence",
+      settings: { ...defaultSettings, textApiKey: "text-key" },
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async (prompt) => {
+          writerPrompt = prompt;
+          return JSON.stringify({
+            title: "通勤包别再乱塞了",
+            content: "这篇从早高峰真实场景写起，重点讲容量、取物和肩负担。",
+            tags: ["通勤包", "上班族"],
+            structure: ["场景", "痛点", "解决方式"],
+            imagePrompt: "通勤包桌面平铺，展示日常物品收纳",
+            basedOnEvidenceIds: ["viral-insight-focus"],
+            evidenceReferences: {
+              title: ["viral-insight-focus"],
+              content: ["viral-insight-focus"],
+              tags: ["viral-insight-focus"],
+              imagePrompt: ["viral-insight-focus"]
+            }
+          });
+        },
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(writerPrompt).toContain("本次重点规律");
+    expect(writerPrompt).toContain("viral-insight-focus");
+    expect(result.currentDraft?.draft.basedOnEvidenceIds).toEqual(["viral-insight-focus"]);
   });
 
   it("revises the active PostProject draft and invalidates stale publish checks", async () => {

@@ -1711,6 +1711,7 @@ async function maybeHandleVisualPlanningTurn(
     currentStage: imagePrompt ? "image_prompt_ready" : "visual_planning"
   });
   const visualEvidenceIds = uniqueIds([
+    ...getFocusedEvidenceIds(updatedProject),
     ...(updatedProject.visualDirection?.basedOnEvidenceIds ?? []),
     ...(imagePrompt?.basedOnEvidenceIds ?? [])
   ]);
@@ -1793,9 +1794,21 @@ async function maybeHandleDraftFromProjectTurn(
   }
 
   const evidenceIds = evidenceReadyProject.evidencePack.insights.map((insight) => insight.id);
+  const focusedEvidenceIds = getFocusedEvidenceIds(evidenceReadyProject);
+  const prioritizedEvidenceIds = focusedEvidenceIds.length ? focusedEvidenceIds : evidenceIds;
   const evidenceForPrompt = evidenceReadyProject.evidencePack.insights
     .filter((insight) => insight.insight.trim())
     .slice(0, 12)
+    .map((insight) => ({
+      id: insight.id,
+      sourceType: insight.sourceType ?? "realtime",
+      type: insight.type,
+      insight: insight.insight,
+      confidence: insight.confidence
+    }));
+  const focusedEvidenceForPrompt = focusedEvidenceIds
+    .map((id) => evidenceReadyProject.evidencePack.insights.find((insight) => insight.id === id))
+    .filter((insight): insight is NonNullable<typeof insight> => Boolean(insight))
     .map((insight) => ({
       id: insight.id,
       sourceType: insight.sourceType ?? "realtime",
@@ -1823,12 +1836,12 @@ async function maybeHandleDraftFromProjectTurn(
     tags: [evidenceReadyProject.topic?.replace(/\s+/g, "") || "小红书"],
     structure: ["标题钩子", "场景引入", "正文价值点", "结尾互动"],
     imagePrompt: brief.visualMood || "真实小红书风格图片，自然光，主体清晰，不复制参考图",
-    basedOnEvidenceIds: evidenceIds.slice(0, 8),
+    basedOnEvidenceIds: prioritizedEvidenceIds.slice(0, 8),
     evidenceReferences: {
-      title: evidenceIds.slice(0, 3),
-      content: evidenceIds.slice(0, 5),
-      tags: evidenceIds.slice(0, 5),
-      imagePrompt: evidenceIds.slice(0, 5)
+      title: prioritizedEvidenceIds.slice(0, 3),
+      content: prioritizedEvidenceIds.slice(0, 5),
+      tags: prioritizedEvidenceIds.slice(0, 5),
+      imagePrompt: prioritizedEvidenceIds.slice(0, 5)
     }
   };
 
@@ -1853,6 +1866,9 @@ ${JSON.stringify(brief, null, 2)}
 
 可引用证据（只能引用这些 id；sourceType=viral_library 只能学习规律，不能复制原文）：
 ${JSON.stringify(evidenceForPrompt, null, 2)}
+
+本次重点规律（如果非空，标题、正文、标签、图片提示词必须优先围绕这些 id，并在 evidenceReferences 中至少引用 1 条）：
+${JSON.stringify(focusedEvidenceForPrompt, null, 2)}
 
 爆款库原创边界（生成时必须遵守；只学习规律，不复述来源表达）：
 ${JSON.stringify(viralSafetyContext, null, 2)}
@@ -1990,6 +2006,8 @@ async function maybeHandleDraftRevisionTurn(
     ...(postProject.creativeBrief?.basedOnEvidenceIds ?? []),
     ...postProject.evidencePack.insights.map((insight) => insight.id)
   ]);
+  const focusedEvidenceIds = getFocusedEvidenceIds(postProject);
+  const prioritizedEvidenceIds = focusedEvidenceIds.length ? focusedEvidenceIds : evidenceIds;
   const evidenceForPrompt = postProject.evidencePack.insights
     .filter((insight) => evidenceIds.includes(insight.id))
     .slice(0, 12)
@@ -2000,15 +2018,25 @@ async function maybeHandleDraftRevisionTurn(
       insight: insight.insight,
       confidence: insight.confidence
     }));
+  const focusedEvidenceForPrompt = focusedEvidenceIds
+    .map((id) => postProject.evidencePack.insights.find((insight) => insight.id === id))
+    .filter((insight): insight is NonNullable<typeof insight> => Boolean(insight))
+    .map((insight) => ({
+      id: insight.id,
+      sourceType: insight.sourceType ?? "realtime",
+      type: insight.type,
+      insight: insight.insight,
+      confidence: insight.confidence
+    }));
   const viralSafetyContext = buildViralSafetyContextForPrompt(postProject);
   const fallback: GeneratedDraft = {
     ...currentDraft.draft,
-    basedOnEvidenceIds: (currentDraft.draft.basedOnEvidenceIds?.length ? currentDraft.draft.basedOnEvidenceIds : evidenceIds).slice(0, 8),
+    basedOnEvidenceIds: (currentDraft.draft.basedOnEvidenceIds?.length ? currentDraft.draft.basedOnEvidenceIds : prioritizedEvidenceIds).slice(0, 8),
     evidenceReferences: currentDraft.draft.evidenceReferences ?? {
-      title: evidenceIds.slice(0, 3),
-      content: evidenceIds.slice(0, 5),
-      tags: evidenceIds.slice(0, 5),
-      imagePrompt: evidenceIds.slice(0, 5)
+      title: prioritizedEvidenceIds.slice(0, 3),
+      content: prioritizedEvidenceIds.slice(0, 5),
+      tags: prioritizedEvidenceIds.slice(0, 5),
+      imagePrompt: prioritizedEvidenceIds.slice(0, 5)
     }
   };
   const raw = await input.model.generateStructuredText(
@@ -2035,6 +2063,9 @@ ${JSON.stringify(postProject.creativeBrief ?? null, null, 2)}
 
 可引用证据（只能引用这些 id；sourceType=viral_library 只能学习规律，不能复制原文）：
 ${JSON.stringify(evidenceForPrompt, null, 2)}
+
+本次重点规律（如果非空，修改后的标题、正文、标签、图片提示词必须优先延续这些 id，并在 evidenceReferences 中至少引用 1 条）：
+${JSON.stringify(focusedEvidenceForPrompt, null, 2)}
 
 爆款库原创边界（修改时必须遵守；只学习规律，不复述来源表达）：
 ${JSON.stringify(viralSafetyContext, null, 2)}
@@ -2863,6 +2894,11 @@ function buildViralSafetyContextForPrompt(project: PostProject) {
     rules: uniqueIds([...strategyRules, ...caseRules, ...insightRules]).slice(0, 12),
     fallbackRule: "如果爆款库证据不足，只能使用 CreativeBrief 和用户输入生成原创内容，不要假装已有研究结论。"
   };
+}
+
+function getFocusedEvidenceIds(project: PostProject): string[] {
+  const validIds = new Set(project.evidencePack.insights.map((insight) => insight.id));
+  return uniqueIds(project.focusedEvidenceIds ?? []).filter((id) => validIds.has(id));
 }
 
 function unknownStringArray(value: unknown): string[] {
