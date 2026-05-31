@@ -689,6 +689,28 @@ export default function Home() {
       case "publish_now":
         await openPublishAssemblyFromWorkspace({ stayInStudio: true });
         return;
+      case "review_publish_confirmation":
+        focusPostStudioTab("publish");
+        setNotice("已打开当前发布确认单。请核对账号、可见范围、图片版本和时间。");
+        return;
+      case "confirm_publish":
+        if (pendingPublish) {
+          await confirmPendingPublish();
+        } else {
+          focusPostStudioTab("publish");
+          setNotice("当前没有可确认的发布单，请先生成发布确认单。");
+        }
+        return;
+      case "cancel_publish":
+        cancelPendingPublish();
+        return;
+      case "view_publish_history":
+        setSection("audit");
+        await loadPublishAudit();
+        return;
+      case "start_project":
+        await startNewProject();
+        return;
       case "recover":
         await loadWorkspace();
         await loadPostProject();
