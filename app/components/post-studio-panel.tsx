@@ -397,9 +397,24 @@ export function PostStudioPanel({
 
           {runningJob ? (
             <div className="studioToolTrace">
-              <strong>{runningJob.title}</strong>
+              <div className="studioToolTraceHeader">
+                <strong>{runningJob.title}</strong>
+                <span>{runningJob.status} · {runningJob.progress}%</span>
+              </div>
               <div className="miniProgress"><i style={{ width: `${runningJob.progress}%` }} /></div>
-              <span>{runningJob.status} · {runningJob.progress}%</span>
+              {runningJob.steps.length ? (
+                <ul className="studioToolStepList" aria-label="后台工具步骤">
+                  {runningJob.steps.slice(-3).map((step) => (
+                    <li className={step.status} key={step.id}>
+                      <span>{labelForTraceStatus(step.status === "done" ? "completed" : step.status)}</span>
+                      <p>{step.label}</p>
+                      {step.detail ? <small>{step.detail}</small> : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <span>任务已创建，等待工具步骤回传。</span>
+              )}
             </div>
           ) : null}
 

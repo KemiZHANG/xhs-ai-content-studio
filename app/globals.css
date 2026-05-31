@@ -3520,9 +3520,54 @@ textarea {
   padding: 12px;
 }
 
+.studioToolTraceHeader {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
 .studioToolTrace span {
   color: rgba(255, 255, 255, 0.7);
   font-size: 13px;
+}
+
+.studioToolStepList {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.studioToolStepList li {
+  border-left: 2px solid rgba(255, 255, 255, 0.22);
+  display: grid;
+  gap: 2px;
+  padding-left: 10px;
+}
+
+.studioToolStepList li.done {
+  border-left-color: #39d98a;
+}
+
+.studioToolStepList li.failed {
+  border-left-color: #ff6b6b;
+}
+
+.studioToolStepList p,
+.studioToolStepList small {
+  margin: 0;
+}
+
+.studioToolStepList p {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.studioToolStepList small {
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
 }
 
 .studioChatList {
