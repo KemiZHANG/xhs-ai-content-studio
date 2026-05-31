@@ -1751,6 +1751,7 @@ async function maybeHandleDraftFromProjectTurn(
       insight: insight.insight,
       confidence: insight.confidence
     }));
+  const viralSafetyContext = buildViralSafetyContextForPrompt(evidenceReadyProject);
   const selectedSamples = evidenceReadyProject.selectedSamples.slice(0, 5).map((sample) => {
     if (!isRecord(sample)) return sample;
     return {
@@ -1800,6 +1801,9 @@ ${JSON.stringify(brief, null, 2)}
 
 可引用证据（只能引用这些 id；sourceType=viral_library 只能学习规律，不能复制原文）：
 ${JSON.stringify(evidenceForPrompt, null, 2)}
+
+爆款库原创边界（生成时必须遵守；只学习规律，不复述来源表达）：
+${JSON.stringify(viralSafetyContext, null, 2)}
 
 实时样本摘要（仅用于理解热度和角度，不要复制标题正文）：
 ${JSON.stringify(selectedSamples, null, 2)}
@@ -1944,6 +1948,7 @@ async function maybeHandleDraftRevisionTurn(
       insight: insight.insight,
       confidence: insight.confidence
     }));
+  const viralSafetyContext = buildViralSafetyContextForPrompt(postProject);
   const fallback: GeneratedDraft = {
     ...currentDraft.draft,
     basedOnEvidenceIds: (currentDraft.draft.basedOnEvidenceIds?.length ? currentDraft.draft.basedOnEvidenceIds : evidenceIds).slice(0, 8),
@@ -1978,6 +1983,9 @@ ${JSON.stringify(postProject.creativeBrief ?? null, null, 2)}
 
 可引用证据（只能引用这些 id；sourceType=viral_library 只能学习规律，不能复制原文）：
 ${JSON.stringify(evidenceForPrompt, null, 2)}
+
+爆款库原创边界（修改时必须遵守；只学习规律，不复述来源表达）：
+${JSON.stringify(viralSafetyContext, null, 2)}
 
 要求：
 1. 按用户要求修改标题、正文、标签、结构或图片提示词。
@@ -2648,6 +2656,44 @@ function summarizeEvidenceCitationReport(
 ): string {
   const report = buildEvidenceCitationReport(project, evidenceIds, evidenceReferences);
   return report.allEvidenceIds.length ? formatEvidenceCitationReport(report) : "";
+}
+
+function buildViralSafetyContextForPrompt(project: PostProject) {
+  const summary = isRecord(project.evidencePack.summary) ? project.evidencePack.summary : {};
+  const viralKnowledge = isRecord(summary.viralKnowledge) ? summary.viralKnowledge : {};
+  const strategyReport = isRecord(viralKnowledge.strategyReport) ? viralKnowledge.strategyReport : {};
+  const results = Array.isArray(viralKnowledge.results) ? viralKnowledge.results : [];
+  const caseRules = results.flatMap((item) => {
+    if (!isRecord(item) || !isRecord(item.case)) return [];
+    const id = typeof item.case.id === "string" ? item.case.id : "viral-case";
+    const extractedInsights = isRecord(item.case.extractedInsights) ? item.case.extractedInsights : {};
+    const creativeSafety = isRecord(item.case.creativeSafety) ? item.case.creativeSafety : {};
+    return compactStrings([
+      ...unknownStringArray(extractedInsights.avoidCopying).map((rule) => `${id}: ${rule}`),
+      ...unknownStringArray(creativeSafety.doNotCopy).map((rule) => `${id}: ${rule}`),
+      ...unknownStringArray(creativeSafety.transformationGuidance).map((rule) => `${id}: ${rule}`)
+    ]);
+  });
+  const strategyRules = unknownStringArray(strategyReport.originalityRules);
+  const insightRules = project.evidencePack.insights
+    .filter((insight) => insight.sourceType === "viral_library")
+    .slice(0, 8)
+    .map((insight) => `${insight.id}: ${insight.type} 只可作为规律引用，不可复述来源样本表达`);
+  return {
+    source: "viral_library_safety",
+    rules: uniqueIds([...strategyRules, ...caseRules, ...insightRules]).slice(0, 12),
+    fallbackRule: "如果爆款库证据不足，只能使用 CreativeBrief 和用户输入生成原创内容，不要假装已有研究结论。"
+  };
+}
+
+function unknownStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? compactStrings(value.map((item) => String(item)))
+    : [];
+}
+
+function compactStrings(values: string[]): string[] {
+  return values.map((value) => value.replace(/\s+/g, " ").trim()).filter(Boolean);
 }
 
 function mergeSelectedGeneratedImages(project: PostProject, candidates: string[], selected: string) {

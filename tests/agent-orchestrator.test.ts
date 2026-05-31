@@ -879,6 +879,7 @@ describe("agent orchestrator", () => {
       currentStage: "evidence_ready"
     });
     const runChatAgent = vi.fn(async () => ({ answer: "legacy answer" }));
+    let writerPrompt = "";
 
     const result = await runAgentTurn({
       message: "请基于当前证据和爆款库规律生成一篇原创小红书笔记",
@@ -893,20 +894,23 @@ describe("agent orchestrator", () => {
         publishContent: async () => ({ ok: true })
       },
       model: {
-        generateStructuredText: async () => JSON.stringify({
-          title: "广州咖啡探店避坑",
-          content: "这篇适合想周末找安静咖啡馆的人。先看人均和排队，再看座位光线，最后给适合人群和避峰建议。",
-          tags: ["广州咖啡馆", "探店", "周末去哪"],
-          structure: ["适合谁", "核心体验", "避坑提醒"],
-          imagePrompt: "广州咖啡馆窗边自然光，桌面咖啡和座位细节，真实探店感",
-          basedOnEvidenceIds: ["insight-live-title"],
-          evidenceReferences: {
-            title: ["insight-live-title"],
-            content: ["insight-live-title"],
-            tags: ["insight-live-title"],
-            imagePrompt: ["insight-live-title"]
-          }
-        }),
+        generateStructuredText: async (prompt) => {
+          writerPrompt = prompt;
+          return JSON.stringify({
+            title: "广州咖啡探店避坑",
+            content: "这篇适合想周末找安静咖啡馆的人。先看人均和排队，再看座位光线，最后给适合人群和避峰建议。",
+            tags: ["广州咖啡馆", "探店", "周末去哪"],
+            structure: ["适合谁", "核心体验", "避坑提醒"],
+            imagePrompt: "广州咖啡馆窗边自然光，桌面咖啡和座位细节，真实探店感",
+            basedOnEvidenceIds: ["insight-live-title"],
+            evidenceReferences: {
+              title: ["insight-live-title"],
+              content: ["insight-live-title"],
+              tags: ["insight-live-title"],
+              imagePrompt: ["insight-live-title"]
+            }
+          });
+        },
         analyzeImageStyle: async () => "",
         generateImage: async () => null,
         generateImageFromReference: async () => null
@@ -936,6 +940,9 @@ describe("agent orchestrator", () => {
       })
     });
     expect(result.cards.find((card) => card.type === "evidence_citations")?.summary).toContain("实时研究");
+    expect(writerPrompt).toContain("爆款库原创边界");
+    expect(writerPrompt).toContain("只学习规律");
+    expect(writerPrompt).toContain("不要复制");
   });
 
   it("revises the active PostProject draft and invalidates stale publish checks", async () => {
