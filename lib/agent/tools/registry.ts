@@ -3,6 +3,7 @@ import { retrieveViralKnowledge, type ViralKnowledgePack, type ViralRetrievalInp
 import { addViralCasesToPostProjectWithSummary } from "@/lib/post-project/store";
 import {
   createViralCaseFromEvidence,
+  reviewViralSaveCandidate,
   upsertViralCases
 } from "@/lib/viral-knowledge/store";
 import type { ModelProvider } from "@/lib/models/provider";
@@ -100,6 +101,23 @@ function defaultToolDefinitions(): AgentToolDefinition[] {
       supportsDryRun: true,
       call: async (input) => {
         const request = parseSaveViralCaseToolInput(input);
+        const candidateReview = reviewViralSaveCandidate(request.sample);
+        if (!candidateReview.shouldSave && !request.force) {
+          return {
+            ok: false,
+            data: {
+              candidateReview,
+              skippedSampleIds: [request.sample.id]
+            },
+            warnings: candidateReview.warnings,
+            risk: "local_write",
+            display: {
+              title: "样本暂未入库",
+              summary: `质量分 ${candidateReview.score}/100，未达到爆款库入库门槛。`,
+              items: [...candidateReview.warnings, ...candidateReview.reasons].slice(0, 5)
+            }
+          };
+        }
         const viralCase = await createViralCaseFromEvidence(request);
         const [saved] = await upsertViralCases([viralCase]);
         const saveResult = await addViralCasesToPostProjectWithSummary([saved]);
@@ -110,7 +128,9 @@ function defaultToolDefinitions(): AgentToolDefinition[] {
             project: saveResult.project,
             addedInsightIds: saveResult.addedInsightIds,
             addedInsights: saveResult.addedInsights,
-            addedSampleIds: saveResult.addedSampleIds
+            addedSampleIds: saveResult.addedSampleIds,
+            candidateReview,
+            skippedSampleIds: []
           },
           warnings: request.model ? [] : ["未提供模型，已使用本地启发式提取爆款规律。"],
           risk: "local_write",
@@ -329,6 +349,7 @@ function parseSaveViralCaseToolInput(input: unknown): {
   topic: string;
   category: string;
   model?: ModelProvider;
+  force?: boolean;
 } {
   const record = isRecord(input) ? input : {};
   const sample = record.sample;
@@ -339,7 +360,8 @@ function parseSaveViralCaseToolInput(input: unknown): {
     sample,
     topic: stringValue(record.topic) || "未分类主题",
     category: stringValue(record.category) || "小红书图文",
-    model: isModelProvider(record.model) ? record.model : undefined
+    model: isModelProvider(record.model) ? record.model : undefined,
+    force: record.force === true || record.allowLowQuality === true
   };
 }
 

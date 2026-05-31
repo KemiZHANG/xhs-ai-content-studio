@@ -110,6 +110,56 @@ describe("agent tool registry", () => {
     expect(result.warnings.join(" ")).toContain("启发式");
   });
 
+  it("applies viral-knowledge save quality review inside the Agent tool", async () => {
+    const registry = createAgentToolRegistry();
+    const weakSample: SampleEvidence = {
+      id: "weak-tool-note",
+      title: "Short note",
+      author: "author",
+      likes: 0,
+      collects: 0,
+      comments: 0,
+      shares: 0,
+      score: 0,
+      url: "",
+      imageUrls: [],
+      cachedImageUrls: [],
+      detailText: "",
+      commentSnippets: [],
+      reasonHighlights: []
+    };
+
+    const rejected = await registry.call("knowledge.saveViralCase", {
+      sample: weakSample,
+      topic: "Weak topic",
+      category: "鎺㈠簵"
+    }) as {
+      ok: boolean;
+      data: { candidateReview: { shouldSave: boolean }; skippedSampleIds: string[] };
+      warnings: string[];
+    };
+
+    expect(rejected.ok).toBe(false);
+    expect(rejected.data.candidateReview.shouldSave).toBe(false);
+    expect(rejected.data.skippedSampleIds).toEqual(["weak-tool-note"]);
+    expect(rejected.warnings.length).toBeGreaterThan(0);
+
+    const forced = await registry.call("knowledge.saveViralCase", {
+      sample: weakSample,
+      topic: "Weak topic",
+      category: "鎺㈠簵",
+      force: true
+    }) as {
+      ok: boolean;
+      data: { case: { sourceSampleId: string }; candidateReview: { shouldSave: boolean }; skippedSampleIds: string[] };
+    };
+
+    expect(forced.ok).toBe(true);
+    expect(forced.data.case.sourceSampleId).toBe("weak-tool-note");
+    expect(forced.data.candidateReview.shouldSave).toBe(false);
+    expect(forced.data.skippedSampleIds).toEqual([]);
+  });
+
   it("executes the viral-knowledge retrieval tool as a traceable RAG pack", async () => {
     const registry = createAgentToolRegistry();
     await registry.call("knowledge.saveViralCase", {
