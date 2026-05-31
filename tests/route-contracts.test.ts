@@ -663,6 +663,16 @@ describe("API route contracts", () => {
       questions: [],
       workspacePatch: expect.objectContaining({ topic: "coffee", recentJobIds: ["job-1"] }),
       cards: [
+        expect.objectContaining({
+          type: "director_summary",
+          title: "后台研究已启动，我会先收集证据",
+          data: expect.objectContaining({
+            stage: "researching",
+            intent: "research_only",
+            nextAction: "open_jobs",
+            evidenceCount: 0
+          })
+        }),
         expect.objectContaining({ type: "stage_guidance", title: "后台研究已启动" }),
         expect.objectContaining({ type: "evidence_summary", title: "证据等待生成" })
       ],
@@ -695,6 +705,15 @@ describe("API route contracts", () => {
     }));
     expect(appendChatTurn).toHaveBeenCalledWith(expect.objectContaining({
       assistantMeta: expect.objectContaining({
+        cards: expect.arrayContaining([
+          expect.objectContaining({ type: "director_summary" })
+        ]),
+        quickActions: expect.arrayContaining([
+          expect.objectContaining({ action: "open_jobs" })
+        ]),
+        toolTrace: expect.arrayContaining([
+          expect.objectContaining({ label: "workflow.runOneClick", status: "running" })
+        ]),
         postProjectId: "post-test",
         postProjectStage: "researching",
         evidenceIds: []

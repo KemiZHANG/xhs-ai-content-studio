@@ -13,6 +13,7 @@ import { appendChatTurn, getChatConversation } from "@/lib/storage/chat";
 import { appendHistory, listHistory } from "@/lib/storage/history";
 import { getAsset, upsertGeneratedAssetPaths, type AssetRecord } from "@/lib/storage/assets";
 import { readSettings } from "@/lib/storage/settings";
+import type { AgentQuickAction, AgentResponseCard, AgentToolTraceItem } from "@/lib/agent/types";
 import type { OneClickInput, OneClickResult } from "@/lib/workflows/one-click";
 
 export const runtime = "nodejs";
@@ -93,11 +94,84 @@ export async function POST(request: Request) {
         postProjectId: queuedPostProject.id
       });
       const answer = `已创建后台 Agent 任务 ${job.id}。你可以继续留在对话页，任务进度和结果会写入任务列表与成果画布。`;
+      const createdAt = new Date().toISOString();
+      const agentMemory = Array.isArray(queuedPostProject.agentMemory) ? queuedPostProject.agentMemory : [];
+      const memoryHints = agentMemory.slice(0, 3);
+      const cards: AgentResponseCard[] = [
+        {
+          id: `card-director-${job.id}`,
+          type: "director_summary",
+          title: "后台研究已启动，我会先收集证据",
+          summary: "阶段：等待研究完成 · 本轮会搜索真实笔记、检索爆款库并压缩成可创作证据。",
+          data: {
+            stage: "researching",
+            stageTitle: "等待研究完成",
+            stageDescription: "当前正在抓取和分析样本，完成后会把标题、正文、标签和图片规律压缩成证据。",
+            intent,
+            intentConfidence: 0.92,
+            did: ["搜索真实笔记", "检索爆款库", "总结证据"],
+            why:
+              routeDecision.workflowGoal === "research"
+                ? "研究任务会先沉淀真实笔记和爆款库证据，不会直接生成或发布内容。"
+                : "先收集证据并生成 CreativeBrief，后续文案和图片方向都会共享同一份依据。",
+            nextAction: "open_jobs",
+            nextActionLabel: "查看任务进度",
+            needsUserInput: false,
+            progress: 10,
+            blockerCount: 0,
+            hasDraft: false,
+            evidenceCount: 0,
+            memoryHints,
+            memorySignalCount: agentMemory.length
+          }
+        },
+        {
+          id: `card-job-${job.id}`,
+          type: "stage_guidance",
+          title: "后台研究已启动",
+          summary: `正在围绕「${routeDecision.topic}」搜索真实小红书笔记，完成后会写入当前 PostProject。`,
+          data: {
+            jobId: job.id,
+            stage: "researching",
+            topic: routeDecision.topic
+          }
+        },
+        {
+          id: `card-evidence-pending-${job.id}`,
+          type: "evidence_summary",
+          title: "证据等待生成",
+          summary: "任务完成前先清空旧证据和旧草稿，避免新项目被上一轮内容干扰。",
+          data: {
+            sourceType: "realtime",
+            status: "pending"
+          }
+        }
+      ];
+      const quickActions: AgentQuickAction[] = [
+        { id: "qa-view-job", label: "查看任务进度", action: "open_jobs" },
+        { id: "qa-refresh-project", label: "刷新项目画布", action: "recover" }
+      ];
+      const toolTrace: AgentToolTraceItem[] = [
+        {
+          id: `tool-${job.id}`,
+          label: "workflow.runOneClick",
+          status: "running",
+          detail: "已进入后台任务队列，完成后会写入成果画布。",
+          createdAt
+        }
+      ];
       const conversation = await appendChatTurn({
         conversationId,
         userContent: message,
         assistantContent: answer,
         assistantMeta: {
+          cards,
+          quickActions,
+          toolTrace,
+          questions: [],
+          intent,
+          intentConfidence: 0.92,
+          needsUserInput: false,
           stage: "researching",
           postProjectId: queuedPostProject.id,
           postProjectStage: queuedPostProject.currentStage,
@@ -131,42 +205,9 @@ export async function POST(request: Request) {
         needsUserInput: false,
         questions: [],
         workspacePatch: workspace,
-        cards: [
-          {
-            id: `card-job-${job.id}`,
-            type: "stage_guidance",
-            title: "后台研究已启动",
-            summary: `正在围绕「${routeDecision.topic}」搜索真实小红书笔记，完成后会写入当前 PostProject。`,
-            data: {
-              jobId: job.id,
-              stage: "researching",
-              topic: routeDecision.topic
-            }
-          },
-          {
-            id: `card-evidence-pending-${job.id}`,
-            type: "evidence_summary",
-            title: "证据等待生成",
-            summary: "任务完成前先清空旧证据和旧草稿，避免新项目被上一轮内容干扰。",
-            data: {
-              sourceType: "realtime",
-              status: "pending"
-            }
-          }
-        ],
-        quickActions: [
-          { id: "qa-view-job", label: "查看任务进度", action: "open_jobs" },
-          { id: "qa-refresh-project", label: "刷新项目画布", action: "recover" }
-        ],
-        toolTrace: [
-          {
-            id: `tool-${job.id}`,
-            label: "workflow.runOneClick",
-            status: "running",
-            detail: "已进入后台任务队列，完成后会写入成果画布。",
-            createdAt: new Date().toISOString()
-          }
-        ],
+        cards,
+        quickActions,
+        toolTrace,
         job,
         jobId: job.id,
         postProject,
