@@ -182,6 +182,33 @@ describe("viral knowledge base", () => {
     expect(first.every((id) => id.startsWith("viral-insight-"))).toBe(true);
   });
 
+  it("replaces existing viral cases from the same source sample instead of duplicating them", async () => {
+    const first = await createViralCaseFromEvidence({
+      sample,
+      topic: "Guangzhou coffee",
+      category: "Cafe review"
+    });
+    const second = await createViralCaseFromEvidence({
+      sample: {
+        ...sample,
+        title: "Guangzhou coffee updated learning sample",
+        likes: 1800,
+        collects: 1300
+      },
+      topic: "Guangzhou coffee",
+      category: "Cafe review"
+    });
+
+    await upsertViralCases([first]);
+    await upsertViralCases([second]);
+    const stored = await listViralCases();
+
+    expect(stored).toHaveLength(1);
+    expect(stored[0].id).toBe(second.id);
+    expect(stored[0].sourceSampleId).toBe(sample.id);
+    expect(stored[0].title).toBe("Guangzhou coffee updated learning sample");
+  });
+
   it("uses multi-query fusion and preserves matched query reasons", async () => {
     const viralCase = await createViralCaseFromEvidence({
       sample,
@@ -390,5 +417,48 @@ describe("viral knowledge base", () => {
     expect(payload.addedInsights.every((insight) => insight.sourceType === "viral_library")).toBe(true);
     expect(payload.readiness.progress).toBeGreaterThan(0);
     expect(Array.isArray(payload.readiness.blockers)).toBe(true);
+  });
+
+  it("saves multiple research samples through the API and attaches deduped evidence", async () => {
+    const token = await getLocalActionToken();
+    const response = await POST(new Request("http://localhost/api/viral-knowledge", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        [ACTION_TOKEN_HEADER]: token
+      },
+      body: JSON.stringify({
+        samples: [
+          sample,
+          {
+            ...sample,
+            id: "note-2",
+            title: "Quiet cafe work guide",
+            url: "https://www.xiaohongshu.com/explore/note-2",
+            likes: 880,
+            collects: 760,
+            comments: 40,
+            shares: 18,
+            score: 1180
+          }
+        ],
+        topic: "Guangzhou coffee",
+        category: "Cafe review",
+        useModel: false
+      })
+    }));
+    const payload = await response.json() as {
+      cases: Array<{ id: string; sourceSampleId: string }>;
+      project: { evidencePack: { sampleIds: string[] } };
+      addedInsightIds: string[];
+      addedSampleIds: string[];
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.cases).toHaveLength(2);
+    expect(payload.cases.map((item) => item.sourceSampleId)).toEqual(["note-1", "note-2"]);
+    expect(payload.addedSampleIds).toHaveLength(2);
+    expect(payload.project.evidencePack.sampleIds).toEqual(expect.arrayContaining(payload.cases.map((item) => item.id)));
+    expect(payload.addedInsightIds.length).toBeGreaterThan(2);
   });
 });

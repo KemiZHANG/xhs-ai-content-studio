@@ -81,9 +81,13 @@ export async function searchViralCasesFusion(input: ViralSearchInput): Promise<V
 export async function upsertViralCases(cases: ViralCase[]): Promise<ViralCase[]> {
   return queueViralKnowledgeWrite(async () => {
     const file = await readViralKnowledgeFile();
-    const normalizedCases = cases.map(normalizeViralCase);
+    const normalizedCases = dedupeViralCasesBySource(cases.map(normalizeViralCase));
     const ids = new Set(normalizedCases.map((item) => item.id));
-    const next = [...normalizedCases, ...file.cases.filter((item) => !ids.has(item.id))].slice(0, 2000);
+    const sourceKeys = new Set(normalizedCases.map(viralSourceKey));
+    const next = [
+      ...normalizedCases,
+      ...file.cases.filter((item) => !ids.has(item.id) && !sourceKeys.has(viralSourceKey(item)))
+    ].slice(0, 2000);
     await writeViralKnowledgeFile({ schemaVersion: VIRAL_SCHEMA_VERSION, cases: next });
     return normalizedCases;
   });
@@ -290,6 +294,26 @@ function normalizeExtractionProvenance(value: ViralExtractionProvenance | undefi
     extractedAt: typeof record.extractedAt === "string" && record.extractedAt.trim() ? record.extractedAt.trim() : item.createdAt,
     fallbackReason: typeof record.fallbackReason === "string" && record.fallbackReason.trim() ? record.fallbackReason.trim() : undefined
   };
+}
+
+function dedupeViralCasesBySource(cases: ViralCase[]): ViralCase[] {
+  const seen = new Set<string>();
+  const deduped: ViralCase[] = [];
+  for (const item of cases) {
+    const key = viralSourceKey(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(item);
+  }
+  return deduped;
+}
+
+function viralSourceKey(item: Pick<ViralCase, "id" | "sourceSampleId" | "sourceUrl">): string {
+  const sampleId = item.sourceSampleId?.trim();
+  if (sampleId) return `sample:${sampleId}`;
+  const url = item.sourceUrl?.trim();
+  if (url) return `url:${url}`;
+  return `id:${item.id}`;
 }
 
 function inferSourceSampleId(item: Pick<ViralCase, "sourceSampleId" | "sourceUrl" | "id">): string {

@@ -87,6 +87,7 @@ export function PostStudioPanel({
   onSelectImagePromptVersion,
   onSelectPostImages,
   onSaveToViralLibrary,
+  onSaveManyToViralLibrary,
   onReloadViralLibrary,
   onSearchViralLibrary,
   onRefreshViralEvidence,
@@ -131,6 +132,7 @@ export function PostStudioPanel({
   onSelectImagePromptVersion: (versionId: string) => void;
   onSelectPostImages: (assetIds: string[]) => void;
   onSaveToViralLibrary: (sample: SampleEvidence) => void;
+  onSaveManyToViralLibrary: (samples: SampleEvidence[]) => void;
   onReloadViralLibrary: () => void;
   onSearchViralLibrary: (filters: {
     query?: string;
@@ -694,22 +696,29 @@ export function PostStudioPanel({
               <strong>{samples.length} 条样本</strong>
               <p className="muted">默认只展示摘要；完整笔记、评论和图片证据保留在主题研究台。</p>
               {saveableSamples.length ? (
-                <div className="miniEvidenceList">
-                  {saveableSamples.map((sample) => (
-                    <article key={sample.id}>
-                      <strong>{sample.title}</strong>
-                      <span>赞 {sample.likes} · 藏 {sample.collects} · 评 {sample.comments}</span>
-                      <div className="evidenceActions">
-                        <button className="textButton" type="button" onClick={() => setSelectedEvidence(sample)}>
-                          查看详情
-                        </button>
-                        <button className="textButton" type="button" onClick={() => onSaveToViralLibrary(sample)}>
-                          保存到爆款库
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
+                <>
+                  <div className="sideActionStack compact">
+                    <button className="secondaryButton fullWidth" type="button" onClick={() => onSaveManyToViralLibrary(saveableSamples)}>
+                      一键沉淀这 {saveableSamples.length} 条高价值样本
+                    </button>
+                  </div>
+                  <div className="miniEvidenceList">
+                    {saveableSamples.map((sample) => (
+                      <article key={sample.id}>
+                        <strong>{sample.title}</strong>
+                        <span>赞 {sample.likes} · 藏 {sample.collects} · 评 {sample.comments}</span>
+                        <div className="evidenceActions">
+                          <button className="textButton" type="button" onClick={() => setSelectedEvidence(sample)}>
+                            查看详情
+                          </button>
+                          <button className="textButton" type="button" onClick={() => onSaveToViralLibrary(sample)}>
+                            保存到爆款库
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </>
               ) : null}
               <button className="secondaryButton fullWidth" onClick={() => saveableSamples[0] ? setSelectedEvidence(saveableSamples[0]) : onNavigate("workflow")} type="button">查看证据详情</button>
             </SideSection>

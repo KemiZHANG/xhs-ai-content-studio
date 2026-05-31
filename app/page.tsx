@@ -510,23 +510,33 @@ export default function Home() {
   }
 
   async function saveSampleToViralLibrary(sample: SampleEvidence) {
+    await saveSamplesToViralLibrary([sample]);
+  }
+
+  async function saveSamplesToViralLibrary(samples: SampleEvidence[]) {
+    const uniqueSamples = uniqueById(samples).slice(0, 8);
+    if (!uniqueSamples.length) return;
     setBusy("viral");
     try {
       const data = (await clientApi("/api/viral-knowledge", {
         method: "POST",
         body: JSON.stringify({
-          sample,
+          samples: uniqueSamples,
           topic: postProject?.topic || workflowForm.topic,
           category: workflowForm.contentType,
           useModel: modelReady
         })
-      })) as { case: ViralCase; project?: PostProject; addedInsightIds?: string[] };
-      setViralCases((current) => [data.case, ...current.filter((item) => item.id !== data.case.id)].slice(0, 12));
+      })) as { case?: ViralCase; cases?: ViralCase[]; project?: PostProject; addedInsightIds?: string[]; addedSampleIds?: string[] };
+      const savedCases = data.cases ?? (data.case ? [data.case] : []);
+      setViralCases((current) => {
+        const savedIds = new Set(savedCases.map((item) => item.id));
+        return [...savedCases, ...current.filter((item) => !savedIds.has(item.id))].slice(0, 12);
+      });
       if (data.project) {
         setPostProject(data.project);
       }
       setNotice(data.addedInsightIds?.length
-        ? `已保存到爆款库，并为当前项目增加 ${data.addedInsightIds.length} 条可复用创作证据。`
+        ? `已保存 ${savedCases.length} 条样本到爆款库，并为当前项目增加 ${data.addedInsightIds.length} 条可复用创作证据。`
         : "已保存到爆款库：系统会沉淀结构化创作规律，不会把原文当作仿写素材。");
       await loadPostProject();
     } finally {
@@ -1279,6 +1289,7 @@ export default function Home() {
             onSelectImagePromptVersion={(versionId) => void selectImagePromptVersion(versionId)}
             onSelectPostImages={(ids) => void selectPostImages(ids)}
             onSaveToViralLibrary={(sample) => void saveSampleToViralLibrary(sample)}
+            onSaveManyToViralLibrary={(samples) => void saveSamplesToViralLibrary(samples)}
             onReloadViralLibrary={() => void loadViralKnowledge()}
             onSearchViralLibrary={(filters) => void loadViralKnowledge(filters)}
             onRefreshViralEvidence={() => void handlePostStudioAction("retrieve_viral_knowledge")}
@@ -1494,4 +1505,13 @@ export default function Home() {
       </section>
     </main>
   );
+}
+
+function uniqueById<T extends { id: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
 }

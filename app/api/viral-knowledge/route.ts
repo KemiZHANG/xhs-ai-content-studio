@@ -70,26 +70,32 @@ export async function POST(request: Request) {
 
     const body = (await request.json()) as {
       sample?: SampleEvidence;
+      samples?: SampleEvidence[];
       topic?: string;
       category?: string;
       useModel?: boolean;
     };
-    if (!body.sample?.id || !body.sample.title) {
+    const samples = (body.samples?.length ? body.samples : body.sample ? [body.sample] : [])
+      .filter((sample): sample is SampleEvidence => Boolean(sample?.id && sample.title));
+    if (!samples.length) {
       return NextResponse.json({ error: "缺少可入库的研究样本" }, { status: 400 });
     }
 
     const settings = await readSettings();
     const model = body.useModel === false || !settings.textApiKey.trim() ? undefined : createModelProvider(settings);
-    const viralCase = await createViralCaseFromEvidence({
-      sample: body.sample,
-      topic: body.topic || "未分类主题",
-      category: body.category || "小红书图文",
-      model
-    });
-    const [saved] = await upsertViralCases([viralCase]);
-    const result = await addViralCasesToPostProjectWithSummary([saved]);
+    const viralCases = await Promise.all(samples.map((sample) =>
+      createViralCaseFromEvidence({
+        sample,
+        topic: body.topic || "未分类主题",
+        category: body.category || "小红书图文",
+        model
+      })
+    ));
+    const savedCases = await upsertViralCases(viralCases);
+    const result = await addViralCasesToPostProjectWithSummary(savedCases);
     return NextResponse.json({
-      case: saved,
+      case: savedCases[0],
+      cases: savedCases,
       project: result.project,
       readiness: buildPostReadinessReport(result.project),
       addedInsightIds: result.addedInsightIds,
