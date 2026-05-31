@@ -15,7 +15,7 @@ export function buildEvidencePackWithViralKnowledge(
   const existingInsightIds = new Set(project.evidencePack.insights.map((insight) => insight.id));
   const normalizedViralInsights = normalizeEvidenceInsights(pack.insights, "viral_library");
   const addedInsights = normalizedViralInsights.filter((insight) => !existingInsightIds.has(insight.id));
-  const insights = [...normalizeEvidenceInsights(project.evidencePack.insights, "realtime"), ...addedInsights];
+  const insights = [...normalizeEvidenceInsights(project.evidencePack.insights, "realtime", { preserveExistingSourceType: true }), ...addedInsights];
   const sourceCounts = countEvidenceSources(insights);
   const shouldRefreshCreativeBrief = !project.creativeBrief?.basedOnEvidenceIds.some((id) =>
     addedInsights.some((insight) => insight.id === id)
@@ -37,11 +37,12 @@ export function buildEvidencePackWithViralKnowledge(
 
 export function normalizeEvidenceInsights(
   insights: EvidenceInsight[],
-  fallbackSourceType: EvidenceSourceType
+  fallbackSourceType: EvidenceSourceType,
+  options: { preserveExistingSourceType?: boolean } = {}
 ): EvidenceInsight[] {
   return insights.map((insight) => ({
     ...insight,
-    sourceType: insight.sourceType ?? fallbackSourceType,
+    sourceType: options.preserveExistingSourceType ? insight.sourceType ?? fallbackSourceType : fallbackSourceType,
     confidence: clampConfidence(insight.confidence),
     sourceSampleIds: mergeSampleIds([], insight.sourceSampleIds)
   }));

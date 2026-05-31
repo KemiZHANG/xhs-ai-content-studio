@@ -168,4 +168,34 @@ describe("agent evidence builder", () => {
     });
     expect(result.shouldRefreshCreativeBrief).toBe(true);
   });
+
+  it("preserves existing user-input evidence source types when adding viral RAG insights", () => {
+    const userProject = project({
+      evidencePack: {
+        sampleIds: ["user-brief"],
+        insights: [
+          insight({
+            id: "user-audience",
+            sourceType: "user_input",
+            type: "audience",
+            insight: "User says the target audience is local cafe reviewers",
+            sourceSampleIds: ["user-brief"]
+          })
+        ],
+        summary: {},
+        updatedAt: now
+      },
+      creativeBrief: undefined
+    });
+
+    const result = buildEvidencePackWithViralKnowledge(userProject, pack());
+
+    expect(result.evidencePack.insights.find((item) => item.id === "user-audience")?.sourceType).toBe("user_input");
+    expect(result.sourceCounts).toMatchObject({ realtime: 0, viral_library: 2, user_input: 1 });
+    expect(result.evidencePack.summary).toMatchObject({
+      viralKnowledge: {
+        evidenceSourceCounts: { realtime: 0, viral_library: 2, user_input: 1 }
+      }
+    });
+  });
 });

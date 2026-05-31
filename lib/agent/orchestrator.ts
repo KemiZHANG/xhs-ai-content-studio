@@ -1658,6 +1658,14 @@ async function maybeHandleVisualPlanningTurn(
       : postProject.imagePrompts,
     currentStage: imagePrompt ? "image_prompt_ready" : "visual_planning"
   });
+  const visualEvidenceIds = uniqueIds([
+    ...(updatedProject.visualDirection?.basedOnEvidenceIds ?? []),
+    ...(imagePrompt?.basedOnEvidenceIds ?? [])
+  ]);
+  const visualEvidenceSummary = buildEvidenceReferenceSummary(updatedProject, visualEvidenceIds);
+  const visualEvidenceLines = visualEvidenceSummary.insights
+    .map((insight) => `- ${insight.id}｜${labelForEvidenceSource(insight.sourceType)}｜${insight.type}: ${insight.insight}`)
+    .join("\n");
   const workspace = await updateWorkspaceState({ lastUserIntent: "plan_visuals" });
   return {
     answer: [
@@ -1665,6 +1673,7 @@ async function maybeHandleVisualPlanningTurn(
       `视觉氛围：${updatedProject.visualDirection?.mood ?? creativeBrief.visualMood}`,
       `构图：${updatedProject.visualDirection?.composition ?? "封面突出主体，正文图递进展示细节"}`,
       imagePrompt ? `Prompt：${imagePrompt.value.prompt}` : "",
+      visualEvidenceLines ? `参考证据：${visualEvidenceSummary.summary}\n${visualEvidenceLines}` : "",
       "发布前仍需要你确认图片方向和最终选图。"
     ].filter(Boolean).join("\n"),
     workspace,
