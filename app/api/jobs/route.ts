@@ -3,6 +3,7 @@ import { readWorkspaceState, resetWorkspaceState } from "@/lib/agent/state";
 import { getJobRunner } from "@/lib/jobs/runner";
 import { readPostProject, resetPostProject } from "@/lib/post-project/store";
 import { requireLocalActionToken } from "@/lib/security/action-token";
+import { writeCurrentDraft } from "@/lib/storage/drafts";
 import { isPublishVisibility, readSettings } from "@/lib/storage/settings";
 import type { OneClickInput, PublishMode } from "@/lib/workflows/one-click";
 
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
     }
 
     const referenceAssetIds = input.imageSource === "product" || input.imageSource === "asset" ? input.assetIds ?? [] : [];
+    await writeCurrentDraft(null);
     const initialWorkspace = await resetWorkspaceState({
       topic: input.topic,
       selectedSamples: [],

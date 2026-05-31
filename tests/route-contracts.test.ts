@@ -347,9 +347,10 @@ describe("API route contracts", () => {
     vi.doMock("@/lib/storage/history", () => ({
       listHistory: async () => []
     }));
+    const writeCurrentDraft = vi.fn();
     vi.doMock("@/lib/storage/drafts", () => ({
       readCurrentDraft: async () => null,
-      writeCurrentDraft: vi.fn(),
+      writeCurrentDraft,
       createDraftRecord: vi.fn()
     }));
     vi.doMock("@/lib/storage/assets", () => ({
@@ -591,9 +592,10 @@ describe("API route contracts", () => {
     vi.doMock("@/lib/storage/history", () => ({
       listHistory: async () => []
     }));
+    const writeCurrentDraft = vi.fn();
     vi.doMock("@/lib/storage/drafts", () => ({
       readCurrentDraft: async () => null,
-      writeCurrentDraft: vi.fn(),
+      writeCurrentDraft,
       createDraftRecord: vi.fn()
     }));
     vi.doMock("@/lib/storage/assets", () => ({
@@ -686,6 +688,7 @@ describe("API route contracts", () => {
       publishPlan: null,
       lastUserIntent: "research_only"
     }));
+    expect(writeCurrentDraft).toHaveBeenCalledWith(null);
     expect(resetPostProject).toHaveBeenCalledWith(expect.objectContaining({
       topic: "coffee",
       currentStage: "researching"
@@ -728,6 +731,7 @@ describe("API route contracts", () => {
       topic: seed.topic,
       currentStage: seed.currentStage
     }));
+    const writeCurrentDraft = vi.fn();
 
     vi.doMock("@/lib/storage/settings", () => ({
       readSettings: async () => ({
@@ -747,6 +751,9 @@ describe("API route contracts", () => {
     vi.doMock("@/lib/post-project/store", () => ({
       readPostProject: vi.fn(),
       resetPostProject
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      writeCurrentDraft
     }));
 
     const { POST } = await import("@/app/api/jobs/route");
@@ -786,6 +793,7 @@ describe("API route contracts", () => {
       publishPlan: null,
       lastUserIntent: "research_to_draft"
     }));
+    expect(writeCurrentDraft).toHaveBeenCalledWith(null);
     expect(resetPostProject).toHaveBeenCalledWith(expect.objectContaining({
       topic: "coffee",
       productInfo: expect.objectContaining({

@@ -65,6 +65,7 @@ export async function POST(request: Request) {
       };
       const intent = routeDecision.workflowGoal === "research" ? "research_only" : "research_to_draft";
       const productImageIds = attachedAssets.map((asset) => asset.id);
+      await writeCurrentDraft(null);
       const initialWorkspace = await resetWorkspaceState({
         topic: routeDecision.topic,
         selectedSamples: [],
