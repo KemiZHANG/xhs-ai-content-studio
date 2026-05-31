@@ -93,6 +93,7 @@ export function PostStudioPanel({
   onSearchViralLibrary,
   onRefreshViralEvidence,
   onOpenImageStudio,
+  onUploadReferenceFiles,
   onOpenPublish,
   onPreparePublish,
   onVisibilityChange,
@@ -149,6 +150,7 @@ export function PostStudioPanel({
   }) => void;
   onRefreshViralEvidence: () => void;
   onOpenImageStudio: () => void;
+  onUploadReferenceFiles: (files: FileList | File[]) => void;
   onOpenPublish: () => void;
   onPreparePublish: () => void;
   onVisibilityChange: (value: RedactedSettings["defaultVisibility"]) => void;
@@ -1000,12 +1002,26 @@ export function PostStudioPanel({
                   })}
                 </div>
               ) : (
-                <p className="muted">还没有产品图或参考图。可以去图片创作台上传，也可以直接让 Agent 生成图片方向。</p>
+                <p className="muted">还没有产品图或参考图。可以直接在这里上传，也可以让 Agent 先生成图片方向。</p>
               )}
               {project?.finalPost?.imageIds.length ? (
                 <p className="muted">最终帖子图片：{project.finalPost.imageIds.slice(0, 4).join(" / ")}</p>
               ) : null}
               <div className="inlineActionGrid">
+                <label className="secondaryButton fullWidth studioInlineUpload">
+                  上传产品图 / 参考图
+                  <input
+                    accept="image/*"
+                    multiple
+                    type="file"
+                    onChange={(event) => {
+                      if (event.target.files?.length) {
+                        onUploadReferenceFiles(event.target.files);
+                        event.target.value = "";
+                      }
+                    }}
+                  />
+                </label>
                 <button className="secondaryButton fullWidth" onClick={onOpenImageStudio} type="button">高级图片创作台</button>
                 <button className="secondaryButton fullWidth" onClick={() => onNavigate("assets")} type="button">管理全部素材</button>
               </div>

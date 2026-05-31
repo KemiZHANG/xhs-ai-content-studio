@@ -730,6 +730,23 @@ export default function Home() {
     }
   }
 
+  async function attachPostStudioReferenceFiles(files: FileList | File[]) {
+    const ids = await uploadFiles(files);
+    if (ids.length) {
+      setWorkflowForm((current) => ({
+        ...current,
+        assetIds: uniqueIds([...current.assetIds, ...ids]),
+        imageSource: "product"
+      }));
+      await patchWorkspace({
+        productImageIds: uniqueIds([...(workspace?.productImageIds ?? []), ...ids]),
+        lastUserIntent: "upload_product_images"
+      });
+      focusPostStudioTab("references");
+      setNotice(`已把 ${ids.length} 张图片加入当前 PostProject 参考图。需要作为发布图时，在右侧点选即可。`);
+    }
+  }
+
   async function generateProductAsset(
     assetIds: string[],
     options: { allowEmpty?: boolean; evidenceContext?: string } = {}
@@ -1306,6 +1323,7 @@ export default function Home() {
             onSearchViralLibrary={(filters) => void loadViralKnowledge(filters)}
             onRefreshViralEvidence={() => void handlePostStudioAction("retrieve_viral_knowledge")}
             onOpenImageStudio={() => setSection("imageStudio")}
+            onUploadReferenceFiles={(files) => void attachPostStudioReferenceFiles(files)}
             onOpenPublish={() => void openPublishAssemblyFromWorkspace({ stayInStudio: true })}
             onPreparePublish={() => void submitFinalPublish(publishScheduleAt)}
             onVisibilityChange={(value) => {
