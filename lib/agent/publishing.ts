@@ -234,12 +234,16 @@ function versionSnapshotSignature(snapshot: PublishVersionSnapshot): string {
     copyVersionId: snapshot.copyVersionId ?? "",
     imagePromptVersionIds: [...snapshot.imagePromptVersionIds].sort(),
     selectedImageIds: [...snapshot.selectedImageIds].sort(),
-    finalPostEvidenceIds: [...snapshot.finalPostEvidenceIds].sort(),
+    finalPostEvidenceIds: [...safeStringArray(snapshot.finalPostEvidenceIds)].sort(),
     qualityGateFresh: snapshot.qualityGateFresh === true,
     qualityCanPublish: snapshot.qualityCanPublish === true,
     finalPostMatchesCanvas: snapshot.finalPostMatchesCanvas === true,
     warnings: [...snapshot.warnings].sort()
   });
+}
+
+function safeStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
 function publishIntentMatchesEvidence(

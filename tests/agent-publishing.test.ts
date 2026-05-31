@@ -180,6 +180,34 @@ describe("agent guarded publishing", () => {
     })).toBe(false);
   });
 
+  it("treats legacy version snapshots without final-post evidence ids as stale instead of crashing", async () => {
+    const args = publishArgs();
+    const result = await executeGuardedPublish({
+      args,
+      requestedBy: "manual",
+      policy: { mode: "review_required" },
+      publishContext: {
+        versionSnapshot
+      },
+      publish: async () => ({ ok: true })
+    });
+    const legacyIntent = {
+      ...result.publishIntent,
+      versionSnapshot: {
+        copyVersionId: versionSnapshot.copyVersionId,
+        imagePromptVersionIds: versionSnapshot.imagePromptVersionIds,
+        selectedImageIds: versionSnapshot.selectedImageIds,
+        qualityGateFresh: versionSnapshot.qualityGateFresh,
+        qualityCanPublish: versionSnapshot.qualityCanPublish,
+        finalPostMatchesCanvas: versionSnapshot.finalPostMatchesCanvas,
+        summary: versionSnapshot.summary,
+        warnings: versionSnapshot.warnings
+      } as typeof versionSnapshot
+    };
+
+    expect(isPublishIntentConfirmable(legacyIntent, args, { versionSnapshot })).toBe(false);
+  });
+
   it("expires publish confirmations when evidence citations change", async () => {
     const args = publishArgs();
     const result = await executeGuardedPublish({

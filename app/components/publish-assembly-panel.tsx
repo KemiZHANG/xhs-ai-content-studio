@@ -137,7 +137,7 @@ export function PublishAssemblyPanel({
               </span>
               <span>
                 <small>证据快照</small>
-                <strong>{postPlan?.versionSnapshot?.finalPostEvidenceIds.length ?? finalPost?.basedOnEvidenceIds?.length ?? 0} 条</strong>
+                <strong>{postPlan?.versionSnapshot?.finalPostEvidenceIds?.length ?? finalPost?.basedOnEvidenceIds?.length ?? 0} 条</strong>
               </span>
             </div>
             <div className="publishSafetyGrid" aria-label="发布安全摘要">
