@@ -359,7 +359,7 @@ function getPublishPayloadEvidenceIds(project: Awaited<ReturnType<typeof readPos
 function buildPublishEvidenceCitationSummary(
   project: Awaited<ReturnType<typeof readPostProject>>
 ): PublishEvidenceCitationSummary | undefined {
-  const evidenceIds = project.copyDraft?.draft.basedOnEvidenceIds ?? project.creativeBrief?.basedOnEvidenceIds ?? [];
+  const evidenceIds = getPublishPayloadEvidenceIds(project);
   if (!project.evidencePack?.insights?.length || !evidenceIds.length) {
     return undefined;
   }

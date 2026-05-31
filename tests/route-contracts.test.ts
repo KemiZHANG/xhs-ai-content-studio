@@ -856,7 +856,7 @@ describe("API route contracts", () => {
           platformStyle: "小红书真实分享",
           tabooWords: [],
           complianceNotes: [],
-          basedOnEvidenceIds: ["insight-1"]
+          basedOnEvidenceIds: ["insight-title", "insight-copy", "insight-tag", "insight-visual"]
         },
         visualDirection: {
           mood: "真实自然",
@@ -864,7 +864,7 @@ describe("API route contracts", () => {
           colorPalette: "暖色",
           mustHave: ["咖啡", "桌面"],
           mustAvoid: [],
-          basedOnEvidenceIds: ["insight-1"]
+          basedOnEvidenceIds: ["insight-visual"]
         },
         copyDraft: {
           id: "draft-current",
@@ -875,20 +875,50 @@ describe("API route contracts", () => {
             tags: ["咖啡", "探店"],
             structure: [],
             imagePrompt: "暖光咖啡馆桌面近景",
-            basedOnEvidenceIds: ["insight-1"]
+            basedOnEvidenceIds: []
           },
           images: [],
           visibility: defaultSettings.defaultVisibility
         },
         evidencePack: {
-          insights: [{
-            id: "insight-1",
-            type: "copy",
-            insight: "用真实场景、人群和注意事项增强可信度",
-            sourceSampleIds: ["sample-1"],
-            confidence: 0.9,
-            createdAt: "2026-05-31T00:00:00.000Z"
-          }]
+          insights: [
+            {
+              id: "insight-title",
+              sourceType: "realtime",
+              type: "title",
+              insight: "标题前置周末场景和适合人群",
+              sourceSampleIds: ["sample-1"],
+              confidence: 0.9,
+              createdAt: "2026-05-31T00:00:00.000Z"
+            },
+            {
+              id: "insight-copy",
+              sourceType: "realtime",
+              type: "copy",
+              insight: "用真实场景、人群和注意事项增强可信度",
+              sourceSampleIds: ["sample-1"],
+              confidence: 0.9,
+              createdAt: "2026-05-31T00:00:00.000Z"
+            },
+            {
+              id: "insight-tag",
+              sourceType: "viral_library",
+              type: "tag",
+              insight: "标签组合覆盖城市、品类和使用场景",
+              sourceSampleIds: ["viral-1"],
+              confidence: 0.82,
+              createdAt: "2026-05-31T00:00:00.000Z"
+            },
+            {
+              id: "insight-visual",
+              sourceType: "viral_library",
+              type: "visual",
+              insight: "封面突出自然光、桌面主体和咖啡细节",
+              sourceSampleIds: ["viral-1"],
+              confidence: 0.8,
+              createdAt: "2026-05-31T00:00:00.000Z"
+            }
+          ]
         },
         selectedSamples: [],
         selectedImages: ["asset-1"],
@@ -1140,7 +1170,22 @@ describe("API route contracts", () => {
       expect.objectContaining({
         status: "preview",
         dryRun: true,
-        publishIntent: expect.objectContaining({ status: expect.stringMatching(/draft|blocked/), accountId: defaultSettings.activeAccountId }),
+        publishIntent: expect.objectContaining({
+          status: expect.stringMatching(/draft|blocked/),
+          accountId: defaultSettings.activeAccountId,
+          evidenceCitationSummary: expect.objectContaining({
+            fieldCounts: expect.objectContaining({
+              title: expect.any(Number),
+              content: expect.any(Number),
+              tags: expect.any(Number),
+              imagePrompt: expect.any(Number)
+            }),
+            sourceCounts: expect.objectContaining({
+              realtime: expect.any(Number),
+              viral_library: expect.any(Number)
+            })
+          })
+        }),
         preview: expect.objectContaining({
           risk: "external_write",
           requiresConfirmation: true,
@@ -1149,6 +1194,10 @@ describe("API route contracts", () => {
         })
       })
     );
+    expect(payload.publishIntent.evidenceCitationSummary.fieldCounts.title).toBeGreaterThan(0);
+    expect(payload.publishIntent.evidenceCitationSummary.fieldCounts.content).toBeGreaterThan(0);
+    expect(payload.publishIntent.evidenceCitationSummary.fieldCounts.tags).toBeGreaterThan(0);
+    expect(payload.publishIntent.evidenceCitationSummary.fieldCounts.imagePrompt).toBeGreaterThan(0);
     expect(executeGuardedPublish).not.toHaveBeenCalled();
     expect(publishContent).not.toHaveBeenCalled();
     expect(writeCurrentDraft).not.toHaveBeenCalled();
