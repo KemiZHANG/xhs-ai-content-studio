@@ -228,7 +228,8 @@ export function PostStudioPanel({
   const staleAccountPublishPlan = project?.publishPlan && !projectPublishPlanMatchesActiveAccount
     ? project.publishPlan
     : null;
-  const activePublishPlan = pendingPublish
+  const staleCanvasPublishPlan = canvasDirty && Boolean(pendingPublish || project?.publishPlan);
+  const activePublishPlan = !canvasDirty && pendingPublish
     ? {
         status: "awaiting_approval",
         visibility: pendingPublish.payload.visibility,
@@ -241,7 +242,7 @@ export function PostStudioPanel({
         confirmationChecklist: project?.publishPlan?.confirmationChecklist ?? [],
         versionSnapshot: project?.publishPlan?.versionSnapshot
       }
-    : project?.publishPlan && projectPublishPlanMatchesActiveAccount
+    : !canvasDirty && project?.publishPlan && projectPublishPlanMatchesActiveAccount
       ? {
           status: project.publishPlan.status,
           visibility: project.publishPlan.visibility,
@@ -324,6 +325,9 @@ export function PostStudioPanel({
     selectedImageCount: selectedAssets.length,
     canvasDirty
   });
+  const publishStatusLabel = staleCanvasPublishPlan
+    ? "需重新确认"
+    : labelForPublishStatus(project?.publishPlan?.status);
 
   const generatedCopyPrompt = useMemo(
     () =>
@@ -377,7 +381,7 @@ export function PostStudioPanel({
           <StagePill label="保存" value={labelForCanvasSaveStatus(canvasDirty, versionStatus)} />
           <StagePill label="版本" value={labelForVersionLockStatus(versionStatus)} />
           <StagePill label="检查" value={labelForQualityStatus(quality, versionStatus?.qualityGateFresh === true)} />
-          <StagePill label="发布" value={labelForPublishStatus(project?.publishPlan?.status)} />
+          <StagePill label="发布" value={publishStatusLabel} />
         </div>
         <div className="nextActionBar">
           <strong>{stageGuidance.title}</strong>
@@ -1408,6 +1412,14 @@ export function PostStudioPanel({
                   <p>
                     这张确认单属于账号 {staleAccountPublishPlan.accountId ?? "未知账号"}，
                     当前账号是 {activeAccount?.displayName ?? settings.activeAccountId}。为了避免误发，请重新生成发布确认单。
+                  </p>
+                </div>
+              ) : null}
+              {staleCanvasPublishPlan ? (
+                <div className="publishIntentSummary stale">
+                  <strong>发布确认单已失效</strong>
+                  <p>
+                    你已经修改了当前画布的文案、标签、图片或 Prompt。为避免误发旧版本，请先保存画布并重新运行 Quality Gate，再生成新的发布确认单。
                   </p>
                 </div>
               ) : null}
