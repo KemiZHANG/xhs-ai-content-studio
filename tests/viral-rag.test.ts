@@ -89,7 +89,7 @@ describe("viral RAG retrieval", () => {
     const trace = pack.evidenceTrace ?? [];
     expect(trace[0]).toMatchObject({
       caseId: viralCase.id,
-      sourceSampleId: viralCase.id,
+      sourceSampleId: sample.id,
       sourceUrl: viralCase.sourceUrl
     });
     expect(trace[0].score).toBeGreaterThan(0);

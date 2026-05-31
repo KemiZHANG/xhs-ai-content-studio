@@ -113,7 +113,7 @@ export function buildViralEvidenceTrace(
 
     return {
       caseId: result.case.id,
-      sourceSampleId: result.case.id,
+      sourceSampleId: result.case.sourceSampleId,
       sourceUrl: result.case.sourceUrl,
       score: result.score,
       matchedQueries: uniqueStrings(result.matchedQueries ?? []),
