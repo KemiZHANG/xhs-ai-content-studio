@@ -111,6 +111,7 @@ export async function POST(request: Request) {
         attachedAssets,
         conversationId: conversation.id
       }).catch(() => undefined);
+      await Promise.resolve(appendPostProjectMemoryFromTurn({ message })).catch(() => undefined);
 
       const workspace = await updateWorkspaceState({
         recentJobIds: [job.id],

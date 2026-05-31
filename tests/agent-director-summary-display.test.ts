@@ -18,6 +18,8 @@ describe("agent director summary display", () => {
         progress: 64.4,
         blockerCount: 2,
         evidenceCount: 9,
+        memoryHints: ["用户认可真实探店感", "避免广告腔"],
+        memorySignalCount: 4,
         hasDraft: true,
         needsUserInput: false
       }
@@ -32,6 +34,8 @@ describe("agent director summary display", () => {
       progress: 64,
       blockerCount: 2,
       evidenceCount: 9,
+      memoryHints: ["用户认可真实探店感", "避免广告腔"],
+      memorySignalCount: 4,
       hasDraft: true,
       needsUserInput: false
     });
@@ -59,6 +63,8 @@ describe("agent director summary display", () => {
       progress: 100,
       blockerCount: 0,
       evidenceCount: 4,
+      memoryHints: [],
+      memorySignalCount: 0,
       nextActionLabel: "继续下一步"
     });
   });

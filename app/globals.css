@@ -4318,6 +4318,36 @@ textarea {
   font-weight: 900;
 }
 
+.agentDirectorMemory {
+  background: rgba(18, 118, 97, 0.07);
+  border: 1px solid rgba(18, 118, 97, 0.14);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  padding: 7px;
+}
+
+.agentDirectorMemory span {
+  color: var(--accent-strong);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.agentDirectorMemory p,
+.agentDirectorBlocker {
+  color: var(--muted);
+  display: block;
+  font-size: 11px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.agentDirectorBlocker {
+  color: color-mix(in srgb, var(--warning) 82%, #000);
+  font-weight: 800;
+}
+
 .agentStageMiniFlow {
   border-top: 1px solid rgba(24, 28, 24, 0.08);
   display: grid;

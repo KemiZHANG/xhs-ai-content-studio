@@ -1552,7 +1552,9 @@ function buildDirectorSummaryCard({
       progress: readiness?.progress,
       blockerCount: readiness?.blockers.length ?? 0,
       hasDraft: Boolean(currentDraft ?? workspace.currentDraft ?? postProject?.copyDraft ?? postProject?.finalPost),
-      evidenceCount: postProject?.evidencePack.insights.length ?? 0
+      evidenceCount: postProject?.evidencePack.insights.length ?? 0,
+      memoryHints: postProject?.agentMemory.slice(0, 3) ?? [],
+      memorySignalCount: postProject?.agentMemory.length ?? 0
     }
   };
 }

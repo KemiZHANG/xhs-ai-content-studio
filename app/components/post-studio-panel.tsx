@@ -1915,8 +1915,15 @@ function AgentCardInlineDetails({
           <span>进度 <b>{directorSummary.progress ?? 0}%</b></span>
           <span>证据 <b>{directorSummary.evidenceCount}</b></span>
           <span>草稿 <b>{directorSummary.hasDraft ? "已建立" : "待生成"}</b></span>
-          <span>阻塞 <b>{directorSummary.blockerCount}</b></span>
+          <span>记忆 <b>{directorSummary.memorySignalCount}</b></span>
         </div>
+        {directorSummary.memoryHints.length ? (
+          <div className="agentDirectorMemory">
+            <span>本项目记忆</span>
+            {directorSummary.memoryHints.map((item) => <p key={item}>{item}</p>)}
+          </div>
+        ) : null}
+        {directorSummary.blockerCount ? <small className="agentDirectorBlocker">还有 {directorSummary.blockerCount} 个阻塞项需要处理</small> : null}
         {directorSummary.nextAction ? (
           <button className="miniActionButton primaryInline" type="button" onClick={() => onQuickAction(directorSummary.nextAction!)}>
             建议下一步：{directorSummary.nextActionLabel}

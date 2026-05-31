@@ -167,6 +167,7 @@ describe("agent orchestrator", () => {
       targetAudience: "周末探店人群",
       goal: "生成真实探店笔记",
       tone: "真实分享",
+      agentMemory: ["用户认可真实探店感", "避免广告腔"],
       evidencePack: {
         sampleIds: ["note-1"],
         insights: [
@@ -212,7 +213,9 @@ describe("agent orchestrator", () => {
     expect(result.cards.find((card) => card.type === "director_summary")?.data).toMatchObject({
       intent: "create_creative_brief",
       stage: "brief_ready",
-      nextAction: "generate_copy"
+      nextAction: "generate_copy",
+      memorySignalCount: 2,
+      memoryHints: ["用户认可真实探店感", "避免广告腔"]
     });
     expect(result.cards.map((card) => card.type)).toContain("creative_brief");
     expect(result.quickActions.map((action) => action.action)).toContain("generate_copy");

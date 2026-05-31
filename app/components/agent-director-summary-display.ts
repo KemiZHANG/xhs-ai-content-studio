@@ -9,6 +9,8 @@ export type AgentDirectorSummaryDisplay = {
   progress?: number;
   blockerCount: number;
   evidenceCount: number;
+  memoryHints: string[];
+  memorySignalCount: number;
   hasDraft: boolean;
   needsUserInput: boolean;
 };
@@ -32,6 +34,8 @@ export function extractAgentDirectorSummaryDisplay(card: AgentResponseCard): Age
     progress: progress === undefined ? undefined : Math.max(0, Math.min(100, Math.round(progress))),
     blockerCount: Math.max(0, Math.round(numberValue(card.data.blockerCount) ?? 0)),
     evidenceCount: Math.max(0, Math.round(numberValue(card.data.evidenceCount) ?? 0)),
+    memoryHints: stringArray(card.data.memoryHints).slice(0, 3),
+    memorySignalCount: Math.max(0, Math.round(numberValue(card.data.memorySignalCount) ?? 0)),
     hasDraft: card.data.hasDraft === true,
     needsUserInput: card.data.needsUserInput === true
   };
@@ -43,6 +47,12 @@ function stringValue(value: unknown): string | undefined {
 
 function numberValue(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.map((item) => (typeof item === "string" ? item.trim() : "")).filter(Boolean)
+    : [];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
