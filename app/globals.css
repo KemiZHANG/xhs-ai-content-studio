@@ -3578,6 +3578,39 @@ textarea {
   margin-top: 4px;
 }
 
+.studioStatusProgress {
+  display: grid;
+  gap: 7px;
+}
+
+.studioStatusProgress > div {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.studioStatusProgress b {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.studioStatusProgress i {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  display: block;
+  height: 7px;
+  overflow: hidden;
+}
+
+.studioStatusProgress em {
+  background: linear-gradient(90deg, var(--accent), rgba(191, 107, 38, 0.78));
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
 .studioStatusChips {
   display: flex;
   flex-wrap: wrap;

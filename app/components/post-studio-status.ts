@@ -1,8 +1,9 @@
 import type { Health, PostProject, RedactedSettings, WorkspaceState } from "@/app/types";
 import { activeAccountReadinessHint, isHealthForActiveAccount } from "@/app/components/account-readiness";
+import { labelForPostAction } from "@/app/components/post-action-labels";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionStatus } from "@/lib/post-project/versioning";
-import type { PostAction } from "@/lib/post-project/types";
+import type { PostAction, PostStage } from "@/lib/post-project/types";
 
 export type PostStudioStatusChip = {
   label: string;
@@ -30,7 +31,10 @@ export type PostStudioStatusSummary = {
   accountOptions: PostStudioAccountOption[];
   accountSwitchHint: string;
   riskLevel: "ok" | "warn" | "neutral";
+  progressPercent: number;
+  stageLine: string;
   primaryAction?: PostAction;
+  primaryActionLabel?: string;
   blockers: string[];
   chips: PostStudioStatusChip[];
 };
@@ -104,7 +108,10 @@ export function buildPostStudioStatusSummary({
       accountOptions,
       accountSwitchHint,
       riskLevel: accountReady ? "neutral" : "warn",
+      progressPercent: 0,
+      stageLine: "等待项目主题 · 完成度 0%",
       primaryAction: "search_research",
+      primaryActionLabel: labelForPostAction("search_research"),
       blockers: ["缺少项目主题", accountReady ? "" : "小红书账号登录状态未确认"].filter(Boolean),
       chips: [
         chip("项目", workspace?.topic ?? "未开始", "neutral"),
@@ -143,7 +150,10 @@ export function buildPostStudioStatusSummary({
     accountOptions,
     accountSwitchHint,
     riskLevel,
+    progressPercent: readiness.progress,
+    stageLine: `${labelForPostStage(project.currentStage)} · 完成度 ${readiness.progress}%`,
     primaryAction: readiness.nextAction,
+    primaryActionLabel: readiness.nextAction ? labelForPostAction(readiness.nextAction) : undefined,
     blockers,
     chips: [
       chip("研究", evidenceCount ? `${evidenceCount} 条证据` : "待研究", evidenceCount ? "ok" : "warn"),
@@ -166,4 +176,26 @@ function formatMcpEndpoint(url: string): string {
   } catch {
     return url || "未配置 MCP";
   }
+}
+
+function labelForPostStage(stage: PostStage): string {
+  const labels: Record<PostStage, string> = {
+    empty: "未开始",
+    briefing: "补全需求",
+    researching: "研究中",
+    evidence_ready: "证据已就绪",
+    brief_ready: "Brief 已就绪",
+    copy_drafting: "文案生成中",
+    copy_ready: "文案已就绪",
+    visual_planning: "图片方向规划",
+    image_prompt_ready: "图片 Prompt 已就绪",
+    image_generating: "图片生成中",
+    image_ready: "图片已就绪",
+    assembling: "组装最终帖子",
+    reviewing: "发布检查中",
+    scheduled: "已定时",
+    published: "已发布",
+    failed: "处理失败"
+  };
+  return labels[stage] ?? stage;
 }

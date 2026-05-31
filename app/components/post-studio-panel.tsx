@@ -476,6 +476,13 @@ export function PostStudioPanel({
               <strong>{statusSummary.headline}</strong>
               <p>{statusSummary.detail}</p>
             </div>
+            <div className="studioStatusProgress" aria-label="帖子项目完成度">
+              <div>
+                <span>{statusSummary.stageLine}</span>
+                {statusSummary.primaryActionLabel ? <b>建议：{statusSummary.primaryActionLabel}</b> : null}
+              </div>
+              <i><em style={{ width: `${statusSummary.progressPercent}%` }} /></i>
+            </div>
             <div className="studioStatusChips">
               {statusSummary.chips.map((item) => (
                 <em className={item.state} key={item.label}>

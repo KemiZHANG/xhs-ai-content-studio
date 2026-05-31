@@ -19,8 +19,11 @@ describe("post studio status summary", () => {
 
     expect(summary.headline).toContain("新建");
     expect(summary.primaryAction).toBe("search_research");
+    expect(summary.primaryActionLabel).toBe("搜索笔记");
     expect(summary.riskLevel).toBe("warn");
     expect(summary.accountReady).toBe(false);
+    expect(summary.progressPercent).toBe(0);
+    expect(summary.stageLine).toBe("等待项目主题 · 完成度 0%");
     expect(summary.accountName).toBe(defaultSettings.accounts[0].displayName);
     expect(summary.accountMcpEndpoint).toBe("localhost:18060");
     expect(summary.accountCount).toBe(1);
@@ -71,6 +74,10 @@ describe("post studio status summary", () => {
     expect(summary.headline).toBe("下一步已经明确");
     expect(summary.riskLevel).toBe("warn");
     expect(summary.accountReady).toBe(false);
+    expect(summary.progressPercent).toBeGreaterThan(0);
+    expect(summary.stageLine).toContain("证据已就绪");
+    expect(summary.stageLine).toContain(`${summary.progressPercent}%`);
+    expect(summary.primaryActionLabel).toBeTruthy();
     expect(summary.accountLoginName).toBeUndefined();
     expect(summary.blockers.length).toBeLessThanOrEqual(3);
     expect(summary.blockers.join(" ")).toContain("账号");
@@ -115,6 +122,7 @@ describe("post studio status summary", () => {
     });
 
     expect(summary.chips.find((item) => item.label === "RAG")).toMatchObject({ value: "1 条爆款库", state: "ok" });
+    expect(summary.stageLine).toContain("证据已就绪");
   });
 
   it("exposes active account metadata for the Post Studio header controls", () => {
