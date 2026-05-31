@@ -50,6 +50,7 @@ import { buildEvidencePanelModel, scoreEvidence, summarizeEvidenceSample } from 
 import { labelForPostAction } from "@/app/components/post-action-labels";
 import { buildPostStudioStatusSummary } from "@/app/components/post-studio-status";
 import { buildViralApplicationModel } from "@/app/components/viral-application";
+import { buildPublishConfirmationSummary } from "@/app/components/publish-confirmation-summary";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
@@ -295,6 +296,23 @@ export function PostStudioPanel({
       quality?.canPublish === true &&
       versionStatus?.qualityGateFresh === true
   );
+  const publishSummary = buildPublishConfirmationSummary({
+    draft: publishDraft,
+    selectedImageCount: selectedAssets.length,
+    activePlan: activePublishPlan,
+    pendingPublish,
+    project,
+    activeAccountName: activeAccount?.displayName,
+    activeLoginName: health?.activeAccount?.loginName,
+    visibility: publishVisibility,
+    scheduleAt: publishScheduleAt,
+    publishReady,
+    citationTraceReady,
+    canvasDirty,
+    accountReady,
+    hasVisualDirection,
+    qualityGateFresh: versionStatus?.qualityGateFresh === true
+  });
   const readiness = project ? buildPostReadinessReport(project) : null;
   const statusSummary = buildPostStudioStatusSummary({
     project,
@@ -1275,6 +1293,32 @@ export function PostStudioPanel({
               <CheckItem ok={publishVisibility === "仅自己可见"} label={`可见范围：${publishVisibility}`} />
               <CheckItem ok={!publishScheduleAt || Date.parse(publishScheduleAt) > Date.now()} label={publishScheduleAt ? `定时：${publishScheduleAt}（本地时区）` : "发布时间：立即"} />
               <CheckItem ok={settings.defaultAutoPublish === false} label="自动发布默认关闭" />
+              <div className={`publishFinalSummary ${publishSummary.riskLevel}`}>
+                <div className="publishFinalSummaryHeader">
+                  <div>
+                    <strong>{publishSummary.headline}</strong>
+                    <p>{publishSummary.detail}</p>
+                  </div>
+                  <span>{publishSummary.modeLabel}</span>
+                </div>
+                <div className="publishFinalSummaryGrid">
+                  <span>账号 <b>{publishSummary.accountLine}</b></span>
+                  <span>时间 <b>{publishSummary.timingLine}</b></span>
+                  <span>可见 <b>{publishSummary.visibilityLine}</b></span>
+                  <span>内容 <b>{publishSummary.contentLine}</b></span>
+                  <span>图片 <b>{publishSummary.imageLine}</b></span>
+                  <span>证据 <b>{publishSummary.evidenceLine}</b></span>
+                  <span>质量 <b>{publishSummary.qualityLine}</b></span>
+                  <span>确认 <b>{publishSummary.checklistLine}</b></span>
+                </div>
+                {publishSummary.blockers.length ? (
+                  <ul>
+                    {publishSummary.blockers.slice(0, 5).map((blocker) => (
+                      <li key={blocker}>{blocker}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
               <div className="publishInlineControls">
                 <label>
                   <span>可见范围</span>
