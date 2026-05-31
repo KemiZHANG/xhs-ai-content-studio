@@ -458,6 +458,8 @@ export type PostProject = {
       confidence: number;
       createdAt: string;
     }>;
+    summary?: unknown;
+    updatedAt?: string;
   };
   selectedSamples: SampleEvidence[] | unknown[];
   creativeBrief?: {

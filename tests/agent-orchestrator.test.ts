@@ -947,6 +947,53 @@ describe("agent orchestrator", () => {
     expect(result.answer).toContain("爆款库");
   });
 
+  it("surfaces insufficient viral RAG evidence instead of hiding the retrieval result", async () => {
+    await resetPostProject({
+      topic: "冷门香薰品牌",
+      targetAudience: "小户型租房人群",
+      goal: "生成一篇真实种草笔记",
+      currentStage: "brief_ready"
+    });
+
+    const result = await runAgentTurn({
+      message: "请刷新当前项目的爆款库 RAG 证据，不要重新搜索小红书",
+      conversationId: "chat-viral-insufficient",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: vi.fn(async () => []),
+        getFeedDetail: vi.fn(async () => null),
+        publishContent: vi.fn(async () => ({ ok: true }))
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      },
+      runChatAgentImpl: vi.fn(async () => ({ answer: "legacy answer" }))
+    });
+
+    expect(result.intent).toBe("retrieve_viral_knowledge");
+    expect(result.answer).toContain("RAG 证据还不够");
+    expect(result.answer).toContain("缺口");
+    const viralCard = result.cards.find((card) => card.id === "card-viral-knowledge");
+    expect(viralCard?.summary).toContain("RAG 证据还不够");
+    expect(viralCard?.data).toMatchObject({
+      sufficiency: expect.objectContaining({
+        isEnough: false,
+        viralCount: 0
+      })
+    });
+    expect(result.postProject?.evidencePack.summary).toMatchObject({
+      viralKnowledge: expect.objectContaining({
+        sufficiency: expect.objectContaining({ isEnough: false })
+      })
+    });
+  });
+
   it("explains explicit viral-library retrieval filters in the agent answer", async () => {
     const viralSample: SampleEvidence = {
       id: "note-viral-filtered-bag",

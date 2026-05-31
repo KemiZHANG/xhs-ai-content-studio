@@ -28,7 +28,7 @@ import { renderXhsCardSet } from "@/lib/cards/renderer";
 import type { ModelProvider } from "@/lib/models/provider";
 import { createAssetRecord, getAsset, saveAsset } from "@/lib/storage/assets";
 import { createDraftRecord, type DraftRecord } from "@/lib/storage/drafts";
-import { summarizeViralRetrievalFilters, type ViralKnowledgePack } from "@/lib/rag/viral";
+import { summarizeViralRetrievalFilters, type RagSufficiency, type ViralKnowledgePack } from "@/lib/rag/viral";
 import type { GeneratedDraft, XhsMcpWorkflowClient } from "@/lib/workflows/one-click";
 
 export type RunAgentTurnInput = AgentRuntimeContext & {
@@ -1015,6 +1015,8 @@ async function maybeHandleViralKnowledgeTurn(
   const updatedProject = await ensureViralEvidenceForProject(seededProject, { force: true, filters: plan.ragFilters });
   const viralInsights = updatedProject.evidencePack.insights.filter((insight) => insight.sourceType === "viral_library");
   const topInsights = viralInsights.slice(0, 5);
+  const viralKnowledge = extractViralKnowledgeSummary(updatedProject.evidencePack.summary);
+  const sufficiencyLine = formatRagSufficiencyForAnswer(viralKnowledge);
   const workspace = await updateWorkspaceState({
     topic: updatedProject.topic,
     evidenceSummary: updatedProject.evidencePack.summary,
@@ -1026,6 +1028,7 @@ async function maybeHandleViralKnowledgeTurn(
     answer: [
       `已基于「${topic}」刷新爆款库 RAG 证据，并合入当前 PostProject。`,
       plan.ragFilters ? `本次筛选条件：${formatRagFiltersSummary(plan.ragFilters)}` : "",
+      sufficiencyLine,
       viralInsights.length
         ? `当前共有 ${viralInsights.length} 条爆款库规律，可用于 CreativeBrief、文案和图片方向。`
         : "暂时没有检索到足够匹配的历史爆款规律，可以继续做实时小红书研究，或先把优秀样本保存进爆款库。",
@@ -1076,7 +1079,8 @@ function buildCardsFromTurn(
   const evidenceSampleCount = postProject?.selectedSamples.length ?? workspace.selectedSamples.length;
   const sourceCounts = countEvidenceSources(projectInsights);
   if (projectInsights.length || workspace.evidenceSummary || workspace.selectedSamples.length) {
-    const viralKnowledge = isRecord(workspace.evidenceSummary) ? workspace.evidenceSummary.viralKnowledge : undefined;
+    const evidenceSummary = postProject?.evidencePack.summary ?? workspace.evidenceSummary;
+    const viralKnowledge = extractViralKnowledgeSummary(evidenceSummary);
     const sourceSummary = projectInsights.length
       ? `实时 ${sourceCounts.realtime} / 爆款库 ${sourceCounts.viral_library} / 用户输入 ${sourceCounts.user_input}`
       : `旧工作区样本 ${workspace.selectedSamples.length}`;
@@ -1093,17 +1097,17 @@ function buildCardsFromTurn(
         keyInsights: projectInsights.slice(0, 5)
       }
     });
-    if (isRecord(viralKnowledge) && Array.isArray(viralKnowledge.results) && viralKnowledge.results.length) {
+    if (viralKnowledge && hasViralKnowledgePayload(viralKnowledge)) {
       cards.push({
         id: "card-viral-knowledge",
         type: "viral_knowledge",
         title: "爆款库规律",
-        summary: `已检索 ${viralKnowledge.results.length} 条历史爆款规律，用于补充实时证据。`,
+        summary: formatViralKnowledgeCardSummary(viralKnowledge),
         data: viralKnowledge
       });
     }
   }
-  const viralStrategy = extractViralStrategyReport(workspace.evidenceSummary);
+  const viralStrategy = extractViralStrategyReport(postProject?.evidencePack.summary ?? workspace.evidenceSummary);
   if (viralStrategy) {
     cards.push({
       id: "card-viral-strategy",
@@ -1216,6 +1220,48 @@ function countEvidenceSources(insights: PostProject["evidencePack"]["insights"])
     },
     { realtime: 0, viral_library: 0, user_input: 0 }
   );
+}
+
+function extractViralKnowledgeSummary(summary: unknown): (Partial<ViralKnowledgePack> & Record<string, unknown>) | null {
+  const viralKnowledge = isRecord(summary) ? summary.viralKnowledge : undefined;
+  return isRecord(viralKnowledge) ? viralKnowledge as Partial<ViralKnowledgePack> & Record<string, unknown> : null;
+}
+
+function hasViralKnowledgePayload(viralKnowledge: Partial<ViralKnowledgePack> & Record<string, unknown>): boolean {
+  return Boolean(
+    (Array.isArray(viralKnowledge.results) && viralKnowledge.results.length) ||
+    isRecord(viralKnowledge.sufficiency) ||
+    isRecord(viralKnowledge.strategyReport)
+  );
+}
+
+function formatViralKnowledgeCardSummary(viralKnowledge: Partial<ViralKnowledgePack> & Record<string, unknown>): string {
+  const resultCount = Array.isArray(viralKnowledge.results) ? viralKnowledge.results.length : 0;
+  const sufficiency = isRecord(viralKnowledge.sufficiency) ? viralKnowledge.sufficiency as Partial<RagSufficiency> : null;
+  if (sufficiency && sufficiency.isEnough === false) {
+    const missing = Array.isArray(sufficiency.missing) && sufficiency.missing.length
+      ? `缺口：${sufficiency.missing.join("、")}。`
+      : "";
+    return `RAG 证据还不够，已检索 ${resultCount} 条历史规律。${sufficiency.recommendation ?? "建议补充实时研究或保存更多优秀样本。"}${missing}`;
+  }
+  if (sufficiency?.isEnough) {
+    return `RAG 证据充足：实时 ${sufficiency.realtimeCount ?? 0} 条，爆款库 ${sufficiency.viralCount ?? resultCount} 条。`;
+  }
+  return `已检索 ${resultCount} 条历史爆款规律，用于补充实时证据。`;
+}
+
+function formatRagSufficiencyForAnswer(viralKnowledge: (Partial<ViralKnowledgePack> & Record<string, unknown>) | null): string {
+  const sufficiency = viralKnowledge && isRecord(viralKnowledge.sufficiency)
+    ? viralKnowledge.sufficiency as Partial<RagSufficiency>
+    : null;
+  if (!sufficiency) return "";
+  const missing = Array.isArray(sufficiency.missing) && sufficiency.missing.length
+    ? `缺口：${sufficiency.missing.join("、")}。`
+    : "";
+  if (sufficiency.isEnough === false) {
+    return `RAG 证据还不够：${sufficiency.recommendation ?? "建议补充实时研究或保存更多优秀样本。"}${missing}`;
+  }
+  return `RAG 证据充足：实时 ${sufficiency.realtimeCount ?? 0} 条，爆款库 ${sufficiency.viralCount ?? 0} 条。`;
 }
 
 function extractViralStrategyReport(summary: unknown): {
@@ -2141,7 +2187,13 @@ async function ensureViralEvidenceForProject(
   });
   const pack = parseViralKnowledgeToolPack(toolResult);
   if (!pack.insights.length && !pack.results.length) {
-    return project;
+    return updatePostProject({
+      evidencePack: {
+        ...project.evidencePack,
+        summary: mergeViralKnowledgeIntoSummary(project.evidencePack.summary, pack),
+        updatedAt: new Date().toISOString()
+      }
+    });
   }
 
   const evidenceBuild = buildEvidencePackWithViralKnowledge(project, pack);
@@ -2158,6 +2210,13 @@ async function ensureViralEvidenceForProject(
     creativeBrief: refreshedBrief,
     currentStage: refreshedBrief ? "brief_ready" : project.currentStage
   });
+}
+
+function mergeViralKnowledgeIntoSummary(summary: unknown, pack: ViralKnowledgePack): unknown {
+  return {
+    ...(isRecord(summary) ? summary : {}),
+    viralKnowledge: pack
+  };
 }
 
 function parseViralKnowledgeToolPack(result: unknown): ViralKnowledgePack {

@@ -186,7 +186,8 @@ export function PostStudioPanel({
     learnings: pickViralLearningLines(item),
     rewriteRules: pickViralRewriteLines(item)
   }));
-  const viralPack = workflowResult?.viralKnowledge ?? workflowResult?.researchSummary?.viralKnowledge ?? null;
+  const projectViralPack = extractProjectViralPack(project);
+  const viralPack = workflowResult?.viralKnowledge ?? workflowResult?.researchSummary?.viralKnowledge ?? projectViralPack ?? null;
   const samples = project?.selectedSamples ?? workflowResult?.evidence ?? workspace?.selectedSamples ?? [];
   const saveableSamples = samples.filter(isSampleEvidence).slice(0, 3);
   const allowedPostActions = (project?.allowedActions ?? []) as PostAction[];
@@ -1422,6 +1423,14 @@ function extractEvidenceIdsFromAgentCard(card: AgentResponseCard): string[] {
 
 function stringListFromRecordValue(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
+function extractProjectViralPack(project?: PostProject | null): WorkflowResult["viralKnowledge"] {
+  const summary = project?.evidencePack.summary;
+  if (!isRecordValue(summary) || !isRecordValue(summary.viralKnowledge)) {
+    return null;
+  }
+  return summary.viralKnowledge as WorkflowResult["viralKnowledge"];
 }
 
 function isRecordValue(value: unknown): value is Record<string, unknown> {
