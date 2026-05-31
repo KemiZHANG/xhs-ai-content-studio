@@ -56,6 +56,10 @@ export type PublishConfirmationSummary = {
   versionLine: string;
   qualityLine: string;
   checklistLine: string;
+  decisionLine: string;
+  nextStepLine: string;
+  detailCompressionLine: string;
+  visibleBlockers: string[];
   riskLevel: "ok" | "warn" | "blocked";
   blockers: string[];
 };
@@ -120,6 +124,7 @@ export function buildPublishConfirmationSummary({
     : hasPendingConfirmation && confirmedChecklist < requiredChecklist.length
       ? "warn"
       : "ok";
+  const visibleBlockers = blockers.slice(0, 3);
 
   return {
     headline: hasPendingConfirmation
@@ -155,9 +160,64 @@ export function buildPublishConfirmationSummary({
         ? `人工确认 ${confirmedChecklist}/${requiredChecklist.length} 项，待确认：${pendingChecklistLabels.slice(0, 2).join("、")}`
         : `人工确认 ${confirmedChecklist}/${requiredChecklist.length} 项，全部必填项已确认`
       : "尚未生成确认清单",
+    decisionLine: formatPublishDecisionLine({
+      riskLevel,
+      hasPendingConfirmation,
+      blockerCount: blockers.length,
+      confirmedChecklist,
+      requiredChecklistCount: requiredChecklist.length
+    }),
+    nextStepLine: formatPublishNextStepLine({
+      riskLevel,
+      hasPendingConfirmation,
+      pendingChecklistLabels,
+      blockers
+    }),
+    detailCompressionLine: "默认只显示发布结论、主要阻塞项和下一步；账号、版本、证据、质量分与确认清单已收进详细发布快照。",
+    visibleBlockers,
     riskLevel,
     blockers
   };
+}
+
+function formatPublishDecisionLine({
+  riskLevel,
+  hasPendingConfirmation,
+  blockerCount,
+  confirmedChecklist,
+  requiredChecklistCount
+}: {
+  riskLevel: PublishConfirmationSummary["riskLevel"];
+  hasPendingConfirmation: boolean;
+  blockerCount: number;
+  confirmedChecklist: number;
+  requiredChecklistCount: number;
+}): string {
+  if (riskLevel === "blocked") return `暂不能发布：还有 ${blockerCount} 个阻塞项需要处理。`;
+  if (hasPendingConfirmation && requiredChecklistCount && confirmedChecklist < requiredChecklistCount) {
+    return `等待人工确认：已确认 ${confirmedChecklist}/${requiredChecklistCount} 项，确认前不会调用小红书发布。`;
+  }
+  if (hasPendingConfirmation) return "确认单已就绪：最后核对后才会执行发布或定时发布。";
+  return "可以进入发布确认：内容、图片、证据和 Quality Gate 已满足生成确认单条件。";
+}
+
+function formatPublishNextStepLine({
+  riskLevel,
+  hasPendingConfirmation,
+  pendingChecklistLabels,
+  blockers
+}: {
+  riskLevel: PublishConfirmationSummary["riskLevel"];
+  hasPendingConfirmation: boolean;
+  pendingChecklistLabels: string[];
+  blockers: string[];
+}): string {
+  if (riskLevel === "blocked") return `下一步：先处理 ${blockers.slice(0, 2).join("、")}。`;
+  if (hasPendingConfirmation && pendingChecklistLabels.length) {
+    return `下一步：确认 ${pendingChecklistLabels.slice(0, 2).join("、")}。`;
+  }
+  if (hasPendingConfirmation) return "下一步：核对账号、可见范围、图片版本和时间后，手动确认发布。";
+  return "下一步：生成发布确认单，进入人工确认。";
 }
 
 function buildBlockers({

@@ -1613,26 +1613,40 @@ export function PostStudioPanel({
                   </div>
                   <span>{publishSummary.modeLabel}</span>
                 </div>
-                <div className="publishFinalSummaryGrid">
-                  <span>账号 <b>{publishSummary.accountLine}</b></span>
-                  <span>连接 <b>{publishSummary.accountSafetyLine}</b></span>
-                  <span>时间 <b>{publishSummary.timingLine}</b></span>
-                  <span>可见 <b>{publishSummary.visibilityLine}</b></span>
-                  <span>内容 <b>{publishSummary.contentLine}</b></span>
-                  <span>图片 <b>{publishSummary.imageLine}</b></span>
-                  <span>证据 <b>{publishSummary.evidenceLine}</b></span>
-                  <span>来源 <b>{publishSummary.evidenceSourceLine}</b></span>
-                  <span>版本 <b>{publishSummary.versionLine}</b></span>
-                  <span>质量 <b>{publishSummary.qualityLine}</b></span>
-                  <span>确认 <b>{publishSummary.checklistLine}</b></span>
+                <div className="publishDecisionStrip">
+                  <strong>{publishSummary.decisionLine}</strong>
+                  <p>{publishSummary.nextStepLine}</p>
+                  <small>{publishSummary.detailCompressionLine}</small>
                 </div>
-                {publishSummary.blockers.length ? (
+                {publishSummary.visibleBlockers.length ? (
                   <ul>
-                    {publishSummary.blockers.slice(0, 5).map((blocker) => (
+                    {publishSummary.visibleBlockers.map((blocker) => (
                       <li key={blocker}>{blocker}</li>
                     ))}
+                    {publishSummary.blockers.length > publishSummary.visibleBlockers.length ? (
+                      <li>还有 {publishSummary.blockers.length - publishSummary.visibleBlockers.length} 项已收进详细快照</li>
+                    ) : null}
                   </ul>
                 ) : null}
+                <details className="publishSnapshotDetails">
+                  <summary>
+                    <strong>详细发布快照</strong>
+                    <span>账号、时间、版本、证据和 Quality Gate</span>
+                  </summary>
+                  <div className="publishFinalSummaryGrid">
+                    <span>账号 <b>{publishSummary.accountLine}</b></span>
+                    <span>连接 <b>{publishSummary.accountSafetyLine}</b></span>
+                    <span>时间 <b>{publishSummary.timingLine}</b></span>
+                    <span>可见 <b>{publishSummary.visibilityLine}</b></span>
+                    <span>内容 <b>{publishSummary.contentLine}</b></span>
+                    <span>图片 <b>{publishSummary.imageLine}</b></span>
+                    <span>证据 <b>{publishSummary.evidenceLine}</b></span>
+                    <span>来源 <b>{publishSummary.evidenceSourceLine}</b></span>
+                    <span>版本 <b>{publishSummary.versionLine}</b></span>
+                    <span>质量 <b>{publishSummary.qualityLine}</b></span>
+                    <span>确认 <b>{publishSummary.checklistLine}</b></span>
+                  </div>
+                </details>
               </div>
               <div className={`publishAccountSafety ${publishAccountSafety.status}`}>
                 <div>

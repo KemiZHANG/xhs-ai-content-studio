@@ -140,6 +140,10 @@ describe("publish confirmation summary", () => {
 
     expect(summary.riskLevel).toBe("ok");
     expect(summary.headline).toBe("已具备生成发布确认单条件");
+    expect(summary.decisionLine).toContain("可以进入发布确认");
+    expect(summary.nextStepLine).toBe("下一步：生成发布确认单，进入人工确认。");
+    expect(summary.detailCompressionLine).toContain("默认只显示发布结论");
+    expect(summary.visibleBlockers).toEqual([]);
     expect(summary.blockers).toEqual([]);
     expect(summary.accountLine).toContain("xhs-user");
     expect(summary.evidenceLine).toContain("引用 1 条证据");
@@ -185,6 +189,8 @@ describe("publish confirmation summary", () => {
     expect(summary.headline).toBe("发布确认单已生成，等待人工确认");
     expect(summary.modeLabel).toBe("定时发布");
     expect(summary.riskLevel).toBe("warn");
+    expect(summary.decisionLine).toContain("等待人工确认");
+    expect(summary.nextStepLine).toContain("确认图片");
     expect(summary.checklistLine).toBe("人工确认 1/2 项，待确认：确认图片");
     expect(summary.accountSafetyLine).toContain("http://localhost:18060/mcp");
     expect(summary.versionLine).toContain("版本快照已锁定");
@@ -283,6 +289,8 @@ describe("publish confirmation summary", () => {
     });
 
     expect(summary.riskLevel).toBe("blocked");
+    expect(summary.decisionLine).toContain("暂不能发布");
+    expect(summary.nextStepLine).toContain("下一步");
     expect(summary.versionLine).toContain("版本快照需复核");
     expect(summary.blockers).toEqual(
       expect.arrayContaining([
@@ -322,6 +330,8 @@ describe("publish confirmation summary", () => {
     });
 
     expect(summary.riskLevel).toBe("blocked");
+    expect(summary.visibleBlockers).toHaveLength(3);
+    expect(summary.visibleBlockers).toEqual(["缺少标题", "缺少正文", "缺少标签"]);
     expect(summary.blockers).toEqual(
       expect.arrayContaining([
         "缺少标题",

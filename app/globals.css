@@ -5632,6 +5632,73 @@ textarea {
   padding: 5px 9px;
 }
 
+.publishDecisionStrip {
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(30, 27, 23, 0.08);
+  border-radius: 12px;
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+}
+
+.publishDecisionStrip strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.publishDecisionStrip p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.publishDecisionStrip small {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.publishSnapshotDetails {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(30, 27, 23, 0.08);
+  border-radius: 12px;
+}
+
+.publishSnapshotDetails > summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  list-style: none;
+  padding: 9px 10px;
+}
+
+.publishSnapshotDetails > summary::-webkit-details-marker {
+  display: none;
+}
+
+.publishSnapshotDetails > summary strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.publishSnapshotDetails > summary span {
+  color: var(--muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+.publishSnapshotDetails[open] {
+  padding-bottom: 10px;
+}
+
+.publishSnapshotDetails[open] .publishFinalSummaryGrid {
+  padding: 0 10px;
+}
+
 .publishFinalSummaryGrid {
   display: grid;
   gap: 7px;
