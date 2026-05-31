@@ -63,6 +63,14 @@ describe("post project", () => {
     expect(getAllowedPostActions("image_ready")).toContain("generate_cards");
   });
 
+  it("does not surface direct publish actions from the reviewing stage before confirmation", () => {
+    const actions = getAllowedPostActions("reviewing");
+
+    expect(actions).toContain("request_publish_confirmation");
+    expect(actions).not.toContain("schedule_publish");
+    expect(actions).not.toContain("publish_now");
+  });
+
   it("migrates workspace evidence and draft into one post project", async () => {
     const workspace = await resetWorkspaceState({
       topic: "coffee",

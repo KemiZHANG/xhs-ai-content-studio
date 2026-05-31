@@ -13,7 +13,7 @@ const allowedActionsByStage: Record<PostStage, PostAction[]> = {
   image_generating: ["select_images", "recover"],
   image_ready: ["select_images", "assemble_post", "generate_images", "generate_cards", "recover"],
   assembling: ["run_quality_gate", "revise_copy", "select_images", "recover"],
-  reviewing: ["request_publish_confirmation", "schedule_publish", "publish_now", "revise_copy", "select_images", "recover"],
+  reviewing: ["request_publish_confirmation", "revise_copy", "select_images", "recover"],
   scheduled: ["recover"],
   published: ["recover"],
   failed: ["recover"]
