@@ -5331,6 +5331,64 @@ textarea {
   padding: 12px;
 }
 
+.viralSearchDrawer {
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: grid;
+}
+
+.viralSearchDrawer > summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  list-style: none;
+  padding: 12px;
+}
+
+.viralSearchDrawer > summary::-webkit-details-marker {
+  display: none;
+}
+
+.viralSearchDrawer > summary strong {
+  color: var(--ink);
+  display: block;
+  font-size: 13px;
+}
+
+.viralSearchDrawer > summary span {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  line-height: 1.45;
+  margin-top: 2px;
+}
+
+.viralSearchDrawer > summary em {
+  background: rgba(18, 118, 97, 0.08);
+  border: 1px solid rgba(18, 118, 97, 0.16);
+  border-radius: 999px;
+  color: var(--accent-strong);
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 850;
+  padding: 5px 9px;
+}
+
+.viralSearchDrawer[open] {
+  box-shadow: 0 12px 28px rgba(44, 38, 28, 0.06);
+}
+
+.viralSearchDrawer[open] .viralSearchPanel {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 14px 14px;
+}
+
 .viralSearchPanel label {
   display: grid;
   gap: 5px;

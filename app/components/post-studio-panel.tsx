@@ -872,28 +872,36 @@ export function PostStudioPanel({
             <SideSection icon={Library} title="爆款库证据">
               <strong>{viralCases.length} 条历史爆款规律</strong>
               <p className="muted">这里长期沉淀标题钩子、正文结构、标签组合、图片风格和评论关注点。默认只显示关键规律，不保存原文合集。</p>
-              <form
-                className="viralSearchPanel"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  onSearchViralLibrary({
-                    query: viralSearchForm.query,
-                    category: viralSearchForm.category,
-                    tags: viralSearchForm.tags,
-                    audience: viralSearchForm.audience,
-                    painPoint: viralSearchForm.painPoint,
-                    createdAfter: viralSearchForm.createdAfter,
-                    createdBefore: viralSearchForm.createdBefore,
-                    minLikes: viralSearchForm.minLikes,
-                    minCollects: viralSearchForm.minCollects,
-                    minComments: viralSearchForm.minComments,
-                    minShares: viralSearchForm.minShares,
-                    minScore: viralSearchForm.minScore,
-                    sortBy: viralSearchForm.sortBy,
-                    sortOrder: viralSearchForm.sortOrder
-                  });
-                }}
-              >
+              <details className="viralSearchDrawer">
+                <summary>
+                  <div>
+                    <strong>检索 / 过滤爆款库</strong>
+                    <span>默认收起，避免把创作证据挤到页面下方。</span>
+                  </div>
+                  <em>{viralCases.length} 条可检索</em>
+                </summary>
+                <form
+                  className="viralSearchPanel"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    onSearchViralLibrary({
+                      query: viralSearchForm.query,
+                      category: viralSearchForm.category,
+                      tags: viralSearchForm.tags,
+                      audience: viralSearchForm.audience,
+                      painPoint: viralSearchForm.painPoint,
+                      createdAfter: viralSearchForm.createdAfter,
+                      createdBefore: viralSearchForm.createdBefore,
+                      minLikes: viralSearchForm.minLikes,
+                      minCollects: viralSearchForm.minCollects,
+                      minComments: viralSearchForm.minComments,
+                      minShares: viralSearchForm.minShares,
+                      minScore: viralSearchForm.minScore,
+                      sortBy: viralSearchForm.sortBy,
+                      sortOrder: viralSearchForm.sortOrder
+                    });
+                  }}
+                >
                 <label>
                   <span>知识库检索</span>
                   <input
@@ -1054,7 +1062,8 @@ export function PostStudioPanel({
                     重置
                   </button>
                 </div>
-              </form>
+                </form>
+              </details>
               {viralPack?.sufficiency ? (
                 <div className={viralPack.sufficiency.isEnough ? "ragStatus good" : "ragStatus warn"}>
                   <strong>{viralPack.sufficiency.isEnough ? "RAG 证据充足" : "RAG 证据还不够"}</strong>
