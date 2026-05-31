@@ -12,6 +12,7 @@ import {
   postProjectFromWorkspace,
   readPostProject,
   resetPostProject,
+  syncPostProjectFromWorkspace,
   updatePostProject
 } from "@/lib/post-project";
 import { buildEvidenceCitationReport } from "@/lib/post-project/citations";
@@ -209,6 +210,43 @@ describe("post project", () => {
     expect(project.topic).toBe("coffee updated");
     expect(project.creativeBrief?.audience).toBe("自定义人群");
     expect(project.evidencePack.insights.map((insight) => insight.insight)).toContain("新标题证据");
+  });
+
+  it("syncs completed background research into the active PostProject instead of leaving it researching", async () => {
+    const workspace = await resetWorkspaceState({ topic: "广州咖啡馆" });
+    await resetPostProject({
+      id: workspace.workspaceId.replace(/^workspace-/, "post-"),
+      topic: "广州咖啡馆",
+      currentStage: "researching"
+    });
+
+    const completedWorkspace = await updateWorkspaceState({
+      topic: "广州咖啡馆",
+      researchRunId: "run-background-1",
+      evidenceSummary: {
+        contentStrengths: ["标题强调可收藏的真实场景"],
+        learningsForContent: ["正文先交代场景，再给选择标准"],
+        imageStrengths: ["封面主体清晰，环境有氛围"],
+        learningsForImages: ["图片要保留店内光线和座位细节"],
+        nextQuestions: ["补充账号调性"]
+      },
+      selectedSamples: [{ id: "note-background-1", title: "广州咖啡馆收藏清单" }]
+    });
+
+    const project = await syncPostProjectFromWorkspace(completedWorkspace);
+
+    expect(project.id).toBe(workspace.workspaceId.replace(/^workspace-/, "post-"));
+    expect(project.currentStage).not.toBe("researching");
+    expect(["brief_ready", "visual_planning", "image_prompt_ready"]).toContain(project.currentStage);
+    expect(project.evidencePack.runId).toBe("run-background-1");
+    expect(project.evidencePack.insights.map((insight) => insight.insight)).toEqual(
+      expect.arrayContaining([
+        "标题强调可收藏的真实场景",
+        "正文先交代场景，再给选择标准",
+        "封面主体清晰，环境有氛围"
+      ])
+    );
+    expect(project.creativeBrief?.basedOnEvidenceIds.length).toBeGreaterThan(0);
   });
 
   it("blocks publish quality when claims are exaggerated or images are missing", () => {

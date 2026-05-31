@@ -1,6 +1,7 @@
 import { readWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
 import { createModelProvider } from "@/lib/models/provider";
 import { createXhsMcpClient } from "@/lib/mcp/xhs";
+import { syncPostProjectFromWorkspace } from "@/lib/post-project/store";
 import { upsertGeneratedAssetPaths } from "@/lib/storage/assets";
 import { createDraftRecord, writeCurrentDraft } from "@/lib/storage/drafts";
 import { appendHistory } from "@/lib/storage/history";
@@ -153,7 +154,7 @@ async function runWorkflowJob(jobId: string, input: OneClickInput): Promise<void
         throw new Error("Failed to persist workflow draft");
       }
       const workspace = await readWorkspaceState();
-      await updateWorkspaceState({
+      const updatedWorkspace = await updateWorkspaceState({
         topic: input.topic,
         researchRunId: run.id,
         evidenceSummary: result.researchSummary
@@ -174,9 +175,10 @@ async function runWorkflowJob(jobId: string, input: OneClickInput): Promise<void
         recentJobIds: [jobId, ...workspace.recentJobIds.filter((id) => id !== jobId)].slice(0, 20),
         recentRunIds: [run.id, ...workspace.recentRunIds.filter((id) => id !== run.id)].slice(0, 20)
       });
+      await syncPostProjectFromWorkspace(updatedWorkspace);
     } else {
       const workspace = await readWorkspaceState();
-      await updateWorkspaceState({
+      const updatedWorkspace = await updateWorkspaceState({
         topic: input.topic,
         researchRunId: run.id,
         evidenceSummary: result.researchSummary
@@ -186,6 +188,7 @@ async function runWorkflowJob(jobId: string, input: OneClickInput): Promise<void
         recentJobIds: [jobId, ...workspace.recentJobIds.filter((id) => id !== jobId)].slice(0, 20),
         recentRunIds: [run.id, ...workspace.recentRunIds.filter((id) => id !== run.id)].slice(0, 20)
       });
+      await syncPostProjectFromWorkspace(updatedWorkspace);
     }
 
     await persist(completeJob(job, result));
