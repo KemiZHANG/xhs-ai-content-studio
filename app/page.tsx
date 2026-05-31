@@ -12,7 +12,7 @@ import {
   ShieldCheck,
   Sparkles
 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { buildCopyCreativeBrief, buildDraftPromptFromBrief, buildImageCreativeBrief } from "@/lib/workflows/creative-briefs";
 import { modelProviderPresets } from "@/lib/models/presets";
 import { parseTagsText } from "@/lib/publishing/assembly";
@@ -43,6 +43,7 @@ import {
 import { clientApi, clientFormDataApi } from "@/app/client/api";
 import { useJobStream } from "@/app/hooks/use-job-stream";
 import { useSettingsHealth } from "@/app/hooks/use-settings-health";
+import { canApplyWorkspaceSnapshot, isJobForWorkspace } from "@/lib/jobs/context";
 
 import type {
   AssetRecord,
@@ -179,6 +180,8 @@ export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatConversations, setChatConversations] = useState<ChatConversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const workspaceIdRef = useRef<string | null>(null);
+  const activeConversationIdRef = useRef<string | null>(null);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string>("");
@@ -208,6 +211,14 @@ export default function Home() {
   useEffect(() => {
     void loadInitial();
   }, []);
+
+  useEffect(() => {
+    workspaceIdRef.current = workspace?.workspaceId ?? null;
+  }, [workspace?.workspaceId]);
+
+  useEffect(() => {
+    activeConversationIdRef.current = activeConversationId;
+  }, [activeConversationId]);
 
   useEffect(() => {
     const hydrated = buildPendingPublishFromPlan({
@@ -285,8 +296,10 @@ export default function Home() {
 
   async function applyJobsSnapshot(nextJobs: JobRecord[], streamedWorkspace?: WorkspaceState, streamedPostProject?: PostProject) {
     setJobs(nextJobs);
-    const activeRecentJobIds = streamedWorkspace?.recentJobIds ?? workspace?.recentJobIds;
-    if (streamedWorkspace) {
+    const shouldApplyStreamedWorkspace = canApplyWorkspaceSnapshot(streamedWorkspace, workspace);
+    const activeWorkspace = shouldApplyStreamedWorkspace && streamedWorkspace ? streamedWorkspace : workspace;
+    const activeRecentJobIds = activeWorkspace?.recentJobIds;
+    if (streamedWorkspace && shouldApplyStreamedWorkspace) {
       setWorkspace(streamedWorkspace);
       if (streamedWorkspace.currentDraft) {
         applyCurrentDraft(streamedWorkspace.currentDraft);
@@ -296,11 +309,11 @@ export default function Home() {
       }
       setPublishAssetIds(streamedWorkspace.selectedImageIds ?? []);
     }
-    if (streamedPostProject) {
+    if (streamedPostProject && shouldApplyStreamedWorkspace) {
       setPostProject(streamedPostProject);
     }
     const autoReturnJob = autoReturnJobId ? nextJobs.find((job) => job.id === autoReturnJobId) : null;
-    if (autoReturnJob?.status === "completed" && autoReturnJob.result) {
+    if (autoReturnJob?.status === "completed" && autoReturnJob.result && isJobForWorkspace(autoReturnJob, activeWorkspace)) {
       applyWorkflowResult(autoReturnJob.result);
       setActiveJobId(autoReturnJob.id);
       setAutoReturnJobId(null);
@@ -313,10 +326,13 @@ export default function Home() {
       }
       return;
     }
+    if (autoReturnJob?.status === "completed" && !isJobForWorkspace(autoReturnJob, activeWorkspace)) {
+      setAutoReturnJobId(null);
+    }
     if (autoReturnJob?.status === "failed") {
       setAutoReturnJobId(null);
     }
-    const latestCompleted = nextJobs.find((job) => job.status === "completed" && job.result);
+    const latestCompleted = nextJobs.find((job) => job.status === "completed" && job.result && isJobForWorkspace(job, activeWorkspace));
     if (latestCompleted && activeRecentJobIds && !activeRecentJobIds.includes(latestCompleted.id)) {
       return;
     }
@@ -896,6 +912,8 @@ export default function Home() {
         : "");
     if (!content) return;
 
+    const requestWorkspaceId = workspaceIdRef.current;
+    const requestConversationId = activeConversationIdRef.current;
     const attachedNames = assets.filter((asset) => assetIds.includes(asset.id)).map((asset) => asset.name);
     const userMessage: ChatMessage = {
       role: "user",
@@ -929,6 +947,9 @@ export default function Home() {
         job?: JobRecord;
         conversation?: ChatConversation;
       };
+      if (requestWorkspaceId !== workspaceIdRef.current || requestConversationId !== activeConversationIdRef.current) {
+        return;
+      }
       const assistantMessage: ChatMessage = {
         role: "assistant",
         content: data.answer,
@@ -1026,6 +1047,28 @@ export default function Home() {
     setActiveJobId(null);
     setAutoReturnJobId(null);
     setAutoReturnTarget("flow");
+    setWorkflowForm((current) => ({
+      ...current,
+      topic: seed.topic ?? "",
+      requirements: "",
+      assetIds: [],
+      productName: "",
+      sellingPoints: "",
+      extraImagePrompt: ""
+    }));
+    setAssetForm((current) => ({
+      ...current,
+      productName: "",
+      sellingPoints: "",
+      extraPrompt: ""
+    }));
+    setCardForm((current) => ({
+      ...current,
+      title: "",
+      subtitle: "",
+      body: "",
+      tagsText: ""
+    }));
     setChatAssetIds([]);
     return data.workspace;
   }
@@ -1240,6 +1283,12 @@ export default function Home() {
 
   async function viewJobResult(job: JobRecord) {
     if (job.result) {
+      if (!isJobForWorkspace(job, workspace)) {
+        setActiveJobId(job.id);
+        setSection("jobs");
+        setNotice("这个任务属于其他 PostProject，已保留在任务历史中；为避免覆盖当前画布，请先新建/恢复对应项目后再导入结果。");
+        return;
+      }
       setWorkflowResult(job.result);
       if (job.result.status === "research_ready" || job.result.researchSummary) {
         setResearchResult(job.result);

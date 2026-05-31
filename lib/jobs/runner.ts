@@ -1,4 +1,6 @@
 import { readWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
+import type { JobWorkspaceContext } from "@/lib/jobs/context";
+import { isJobForWorkspace } from "@/lib/jobs/context";
 import { createModelProvider } from "@/lib/models/provider";
 import { createXhsMcpClient } from "@/lib/mcp/xhs";
 import { syncPostProjectFromWorkspace } from "@/lib/post-project/store";
@@ -20,7 +22,7 @@ import { readSettings } from "@/lib/storage/settings";
 import { runOneClickWorkflow, type OneClickInput } from "@/lib/workflows/one-click";
 
 type JobRunner = {
-  enqueueWorkflow(input: OneClickInput): Promise<JobRecord>;
+  enqueueWorkflow(input: OneClickInput, context?: JobWorkspaceContext): Promise<JobRecord>;
   getJob(id: string): Promise<JobRecord | null>;
   listJobs(): Promise<JobRecord[]>;
 };
@@ -37,11 +39,13 @@ export function getJobRunner(): JobRunner {
 
   if (!globalForJobs.xhsJobRunner) {
     globalForJobs.xhsJobRunner = {
-      async enqueueWorkflow(input) {
+      async enqueueWorkflow(input, context) {
         let job = createJobRecord({
           type: "workflow",
           title: `${input.workflowGoal === "research" ? "选题研究" : "生成笔记"}：${input.topic}`,
-          input
+          input,
+          workspaceId: context?.workspaceId,
+          postProjectId: context?.postProjectId
         });
         job = updateJobStep(job, {
           id: "queued",
@@ -136,11 +140,22 @@ async function runWorkflowJob(jobId: string, input: OneClickInput): Promise<void
     }
 
     const run = await appendHistory(input, result);
+    const activeWorkspace = await readWorkspaceState();
+    const shouldSyncToWorkspace = isJobForWorkspace(job, activeWorkspace);
     const registeredImages = await upsertGeneratedAssetPaths(result.images, {
       prompt: result.draft?.imagePrompt,
       sourceAssetIds: input.assetIds
     });
-    if (result.draft) {
+    if (!shouldSyncToWorkspace) {
+      job = await persist(
+        updateJobStep(job, {
+          id: "workspace-sync",
+          label: "工作区同步",
+          status: "skipped",
+          detail: "当前 PostProject 已切换，该任务结果仅保留在任务历史中，不覆盖现在的创作画布。"
+        })
+      );
+    } else if (result.draft) {
       const currentDraft = await writeCurrentDraft(
         createDraftRecord({
           draft: result.draft,
@@ -153,7 +168,6 @@ async function runWorkflowJob(jobId: string, input: OneClickInput): Promise<void
       if (!currentDraft) {
         throw new Error("Failed to persist workflow draft");
       }
-      const workspace = await readWorkspaceState();
       const updatedWorkspace = await updateWorkspaceState({
         topic: input.topic,
         researchRunId: run.id,
@@ -170,14 +184,13 @@ async function runWorkflowJob(jobId: string, input: OneClickInput): Promise<void
             : undefined,
         productImageIds:
           input.imageSource === "product" && input.assetIds?.length
-            ? [...new Set([...workspace.productImageIds, ...input.assetIds])]
+            ? [...new Set([...activeWorkspace.productImageIds, ...input.assetIds])]
             : undefined,
-        recentJobIds: [jobId, ...workspace.recentJobIds.filter((id) => id !== jobId)].slice(0, 20),
-        recentRunIds: [run.id, ...workspace.recentRunIds.filter((id) => id !== run.id)].slice(0, 20)
+        recentJobIds: [jobId, ...activeWorkspace.recentJobIds.filter((id) => id !== jobId)].slice(0, 20),
+        recentRunIds: [run.id, ...activeWorkspace.recentRunIds.filter((id) => id !== run.id)].slice(0, 20)
       });
       await syncPostProjectFromWorkspace(updatedWorkspace);
     } else {
-      const workspace = await readWorkspaceState();
       const updatedWorkspace = await updateWorkspaceState({
         topic: input.topic,
         researchRunId: run.id,
@@ -185,8 +198,8 @@ async function runWorkflowJob(jobId: string, input: OneClickInput): Promise<void
           ? { ...result.researchSummary, viralKnowledge: result.viralKnowledge ?? null }
           : result.researchSummary,
         selectedSamples: result.evidence,
-        recentJobIds: [jobId, ...workspace.recentJobIds.filter((id) => id !== jobId)].slice(0, 20),
-        recentRunIds: [run.id, ...workspace.recentRunIds.filter((id) => id !== run.id)].slice(0, 20)
+        recentJobIds: [jobId, ...activeWorkspace.recentJobIds.filter((id) => id !== jobId)].slice(0, 20),
+        recentRunIds: [run.id, ...activeWorkspace.recentRunIds.filter((id) => id !== run.id)].slice(0, 20)
       });
       await syncPostProjectFromWorkspace(updatedWorkspace);
     }

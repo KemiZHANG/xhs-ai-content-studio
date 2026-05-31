@@ -33,6 +33,8 @@ export type JobRecord = {
   progress: number;
   createdAt: string;
   updatedAt: string;
+  workspaceId?: string;
+  postProjectId?: string;
   input: unknown;
   steps: JobStep[];
   publish?: PublishRecord;
@@ -45,11 +47,15 @@ const jobsPath = () => path.join(process.cwd(), "data", "jobs.json");
 export function createJobRecord({
   type,
   title,
-  input
+  input,
+  workspaceId,
+  postProjectId
 }: {
   type: JobType;
   title: string;
   input: unknown;
+  workspaceId?: string;
+  postProjectId?: string;
 }): JobRecord {
   const now = new Date().toISOString();
   return {
@@ -60,6 +66,8 @@ export function createJobRecord({
     progress: 0,
     createdAt: now,
     updatedAt: now,
+    workspaceId,
+    postProjectId,
     input,
     steps: []
   };

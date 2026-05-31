@@ -87,7 +87,10 @@ export async function POST(request: Request) {
         currentStage: "researching"
       });
 
-      const job = await getJobRunner().enqueueWorkflow(input);
+      const job = await getJobRunner().enqueueWorkflow(input, {
+        workspaceId: initialWorkspace.workspaceId,
+        postProjectId: queuedPostProject.id
+      });
       const answer = `已创建后台 Agent 任务 ${job.id}。你可以继续留在对话页，任务进度和结果会写入任务列表与成果画布。`;
       const conversation = await appendChatTurn({
         conversationId,

@@ -674,7 +674,10 @@ describe("API route contracts", () => {
       postProject: expect.objectContaining({ currentStage: "researching" }),
       conversation
     });
-    expect(enqueueWorkflow).toHaveBeenCalledWith(expect.objectContaining({ topic: "coffee" }));
+    expect(enqueueWorkflow).toHaveBeenCalledWith(
+      expect.objectContaining({ topic: "coffee" }),
+      expect.objectContaining({ workspaceId: "workspace-test", postProjectId: "post-test" })
+    );
     expect(resetWorkspaceState).toHaveBeenCalledWith(expect.objectContaining({
       topic: "coffee",
       selectedSamples: [],
@@ -771,7 +774,8 @@ describe("API route contracts", () => {
         topic: "coffee",
         publishMode: "draft",
         autoPublish: false
-      })
+      }),
+      expect.objectContaining({ workspaceId: "workspace-job", postProjectId: "post-job" })
     );
     expect(resetWorkspaceState).toHaveBeenCalledWith(expect.objectContaining({
       topic: "coffee",

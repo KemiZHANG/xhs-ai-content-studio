@@ -6,8 +6,13 @@ describe("job records", () => {
     let job = createJobRecord({
       type: "workflow",
       title: "生成咖啡探店笔记",
-      input: { topic: "咖啡探店" }
+      input: { topic: "咖啡探店" },
+      workspaceId: "workspace-1",
+      postProjectId: "post-1"
     });
+
+    expect(job.workspaceId).toBe("workspace-1");
+    expect(job.postProjectId).toBe("post-1");
 
     job = updateJobStep(job, {
       id: "search",

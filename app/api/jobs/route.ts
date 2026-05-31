@@ -84,7 +84,10 @@ export async function POST(request: Request) {
       currentStage: "researching"
     });
 
-    const job = await getJobRunner().enqueueWorkflow(input);
+    const job = await getJobRunner().enqueueWorkflow(input, {
+      workspaceId: initialWorkspace.workspaceId,
+      postProjectId: postProject.id
+    });
     return NextResponse.json({ job, workspace: initialWorkspace, postProject });
   } catch (error) {
     return NextResponse.json(

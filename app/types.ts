@@ -272,6 +272,8 @@ export type JobRecord = {
   progress: number;
   createdAt: string;
   updatedAt: string;
+  workspaceId?: string;
+  postProjectId?: string;
   input: unknown;
   steps: WorkflowStep[];
   publish?: {
@@ -407,6 +409,9 @@ export type WorkspacePublishPlan = {
 };
 
 export type WorkspaceState = {
+  schemaVersion?: number;
+  workspaceId: string;
+  updatedAt?: string;
   topic?: string;
   researchRunId?: string;
   evidenceSummary?: ResearchSummary | unknown;
