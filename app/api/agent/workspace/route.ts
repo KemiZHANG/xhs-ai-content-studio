@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { readWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
+import { syncPostProjectFromWorkspace } from "@/lib/post-project/store";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import type { WorkspaceState } from "@/lib/agent/types";
 
@@ -8,7 +9,8 @@ export const runtime = "nodejs";
 export async function GET() {
   try {
     const workspace = await readWorkspaceState();
-    return NextResponse.json({ workspace });
+    const postProject = await syncPostProjectFromWorkspace(workspace);
+    return NextResponse.json({ workspace, postProject });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to read workspace state" },
@@ -38,7 +40,8 @@ export async function PATCH(request: Request) {
       recentRunIds: Array.isArray(body.recentRunIds) ? body.recentRunIds.map(String) : undefined,
       recentConversationIds: Array.isArray(body.recentConversationIds) ? body.recentConversationIds.map(String) : undefined
     });
-    return NextResponse.json({ workspace });
+    const postProject = await syncPostProjectFromWorkspace(workspace);
+    return NextResponse.json({ workspace, postProject });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to update workspace state" },

@@ -96,6 +96,58 @@ describe("API route contracts", () => {
     vi.doUnmock("@/lib/storage/drafts");
   });
 
+  it("syncs workspace patches into PostProject so uploaded reference images are current", async () => {
+    const workspace = {
+      schemaVersion: 1,
+      workspaceId: "workspace-ref",
+      updatedAt: "",
+      selectedSamples: [],
+      selectedImageIds: [],
+      productImageIds: ["asset-product-1"],
+      recentJobIds: [],
+      recentRunIds: [],
+      recentConversationIds: []
+    };
+    const updateWorkspaceState = vi.fn(async () => workspace);
+    const syncPostProjectFromWorkspace = vi.fn(async (input) => ({
+      id: "post-ref",
+      topic: input.topic,
+      productInfo: { referenceAssetIds: input.productImageIds },
+      currentStage: "briefing"
+    }));
+
+    vi.doMock("@/lib/agent/state", () => ({
+      readWorkspaceState: vi.fn(),
+      updateWorkspaceState
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      syncPostProjectFromWorkspace
+    }));
+
+    const { PATCH } = await import("@/app/api/agent/workspace/route");
+    const response = await PATCH(jsonRequest({
+      productImageIds: ["asset-product-1"],
+      lastUserIntent: "upload_product_images"
+    }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(updateWorkspaceState).toHaveBeenCalledWith(expect.objectContaining({
+      productImageIds: ["asset-product-1"],
+      lastUserIntent: "upload_product_images"
+    }));
+    expect(syncPostProjectFromWorkspace).toHaveBeenCalledWith(workspace);
+    expect(payload).toEqual({
+      workspace,
+      postProject: expect.objectContaining({
+        id: "post-ref",
+        productInfo: { referenceAssetIds: ["asset-product-1"] }
+      })
+    });
+    vi.doUnmock("@/lib/agent/state");
+    vi.doUnmock("@/lib/post-project/store");
+  });
+
   it("returns a stable one-click validation error shape", async () => {
     vi.doMock("@/lib/storage/settings", () => ({
       readSettings: async () => defaultSettings,

@@ -372,13 +372,18 @@ export default function Home() {
     const data = (await clientApi("/api/agent/workspace", {
       method: "PATCH",
       body: JSON.stringify(patch)
-    })) as { workspace: WorkspaceState };
+    })) as { workspace: WorkspaceState; postProject?: PostProject };
     setWorkspace(data.workspace);
+    if (data.postProject) {
+      setPostProject(data.postProject);
+    }
     if (data.workspace.currentDraft) {
       applyCurrentDraft(data.workspace.currentDraft);
     }
     setPublishAssetIds(data.workspace.selectedImageIds ?? []);
-    await loadPostProject();
+    if (!data.postProject) {
+      await loadPostProject();
+    }
     return data.workspace;
   }
 
