@@ -21,6 +21,16 @@ export function toSettingsDraft(settings: RedactedSettings): SettingsDraft {
   };
 }
 
+export function hasActiveAccountConnectionChanged(
+  current: Pick<RedactedSettings, "activeAccountId" | "mcpUrl">,
+  next: Pick<SettingsDraft, "activeAccountId" | "mcpUrl">
+): boolean {
+  return (
+    current.activeAccountId !== next.activeAccountId ||
+    normalizeEndpoint(current.mcpUrl) !== normalizeEndpoint(next.mcpUrl)
+  );
+}
+
 export function useSettingsHealth(
   defaultSettings: RedactedSettings,
   options: UseSettingsHealthOptions = {}
@@ -71,6 +81,15 @@ export function useSettingsHealth(
     event.preventDefault();
     setSettingsBusy("settings");
     options.onNotice?.("");
+    const connectionChanged = hasActiveAccountConnectionChanged(settings, settingsDraft);
+    const nextAccount =
+      settingsDraft.accounts.find((account) => account.id === settingsDraft.activeAccountId) ??
+      settings.accounts.find((account) => account.id === settings.activeAccountId) ??
+      settings.accounts[0];
+    if (connectionChanged && nextAccount) {
+      options.onBeforeAccountSwitch?.(nextAccount);
+      setHealth(null);
+    }
     try {
       const data = await clientApi<RedactedSettings>("/api/settings", {
         method: "POST",
@@ -79,7 +98,15 @@ export function useSettingsHealth(
       setClientActionToken(data.actionToken);
       setSettings(data);
       setSettingsDraft(toSettingsDraft(data));
-      options.onNotice?.("设置已保存");
+      options.onNotice?.(
+        connectionChanged
+          ? "设置已保存，正在重新检测当前小红书账号。"
+          : "设置已保存。"
+      );
+      if (connectionChanged) {
+        await checkHealth();
+        await options.onAfterAccountSwitch?.();
+      }
       return data;
     } finally {
       setSettingsBusy(null);
@@ -132,4 +159,8 @@ export function useSettingsHealth(
     saveSettings,
     switchActiveAccount
   };
+}
+
+function normalizeEndpoint(value: string): string {
+  return value.trim().replace(/\/+$/, "").toLowerCase();
 }
