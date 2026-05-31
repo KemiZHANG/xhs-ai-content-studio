@@ -7,7 +7,7 @@ const riskyClaims = ["认证", "销量", "全网", "官方", "治愈", "疗效",
 export function runPostQualityGate(project: Pick<
   PostProject,
   "finalPost" | "copyDraft" | "selectedImages" | "creativeBrief" | "visualDirection"
-> & Partial<Pick<PostProject, "productInfo" | "selectedSamples" | "evidencePack" | "imagePrompts">>): QualityCheck {
+> & Partial<Pick<PostProject, "productInfo" | "selectedSamples" | "evidencePack" | "imagePrompts" | "generatedImages">>): QualityCheck {
   const finalPost = project.finalPost ?? finalPostFromDraft(project);
   const issues: string[] = [];
   const suggestions: string[] = [];
@@ -36,6 +36,7 @@ export function runPostQualityGate(project: Pick<
     : null;
   const finalImageIds = finalPost?.imageIds ?? [];
   const selectedImageIds = project.selectedImages ?? [];
+  const imageProvenanceIssues = findGeneratedImageProvenanceIssues(project, finalImageIds);
   const hasStaleFinalImages = Boolean(
     finalPost &&
       selectedImageIds.length &&
@@ -70,6 +71,11 @@ export function runPostQualityGate(project: Pick<
   if (hasStaleFinalImages) {
     issues.push("最终帖子图片版本与当前选中图片不一致");
     suggestions.push("请重新组装最终帖子或确认当前选中的图片版本，避免误发旧图。");
+  }
+
+  if (imageProvenanceIssues.length) {
+    issues.push(`生成图缺少可追溯来源：${imageProvenanceIssues.slice(0, 3).join("、")}`);
+    suggestions.push("请重新选择或生成图片，确保发布图保留 promptVersionId 和 basedOnEvidenceIds，方便发布前确认图片方向。");
   }
 
   if (hasVisualEvidenceMissing) {
@@ -152,6 +158,7 @@ export function runPostQualityGate(project: Pick<
     !finalPost?.imageIds.length,
     !project.visualDirection,
     hasStaleFinalImages,
+    imageProvenanceIssues.length > 0,
     hasVisualEvidenceMissing,
     hasVisualEvidenceMismatch
   ]);
@@ -169,6 +176,7 @@ export function runPostQualityGate(project: Pick<
       !finalPost.tags.length ||
       !finalPost.imageIds.length ||
       hasStaleFinalImages ||
+      imageProvenanceIssues.length > 0 ||
       hasVisualEvidenceMissing ||
       hasVisualEvidenceMismatch ||
       exaggerated.length ||
@@ -203,6 +211,24 @@ export function runPostQualityGate(project: Pick<
     originalityReview,
     checkedAt: new Date().toISOString()
   };
+}
+
+function findGeneratedImageProvenanceIssues(
+  project: Partial<Pick<PostProject, "generatedImages">>,
+  finalImageIds: string[]
+): string[] {
+  if (!finalImageIds.length || !project.generatedImages?.length) return [];
+  const finalImageSet = new Set(finalImageIds);
+  return project.generatedImages
+    .filter((image) => finalImageSet.has(image.assetId ?? image.id))
+    .filter((image) => Boolean(image.path || image.url || image.promptVersionId || image.promptId || image.sourceAssetIds?.length || image.basedOnEvidenceIds?.length))
+    .flatMap((image) => {
+      const label = image.assetId ?? image.id;
+      const missing: string[] = [];
+      if (!image.promptVersionId && !image.promptId) missing.push("promptVersionId");
+      if (!image.basedOnEvidenceIds?.length) missing.push("basedOnEvidenceIds");
+      return missing.length ? [`${label} 缺少 ${missing.join("/")}`] : [];
+    });
 }
 
 function findProductMutationRisk(
