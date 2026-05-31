@@ -51,6 +51,7 @@ import { buildEvidencePanelModel, scoreEvidence, summarizeEvidenceSample } from 
 import { labelForPostAction } from "@/app/components/post-action-labels";
 import { buildPostStudioStatusSummary } from "@/app/components/post-studio-status";
 import { buildViralApplicationModel } from "@/app/components/viral-application";
+import { buildViralEvidenceSummary } from "@/app/components/viral-evidence-summary";
 import { buildPublishConfirmationSummary } from "@/app/components/publish-confirmation-summary";
 import { buildPublishAuditSafetySummary } from "@/app/components/publish-audit-summary";
 import { buildPostProjectContextSummary } from "@/app/components/post-project-context";
@@ -235,6 +236,7 @@ export function PostStudioPanel({
   const viralApplication = buildViralApplicationModel(project);
   const projectViralPack = extractProjectViralPack(project);
   const viralPack = workflowResult?.viralKnowledge ?? workflowResult?.researchSummary?.viralKnowledge ?? projectViralPack ?? null;
+  const viralEvidenceSummary = buildViralEvidenceSummary({ project, viralCases, viralKnowledge: viralPack });
   const samples = project?.selectedSamples ?? workflowResult?.evidence ?? workspace?.selectedSamples ?? [];
   const evidenceSamples = samples.filter(isSampleEvidence);
   const evidencePanel = buildEvidencePanelModel(evidenceSamples, 3);
@@ -839,6 +841,7 @@ export function PostStudioPanel({
                 <span>实时证据 {realtimeInsights.length}</span>
                 <span>爆款库 {viralInsights.length}</span>
               </div>
+              <ViralEvidenceDigest summary={viralEvidenceSummary} compact onOpenViral={() => setTab("viral")} />
               {keyLearningInsights.length ? (
                 <>
                 {keyLearningInsights.map((insight) => (
@@ -951,6 +954,7 @@ export function PostStudioPanel({
             <SideSection icon={Library} title="爆款库证据">
               <strong>{viralCases.length} 条历史爆款规律</strong>
               <p className="muted">这里长期沉淀标题钩子、正文结构、标签组合、图片风格和评论关注点。默认只显示关键规律，不保存原文合集。</p>
+              <ViralEvidenceDigest summary={viralEvidenceSummary} />
               <details className="viralSearchDrawer">
                 <summary>
                   <div>
@@ -2055,6 +2059,54 @@ function EvidencePanelSummary({
         ))}
       </div>
     </article>
+  );
+}
+
+function ViralEvidenceDigest({
+  summary,
+  compact = false,
+  onOpenViral
+}: {
+  summary: ReturnType<typeof buildViralEvidenceSummary>;
+  compact?: boolean;
+  onOpenViral?: () => void;
+}) {
+  return (
+    <div className={summary.hasEvidence ? "viralEvidenceDigest ready" : "viralEvidenceDigest"}>
+      <div className="viralEvidenceDigestHeader">
+        <div>
+          <strong>{summary.headline}</strong>
+          <p>{summary.detail}</p>
+        </div>
+        <span>{summary.sourceLine}</span>
+      </div>
+      {summary.keyInsights.length ? (
+        <div className="viralEvidenceDigestList">
+          {summary.keyInsights.slice(0, compact ? 3 : 5).map((insight) => (
+            <article key={insight.id}>
+              <span>
+                {labelForInsight(insight.type)}
+                {insight.isFocused ? " · 重点" : ""}
+                {insight.isCited ? " · 已引用" : ""}
+              </span>
+              <p>{insight.insight}</p>
+            </article>
+          ))}
+        </div>
+      ) : null}
+      {summary.sourceCases.length && !compact ? (
+        <div className="viralEvidenceSources">
+          {summary.sourceCases.map((item) => (
+            <span key={item.id}>{item.hookType || item.title} · {item.category} · 分 {Math.round(item.score)}</span>
+          ))}
+        </div>
+      ) : null}
+      <small>{summary.traceLine}</small>
+      {summary.missingLine ? <small>{summary.missingLine}</small> : null}
+      {onOpenViral ? (
+        <button className="textButton" type="button" onClick={onOpenViral}>查看爆款库证据</button>
+      ) : null}
+    </div>
   );
 }
 

@@ -4664,6 +4664,85 @@ textarea {
   padding: 7px 8px;
 }
 
+.viralEvidenceDigest {
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(22, 35, 31, 0.1);
+  border-radius: 14px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.viralEvidenceDigest.ready {
+  background:
+    linear-gradient(135deg, rgba(18, 118, 97, 0.11), rgba(255, 255, 255, 0.78)),
+    rgba(255, 255, 255, 0.74);
+  border-color: rgba(18, 118, 97, 0.22);
+}
+
+.viralEvidenceDigestHeader {
+  display: grid;
+  gap: 8px;
+}
+
+.viralEvidenceDigestHeader strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.viralEvidenceDigestHeader p,
+.viralEvidenceDigest small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 3px 0 0;
+}
+
+.viralEvidenceDigestHeader > span,
+.viralEvidenceSources span {
+  background: rgba(18, 118, 97, 0.08);
+  border: 1px solid rgba(18, 118, 97, 0.16);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 750;
+  padding: 6px 8px;
+  width: fit-content;
+}
+
+.viralEvidenceDigestList {
+  display: grid;
+  gap: 7px;
+}
+
+.viralEvidenceDigestList article {
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(18, 118, 97, 0.12);
+  border-radius: 10px;
+  padding: 8px 9px;
+}
+
+.viralEvidenceDigestList span {
+  color: var(--muted);
+  display: block;
+  font-size: 11px;
+  font-weight: 750;
+  margin-bottom: 3px;
+}
+
+.viralEvidenceDigestList p {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.viralEvidenceSources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .viralApplyPanel {
   background: rgba(18, 118, 97, 0.06);
   border: 1px solid rgba(18, 118, 97, 0.14);
