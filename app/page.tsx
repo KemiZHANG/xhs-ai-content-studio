@@ -26,6 +26,7 @@ import {
   WorkflowRibbon
 } from "@/app/components/xhs-panels";
 import { AccountStatusCard } from "@/app/components/account-status-card";
+import { buildPendingPublishFromPlan } from "@/app/components/publish-confirmation";
 import { PostStudioPanel, type StudioTab } from "@/app/components/post-studio-panel";
 import { ChatPanel } from "@/app/components/chat-workbench";
 import { StatusPill } from "@/app/components/status-badges";
@@ -51,7 +52,6 @@ import type {
   ChatMessage,
   CreatorMemoryProfile,
   DraftRecord,
-  Health,
   ImageStudioMode,
   JobRecord,
   PendingPublishConfirmation,
@@ -134,6 +134,7 @@ export default function Home() {
   const [publishScheduleAt, setPublishScheduleAt] = useState("");
   const [publishStatus, setPublishStatus] = useState("");
   const [pendingPublish, setPendingPublish] = useState<PendingPublishConfirmation | null>(null);
+  const [dismissedPublishIntentId, setDismissedPublishIntentId] = useState<string | null>(null);
   const [workflowForm, setWorkflowForm] = useState({
     topic: "上海安静咖啡馆",
     contentType: "探店",
@@ -207,6 +208,29 @@ export default function Home() {
   useEffect(() => {
     void loadInitial();
   }, []);
+
+  useEffect(() => {
+    const hydrated = buildPendingPublishFromPlan({
+      plan: postProject?.publishPlan ?? workspace?.publishPlan ?? null,
+      settings,
+      health
+    });
+    if (!hydrated || hydrated.publishIntentId === dismissedPublishIntentId) {
+      return;
+    }
+    setPendingPublish((current) =>
+      current?.publishIntentId === hydrated.publishIntentId ? current : hydrated
+    );
+  }, [
+    dismissedPublishIntentId,
+    health?.activeAccount?.loginName,
+    postProject?.publishPlan?.id,
+    postProject?.publishPlan?.status,
+    settings.activeAccountId,
+    settings.mcpUrl,
+    workspace?.publishPlan?.id,
+    workspace?.publishPlan?.status
+  ]);
 
   const latestRun = useMemo(() => runs[0], [runs]);
   const activeJob = useMemo(
@@ -1112,6 +1136,7 @@ export default function Home() {
       if (data.requiresConfirmation && data.publishIntent?.id) {
         const activeAccount =
           settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
+        setDismissedPublishIntentId(null);
         setPendingPublish({
           payload: publishPayload,
           publishIntentId: data.publishIntent.id,
@@ -1184,6 +1209,9 @@ export default function Home() {
   }
 
   function cancelPendingPublish() {
+    if (pendingPublish?.publishIntentId) {
+      setDismissedPublishIntentId(pendingPublish.publishIntentId);
+    }
     setPendingPublish(null);
     setPublishStatus("已取消本次发布确认。内容和图片仍保留在发布装配台。");
   }
