@@ -961,8 +961,13 @@ export default function Home() {
     const data = (await clientApi("/api/agent/workspace/reset", {
       method: "POST",
       body: JSON.stringify(seed)
-    })) as { workspace: WorkspaceState };
+    })) as { workspace: WorkspaceState; postProject?: PostProject };
     setWorkspace(data.workspace);
+    if (data.postProject) {
+      setPostProject(data.postProject);
+    } else {
+      setPostProject(null);
+    }
     setWorkflowResult(null);
     setResearchResult(null);
     setCurrentDraft(null);
@@ -976,7 +981,6 @@ export default function Home() {
     setAutoReturnJobId(null);
     setAutoReturnTarget("flow");
     setChatAssetIds([]);
-    await loadPostProject();
     return data.workspace;
   }
 

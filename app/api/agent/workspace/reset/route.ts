@@ -18,12 +18,12 @@ export async function POST(request: Request) {
       topic: typeof body.topic === "string" ? body.topic : undefined,
       lastUserIntent: typeof body.lastUserIntent === "string" ? body.lastUserIntent : "start_new_workspace"
     });
-    await resetPostProject({
+    const postProject = await resetPostProject({
       id: workspace.workspaceId === "local-default" ? "post-local-default" : workspace.workspaceId.replace(/^workspace-/, "post-"),
       topic: workspace.topic
     });
 
-    return NextResponse.json({ workspace });
+    return NextResponse.json({ workspace, postProject });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to reset workspace state" },

@@ -59,7 +59,11 @@ describe("API route contracts", () => {
   });
 
   it("clears the active PostProject when the workspace reset route starts a new project", async () => {
-    const resetPostProject = vi.fn(async () => ({}));
+    const resetPostProject = vi.fn(async (seed) => ({
+      id: seed.id,
+      topic: seed.topic,
+      currentStage: "empty"
+    }));
     const resetWorkspaceState = vi.fn(async () => ({
       schemaVersion: 1,
       workspaceId: "workspace-clean",
@@ -82,6 +86,10 @@ describe("API route contracts", () => {
 
     expect(response.status).toBe(200);
     expect(payload.workspace.workspaceId).toBe("workspace-clean");
+    expect(payload.postProject).toEqual(expect.objectContaining({
+      id: "post-clean",
+      currentStage: "empty"
+    }));
     expect(writeCurrentDraft).toHaveBeenCalledWith(null);
     expect(resetWorkspaceState).toHaveBeenCalledWith({
       topic: "广州咖啡馆",
