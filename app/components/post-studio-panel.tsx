@@ -696,6 +696,20 @@ export function PostStudioPanel({
                   placeholder="文案和图片共享 CreativeBrief，图片方向会沉淀在这里。"
                 />
               </label>
+              {project?.visualDirection ? (
+                <section className={project.visualDirection.confirmedAt || project.visualDirection.confirmationStatus === "confirmed" ? "versionIntegrity ok" : "versionIntegrity warn"} aria-label="图片方向确认状态">
+                  <strong>{project.visualDirection.confirmedAt || project.visualDirection.confirmationStatus === "confirmed" ? "图片方向已确认" : "图片方向待确认"}</strong>
+                  <p>
+                    {project.visualDirection.mood} · {project.visualDirection.composition}
+                  </p>
+                  {project.visualDirection.confirmedAt ? <small>确认时间：{formatDateTime(project.visualDirection.confirmedAt)}</small> : null}
+                  {!(project.visualDirection.confirmedAt || project.visualDirection.confirmationStatus === "confirmed") ? (
+                    <button className="secondaryButton compactButton" type="button" onClick={() => onQuickAction("confirm_visual_direction")}>
+                      确认图片方向
+                    </button>
+                  ) : null}
+                </section>
+              ) : null}
               {imagePromptVersions.length ? (
                 <section className="versionSwitcher compactVersionSwitcher" aria-label="图片 Prompt 版本">
                   <div>

@@ -436,6 +436,40 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
       });
     }
 
+    const visualDirectionConfirmationTurn = await maybeHandleVisualDirectionConfirmationTurn(input, plan, initialPostProject);
+    if (visualDirectionConfirmationTurn) {
+      trace = addTraceEvent(trace, {
+        type: "tool_called",
+        label: "project.confirmVisualDirection",
+        detail: "Recorded explicit user confirmation for the active PostProject visual direction.",
+        metadata: {
+          confirmedAt: visualDirectionConfirmationTurn.postProject.visualDirection?.confirmedAt,
+          stage: visualDirectionConfirmationTurn.postProject.currentStage
+        }
+      });
+      trace = addTraceEvent(trace, {
+        type: "workspace_updated",
+        label: "Workspace updated",
+        detail: "Marked the current visual direction as confirmed before image generation or publish checks."
+      });
+      agentRun = completeRun(agentRun);
+      trace = addTraceEvent(trace, {
+        type: "run_completed",
+        label: "Agent run completed",
+        detail: "Agent turn completed after confirming visual direction."
+      });
+      await persistAgentTrace(trace);
+      return buildAgentTurnResult({
+        answer: visualDirectionConfirmationTurn.answer,
+        plan,
+        workspace: visualDirectionConfirmationTurn.workspace,
+        currentDraft: input.currentDraft ?? undefined,
+        agentRun,
+        trace,
+        postProject: visualDirectionConfirmationTurn.postProject
+      });
+    }
+
     const qualityCheckTurn = await maybeHandleQualityCheckTurn(input, plan, initialPostProject);
     if (qualityCheckTurn) {
       trace = addTraceEvent(trace, {
@@ -1379,13 +1413,17 @@ function buildCardsFromTurn(
   }
   if (postProject?.visualDirection) {
     const referenceSummary = buildEvidenceReferenceSummary(postProject, postProject.visualDirection.basedOnEvidenceIds);
+    const visualConfirmationLabel = postProject.visualDirection.confirmationStatus === "confirmed" || postProject.visualDirection.confirmedAt
+      ? "已确认"
+      : "待确认";
     cards.push({
       id: "card-visual-direction",
       type: "visual_direction",
       title: "视觉方向",
-      summary: `${postProject.visualDirection.mood} · ${postProject.visualDirection.composition}`,
+      summary: `${postProject.visualDirection.mood} · ${postProject.visualDirection.composition} · ${visualConfirmationLabel}`,
       data: {
         ...postProject.visualDirection,
+        confirmationStatus: postProject.visualDirection.confirmationStatus ?? (postProject.visualDirection.confirmedAt ? "confirmed" : "pending"),
         evidenceSummary: referenceSummary
       }
     });
@@ -1430,7 +1468,7 @@ function shouldShowAgentPlanCard(plan: AgentPlan): boolean {
   if (plan.intent === "ask") return false;
   if (plan.steps.length >= 3) return true;
   return plan.steps.some((step) =>
-    ["saveViralKnowledge", "createCreativeBrief", "planVisuals", "assemblePost", "runQualityGate", "schedulePublish"].includes(step.action)
+    ["saveViralKnowledge", "createCreativeBrief", "planVisuals", "confirmVisualDirection", "assemblePost", "runQualityGate", "schedulePublish"].includes(step.action)
   );
 }
 
@@ -1445,6 +1483,7 @@ function labelForAgentPlanAction(action: AgentAction): string {
     generateDraft: "生成文案",
     reviseDraft: "修改文案",
     planVisuals: "规划图片方向",
+    confirmVisualDirection: "确认图片方向",
     generateImages: "生成图片",
     generateCards: "生成图文卡片",
     selectImages: "选择图片",
@@ -1613,6 +1652,7 @@ const postActionLabels: Record<PostAction, string> = {
   generate_copy: "生成文案",
   revise_copy: "修改当前文案",
   plan_visuals: "规划图片方向",
+  confirm_visual_direction: "确认图片方向",
   generate_image_prompts: "生成图片提示词",
   generate_images: "生成配图",
   generate_cards: "生成图文卡片",
@@ -1896,10 +1936,18 @@ async function maybeHandleVisualPlanningTurn(
     };
   }
 
-  const visualDirection = deriveVisualDirection({
+  const derivedVisualDirection = deriveVisualDirection({
     creativeBrief,
     visualDirection: postProject.visualDirection
   });
+  const visualDirection = derivedVisualDirection
+    ? {
+        ...derivedVisualDirection,
+        confirmationStatus: "pending" as const,
+        confirmedAt: undefined,
+        confirmedBy: undefined
+      }
+    : undefined;
   const imagePrompt = visualDirection
     ? deriveImagePromptVersion({
         ...postProject,
@@ -1931,7 +1979,52 @@ async function maybeHandleVisualPlanningTurn(
       `构图：${updatedProject.visualDirection?.composition ?? "封面突出主体，正文图递进展示细节"}`,
       imagePrompt ? `Prompt：${imagePrompt.value.prompt}` : "",
       visualEvidenceLines ? `参考证据：${visualEvidenceSummary.summary}\n${visualEvidenceLines}` : "",
-      "发布前仍需要你确认图片方向和最终选图。"
+      "下一步请先确认图片方向；确认后我再继续生成图片或进入发布检查。"
+    ].filter(Boolean).join("\n"),
+    workspace,
+    postProject: updatedProject
+  };
+}
+
+async function maybeHandleVisualDirectionConfirmationTurn(
+  input: RunAgentTurnInput,
+  plan: ReturnType<typeof createAgentPlan>,
+  postProject: PostProject
+): Promise<{ answer: string; workspace: WorkspaceState; postProject: PostProject } | null> {
+  if (plan.intent !== "confirm_visual_direction") {
+    return null;
+  }
+
+  if (!postProject.visualDirection) {
+    const workspace = await updateWorkspaceState({ lastUserIntent: "confirm_visual_direction" });
+    return {
+      answer: "当前项目还没有图片方向可以确认。请先让我基于 CreativeBrief 规划图片方向，再确认是否采用。",
+      workspace,
+      postProject
+    };
+  }
+
+  const confirmedAt = new Date().toISOString();
+  const updatedProject = await updatePostProject({
+    visualDirection: {
+      ...postProject.visualDirection,
+      confirmationStatus: "confirmed",
+      confirmedAt,
+      confirmedBy: "user"
+    },
+    auditStatus: "unchecked",
+    qualityCheck: undefined,
+    currentStage: postProject.imagePrompts.length ? "image_prompt_ready" : "visual_planning"
+  });
+  const workspace = await updateWorkspaceState({ lastUserIntent: "confirm_visual_direction" });
+  return {
+    answer: [
+      "已确认当前图片方向，后续生图、选图和发布检查都会以这个方向作为人工确认版本。",
+      `视觉氛围：${updatedProject.visualDirection?.mood}`,
+      `构图：${updatedProject.visualDirection?.composition}`,
+      updatedProject.imagePrompts.length
+        ? "下一步可以生成配图或图文卡片。"
+        : "下一步可以生成图片 Prompt。"
     ].filter(Boolean).join("\n"),
     workspace,
     postProject: updatedProject
@@ -2572,6 +2665,23 @@ async function maybeHandleImageGenerationTurn(
     });
     return {
       answer: "图片生成需要先在模型设置里配置图片模型 API Key。",
+      currentDraft,
+      workspace
+    };
+  }
+
+  if (activeProject.visualDirection && activeProject.visualDirection.confirmationStatus !== "confirmed" && !activeProject.visualDirection.confirmedAt) {
+    const workspace = await updateWorkspaceState({
+      currentDraftId: currentDraft.id,
+      currentDraft,
+      lastUserIntent: "generate_images"
+    });
+    return {
+      answer: [
+        "我先不直接生成图片：当前项目已有图片方向，但还没有人工确认。",
+        `待确认方向：${activeProject.visualDirection.mood} · ${activeProject.visualDirection.composition}`,
+        "请回复“确认图片方向”或在画布里点确认后，我再继续生成配图。"
+      ].join("\n"),
       currentDraft,
       workspace
     };

@@ -78,6 +78,7 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
   const draft = project.copyDraft?.draft;
   const hasCopy = Boolean(draft?.title?.trim() && draft?.content?.trim());
   const hasVisualPlan = hasTraceableVisualPlan(project.visualDirection, imagePrompts);
+  const hasConfirmedVisualDirection = hasConfirmedVisualPlan(project.visualDirection);
   const hasImages = selectedImages.length > 0;
   const hasFinalPost = Boolean(project.finalPost);
   const finalPostCurrent = isFinalPostCurrent(project);
@@ -116,9 +117,15 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
     {
       id: "visual",
       label: "图片方向",
-      ready: hasVisualPlan,
-      detail: hasVisualPlan ? "图片方向或 Prompt 已引用 CreativeBrief / evidencePack 证据" : "规划封面、场景、构图和禁用项，并绑定证据",
-      action: actionSet.has("plan_visuals")
+      ready: hasVisualPlan && hasConfirmedVisualDirection,
+      detail: hasVisualPlan
+        ? hasConfirmedVisualDirection
+          ? "图片方向已引用证据并完成人工确认"
+          : "图片方向已生成，但还需要人工确认后再生图或发布"
+        : "规划封面、场景、构图和禁用项，并绑定证据",
+      action: hasVisualPlan && !hasConfirmedVisualDirection && actionSet.has("confirm_visual_direction")
+        ? "confirm_visual_direction"
+        : actionSet.has("plan_visuals")
         ? "plan_visuals"
         : actionSet.has("generate_image_prompts")
           ? "generate_image_prompts"
@@ -216,6 +223,15 @@ function selectVisibleReadinessItems(items: PostReadinessItem[], blockers: PostR
 
 function hasTraceableVisualPlan(visualDirection: unknown, imagePrompts: readonly unknown[]): boolean {
   return Boolean(hasEvidenceIds(visualDirection) || imagePrompts.some(hasEvidenceIds));
+}
+
+function hasConfirmedVisualPlan(visualDirection: unknown): boolean {
+  if (!isRecord(visualDirection)) return false;
+  return visualDirection.confirmationStatus === "confirmed" || typeof visualDirection.confirmedAt === "string";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
 
 function isFinalPostCurrent(project: ReadinessProject): boolean {

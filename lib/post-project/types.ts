@@ -29,6 +29,7 @@ export type PostAction =
   | "generate_copy"
   | "revise_copy"
   | "plan_visuals"
+  | "confirm_visual_direction"
   | "generate_image_prompts"
   | "generate_images"
   | "generate_cards"
@@ -102,6 +103,9 @@ export type VisualDirection = {
   mustHave: string[];
   mustAvoid: string[];
   basedOnEvidenceIds: string[];
+  confirmationStatus?: "pending" | "confirmed";
+  confirmedAt?: string;
+  confirmedBy?: "user" | "agent";
 };
 
 export type ImagePromptVersion = VersionedText<{

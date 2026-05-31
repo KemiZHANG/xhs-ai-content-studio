@@ -517,6 +517,9 @@ export type PostProject = {
     mustHave: string[];
     mustAvoid: string[];
     basedOnEvidenceIds: string[];
+    confirmationStatus?: "pending" | "confirmed";
+    confirmedAt?: string;
+    confirmedBy?: "user" | "agent";
   };
   imagePrompts: Array<{
     id: string;

@@ -86,7 +86,10 @@ describe("post readiness report", () => {
         colorPalette: "木色和奶油白",
         mustHave: ["咖啡杯"],
         mustAvoid: ["虚假价格"],
-        basedOnEvidenceIds: ["insight-1"]
+        basedOnEvidenceIds: ["insight-1"],
+        confirmationStatus: "confirmed",
+        confirmedAt: "2026-05-31T00:00:00.000Z",
+        confirmedBy: "user"
       },
       imagePrompts: [
         {

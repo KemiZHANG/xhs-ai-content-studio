@@ -876,7 +876,10 @@ describe("API route contracts", () => {
           colorPalette: "暖色",
           mustHave: ["咖啡", "桌面"],
           mustAvoid: [],
-          basedOnEvidenceIds: ["insight-visual"]
+          basedOnEvidenceIds: ["insight-visual"],
+          confirmationStatus: "confirmed",
+          confirmedAt: "2026-05-31T00:00:00.000Z",
+          confirmedBy: "user"
         },
         copyDraft: {
           id: "draft-current",
@@ -1264,7 +1267,17 @@ describe("API route contracts", () => {
         },
         selectedSamples: [],
         creativeBrief: { basedOnEvidenceIds: ["insight-1"] },
-        visualDirection: { mood: "真实", basedOnEvidenceIds: ["insight-1"] },
+        visualDirection: {
+          mood: "真实",
+          composition: "真实场景近景",
+          colorPalette: "自然色",
+          mustHave: ["主体清晰"],
+          mustAvoid: ["广告海报感"],
+          basedOnEvidenceIds: ["insight-1"],
+          confirmationStatus: "confirmed",
+          confirmedAt: "2026-05-31T00:00:00.000Z",
+          confirmedBy: "user"
+        },
         copyDraft: {
           id: "draft-current",
           updatedAt: "now",
@@ -1370,7 +1383,10 @@ describe("API route contracts", () => {
           colorPalette: "暖色",
           mustHave: ["咖啡", "桌面"],
           mustAvoid: [],
-          basedOnEvidenceIds: ["insight-1"]
+          basedOnEvidenceIds: ["insight-1"],
+          confirmationStatus: "confirmed",
+          confirmedAt: "2026-05-31T00:00:00.000Z",
+          confirmedBy: "user"
         },
         copyDraft: {
           id: "draft-current",

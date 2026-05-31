@@ -9,6 +9,7 @@ const actionLabels: Record<PostAction, string> = {
   generate_copy: "生成文案",
   revise_copy: "修改文案",
   plan_visuals: "规划图片",
+  confirm_visual_direction: "确认图片方向",
   generate_image_prompts: "生成图片 Prompt",
   generate_images: "生成图片",
   generate_cards: "生成卡片",

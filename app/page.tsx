@@ -644,6 +644,9 @@ export default function Home() {
       case "generate_image_prompts":
         await submitChatMessage("请基于当前 CreativeBrief 和证据生成图片方向与图片提示词，不要直接生图，先让我确认方向。", false);
         return;
+      case "confirm_visual_direction":
+        await submitChatMessage("确认图片方向，就按当前视觉方向继续。", false);
+        return;
       case "generate_images":
         await submitChatMessage("请基于当前草稿、CreativeBrief 和图片提示词生成小红书配图。", false, chatAssetIds);
         return;

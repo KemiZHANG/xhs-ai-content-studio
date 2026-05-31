@@ -460,7 +460,10 @@ describe("agent orchestrator", () => {
         colorPalette: "warm neutral",
         mustHave: ["coffee"],
         mustAvoid: [],
-        basedOnEvidenceIds: ["insight-visual"]
+        basedOnEvidenceIds: ["insight-visual"],
+        confirmationStatus: "confirmed",
+        confirmedAt: "2026-05-31T00:00:00.000Z",
+        confirmedBy: "user"
       },
       evidencePack: {
         sampleIds: ["sample-1"],
@@ -562,6 +565,117 @@ describe("agent orchestrator", () => {
     expect(result.postProject?.publishPlan).toBeNull();
   });
 
+  it("records explicit visual direction confirmation on the active PostProject", async () => {
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      visualDirection: {
+        mood: "自然光探店感",
+        composition: "桌面近景，咖啡在画面中心",
+        colorPalette: "暖白和木色",
+        mustHave: ["咖啡", "自然光"],
+        mustAvoid: ["广告海报感"],
+        basedOnEvidenceIds: ["insight-visual"],
+        confirmationStatus: "pending"
+      },
+      imagePrompts: [{
+        id: "prompt-confirm",
+        createdAt: "2026-05-31T00:00:00.000Z",
+        label: "主图 Prompt",
+        value: { prompt: "自然光咖啡馆桌面近景" },
+        basedOnEvidenceIds: ["insight-visual"]
+      }],
+      currentStage: "image_prompt_ready"
+    });
+
+    const result = await runAgentTurn({
+      message: "确认图片方向，就按当前视觉方向继续",
+      conversationId: "chat-confirm-visual",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(result.postProject?.visualDirection?.confirmationStatus).toBe("confirmed");
+    expect(result.postProject?.visualDirection?.confirmedBy).toBe("user");
+    expect(result.postProject?.visualDirection?.confirmedAt).toBeTruthy();
+    expect(result.answer).toContain("已确认当前图片方向");
+    expect(result.quickActions.map((action) => action.action)).toContain("generate_images");
+  });
+
+  it("blocks image generation when the current visual direction is not confirmed", async () => {
+    const generateImage = vi.fn(async () => ({ path: "should-not-be-used.png" }));
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      visualDirection: {
+        mood: "自然光探店感",
+        composition: "桌面近景，咖啡在画面中心",
+        colorPalette: "暖白和木色",
+        mustHave: ["咖啡", "自然光"],
+        mustAvoid: ["广告海报感"],
+        basedOnEvidenceIds: ["insight-visual"],
+        confirmationStatus: "pending"
+      },
+      imagePrompts: [{
+        id: "prompt-unconfirmed",
+        createdAt: "2026-05-31T00:00:00.000Z",
+        label: "主图 Prompt",
+        value: { prompt: "自然光咖啡馆桌面近景" },
+        basedOnEvidenceIds: ["insight-visual"]
+      }],
+      copyDraft: {
+        id: "draft-unconfirmed",
+        updatedAt: "2026-05-31T00:00:00.000Z",
+        draft: {
+          title: "广州周末安静咖啡馆",
+          content: "适合坐一下午的真实探店清单。",
+          tags: ["广州咖啡"],
+          structure: [],
+          imagePrompt: "自然光咖啡馆桌面近景",
+          basedOnEvidenceIds: ["insight-visual"]
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      },
+      currentStage: "image_prompt_ready"
+    });
+
+    const result = await runAgentTurn({
+      message: "请基于当前草稿生成配图",
+      conversationId: "chat-block-unconfirmed-image",
+      settings: { ...defaultSettings, imageApiKey: "image-key" },
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(generateImage).not.toHaveBeenCalled();
+    expect(result.answer).toContain("还没有人工确认");
+    expect(result.postProject?.generatedImages).toEqual([]);
+  });
+
   it("generates images from the active PostProject draft when chat input has no currentDraft", async () => {
     const imagePath = path.join(tempDir, "generated-assets", "generated", "project-draft-image.png");
     let prompt = "";
@@ -600,7 +714,10 @@ describe("agent orchestrator", () => {
         colorPalette: "暖白和木色",
         mustHave: ["咖啡", "自然光"],
         mustAvoid: ["广告海报感"],
-        basedOnEvidenceIds: ["insight-visual"]
+        basedOnEvidenceIds: ["insight-visual"],
+        confirmationStatus: "confirmed",
+        confirmedAt: "2026-05-31T00:00:00.000Z",
+        confirmedBy: "user"
       },
       imagePrompts: [{
         id: "prompt-project-v1",
@@ -797,9 +914,28 @@ describe("agent orchestrator", () => {
         tags: ["广州咖啡"],
         imageIds: ["asset-1"],
         coverImageId: "asset-1",
-        imagePromptVersionIds: [],
+        copyVersionId: "copy-draft-ready",
+        imagePromptVersionIds: ["prompt-ready"],
         basedOnEvidenceIds: ["insight-title"]
       },
+      visualDirection: {
+        mood: "自然光探店",
+        composition: "咖啡桌面近景",
+        colorPalette: "暖白木色",
+        mustHave: ["咖啡"],
+        mustAvoid: ["广告海报感"],
+        basedOnEvidenceIds: ["insight-title"],
+        confirmationStatus: "confirmed",
+        confirmedAt: "2026-05-31T00:00:00.000Z",
+        confirmedBy: "user"
+      },
+      imagePrompts: [{
+        id: "prompt-ready",
+        createdAt: "2026-05-31T00:00:00.000Z",
+        label: "主图 Prompt",
+        value: { prompt: "自然光咖啡桌面" },
+        basedOnEvidenceIds: ["insight-title"]
+      }],
       selectedImages: ["asset-1"],
       qualityCheck: {
         titleScore: 90,

@@ -93,6 +93,14 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
     });
   }
 
+  if (isVisualDirectionConfirmationRequest(message, lower) && (input.allowedActions?.includes("confirm_visual_direction") || input.postStage === "visual_planning" || input.postStage === "image_prompt_ready")) {
+    return buildPlan({
+      intent: "confirm_visual_direction",
+      topic: inferTopic(message),
+      steps: [step("confirmVisualDirection", "Record explicit user confirmation for the current visual direction before image generation or publish checks.", "project.confirmVisualDirection")]
+    });
+  }
+
   if (isImageGenerationRequest(message, lower)) {
     if ((/方向|提示词|prompt/i.test(message) || input.allowedActions?.includes("plan_visuals")) && !/出图|生图|生成.*(?:配图|场景图|产品图)/.test(message)) {
       return buildPlan({
@@ -247,6 +255,12 @@ function isDraftOutputRequest(message: string): boolean {
 
 function isVisualPlanningRequest(message: string, lower: string): boolean {
   return /图片风格|图片方向|视觉|封面|配图|图文|提示词|场景图|产品图/.test(message) || lower.includes("visual") || lower.includes("image prompt");
+}
+
+function isVisualDirectionConfirmationRequest(message: string, lower: string): boolean {
+  return /(?:确认|可以|通过|就按|按这个|没问题|同意).{0,12}(?:图片方向|视觉方向|图片风格|视觉风格|配图方向|封面方向|Prompt|提示词)|(?:图片方向|视觉方向|配图方向|封面方向).{0,12}(?:确认|可以|通过|没问题|同意)/i.test(message) ||
+    lower.includes("confirm visual") ||
+    lower.includes("confirm image direction");
 }
 
 function isCreativeBriefRequest(message: string, lower: string): boolean {

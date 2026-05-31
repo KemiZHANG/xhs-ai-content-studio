@@ -45,7 +45,7 @@ const stageGuidance: Record<PostStage, PostStageGuidance> = {
   visual_planning: {
     title: "确认视觉方向",
     description: "先确认图片必须包含和必须避免的元素，再生成可执行图片提示词。",
-    primaryAction: "generate_image_prompts"
+    primaryAction: "confirm_visual_direction"
   },
   image_prompt_ready: {
     title: "生成或选择图片",

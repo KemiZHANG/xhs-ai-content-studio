@@ -77,6 +77,20 @@ describe("agent planner", () => {
     ]);
   });
 
+  it("plans an explicit visual direction confirmation before image generation", () => {
+    const plan = createAgentPlan({
+      message: "确认图片方向，就按当前视觉方向继续",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      postStage: "image_prompt_ready",
+      allowedActions: ["confirm_visual_direction", "generate_images"]
+    });
+
+    expect(plan.intent).toBe("confirm_visual_direction");
+    expect(plan.steps.map((step) => step.action)).toEqual(["confirmVisualDirection"]);
+    expect(plan.steps[0].toolName).toBe("project.confirmVisualDirection");
+  });
+
   it("extracts viral RAG metric and tag filters from natural language", () => {
     const plan = createAgentPlan({
       message: "检索爆款库里广州咖啡馆 #探店 #拍照 收藏超过1000 点赞大于2千 分享20以上 综合分3000以上的高收藏案例",

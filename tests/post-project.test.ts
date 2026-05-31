@@ -127,7 +127,8 @@ describe("post project", () => {
     expect(project.visualDirection?.basedOnEvidenceIds).toEqual(project.creativeBrief?.basedOnEvidenceIds);
     expect(project.imagePrompts[0].basedOnEvidenceIds).toEqual(project.creativeBrief?.basedOnEvidenceIds);
     expect(project.finalPost?.title).toBe("Draft");
-    expect(project.qualityCheck?.canPublish).toBe(true);
+    expect(project.qualityCheck?.canPublish).toBe(false);
+    expect(project.qualityCheck?.issues).toContain("图片方向尚未人工确认");
     expect(project.currentStage).toBe("reviewing");
   });
 

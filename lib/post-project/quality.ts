@@ -21,6 +21,11 @@ export function runPostQualityGate(project: Pick<
   const evidenceIds = new Set((project.evidencePack?.insights ?? []).map((insight) => insight.id));
   const draftEvidenceIds = project.copyDraft?.draft.basedOnEvidenceIds ?? [];
   const visualEvidenceIds = collectVisualEvidenceIds(project);
+  const isVisualDirectionUnconfirmed = Boolean(
+    project.visualDirection &&
+      project.visualDirection.confirmationStatus !== "confirmed" &&
+      !project.visualDirection.confirmedAt
+  );
   const hasVisualEvidenceMissing = Boolean(project.visualDirection && !visualEvidenceIds.length);
   const hasVisualEvidenceMismatch = Boolean(
     project.visualDirection &&
@@ -81,6 +86,11 @@ export function runPostQualityGate(project: Pick<
   if (imageProvenanceIssues.length) {
     issues.push(`生成图缺少可追溯来源：${imageProvenanceIssues.slice(0, 3).join("、")}`);
     suggestions.push("请重新选择或生成图片，确保发布图保留 promptVersionId 和 basedOnEvidenceIds，方便发布前确认图片方向。");
+  }
+
+  if (isVisualDirectionUnconfirmed) {
+    issues.push("图片方向尚未人工确认");
+    suggestions.push("请先确认图片方向，再生成/选择最终图片并进入发布确认。");
   }
 
   if (hasVisualEvidenceMissing) {
@@ -163,6 +173,7 @@ export function runPostQualityGate(project: Pick<
   const visualConsistencyScore = scoreFromIssues([
     !finalPost?.imageIds.length,
     !project.visualDirection,
+    isVisualDirectionUnconfirmed,
     hasStaleFinalImages,
     imageProvenanceIssues.length > 0,
     hasVisualEvidenceMissing,
@@ -183,6 +194,7 @@ export function runPostQualityGate(project: Pick<
       !finalPost.imageIds.length ||
       hasStaleFinalImages ||
       imageProvenanceIssues.length > 0 ||
+      isVisualDirectionUnconfirmed ||
       hasVisualEvidenceMissing ||
       hasVisualEvidenceMismatch ||
       exaggerated.length ||
