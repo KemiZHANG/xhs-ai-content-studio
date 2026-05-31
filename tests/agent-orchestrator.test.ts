@@ -314,6 +314,107 @@ describe("agent orchestrator", () => {
     expect(result.postProject?.publishPlan).toBeNull();
   });
 
+  it("generates images from the active PostProject draft when chat input has no currentDraft", async () => {
+    const imagePath = path.join(tempDir, "generated-assets", "generated", "project-draft-image.png");
+    let prompt = "";
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: {
+        sampleIds: ["sample-visual"],
+        insights: [{
+          id: "insight-visual",
+          sourceType: "realtime",
+          type: "visual",
+          insight: "封面使用自然光桌面近景，主体要清楚",
+          sourceSampleIds: ["sample-visual"],
+          confidence: 0.9,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }]
+      },
+      creativeBrief: {
+        audience: "周末探店用户",
+        painPoint: "不知道去哪坐一下午",
+        contentAngle: "安静咖啡馆真实分享",
+        emotionalHook: "周末慢下来",
+        proofPoints: ["真实体验"],
+        tone: "生活化",
+        visualMood: "自然光、安静、真实探店感",
+        imageMustHave: ["咖啡", "自然光", "桌面细节"],
+        imageMustAvoid: ["夸张广告感"],
+        platformStyle: "xiaohongshu",
+        tabooWords: [],
+        complianceNotes: ["不要虚构认证或销量"],
+        basedOnEvidenceIds: ["insight-visual"]
+      },
+      visualDirection: {
+        mood: "自然光探店感",
+        composition: "桌面近景，咖啡在画面中心",
+        colorPalette: "暖白和木色",
+        mustHave: ["咖啡", "自然光"],
+        mustAvoid: ["广告海报感"],
+        basedOnEvidenceIds: ["insight-visual"]
+      },
+      imagePrompts: [{
+        id: "prompt-project-v1",
+        createdAt: "2026-05-31T00:00:00.000Z",
+        label: "主图 Prompt",
+        value: { prompt: "自然光咖啡馆桌面近景，小红书真实探店照片" },
+        basedOnEvidenceIds: ["insight-visual"]
+      }],
+      copyDraft: {
+        id: "draft-project",
+        updatedAt: "2026-05-31T00:00:00.000Z",
+        draft: {
+          title: "广州周末安静咖啡馆",
+          content: "这家适合周末坐一下午。",
+          tags: ["广州咖啡馆", "周末探店"],
+          structure: ["场景", "体验", "建议"],
+          imagePrompt: "自然光咖啡馆桌面近景，小红书真实探店照片",
+          basedOnEvidenceIds: ["insight-visual"]
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      }
+    });
+
+    const result = await runAgentTurn({
+      message: "请给当前帖子生成一张配图",
+      conversationId: "chat-project-image",
+      settings: { ...defaultSettings, imageApiKey: "image-key" },
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async (input) => {
+          prompt = input;
+          return { path: imagePath };
+        },
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(prompt).toContain("PostProject topic: 广州咖啡馆");
+    expect(prompt).toContain("CreativeBrief");
+    expect(prompt).toContain("insight-visual");
+    expect(result.currentDraft?.id).toBe("draft-project");
+    expect(result.currentDraft?.images).toEqual([{ path: imagePath }]);
+    expect(result.answer).toContain("图片依据证据：insight-visual");
+    expect(result.workspace.currentDraftId).toBe("draft-project");
+    expect(result.postProject?.generatedImages[0]).toMatchObject({
+      promptVersionId: "prompt-project-v1",
+      basedOnEvidenceIds: ["insight-visual"],
+      selected: true
+    });
+    expect(result.postProject?.selectedImages).toEqual(result.workspace.selectedImageIds);
+  });
+
   it("prioritizes quick actions from PostProject readiness gaps", async () => {
     await resetPostProject({
       topic: "广州咖啡馆",

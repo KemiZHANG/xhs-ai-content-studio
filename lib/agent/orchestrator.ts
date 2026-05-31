@@ -1901,7 +1901,8 @@ async function maybeHandleImageGenerationTurn(
   }
 
   const existing = await readWorkspaceState();
-  const currentDraft = input.currentDraft ?? existing.currentDraft ?? null;
+  const activeProject = await readPostProject();
+  const currentDraft = input.currentDraft ?? existing.currentDraft ?? activeProject.copyDraft ?? null;
   if (!currentDraft) {
     const workspace = await updateWorkspaceState({ lastUserIntent: plan.intent });
     return {
@@ -1927,7 +1928,8 @@ async function maybeHandleImageGenerationTurn(
   const prompt = buildAgentImagePrompt({
     message: input.message,
     draft: currentDraft,
-    evidenceSummary: existing.evidenceSummary
+    evidenceSummary: activeProject.evidencePack.summary ?? existing.evidenceSummary,
+    postProject: activeProject
   });
   const generatedImage = input.attachedAssets.length
     ? await input.model.generateImageFromReference(
@@ -1954,7 +1956,6 @@ async function maybeHandleImageGenerationTurn(
     updatedAt: new Date().toISOString(),
     images: [...currentDraft.images, generatedImage]
   };
-  const activeProject = await readPostProject();
   const activePromptVersion = activeProject.imagePrompts.at(-1);
   const imageEvidenceIds = uniqueIds([
     ...(activePromptVersion?.basedOnEvidenceIds ?? []),
@@ -1999,7 +2000,12 @@ async function maybeHandleImageGenerationTurn(
   }
 
   return {
-    answer: `已为当前草稿生成 1 张新图片，并放入成果画布。\n标题：${updatedDraft.draft.title}`,
+    answer: [
+      "已为当前 PostProject 草稿生成 1 张新图片，并放入成果画布。",
+      `标题：${updatedDraft.draft.title}`,
+      imageEvidenceIds.length ? `图片依据证据：${imageEvidenceIds.slice(0, 5).join("、")}` : "图片依据：当前草稿与用户最新需求，尚未绑定可追溯证据。",
+      activePromptVersion ? `Prompt 版本：${activePromptVersion.id}` : ""
+    ].filter(Boolean).join("\n"),
     currentDraft: updatedDraft,
     workspace
   };
@@ -2143,18 +2149,35 @@ async function updateWorkspaceFromTurn({
 function buildAgentImagePrompt({
   message,
   draft,
-  evidenceSummary
+  evidenceSummary,
+  postProject
 }: {
   message: string;
   draft: DraftRecord;
   evidenceSummary: unknown;
+  postProject?: PostProject;
 }): string {
+  const keyInsights = postProject?.evidencePack.insights
+    .slice(0, 8)
+    .map((insight) => `${insight.id} [${insight.sourceType ?? "realtime"}/${insight.type}]: ${insight.insight}`)
+    .join("\n");
   return [
     "Generate an original Xiaohongshu-ready image for the current post.",
     `User request: ${message}`,
+    postProject?.topic ? `PostProject topic: ${postProject.topic}` : "",
+    postProject?.creativeBrief ? `CreativeBrief: ${JSON.stringify({
+      audience: postProject.creativeBrief.audience,
+      contentAngle: postProject.creativeBrief.contentAngle,
+      visualMood: postProject.creativeBrief.visualMood,
+      imageMustHave: postProject.creativeBrief.imageMustHave,
+      imageMustAvoid: postProject.creativeBrief.imageMustAvoid,
+      complianceNotes: postProject.creativeBrief.complianceNotes
+    })}` : "",
+    postProject?.visualDirection ? `Visual direction: ${JSON.stringify(postProject.visualDirection)}` : "",
     `Draft title: ${draft.draft.title}`,
     `Draft image prompt: ${draft.draft.imagePrompt}`,
     `Tags: ${draft.draft.tags.join(", ")}`,
+    keyInsights ? `Traceable evidence insights:\n${keyInsights}` : "",
     evidenceSummary ? `Evidence summary: ${JSON.stringify(evidenceSummary).slice(0, 1600)}` : "",
     "Do not copy competitor images. If product reference images are provided, preserve the product subject, package shape, label position, color, and material. Do not invent unreadable brand text, false logos, certifications, or exaggerated claims."
   ]
