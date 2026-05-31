@@ -37,6 +37,7 @@ import type {
 import { getPostStageGuidance } from "@/lib/post-project/guidance";
 import { buildEvidenceCitationReport, buildEvidenceReferenceSummary } from "@/lib/post-project/citations";
 import { activeAccountReadinessHint, isHealthForActiveAccount } from "@/app/components/account-readiness";
+import { citationFieldBadges, formatCitationStripSummary } from "@/app/components/evidence-citation-display";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 import { pickEvidenceHighlights, scoreEvidence, summarizeEvidenceSample } from "@/app/components/evidence-display";
@@ -600,10 +601,18 @@ export function PostStudioPanel({
                   ))}
                 </section>
               ) : null}
-              {citationEvidenceIds.length ? (
+              {citationReport?.allEvidenceIds.length ? (
                 <section className="evidenceReferenceStrip" aria-label="文案证据引用">
                   <strong>证据引用</strong>
-                  <span>{citationEvidenceIds.slice(0, 5).join(" / ")}</span>
+                  <span>{formatCitationStripSummary(citationReport)}</span>
+                  <div className="citationBadgeRow">
+                    {citationFieldBadges(citationReport).map((badge) => (
+                      <em className={badge.status} key={badge.label}>
+                        {badge.label} {badge.count}
+                      </em>
+                    ))}
+                  </div>
+                  {citationReport.warnings.length ? <small>{citationReport.warnings[0]}</small> : null}
                 </section>
               ) : null}
             </div>

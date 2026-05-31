@@ -4932,6 +4932,35 @@ textarea {
   overflow-wrap: anywhere;
 }
 
+.evidenceReferenceStrip small {
+  color: #8a5a10;
+  font-size: 11px;
+}
+
+.citationBadgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.citationBadgeRow em {
+  border-radius: 999px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  padding: 3px 7px;
+}
+
+.citationBadgeRow em.ok {
+  background: rgba(18, 118, 97, 0.12);
+  color: var(--accent-strong);
+}
+
+.citationBadgeRow em.warn {
+  background: rgba(190, 128, 28, 0.14);
+  color: #8a5a10;
+}
+
 .insightLine {
   background: var(--surface-subtle);
   border: 1px solid var(--line);
