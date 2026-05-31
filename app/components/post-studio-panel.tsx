@@ -1000,6 +1000,7 @@ export function PostStudioPanel({
                         <span className={item.extraction.method === "model" ? "viralExtractionBadge model" : "viralExtractionBadge"}>
                           {labelForViralExtraction(item.extraction.method)} · {item.category}
                         </span>
+                        {item.quality ? <span className="viralExtractionBadge">规律质量 {Math.round(item.quality.score * 100)}%</span> : null}
                         <button className="textButton" type="button" onClick={() => setSelectedViralCase(item)}>查看</button>
                       </div>
                       <h4>{item.hookType || item.title}</h4>
@@ -1045,7 +1046,7 @@ export function PostStudioPanel({
                       <strong>{item.hookType}</strong>
                       <span className="viralAngleLine">{item.hookType} · {item.category} · {item.imageStyle}</span>
                       <p>{item.extractedInsights.reusableRules[0] || item.contentStructure.join(" / ")}</p>
-                      <span>赞 {item.metrics.likes} · 藏 {item.metrics.collects}</span>
+                      <span>赞 {item.metrics.likes} · 藏 {item.metrics.collects}{item.quality ? ` · 规律质量 ${Math.round(item.quality.score * 100)}%` : ""}</span>
                       <div className="evidenceActions">
                         <button className="textButton" type="button" onClick={() => setSelectedViralCase(item)}>
                           查看规律
@@ -1884,6 +1885,7 @@ function ViralCaseDrawer({ viralCase, onClose }: { viralCase: ViralCase; onClose
             <p className="muted">
               Extraction: {viralCase.extraction.method === "model" ? "AI model" : "local heuristic"}
               {" · "}Source: {viralCase.extraction.sourceSampleId || viralCase.sourceSampleId}
+              {viralCase.quality ? ` · Quality: ${Math.round(viralCase.quality.score * 100)}%` : ""}
               {viralCase.extraction.fallbackReason ? ` · fallback: ${viralCase.extraction.fallbackReason}` : ""}
             </p>
           </div>
@@ -1903,6 +1905,9 @@ function ViralCaseDrawer({ viralCase, onClose }: { viralCase: ViralCase; onClose
             <div className="drawerInlineWarning">
               <strong>原创安全摘要</strong>
               <p>{viralCase.creativeSafety.summary}</p>
+              {viralCase.quality?.warnings.length ? (
+                <p>质量提示：{viralCase.quality.warnings.slice(0, 2).join(" / ")}</p>
+              ) : null}
               <KnowledgeList title="可学习" items={viralCase.creativeSafety.reusablePatterns} />
               <KnowledgeList title="必须改写/替换" items={viralCase.creativeSafety.transformationGuidance} />
             </div>

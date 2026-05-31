@@ -205,6 +205,13 @@ export type ViralCase = {
     doNotCopy: string[];
     transformationGuidance: string[];
   };
+  quality?: {
+    score: number;
+    structuredFieldCount: number;
+    reusableRuleCount: number;
+    safetyRuleCount: number;
+    warnings: string[];
+  };
   extraction: {
     sourceSampleId: string;
     method: "model" | "heuristic";

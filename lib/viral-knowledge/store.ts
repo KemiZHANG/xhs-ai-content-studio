@@ -9,6 +9,7 @@ import type {
   ViralCreativeSafety,
   ViralExtractionProvenance,
   ViralExtractedInsights,
+  ViralKnowledgeQuality,
   ViralSearchInput,
   ViralSearchResult
 } from "@/lib/viral-knowledge/types";
@@ -157,6 +158,11 @@ export async function createViralCaseFromEvidence({
     })),
     extractedInsights,
     creativeSafety,
+    quality: evaluateViralKnowledgeQuality({
+      extractedInsights,
+      creativeSafety,
+      extractionMethod: extracted.method
+    }),
     extraction: {
       sourceSampleId: sample.id,
       method: extracted.method,
@@ -170,15 +176,16 @@ export function viralCasesToEvidenceInsights(cases: ViralCase[]) {
   const now = new Date().toISOString();
   return cases.flatMap((item) => {
     const sourceSampleIds = [item.id];
+    const confidence = (base: number) => Number(Math.min(0.94, base + (item.quality?.score ?? 0.5) * 0.08).toFixed(2));
     return compact([
-      evidenceInsight("hook", first(item.extractedInsights.titleHooks) || item.hookType, sourceSampleIds, now, 0.76),
-      evidenceInsight("structure", item.contentStructure.slice(0, 3).join(" / "), sourceSampleIds, now, 0.74),
-      evidenceInsight("tag", item.extractedInsights.tagPatterns.slice(0, 3).join("；") || item.tags.join("、"), sourceSampleIds, now, 0.68),
-      evidenceInsight("visual", item.imageStyle, sourceSampleIds, now, 0.72),
-      evidenceInsight("audience", item.audience, sourceSampleIds, now, 0.68),
-      evidenceInsight("pain_point", item.painPoint, sourceSampleIds, now, 0.7),
-      evidenceInsight("comment", summarizeCommentConcerns(item.extractedInsights.commentConcerns), sourceSampleIds, now, 0.7),
-      evidenceInsight("copy", item.creativeSafety?.summary ?? "", sourceSampleIds, now, 0.78)
+      evidenceInsight("hook", first(item.extractedInsights.titleHooks) || item.hookType, sourceSampleIds, now, confidence(0.76)),
+      evidenceInsight("structure", item.contentStructure.slice(0, 3).join(" / "), sourceSampleIds, now, confidence(0.74)),
+      evidenceInsight("tag", item.extractedInsights.tagPatterns.slice(0, 3).join("；") || item.tags.join("、"), sourceSampleIds, now, confidence(0.68)),
+      evidenceInsight("visual", item.imageStyle, sourceSampleIds, now, confidence(0.72)),
+      evidenceInsight("audience", item.audience, sourceSampleIds, now, confidence(0.68)),
+      evidenceInsight("pain_point", item.painPoint, sourceSampleIds, now, confidence(0.7)),
+      evidenceInsight("comment", summarizeCommentConcerns(item.extractedInsights.commentConcerns), sourceSampleIds, now, confidence(0.7)),
+      evidenceInsight("copy", item.creativeSafety?.summary ?? "", sourceSampleIds, now, confidence(0.78))
     ]);
   });
 }
@@ -272,6 +279,7 @@ function normalizeViralCase(item: ViralCase): ViralCase {
   const extractedInsights = normalizeExtractedInsights(item.extractedInsights);
   const contentStructure = uniqueStrings(item.contentStructure).slice(0, 8);
   const imageStyle = item.imageStyle || first(extractedInsights.visualPatterns) || "";
+  const extraction = normalizeExtractionProvenance(item.extraction, item);
   const creativeSafety = normalizeCreativeSafety(item.creativeSafety, {
     title: item.title,
     extractedInsights,
@@ -294,7 +302,77 @@ function normalizeViralCase(item: ViralCase): ViralCase {
     })),
     extractedInsights,
     creativeSafety,
-    extraction: normalizeExtractionProvenance(item.extraction, item)
+    quality: normalizeViralKnowledgeQuality(item.quality, {
+      extractedInsights,
+      creativeSafety,
+      extractionMethod: extraction.method
+    }),
+    extraction
+  };
+}
+
+export function evaluateViralKnowledgeQuality({
+  extractedInsights,
+  creativeSafety,
+  extractionMethod
+}: {
+  extractedInsights: ViralExtractedInsights;
+  creativeSafety?: ViralCreativeSafety;
+  extractionMethod: ViralExtractionProvenance["method"];
+}): ViralKnowledgeQuality {
+  const structuredFields = [
+    extractedInsights.titleHooks,
+    extractedInsights.copyStructures,
+    extractedInsights.tagPatterns,
+    extractedInsights.visualPatterns,
+    extractedInsights.audienceSignals,
+    extractedInsights.painPoints,
+    extractedInsights.emotionalTriggers,
+    extractedInsights.commentConcerns
+  ];
+  const structuredFieldCount = structuredFields.filter((items) => items.length > 0).length;
+  const reusableRuleCount = extractedInsights.reusableRules.length + (creativeSafety?.reusablePatterns.length ?? 0);
+  const safetyRuleCount = extractedInsights.avoidCopying.length
+    + (creativeSafety?.doNotCopy.length ?? 0)
+    + (creativeSafety?.transformationGuidance.length ?? 0);
+  const warnings = [
+    structuredFieldCount < 5 ? "结构化规律不足：建议补充标题、正文、标签、图片、人群或痛点维度。" : "",
+    reusableRuleCount < 3 ? "可复用规则不足：不要只保存原文摘要，应提炼可迁移的创作方法。" : "",
+    safetyRuleCount < 3 ? "防复制约束不足：需要明确哪些标题、正文、图片或数据不能复用。" : "",
+    extractionMethod === "heuristic" ? "当前为启发式提取；配置文本模型后可获得更稳的 AI 结构化规律。" : ""
+  ].filter(Boolean);
+  const score = Math.min(
+    1,
+    structuredFieldCount / 8 * 0.5
+      + Math.min(reusableRuleCount, 6) / 6 * 0.25
+      + Math.min(safetyRuleCount, 6) / 6 * 0.2
+      + (extractionMethod === "model" ? 0.05 : 0)
+  );
+  return {
+    score: Number(score.toFixed(2)),
+    structuredFieldCount,
+    reusableRuleCount,
+    safetyRuleCount,
+    warnings
+  };
+}
+
+function normalizeViralKnowledgeQuality(
+  value: ViralKnowledgeQuality | undefined,
+  fallback: {
+    extractedInsights: ViralExtractedInsights;
+    creativeSafety?: ViralCreativeSafety;
+    extractionMethod: ViralExtractionProvenance["method"];
+  }
+): ViralKnowledgeQuality {
+  const generated = evaluateViralKnowledgeQuality(fallback);
+  if (!value) return generated;
+  return {
+    score: Number.isFinite(value.score) ? Math.max(0, Math.min(value.score, 1)) : generated.score,
+    structuredFieldCount: Number.isFinite(value.structuredFieldCount) ? Math.max(0, value.structuredFieldCount) : generated.structuredFieldCount,
+    reusableRuleCount: Number.isFinite(value.reusableRuleCount) ? Math.max(0, value.reusableRuleCount) : generated.reusableRuleCount,
+    safetyRuleCount: Number.isFinite(value.safetyRuleCount) ? Math.max(0, value.safetyRuleCount) : generated.safetyRuleCount,
+    warnings: value.warnings?.length ? uniqueStrings(value.warnings).slice(0, 8) : generated.warnings
   };
 }
 
@@ -599,13 +677,14 @@ function scoreViralCase(item: ViralCase, queryTokens: string[], input: ViralSear
   const tokenHits = queryTokens.filter((token) => textTokens.includes(token));
   const semanticScore = cosineSimilarity(createLocalEmbedding(queryTokens.join(" ")), item.embedding);
   const metricScore = Math.min(0.25, Math.log10(1 + item.metrics.likes + item.metrics.collects * 1.4 + item.metrics.comments * 0.6) / 20);
+  const qualityScore = Math.min(0.08, (item.quality?.score ?? 0.5) * 0.08);
   const filterBonus = [
     input.topic && includesLoose(item.topic, input.topic),
     input.category && includesLoose(item.category, input.category),
     input.audience && includesLoose(item.audience, input.audience),
     input.painPoint && includesLoose(item.painPoint, input.painPoint)
   ].filter(Boolean).length * 0.08;
-  const score = tokenHits.length * 0.08 + semanticScore * 0.55 + metricScore + filterBonus;
+  const score = tokenHits.length * 0.08 + semanticScore * 0.55 + metricScore + qualityScore + filterBonus;
   return {
     case: item,
     score: Number(score.toFixed(4)),
@@ -614,7 +693,8 @@ function scoreViralCase(item: ViralCase, queryTokens: string[], input: ViralSear
     reasons: [
       tokenHits.length ? `命中关键词：${tokenHits.slice(0, 5).join("、")}` : "",
       semanticScore > 0.1 ? "语义相似" : "",
-      metricScore > 0.05 ? "互动数据较强" : ""
+      metricScore > 0.05 ? "互动数据较强" : "",
+      qualityScore > 0.05 ? "结构化规律质量较高" : ""
     ].filter(Boolean)
   };
 }

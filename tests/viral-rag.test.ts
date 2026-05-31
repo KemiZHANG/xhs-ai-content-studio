@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { retrieveViralKnowledge, rewriteRetrievalQueries, evaluateRagSufficiency } from "@/lib/rag/viral";
 import { createViralKnowledgePackRetriever, createViralKnowledgeRetriever } from "@/lib/rag/retrievers";
-import { createViralCaseFromEvidence, upsertViralCases } from "@/lib/viral-knowledge/store";
+import { createViralCaseFromEvidence, evaluateViralKnowledgeQuality, upsertViralCases } from "@/lib/viral-knowledge/store";
 import type { SampleEvidence } from "@/lib/workflows/one-click";
 
 let originalCwd: string;
@@ -76,6 +76,7 @@ describe("viral RAG retrieval", () => {
 
     expect(pack.rewrittenQueries.length).toBeGreaterThan(1);
     expect(pack.results[0].case.id).toBe(viralCase.id);
+    expect(pack.results[0].case.quality?.score).toBeGreaterThan(0.5);
     expect(pack.filters).toMatchObject({ minCollects: 1000, minShares: 20, sortBy: "collects" });
     expect(pack.filterSummary).toContain("收藏 ≥ 1000");
     expect(pack.filterSummary).toContain("分享 ≥ 20");
@@ -85,6 +86,38 @@ describe("viral RAG retrieval", () => {
     expect(pack.strategyReport.audiencePainPoints.join(" ")).toContain("评论关注点");
     expect(pack.sufficiency.realtimeCount).toBe(4);
     expect(pack.sufficiency.viralCount).toBe(1);
+  });
+
+  it("scores structured viral knowledge quality for safer RAG reuse", async () => {
+    const viralCase = await createViralCaseFromEvidence({
+      sample,
+      topic: "广州咖啡馆",
+      category: "探店"
+    });
+
+    expect(viralCase.quality?.structuredFieldCount).toBeGreaterThanOrEqual(5);
+    expect(viralCase.quality?.safetyRuleCount).toBeGreaterThanOrEqual(3);
+    expect(viralCase.quality?.warnings.join(" ")).toContain("启发式提取");
+
+    const weakQuality = evaluateViralKnowledgeQuality({
+      extractionMethod: "model",
+      extractedInsights: {
+        titleHooks: [],
+        copyStructures: [],
+        tagPatterns: [],
+        visualPatterns: [],
+        audienceSignals: [],
+        painPoints: [],
+        emotionalTriggers: [],
+        commentConcerns: [],
+        reusableRules: [],
+        avoidCopying: []
+      }
+    });
+
+    expect(weakQuality.score).toBeLessThan(0.2);
+    expect(weakQuality.warnings.join(" ")).toContain("可复用规则不足");
+    expect(weakQuality.warnings.join(" ")).toContain("防复制约束不足");
   });
 
   it("marks evidence insufficient when key dimensions are missing", () => {

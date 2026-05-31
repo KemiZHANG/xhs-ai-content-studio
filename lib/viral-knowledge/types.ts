@@ -35,6 +35,14 @@ export type ViralExtractionProvenance = {
   fallbackReason?: string;
 };
 
+export type ViralKnowledgeQuality = {
+  score: number;
+  structuredFieldCount: number;
+  reusableRuleCount: number;
+  safetyRuleCount: number;
+  warnings: string[];
+};
+
 export type ViralCase = {
   id: string;
   platform: ViralPlatform;
@@ -56,6 +64,7 @@ export type ViralCase = {
   embedding: number[];
   extractedInsights: ViralExtractedInsights;
   creativeSafety?: ViralCreativeSafety;
+  quality?: ViralKnowledgeQuality;
   extraction: ViralExtractionProvenance;
 };
 
