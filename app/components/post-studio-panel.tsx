@@ -2641,6 +2641,7 @@ function labelForCitationField(field: string): string {
 
 function labelForAgentCard(type: string): string {
   const labels: Record<string, string> = {
+    director_summary: "导演摘要",
     agent_plan: "Agent 计划",
     stage_guidance: "下一步",
     evidence_summary: "证据摘要",

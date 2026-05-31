@@ -1313,6 +1313,9 @@ function buildCardsFromTurn(
   plan?: AgentPlan
 ): AgentResponseCard[] {
   const cards: AgentResponseCard[] = [];
+  if (plan) {
+    cards.push(buildDirectorSummaryCard({ workspace, currentDraft, postProject, plan }));
+  }
   if (plan && shouldShowAgentPlanCard(plan)) {
     const plannedSteps = plan.steps.map((step, index) => ({
       index: index + 1,
@@ -1503,6 +1506,90 @@ function buildCardsFromTurn(
     });
   }
   return cards;
+}
+
+function buildDirectorSummaryCard({
+  workspace,
+  currentDraft,
+  postProject,
+  plan
+}: {
+  workspace: WorkspaceState;
+  currentDraft?: DraftRecord | null;
+  postProject?: PostProject | null;
+  plan: AgentPlan;
+}): AgentResponseCard {
+  const stage = postProject?.currentStage ?? inferStageFromWorkspace(workspace);
+  const guidance = getPostStageGuidance(stage, postProject?.allowedActions ?? []);
+  const readiness = postProject ? buildPostReadinessReport(postProject) : null;
+  const primaryAction = readiness?.nextAction ?? guidance.primaryAction;
+  const actionLabel = primaryAction ? postActionLabels[primaryAction] ?? primaryAction : "补充创作信息";
+  const plannedActions = plan.steps.map((step) => labelForAgentPlanAction(step.action));
+  const did = plannedActions.length ? plannedActions.slice(0, 3).join(" → ") : "理解当前需求";
+  const why = buildDirectorReason({ plan, postProject, workspace, currentDraft });
+  const summary = [
+    `阶段：${guidance.title}`,
+    `本轮：${did}`,
+    `下一步：${actionLabel}`
+  ].join(" · ");
+
+  return {
+    id: "card-director-summary",
+    type: "director_summary",
+    title: plan.intent === "ask" ? "我先帮你把信息补齐" : "我会按当前项目阶段推进",
+    summary,
+    data: {
+      stage,
+      stageTitle: guidance.title,
+      stageDescription: guidance.description,
+      intent: plan.intent,
+      intentConfidence: inferIntentConfidence(plan, workspace),
+      did: plannedActions,
+      why,
+      nextAction: primaryAction,
+      nextActionLabel: actionLabel,
+      needsUserInput: plan.intent === "ask" || plan.steps.some((step) => step.action === "askClarifyingQuestion"),
+      progress: readiness?.progress,
+      blockerCount: readiness?.blockers.length ?? 0,
+      hasDraft: Boolean(currentDraft ?? workspace.currentDraft ?? postProject?.copyDraft ?? postProject?.finalPost),
+      evidenceCount: postProject?.evidencePack.insights.length ?? 0
+    }
+  };
+}
+
+function buildDirectorReason({
+  plan,
+  postProject,
+  workspace,
+  currentDraft
+}: {
+  plan: AgentPlan;
+  postProject?: PostProject | null;
+  workspace: WorkspaceState;
+  currentDraft?: DraftRecord | null;
+}): string {
+  if (plan.intent === "ask") {
+    return "信息不足或意图置信度偏低，先澄清可以避免搜错主题、写偏文案或误触发发布。";
+  }
+  if (plan.steps.some((step) => step.action === "retrieveViralKnowledge")) {
+    return "同时参考实时研究和爆款库规律，但只提取结构、钩子和风格，不复制原文或原图。";
+  }
+  if (plan.steps.some((step) => step.action === "preparePublish" || step.action === "schedulePublish")) {
+    return "发布属于真实外部动作，必须先生成确认单并核对账号、版本、图片、可见范围和时间。";
+  }
+  if (plan.steps.some((step) => step.action === "generateDraft" || step.action === "planVisuals")) {
+    return "文案和图片方向会共享同一个 CreativeBrief，并保留 basedOnEvidenceIds 方便追溯。";
+  }
+  if (plan.steps.some((step) => step.action === "runQualityGate")) {
+    return "进入发布前先检查图文一致、证据引用、广告感、夸张功效和版本快照。";
+  }
+  if (postProject?.currentStage && postProject.currentStage !== "empty") {
+    return "当前已经有 PostProject 上下文，所以可以沿着阶段继续推进，不需要你重复完整需求。";
+  }
+  if (currentDraft ?? workspace.currentDraft) {
+    return "当前已有草稿上下文，后续修改会围绕这篇内容而不是另起一篇。";
+  }
+  return "我会先读取当前项目状态，再决定执行、追问或生成下一步计划。";
 }
 
 function shouldShowAgentPlanCard(plan: AgentPlan): boolean {

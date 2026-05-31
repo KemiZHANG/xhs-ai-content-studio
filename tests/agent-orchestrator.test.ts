@@ -54,6 +54,10 @@ describe("agent orchestrator", () => {
     expect(result.needsUserInput).toBe(true);
     expect(result.questions.join(" ")).toContain("具体主题");
     expect(result.quickActions.map((action) => action.action)).toContain("search_research");
+    expect(result.cards.find((card) => card.type === "director_summary")).toMatchObject({
+      id: "card-director-summary",
+      title: "我先帮你把信息补齐"
+    });
     expect(result.cards.find((card) => card.type === "stage_guidance")).toMatchObject({
       id: "card-stage-guidance",
       type: "stage_guidance"
@@ -204,6 +208,12 @@ describe("agent orchestrator", () => {
     expect(result.intent).toBe("create_creative_brief");
     expect(result.needsUserInput).toBe(false);
     expect(result.postProject?.creativeBrief).toBeTruthy();
+    expect(result.cards.find((card) => card.type === "director_summary")?.summary).toContain("下一步：生成文案");
+    expect(result.cards.find((card) => card.type === "director_summary")?.data).toMatchObject({
+      intent: "create_creative_brief",
+      stage: "brief_ready",
+      nextAction: "generate_copy"
+    });
     expect(result.cards.map((card) => card.type)).toContain("creative_brief");
     expect(result.quickActions.map((action) => action.action)).toContain("generate_copy");
     expect(runChatAgent).not.toHaveBeenCalled();

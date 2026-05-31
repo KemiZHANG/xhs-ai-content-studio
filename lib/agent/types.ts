@@ -264,6 +264,7 @@ export type AgentTurnResult = {
 };
 
 export type AgentResponseCardType =
+  | "director_summary"
   | "agent_plan"
   | "stage_guidance"
   | "evidence_summary"
