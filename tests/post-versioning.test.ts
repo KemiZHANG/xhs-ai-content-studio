@@ -78,6 +78,27 @@ describe("post versioning status", () => {
     expect(status.needsQualityGate).toBe(true);
     expect(status.warnings.join(" ")).toContain("最终帖子快照已落后");
   });
+
+  it("does not treat a failed Quality Gate as fresh even when the final post matches the canvas", () => {
+    const failedQualityProject = {
+      ...baseProject,
+      qualityCheck: {
+        ...baseProject.qualityCheck,
+        canPublish: false,
+        issues: ["图片方向和文案证据不一致"]
+      }
+    };
+    const status = getPostVersionStatus(failedQualityProject);
+    const snapshot = buildPublishVersionSnapshot(failedQualityProject);
+
+    expect(status.finalPostMatchesCanvas).toBe(true);
+    expect(status.qualityGateFresh).toBe(false);
+    expect(status.needsQualityGate).toBe(true);
+    expect(status.warnings.join(" ")).toContain("Quality Gate 未通过");
+    expect(snapshot.qualityGateFresh).toBe(false);
+    expect(snapshot.qualityCanPublish).toBe(false);
+  });
+
   it("builds a publish confirmation snapshot from the current canvas versions", () => {
     const snapshot = buildPublishVersionSnapshot(baseProject);
 

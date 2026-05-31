@@ -51,13 +51,15 @@ export function getPostVersionStatus(project: Pick<
       sameStringSet(finalPost.imageIds ?? [], selectedImages) &&
       sameStringSet(safeStringArray(finalPost.imagePromptVersionIds), activeImagePromptVersionIds)
   );
-  const qualityGateFresh = Boolean(project.qualityCheck && finalPostMatchesCanvas);
+  const hasQualityCheck = Boolean(project.qualityCheck);
+  const qualityGateFresh = Boolean(project.qualityCheck?.canPublish && finalPostMatchesCanvas);
   const warnings = [
     !project.copyDraft ? "还没有当前文案版本" : "",
     !selectedImages.length ? "还没有选中发布图片" : "",
     project.finalPost && !finalPostMatchesCanvas ? "最终帖子快照已落后于当前画布" : "",
-    project.qualityCheck && !qualityGateFresh ? "Quality Gate 已失效，需要重新检查" : "",
-    !project.qualityCheck ? "Quality Gate 尚未运行" : ""
+    project.qualityCheck && !project.qualityCheck.canPublish ? "Quality Gate 未通过，不能进入发布确认" : "",
+    project.qualityCheck?.canPublish && !qualityGateFresh ? "Quality Gate 已失效，需要重新检查" : "",
+    !hasQualityCheck ? "Quality Gate 尚未运行" : ""
   ].filter(Boolean);
 
   return {
