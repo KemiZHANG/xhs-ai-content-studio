@@ -2130,6 +2130,10 @@ ${JSON.stringify(selectedSamples, null, 2)}
       ...evidenceReadyProject.copyVersions.filter((version) => version.id !== copyVersion.id),
       copyVersion
     ],
+    finalPost: undefined,
+    publishPlan: null,
+    qualityCheck: undefined,
+    auditStatus: "unchecked",
     currentStage: "copy_ready"
   });
   const workspace = await updateWorkspaceState({
@@ -2142,6 +2146,7 @@ ${JSON.stringify(selectedSamples, null, 2)}
   });
 
   const referenced = summarizeEvidenceCitationReport(updatedProject, draft.basedOnEvidenceIds ?? evidenceIds, draft.evidenceReferences);
+  const nextStep = formatDraftNextStep(updatedProject);
   return {
     answer: [
       "已基于当前 PostProject、CreativeBrief、实时证据和爆款库规律生成原创草稿。",
@@ -2151,12 +2156,31 @@ ${JSON.stringify(selectedSamples, null, 2)}
       "",
       `标签：${draft.tags.map((tag) => `#${tag}`).join(" ")}`,
       "",
-      referenced
+      referenced,
+      nextStep
     ].filter(Boolean).join("\n"),
     currentDraft: draftRecord,
     workspace,
     postProject: updatedProject
   };
+}
+
+function formatDraftNextStep(project: PostProject): string {
+  const readiness = buildPostReadinessReport(project);
+  const nextAction = readiness.nextAction;
+  if (nextAction === "plan_visuals" || nextAction === "generate_image_prompts") {
+    return "下一步建议：先生成图片方向和图片提示词，让配图继续沿用同一份 CreativeBrief。";
+  }
+  if (nextAction === "generate_images" || nextAction === "generate_cards" || nextAction === "select_images") {
+    return "下一步建议：生成或选择发布图片，再把文案和图片装配成最终帖子。";
+  }
+  if (nextAction === "assemble_post") {
+    return "下一步建议：把当前文案和选中图片组装成最终帖子，然后运行发布前检查。";
+  }
+  if (nextAction === "run_quality_gate") {
+    return "下一步建议：运行 Quality Gate，检查图文一致、证据追溯和发布风险。";
+  }
+  return "下一步建议：在右侧成果画布确认当前文案版本，再继续图片方向、选图或发布检查。";
 }
 
 async function maybeHandleDraftRevisionTurn(
