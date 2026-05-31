@@ -1255,10 +1255,13 @@ function buildPublishCheckCard(
   const confirmed = required.filter((item) => item.confirmed);
   const versionSnapshot = publishPlan.versionSnapshot ?? (postProject ? buildPublishVersionSnapshot(postProject) : undefined);
   const evidenceSummary = publishPlan.evidenceCitationSummary?.summary;
+  const guardrailBlockers = (publishPlan.guardrailResults ?? []).filter(Boolean);
   const blockers = [
+    ...guardrailBlockers,
     ...checklist.filter((item) => item.required && !item.confirmed).map((item) => item.label),
     ...(versionSnapshot?.warnings ?? [])
   ].slice(0, 6);
+  const isBlockedOrFailed = publishPlan.status === "blocked" || publishPlan.status === "failed";
   const summary = [
     `状态：${publishPlan.status}`,
     `人工确认：${confirmed.length}/${required.length}`,
@@ -1267,7 +1270,13 @@ function buildPublishCheckCard(
     blockers.length ? `待处理：${blockers.slice(0, 3).join("、")}` : ""
   ].filter(Boolean).join("；");
   return {
-    title: publishPlan.status === "awaiting_approval" ? "发布确认待人工核对" : "发布确认",
+    title: publishPlan.status === "awaiting_approval"
+      ? "发布确认待人工核对"
+      : publishPlan.status === "blocked"
+        ? "发布准备被拦截"
+        : publishPlan.status === "failed"
+          ? "发布失败待处理"
+          : "发布确认",
     summary,
     data: {
       publishPlan,
@@ -1287,7 +1296,9 @@ function buildPublishCheckCard(
       blockers,
       nextActions: publishPlan.status === "awaiting_approval"
         ? ["review_publish_confirmation", "confirm_publish", "cancel_publish"]
-        : ["review_publish_status"]
+        : isBlockedOrFailed
+          ? ["run_quality_gate", "revise_copy", "select_images"]
+          : ["review_publish_status"]
     }
   };
 }

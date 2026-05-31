@@ -150,6 +150,59 @@ describe("agent orchestrator", () => {
     expect(result.trace.events.map((event) => event.type)).toContain("tool_called");
   });
 
+  it("surfaces blocked publish reasons and recovery actions when policy prevents publishing", async () => {
+    let publishCalls = 0;
+    const result = await runAgentTurn({
+      message: "现在帮我发布",
+      conversationId: "chat-blocked-publish",
+      settings: { ...defaultSettings, agentPublishPolicy: "draft_only" },
+      history: [],
+      currentDraft: {
+        id: "draft-1",
+        updatedAt: "2026-05-21T00:00:00.000Z",
+        draft: {
+          title: "A useful title",
+          content: "Original body content",
+          tags: ["tag"],
+          structure: [],
+          imagePrompt: ""
+        },
+        images: [{ path: path.join(tempDir, "generated-assets", "generated", "draft.png") }],
+        visibility: defaultSettings.defaultVisibility
+      },
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => {
+          publishCalls += 1;
+          return { ok: true };
+        }
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(publishCalls).toBe(0);
+    expect(result.workspace.publishPlan?.status).toBe("blocked");
+    const publishCard = result.cards.find((card) => card.id === "card-publish-check");
+    expect(publishCard?.title).toBe("发布准备被拦截");
+    expect(publishCard?.summary).toContain("draft only mode blocks external publishing");
+    expect(publishCard?.data).toMatchObject({
+      blockers: expect.arrayContaining(["draft only mode blocks external publishing"]),
+      nextActions: ["run_quality_gate", "revise_copy", "select_images"]
+    });
+    expect(result.quickActions.map((action) => action.action)).toEqual([
+      "run_quality_gate",
+      "revise_copy",
+      "select_images"
+    ]);
+  });
+
   it("asks for a draft instead of researching when publish is requested without a draft", async () => {
     const runChatAgent = vi.fn(async () => ({ answer: "legacy answer" }));
     await resetPostProject({
