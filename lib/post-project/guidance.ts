@@ -39,7 +39,7 @@ const stageGuidance: Record<PostStage, PostStageGuidance> = {
   },
   copy_ready: {
     title: "规划图片方向",
-    description: "文案已经可用，下一步让图片方向和文案共享同一个 CreativeBrief。",
+    description: "文案已经可用，下一步让图片方向和文案共享同一份 CreativeBrief。",
     primaryAction: "plan_visuals"
   },
   visual_planning: {

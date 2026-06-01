@@ -52,7 +52,7 @@ export function buildPostNextStepCoach({
 }
 
 function whyForAction(action: PostAction, blockerLabel?: string): string {
-  const blocker = blockerLabel ? `当前卡住的是“${blockerLabel}”，` : "";
+  const blocker = blockerLabel ? `当前卡住的是「${blockerLabel}」，` : "";
   const reasons: Partial<Record<PostAction, string>> = {
     start_brief: `${blocker}先把主题、人群和目标说清楚，后续研究、文案和图片才会围绕同一篇帖子推进。`,
     update_brief_inputs: `${blocker}补齐需求能减少 Agent 猜测，避免生成内容偏离你的账号定位。`,
