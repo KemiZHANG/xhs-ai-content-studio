@@ -142,7 +142,7 @@ export function ChatPanel({
               </button>
             ))
           ) : (
-            <p className="muted">暂无对话，发一句需求就会自动保存。</p>
+            <p className="muted">暂无对话，发送一句需求后会自动保存。</p>
           )}
         </div>
       </aside>
@@ -171,7 +171,10 @@ export function ChatPanel({
             <div>
               <span>当前文案草稿</span>
               <strong>{currentDraft.draft.title}</strong>
-              <p>{currentDraft.draft.content.slice(0, 88)}{currentDraft.draft.content.length > 88 ? "..." : ""}</p>
+              <p>
+                {currentDraft.draft.content.slice(0, 88)}
+                {currentDraft.draft.content.length > 88 ? "..." : ""}
+              </p>
             </div>
             <div className="actionRow">
               <button className="secondaryButton" onClick={onOpenImageStudio} type="button">
@@ -199,7 +202,7 @@ export function ChatPanel({
                     }
                     onDraftCommand={onDraftCommand}
                     onCopyStudio={onOpenCopyWorkspace}
-                    onImageStudio={() => onOpenImageStudio()}
+                    onImageStudio={onOpenImageStudio}
                     onOpenPublish={onOpenPublish}
                   />
                 ) : null}
