@@ -1638,6 +1638,16 @@ export function PostStudioPanel({
                   <p>{publishSummary.nextStepLine}</p>
                   <small>{publishSummary.detailCompressionLine}</small>
                 </div>
+                {publishSummary.confirmationItems.length ? (
+                  <div className="publishConfirmationChips" aria-label="人工确认清单摘要">
+                    {publishSummary.confirmationItems.slice(0, 6).map((item) => (
+                      <span className={item.confirmed ? "confirmed" : item.required ? "required" : "optional"} key={`${item.label}-${item.required}`}>
+                        <b>{item.confirmed ? "已确认" : item.required ? "待确认" : "可选"}</b>
+                        {item.label}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
                 {publishSummary.visibleBlockers.length ? (
                   <ul>
                     {publishSummary.visibleBlockers.map((blocker) => (

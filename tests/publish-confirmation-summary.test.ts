@@ -192,6 +192,10 @@ describe("publish confirmation summary", () => {
     expect(summary.decisionLine).toContain("等待人工确认");
     expect(summary.nextStepLine).toContain("确认图片");
     expect(summary.checklistLine).toBe("人工确认 1/2 项，待确认：确认图片");
+    expect(summary.confirmationItems).toEqual([
+      { label: "确认账号", confirmed: true, required: true },
+      { label: "确认图片", confirmed: false, required: true }
+    ]);
     expect(summary.accountSafetyLine).toContain("http://localhost:18060/mcp");
     expect(summary.versionLine).toContain("版本快照已锁定");
   });

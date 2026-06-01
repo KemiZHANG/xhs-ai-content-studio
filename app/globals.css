@@ -5743,6 +5743,47 @@ textarea {
   line-height: 1.45;
 }
 
+.publishConfirmationChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.publishConfirmationChips span {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(30, 27, 23, 0.08);
+  border-radius: 999px;
+  color: var(--ink);
+  display: inline-flex;
+  font-size: 11px;
+  gap: 6px;
+  line-height: 1;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 0 9px;
+}
+
+.publishConfirmationChips b {
+  border-radius: 999px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 850;
+  padding: 3px 6px;
+}
+
+.publishConfirmationChips .confirmed b {
+  background: var(--accent);
+}
+
+.publishConfirmationChips .required b {
+  background: #b96b19;
+}
+
+.publishConfirmationChips .optional b {
+  background: #7c766e;
+}
+
 .publishSnapshotDetails {
   background: rgba(255, 255, 255, 0.5);
   border: 1px solid rgba(30, 27, 23, 0.08);

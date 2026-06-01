@@ -13,6 +13,7 @@ export type PublishConfirmationSummaryPlan = {
     required?: boolean;
     confirmed?: boolean;
     label?: string;
+    detail?: string;
   }>;
   versionSnapshot?: {
     qualityGateFresh?: boolean;
@@ -59,6 +60,11 @@ export type PublishConfirmationSummary = {
   decisionLine: string;
   nextStepLine: string;
   detailCompressionLine: string;
+  confirmationItems: Array<{
+    label: string;
+    confirmed: boolean;
+    required: boolean;
+  }>;
   visibleBlockers: string[];
   riskLevel: "ok" | "warn" | "blocked";
   blockers: string[];
@@ -95,6 +101,13 @@ export function buildPublishConfirmationSummary({
   ]);
   const evidenceSourceCounts = countEvidenceSources(project);
   const requiredChecklist = activePlan?.confirmationChecklist?.filter((item) => item.required) ?? [];
+  const confirmationItems = (activePlan?.confirmationChecklist ?? [])
+    .filter((item) => item.label?.trim())
+    .map((item) => ({
+      label: item.label!.trim(),
+      confirmed: item.confirmed === true,
+      required: item.required === true
+    }));
   const confirmedChecklist = requiredChecklist.filter((item) => item.confirmed).length;
   const pendingChecklistLabels = requiredChecklist
     .filter((item) => !item.confirmed)
@@ -174,6 +187,7 @@ export function buildPublishConfirmationSummary({
       blockers
     }),
     detailCompressionLine: "默认只显示发布结论、主要阻塞项和下一步；账号、版本、证据、质量分与确认清单已收进详细发布快照。",
+    confirmationItems,
     visibleBlockers,
     riskLevel,
     blockers
