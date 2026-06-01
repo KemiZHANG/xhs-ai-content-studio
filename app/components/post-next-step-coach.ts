@@ -55,7 +55,7 @@ function whyForAction(action: PostAction, blockerLabel?: string): string {
   const blocker = blockerLabel ? `当前卡住的是“${blockerLabel}”，` : "";
   const reasons: Partial<Record<PostAction, string>> = {
     start_brief: `${blocker}先把主题、人群和目标说清楚，后续研究、文案和图片才会围绕同一篇帖子推进。`,
-    update_brief_inputs: `${blocker}补齐需求能减少 Agent 猜测，避免生成出来的内容偏离你的账号定位。`,
+    update_brief_inputs: `${blocker}补齐需求能减少 Agent 猜测，避免生成内容偏离你的账号定位。`,
     search_research: `${blocker}先拿真实小红书样本，才能把后续结论标记为证据，而不是凭空建议。`,
     retrieve_viral_knowledge: `${blocker}实时样本解决“现在流行什么”，爆款库补长期可复用的标题、结构和图片规律。`,
     create_creative_brief: `${blocker}CreativeBrief 是文案和图片共用的策略层，先生成它能避免图文割裂。`,
@@ -94,7 +94,7 @@ function outcomeForAction(action: PostAction): string {
     request_publish_confirmation: "完成后只生成待人工确认的发布单，不会直接发到小红书。",
     schedule_publish: "完成后生成待人工确认的定时发布单。",
     publish_now: "完成后生成待人工确认的立即发布单。",
-    revise_copy: "完成后会生成/更新文案版本，并使旧发布确认单失效。",
+    revise_copy: "完成后会生成或更新文案版本，并使旧发布确认单失效。",
     update_brief_inputs: "完成后 Agent 会重新评估是否需要研究、Brief 或直接创作。",
     start_brief: "完成后得到一个干净的新 PostProject。",
     summarize_evidence: "完成后右侧证据面板只保留关键结论，原始样本进详情。",

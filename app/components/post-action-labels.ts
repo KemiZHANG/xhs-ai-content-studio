@@ -14,7 +14,7 @@ const actionLabels: Record<PostAction, string> = {
   generate_image_prompts: "生成图片 Prompt",
   generate_images: "生成图片",
   generate_cards: "生成卡片",
-  select_images: "选图",
+  select_images: "选择图片",
   assemble_post: "组装帖子",
   run_quality_gate: "发布检查",
   request_publish_confirmation: "生成发布确认单",

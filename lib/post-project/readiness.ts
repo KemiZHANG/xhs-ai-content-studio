@@ -111,9 +111,9 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
         ? `已合入 ${viralInsights.length} 条历史爆款规律`
         : hasBrief
           ? "当前 Brief 已生成；如需补强可随时刷新爆款库 RAG"
-        : hasEvidence
-          ? "把历史爆款库规律合入 evidencePack，补足标题钩子、结构、标签和图片风格"
-          : "先完成实时研究，再检索历史爆款库",
+          : hasEvidence
+            ? "把历史爆款库规律合入 evidencePack，补足标题钩子、正文结构、标签组合和图片风格"
+            : "先完成实时研究，再检索历史爆款库",
       action: hasEvidence && !hasViralRag && !hasBrief && actionSet.has("retrieve_viral_knowledge")
         ? "retrieve_viral_knowledge"
         : undefined
@@ -122,7 +122,7 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
       id: "brief",
       label: "创作策略",
       ready: hasBrief,
-      detail: hasBrief ? "CreativeBrief 已生成" : "把证据压缩成目标人群、角度和视觉方向",
+      detail: hasBrief ? "CreativeBrief 已生成" : "把证据压缩成目标人群、内容角度和视觉方向",
       action: actionSet.has("create_creative_brief") ? "create_creative_brief" : undefined
     },
     {
@@ -144,10 +144,10 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
       action: hasVisualPlan && !hasConfirmedVisualDirection && actionSet.has("confirm_visual_direction")
         ? "confirm_visual_direction"
         : actionSet.has("plan_visuals")
-        ? "plan_visuals"
-        : actionSet.has("generate_image_prompts")
-          ? "generate_image_prompts"
-          : undefined
+          ? "plan_visuals"
+          : actionSet.has("generate_image_prompts")
+            ? "generate_image_prompts"
+            : undefined
     },
     {
       id: "images",
@@ -167,7 +167,7 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
       label: "成稿装配",
       ready: finalPostCurrent,
       detail: finalPostCurrent
-        ? "文案和图片已绑定为同一篇帖子"
+        ? "文案和图片已绑定为同一篇最终帖子"
         : hasFinalPost
           ? "最终帖子快照已落后于当前画布，需要重新装配"
           : "把当前草稿和选中图片装配成最终帖子",
