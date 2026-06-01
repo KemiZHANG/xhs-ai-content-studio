@@ -132,7 +132,7 @@ describe("agent tool registry", () => {
     const rejected = await registry.call("knowledge.saveViralCase", {
       sample: weakSample,
       topic: "Weak topic",
-      category: "鎺㈠簵"
+      category: "test"
     }) as {
       ok: boolean;
       data: { candidateReview: { shouldSave: boolean }; skippedSampleIds: string[] };
@@ -147,7 +147,7 @@ describe("agent tool registry", () => {
     const forced = await registry.call("knowledge.saveViralCase", {
       sample: weakSample,
       topic: "Weak topic",
-      category: "鎺㈠簵",
+      category: "test",
       force: true
     }) as {
       ok: boolean;

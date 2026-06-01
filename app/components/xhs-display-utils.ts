@@ -26,7 +26,7 @@ export function subtitleForSection(section: Section): string {
     jobs: "追踪搜索、分析、生成图片和发布任务的后台进度。",
     assets: "管理产品原图、参考图和生成结果；主要从 Post Studio 上传和选择使用。",
     imageStudio: "在 AI 生图和图文卡片之间切换，产出可进入 Post Studio 的视觉素材。",
-    chat: "旧版自然语言工作台；新创作建议回到 Post Studio 完成。",
+    chat: "旧版自然语言工作台；新的创作建议回到 Post Studio 完成。",
     publish: "旧版发布装配入口；当前项目发布请优先使用 Post Studio，真实发布前仍需先生成确认单。",
     audit: "回看发布预览、确认单、阻止原因、真实发布和定时发布记录。",
     history: "回看研究记录、证据、草稿和生成结果。",
