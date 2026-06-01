@@ -890,11 +890,28 @@ async function maybeHandleClarifyingTurn(
     answer: [
       "我先不急着执行工具，当前信息还不够明确。",
       "为了避免搜错主题、生成跑偏，先补充下面这些信息即可：",
-      ...questions.map((question, index) => `${index + 1}. ${question}`)
+      ...questions.map((question, index) => `${index + 1}. ${question}`),
+      buildClarifyingReplyTemplate(questions)
     ].join("\n"),
     questions,
     workspace
   };
+}
+
+function buildClarifyingReplyTemplate(questions: string[]): string {
+  const joined = questions.join(" ");
+  const slots = [
+    /主题|研究|创作/.test(joined) ? "主题：" : "",
+    /目标人群|人群/.test(joined) ? "目标人群：" : "",
+    /目标是什么|内容目标|发布前|发布/.test(joined) ? "内容目标：" : "",
+    /卖点|体验点|语气|禁忌|产品|账号信息/.test(joined) ? "卖点/语气/禁忌：" : "",
+    /图片|产品图|参考图|上传/.test(joined) ? "图片要求：" : ""
+  ].filter(Boolean);
+  const uniqueSlots = Array.from(new Set(slots));
+  if (!uniqueSlots.length) {
+    return "你可以直接回复：下一步我想做：继续研究 / 生成文案 / 规划图片 / 发布检查。";
+  }
+  return `你可以直接回复：${uniqueSlots.join("；")}。`;
 }
 
 function buildClarifyingQuestions(plan: AgentPlan, workspace: WorkspaceState, postProject?: PostProject | null): string[] {

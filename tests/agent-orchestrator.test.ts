@@ -48,6 +48,7 @@ describe("agent orchestrator", () => {
     });
 
     expect(result.answer).toContain("信息还不够明确");
+    expect(result.answer).toContain("你可以直接回复：主题：");
     expect(result.reply).toContain("信息还不够明确");
     expect(result.intent).toBe("ask");
     expect(result.intentConfidence).toBeLessThan(0.7);
