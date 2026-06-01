@@ -69,6 +69,7 @@ import { buildPostSideDigest } from "@/app/components/post-side-digest";
 import { selectRunningJobForWorkspace } from "@/app/components/job-display";
 import { buildCreationProvenance, type CreationProvenanceCard } from "@/app/components/creation-provenance";
 import { buildBriefTabSummary, buildImageTabSummary, buildPublishTabSummary, type StudioTabSummary } from "@/app/components/studio-tab-summary";
+import { buildVersionSwitchGuidance } from "@/app/components/version-switch-guidance";
 import { buildCreatorMemoryDigest } from "@/lib/agent/memory-digest";
 import { resolvePostCreationTopic, resolvePostStudioTitle } from "@/app/components/post-studio-title";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
@@ -329,6 +330,18 @@ export function PostStudioPanel({
     ...(project?.creativeBrief?.basedOnEvidenceIds ?? [])
   ]);
   const versionStatus = project ? getPostVersionStatus(project) : null;
+  const copyVersionGuidance = buildVersionSwitchGuidance({
+    kind: "copy",
+    hasPublishPlan: Boolean(pendingPublish || project?.publishPlan),
+    qualityGateFresh: versionStatus?.qualityGateFresh === true,
+    finalPostExists: Boolean(project?.finalPost)
+  });
+  const promptVersionGuidance = buildVersionSwitchGuidance({
+    kind: "prompt",
+    hasPublishPlan: Boolean(pendingPublish || project?.publishPlan),
+    qualityGateFresh: versionStatus?.qualityGateFresh === true,
+    finalPostExists: Boolean(project?.finalPost)
+  });
   const versionDiff = project ? getPostVersionDiffReport(project) : null;
   const canvasVersionDisplay = buildCanvasVersionDisplay(versionStatus, versionDiff);
   const citationReport = project && citationEvidenceIds.length
@@ -784,7 +797,7 @@ export function PostStudioPanel({
                 <section className="versionSwitcher" aria-label="文案版本">
                   <div>
                     <strong>文案版本</strong>
-                    <span>选择一个版本会回填到画布，发布前仍需确认。</span>
+                    <span>{copyVersionGuidance.detail}</span>
                   </div>
                   <div>
                     {copyVersions.slice(-4).map((version, index) => (
@@ -794,6 +807,7 @@ export function PostStudioPanel({
                           <span>{formatDateTime(version.createdAt)} · 证据 {version.basedOnEvidenceIds.length}</span>
                         </div>
                         <p>{summarizeDraftDiff(publishDraft, version.value)}</p>
+                        <small className={`versionSwitchHint ${copyVersionGuidance.state}`}>{copyVersionGuidance.label}</small>
                         <button
                           type="button"
                           onClick={() => {
@@ -851,7 +865,7 @@ export function PostStudioPanel({
                 <section className="versionSwitcher compactVersionSwitcher" aria-label="图片 Prompt 版本">
                   <div>
                     <strong>Prompt 版本</strong>
-                    <span>用于 Post Studio 图片面板或高级图片工具继续生图。</span>
+                    <span>{promptVersionGuidance.detail}</span>
                   </div>
                   <div>
                     {imagePromptVersions.slice(-3).map((version, index) => (
@@ -861,6 +875,7 @@ export function PostStudioPanel({
                           <span>{formatDateTime(version.createdAt)} · 证据 {version.basedOnEvidenceIds.length}</span>
                         </div>
                         <p>{summarizePromptDiff(latestImagePrompt, version.value.prompt)}</p>
+                        <small className={`versionSwitchHint ${promptVersionGuidance.state}`}>{promptVersionGuidance.label}</small>
                         {version.value.negativePrompt ? <small>避免：{version.value.negativePrompt.slice(0, 90)}</small> : null}
                         <button
                           type="button"
