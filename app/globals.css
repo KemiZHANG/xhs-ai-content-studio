@@ -7347,16 +7347,18 @@ textarea {
 }
 
 .advancedEntry {
-  border-top: 1px solid var(--line);
-  margin-top: 14px;
-  padding-top: 14px;
+  border: 1px dashed color-mix(in srgb, var(--line) 85%, transparent);
+  border-radius: 12px;
+  margin-top: 12px;
+  padding: 10px;
 }
 
 .advancedEntry summary {
-  align-items: flex-start;
+  align-items: center;
   cursor: pointer;
-  display: grid;
-  gap: 4px;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
   list-style: none;
 }
 
@@ -7366,8 +7368,15 @@ textarea {
 
 .advancedEntry summary span {
   color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  max-width: 260px;
+  text-align: right;
+}
+
+.advancedEntry summary strong {
+  color: var(--muted);
   font-size: 12px;
-  line-height: 1.5;
 }
 
 .advancedEntry > div {

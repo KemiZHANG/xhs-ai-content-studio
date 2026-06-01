@@ -1112,8 +1112,16 @@ export default function Home() {
       ...current,
       extraPrompt: imageBrief || current.extraPrompt
     }));
-    setSection("imageStudio");
-    setNotice("已带入图片创作简报，只包含图片风格和生成要求。");
+    setChatInput(
+      [
+        "请基于当前 PostProject 的证据、爆款库规律和 CreativeBrief 规划图片方向，并生成可执行的图片 Prompt，不要重新搜索。",
+        imageBrief ? `图片简报：${imageBrief}` : "图片简报：请先提炼封面、正文图和产品/场景图方向。",
+        "请说明参考了哪些视觉证据，并提醒我是否需要上传产品图或参考图。"
+      ].join("\n")
+    );
+    setSection("flow");
+    focusPostStudioTab("references");
+    setNotice("已把图片创作简报放回 Post Studio。你可以上传产品图/参考图，或直接让 Agent 规划图片方向。");
   }
 
   async function openPublishAssembly(draft?: NonNullable<WorkflowResult["draft"]>, options: { stayInStudio?: boolean } = {}) {

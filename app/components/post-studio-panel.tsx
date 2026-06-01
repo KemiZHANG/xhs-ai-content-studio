@@ -1970,27 +1970,27 @@ export function PostStudioPanel({
             </SideSection>
           ) : null}
 
-          <details className="advancedEntry">
+          <details className="advancedEntry compactAdvancedEntry">
             <summary>
-              <strong>备用工具</strong>
-              <span>主流程已经合并到 Post Studio。只有需要单独调试、批量查看或使用旧工具时再展开。</span>
+              <strong>高级/调试工具</strong>
+              <span>日常创作留在 Post Studio；只有排查任务或单独批量处理时再展开。</span>
             </summary>
             <div className="advancedToolList">
               <button onClick={() => onNavigate("workflow")} type="button">
                 <strong>独立主题研究</strong>
-                <span>只搜索和分析样本，不写稿、不发布。</span>
+                <span>单独复查搜索条件和样本表。</span>
               </button>
               <button onClick={() => onNavigate("imageStudio")} type="button">
                 <strong>高级图片工具</strong>
-                <span>单独生成 AI 图片或图文卡片。</span>
+                <span>批量生成 AI 图片或图文卡片。</span>
               </button>
               <button onClick={() => onNavigate("jobs")} type="button">
                 <strong>任务进度</strong>
                 <span>查看后台长任务和失败原因。</span>
               </button>
               <button onClick={() => onNavigate("publish")} type="button">
-                <strong>旧发布装配</strong>
-                <span>备用入口；正式发布优先在本页确认。</span>
+                <strong>发布装配调试</strong>
+                <span>备用入口；正式发布仍优先在本页确认。</span>
               </button>
             </div>
           </details>
