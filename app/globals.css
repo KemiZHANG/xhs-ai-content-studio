@@ -5161,15 +5161,50 @@ textarea {
   z-index: 3;
 }
 
-.studioTabs {
+.studioTabGroups {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.studioTabGroup {
   background: var(--surface-subtle);
   border: 1px solid var(--line);
   border-radius: 12px;
   display: grid;
-  gap: 6px;
-  grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
-  margin-bottom: 14px;
-  padding: 5px;
+  gap: 8px;
+  padding: 9px;
+}
+
+.studioTabGroup.active {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(18, 118, 97, 0.26);
+  box-shadow: 0 10px 22px rgba(39, 37, 31, 0.06);
+}
+
+.studioTabGroup > div:first-child {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.studioTabGroup strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.studioTabGroup span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.studioTabs {
+  display: grid;
+  gap: 5px;
+  grid-template-columns: repeat(auto-fit, minmax(58px, 1fr));
 }
 
 .studioSideDigest {

@@ -66,6 +66,7 @@ import { buildGeneratedAssetSummary, buildReferenceAssetSummary } from "@/app/co
 import { buildPostNextStepCoach } from "@/app/components/post-next-step-coach";
 import { buildPostFlowSummary, type PostFlowPhase } from "@/app/components/post-flow-summary";
 import { buildPostSideDigest } from "@/app/components/post-side-digest";
+import { buildStudioTabGroups } from "@/app/components/studio-tab-groups";
 import { selectRunningJobForWorkspace } from "@/app/components/job-display";
 import { buildCreationProvenance, type CreationProvenanceCard } from "@/app/components/creation-provenance";
 import { buildBriefTabSummary, buildImageTabSummary, buildPublishTabSummary, type StudioTabSummary } from "@/app/components/studio-tab-summary";
@@ -468,6 +469,7 @@ export function PostStudioPanel({
     qualityFresh: versionStatus?.qualityGateFresh === true,
     activeTab: tab
   });
+  const studioTabGroups = buildStudioTabGroups(tab);
 
   return (
     <div className="postStudio">
@@ -1006,19 +1008,28 @@ export function PostStudioPanel({
               ))}
             </div>
           </div>
-          <div className="studioTabs" role="tablist">
-            {[
-              { id: "insights", label: "结论" },
-              { id: "brief", label: "Brief" },
-              { id: "evidence", label: "证据" },
-              { id: "viral", label: "爆款库" },
-              { id: "references", label: "图片参考" },
-              { id: "generated", label: "生成素材" },
-              { id: "publish", label: "检查" }
-            ].map((item) => (
-              <button className={tab === item.id ? "active" : ""} key={item.id} onClick={() => setTab(item.id as StudioTab)} type="button">
-                {item.label}
-              </button>
+          <div className="studioTabGroups" role="tablist" aria-label="右侧工作区分组">
+            {studioTabGroups.map((group) => (
+              <section className={group.active ? "studioTabGroup active" : "studioTabGroup"} key={group.id}>
+                <div>
+                  <strong>{group.label}</strong>
+                  <span>{group.detail}</span>
+                </div>
+                <div className="studioTabs">
+                  {group.tabs.map((item) => (
+                    <button
+                      aria-selected={item.active}
+                      className={item.active ? "active" : ""}
+                      key={item.id}
+                      onClick={() => setTab(item.id)}
+                      role="tab"
+                      type="button"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
 
