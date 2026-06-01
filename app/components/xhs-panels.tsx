@@ -206,7 +206,7 @@ export function WorkflowPanel({
 
           <div className="researchScopeHint">
             <strong>研究台不会发布。</strong>
-            <span>完成后会把“标题怎么学、正文怎么学、标签怎么学、图片怎么学”带到 AI 工作台和图片创作台。</span>
+            <span>完成后会把“标题怎么学、正文怎么学、标签怎么学、图片怎么学”带回 Post Studio。</span>
           </div>
 
           <label>
@@ -238,7 +238,7 @@ export function WorkflowPanel({
             onOpenPublish={onOpenPublish}
           />
         ) : (
-          <p className="muted">研究完成后这里会显示真实笔记、互动数据、正文片段、图片证据和可学习要点。你可以一键带到 AI 工作台写文案，或带到图片创作台生成配图。</p>
+          <p className="muted">研究完成后这里会显示真实笔记、互动数据、正文片段、图片证据和可学习要点。日常创作会回到 Post Studio 继续写文案、生成图片和做发布检查。</p>
         )}
       </section>
     </div>
@@ -384,7 +384,7 @@ export function JobsPanel({
             {activeJob.status === "completed" && activeJob.result ? (
               <section className="resultBlock jobCompletionActions">
                 <h3>任务已完成</h3>
-                <p>{activeJobMeta?.resultHint ?? "研究结果已经准备好，可以回到 Post Studio 查看证据，也可以继续进入图片创作台。"}</p>
+                <p>{activeJobMeta?.resultHint ?? "研究结果已经准备好，可以回到 Post Studio 查看证据、生成文案和选择图片。"}</p>
                 <div className="actionRow">
                   <button className="primaryButton" disabled={!activeJobMeta?.canViewResult} onClick={() => onViewResult(activeJob)} type="button">
                     查看研究结果

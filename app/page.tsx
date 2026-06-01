@@ -854,7 +854,7 @@ export default function Home() {
         lastUserIntent: "generate_card_images"
       });
       await selectPostImages(nextSelectedImageIds);
-      setNotice(`已生成 ${ids.length} 张图文卡片，并加入成果画布和发布装配台。`);
+      setNotice(`已生成 ${ids.length} 张图文卡片，并加入 Post Studio 成果画布和发布候选图。`);
     } finally {
       setBusy(null);
     }
@@ -1119,7 +1119,7 @@ export default function Home() {
       setNotice("已在 Post Studio 内聚焦发布检查。确认文案、图片、账号、可见范围和时间后再生成确认单。");
     } else {
       setSection("publish");
-      setNotice("请在发布装配台确认文案、图片、可见范围和发布时间。");
+      setNotice("请在发布确认页核对文案、图片、可见范围和发布时间。");
     }
   }
 
@@ -1148,7 +1148,7 @@ export default function Home() {
       setNotice("已在 Post Studio 内聚焦发布检查。确认文案、图片、账号、可见范围和时间后再生成确认单。");
     } else {
       setSection("publish");
-      setNotice("已把当前草稿和已选图片带到发布装配台。");
+      setNotice("已把当前草稿和已选图片带到 Post Studio 发布检查。");
     }
   }
 
@@ -1192,7 +1192,7 @@ export default function Home() {
           loginName: health?.activeAccount?.loginName
         });
         setPublishStatus("已生成发布确认单。确认后才会真实提交到小红书。");
-        setNotice("发布前确认单已生成，请在发布装配台确认。");
+        setNotice("发布前确认单已生成，请在 Post Studio 发布检查中人工确认。");
         return;
       }
       if (data.currentDraft) {
@@ -1257,7 +1257,7 @@ export default function Home() {
       setDismissedPublishIntentId(pendingPublish.publishIntentId);
     }
     setPendingPublish(null);
-    setPublishStatus("已取消本次发布确认。内容和图片仍保留在发布装配台。");
+    setPublishStatus("已取消本次发布确认。内容和图片仍保留在当前 Post Studio 项目中。");
   }
 
   async function viewJobResult(job: JobRecord) {

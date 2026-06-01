@@ -264,10 +264,10 @@ export function WorkspaceCanvas({
             ))}
           </div>
         ) : (
-          <p>可以上传产品图，或进入图片创作台生成场景图。</p>
+          <p>可以上传产品图，或在 Post Studio 图片面板生成场景图。</p>
         )}
         <button className="secondaryButton fullWidth" onClick={onOpenImageStudio} type="button">
-          图片创作台
+          图片面板
         </button>
       </section>
 
@@ -302,7 +302,7 @@ export function WorkspaceCanvas({
           </p>
         ) : null}
         <button className="primaryButton fullWidth" disabled={!draft} onClick={onOpenPublish} type="button">
-          发布装配台
+          发布检查
         </button>
       </section>
     </aside>

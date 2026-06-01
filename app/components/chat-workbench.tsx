@@ -178,7 +178,7 @@ export function ChatPanel({
                 去配图
               </button>
               <button className="primaryButton" onClick={() => onOpenPublish(currentDraft.draft)} type="button">
-                进入发布装配台
+                回到 Post Studio 发布检查
               </button>
             </div>
           </section>
@@ -293,7 +293,7 @@ export function ChatPanel({
                     </button>
                   ))}
                   <button className="quickAsset textOnly" onClick={onOpenImageStudio} type="button">
-                    去图片创作台
+                    去 Post Studio 图片面板
                   </button>
                 </div>
               ) : null}

@@ -817,7 +817,7 @@ export function PostStudioPanel({
                 <section className="versionSwitcher compactVersionSwitcher" aria-label="图片 Prompt 版本">
                   <div>
                     <strong>Prompt 版本</strong>
-                    <span>用于图片创作台继续生图。</span>
+                    <span>用于 Post Studio 图片面板或高级图片工具继续生图。</span>
                   </div>
                   <div>
                     {imagePromptVersions.slice(-3).map((version, index) => (
@@ -1585,12 +1585,12 @@ export function PostStudioPanel({
                   })}
                 </div>
               ) : (
-                <p className="muted">可以让 Agent 生成配图，或在图片创作台生成 AI 生图 / 图文卡片。</p>
+                <p className="muted">可以让 Agent 在当前项目里生成配图；需要更多参数时再打开高级图片工具。</p>
               )}
               <div className="inlineActionGrid">
                 <button className="secondaryButton fullWidth" onClick={() => onQuickAction("generate_images")} type="button">Agent 生成配图</button>
                 <button className="secondaryButton fullWidth" onClick={() => onQuickAction("generate_cards")} type="button">生成图文卡片</button>
-                <button className="secondaryButton fullWidth" onClick={onOpenImageStudio} type="button">打开图片创作台</button>
+                <button className="secondaryButton fullWidth" onClick={onOpenImageStudio} type="button">高级图片工具</button>
               </div>
             </SideSection>
           ) : null}
@@ -1866,7 +1866,7 @@ export function PostStudioPanel({
                 <button className="primaryButton fullWidth" disabled={!publishReady || busy} onClick={onPreparePublish} type="button">
                   {pendingPublish ? "重新生成确认单" : publishScheduleAt ? "生成定时确认单" : "生成发布确认单"}
                 </button>
-                <button className="secondaryButton fullWidth" onClick={onOpenPublish} type="button">打开完整发布台</button>
+                <button className="secondaryButton fullWidth" onClick={onOpenPublish} type="button">聚焦发布检查</button>
               </div>
             </SideSection>
           ) : null}
