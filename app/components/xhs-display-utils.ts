@@ -20,7 +20,7 @@ export function titleForSection(section: Section): string {
 
 export function subtitleForSection(section: Section): string {
   const subtitles: Record<Section, string> = {
-    flow: "围绕一个帖子项目完成研究、文案、图片、发布检查和确认。",
+    flow: "围绕一个帖子项目完成研究、文案、图片、发布检查和人工确认。",
     dashboard: "查看 MCP、模型、任务和发布安全状态。",
     workflow: "按主题、类型、时间和样本数搜索真实笔记，只做研究分析，不生成、不发布。",
     jobs: "追踪搜索、分析、生成图片和发布任务的后台进度。",
