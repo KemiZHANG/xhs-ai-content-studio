@@ -2224,6 +2224,73 @@ describe("API route contracts", () => {
     }));
   });
 
+  it("syncs uploaded reference assets into PostProject product info", async () => {
+    const updateWorkspaceState = vi.fn();
+    const updatePostProject = vi.fn(async (patch) => ({
+      id: "post-1",
+      productInfo: patch.productInfo,
+      evidencePack: { insights: [] },
+      selectedSamples: [],
+      copyVersions: [],
+      imagePrompts: [],
+      generatedImages: [],
+      selectedImages: [],
+      agentMemory: [],
+      currentStage: "briefing",
+      allowedActions: []
+    }));
+    vi.doMock("@/lib/agent/state", () => ({ updateWorkspaceState }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => ({
+        id: "post-1",
+        productInfo: {
+          name: "咖啡豆",
+          sellingPoints: "低酸",
+          scene: "早餐桌",
+          referenceAssetIds: ["asset-old"]
+        },
+        evidencePack: { insights: [] },
+        selectedSamples: [],
+        copyVersions: [],
+        imagePrompts: [],
+        generatedImages: [],
+        selectedImages: [],
+        agentMemory: [],
+        currentStage: "briefing",
+        allowedActions: []
+      }),
+      updatePostProject
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(),
+      writeCurrentDraft: vi.fn()
+    }));
+
+    const { PATCH } = await import("@/app/api/post-project/route");
+    const response = await PATCH(jsonRequest({
+      action: "update_reference_assets",
+      referenceAssetIds: ["asset-old", "asset-new", "asset-new"]
+    }));
+
+    expect(response.status).toBe(200);
+    expect(updateWorkspaceState).toHaveBeenCalledWith({
+      productImageIds: ["asset-old", "asset-new"],
+      lastUserIntent: "upload_product_images"
+    });
+    expect(updatePostProject).toHaveBeenCalledWith(expect.objectContaining({
+      productInfo: {
+        name: "咖啡豆",
+        sellingPoints: "低酸",
+        scene: "早餐桌",
+        referenceAssetIds: ["asset-old", "asset-new"]
+      },
+      finalPost: undefined,
+      publishPlan: null,
+      qualityCheck: undefined,
+      auditStatus: "unchecked"
+    }));
+  });
+
   it("ignores externally patched PostProject safety fields", async () => {
     const updatePostProject = vi.fn(async (patch) => ({ id: "post-1", ...patch }));
     vi.doMock("@/lib/post-project/store", () => ({

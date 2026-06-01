@@ -41,6 +41,10 @@ type PostProjectActionBody =
   | {
       action: "focus_evidence";
       focusedEvidenceIds: string[];
+    }
+  | {
+      action: "update_reference_assets";
+      referenceAssetIds: string[];
     };
 
 export async function GET() {
@@ -145,6 +149,25 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
       creativeBrief: undefined,
       visualDirection: undefined,
       imagePrompts: [],
+      finalPost: undefined,
+      publishPlan: null,
+      qualityCheck: undefined,
+      auditStatus: "unchecked"
+    });
+    return { project: nextProject };
+  }
+
+  if (body.action === "update_reference_assets") {
+    const referenceAssetIds = uniqueStrings(body.referenceAssetIds);
+    await updateWorkspaceState({
+      productImageIds: referenceAssetIds,
+      lastUserIntent: "upload_product_images"
+    });
+    const nextProject = await updatePostProject({
+      productInfo: {
+        ...project.productInfo,
+        referenceAssetIds
+      },
       finalPost: undefined,
       publishPlan: null,
       qualityCheck: undefined,

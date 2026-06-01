@@ -786,6 +786,14 @@ export default function Home() {
         productImageIds: uniqueIds([...(workspace?.productImageIds ?? []), ...ids]),
         lastUserIntent: "upload_product_images"
       });
+      const data = (await clientApi("/api/post-project", {
+        method: "PATCH",
+        body: JSON.stringify({
+          action: "update_reference_assets",
+          referenceAssetIds: uniqueIds([...(postProject?.productInfo?.referenceAssetIds ?? workspace?.productImageIds ?? []), ...ids])
+        })
+      })) as { project: PostProject };
+      setPostProject(data.project);
       focusPostStudioTab("references");
       setNotice(`已把 ${ids.length} 张图片加入当前 PostProject 参考图。需要作为发布图时，在右侧点选即可。`);
     }
