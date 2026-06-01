@@ -70,6 +70,8 @@ describe("viral application model", () => {
     expect(model.ragLine).toContain("实时 1 条");
     expect(model.missingEvidence).toEqual(["实时小红书样本不足 3 条", "缺少图片风格规律"]);
     expect(model.recommendation).toBe("建议继续搜索或补充参考样本。");
+    expect(model.actions.slice(0, 2).map((action) => action.action)).toEqual(["search_research", "retrieve_viral_knowledge"]);
+    expect(model.actions[0].primary).toBe(true);
   });
 
   it("marks RAG as enough when realtime and viral evidence pass sufficiency", () => {

@@ -86,6 +86,10 @@ export function buildViralApplicationModel(project: PostProject | null | undefin
   const draftUsesViral = Boolean(draftEvidenceIds.length);
   const actions: ViralApplicationAction[] = [];
 
+  if (ragReadiness.ragStatus === "insufficient") {
+    actions.push({ id: "viral-more-realtime", label: "继续实时研究", action: "search_research", primary: true });
+    actions.push({ id: "viral-refresh-rag", label: "刷新 RAG 证据", action: "retrieve_viral_knowledge" });
+  }
   if (!briefUsesViral) {
     actions.push({ id: "viral-apply-brief", label: "应用到 CreativeBrief", action: "create_creative_brief", primary: true });
   }
