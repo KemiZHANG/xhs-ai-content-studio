@@ -225,7 +225,7 @@ export function PublishAssemblyPanel({
               <p>选中的图片会随这篇笔记一起发送。图片创作台生成的新图会自动加入这里，也可以手动勾选素材库里的图片。</p>
             </div>
             <button className="secondaryButton" onClick={onGoImage} type="button">
-              去图片创作台
+              回到 Post Studio 图片面板
             </button>
           </div>
           {selectedAssets.length ? (
@@ -241,7 +241,7 @@ export function PublishAssemblyPanel({
               ))}
             </div>
           ) : (
-            <p className="muted">还没有选择发布图片。先去图片创作台生成，或从右侧素材中选择。</p>
+            <p className="muted">还没有选择发布图片。先回到 Post Studio 图片面板生成，或从右侧素材中选择。</p>
           )}
         </section>
 
@@ -363,7 +363,7 @@ export function PublishAssemblyPanel({
               </article>
             ))
           ) : (
-            <p className="muted">还没有素材。请去图片创作台上传或生成图片。</p>
+            <p className="muted">还没有素材。请回到 Post Studio 上传或生成图片。</p>
           )}
         </div>
       </section>

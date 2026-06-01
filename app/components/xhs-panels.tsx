@@ -393,7 +393,7 @@ export function JobsPanel({
                     恢复为当前项目
                   </button>
                   <button className="secondaryButton" onClick={onOpenImageStudio} type="button">
-                    进入图片创作台
+                    回到 Post Studio 图片面板
                   </button>
                 </div>
               </section>

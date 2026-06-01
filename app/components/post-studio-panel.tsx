@@ -1830,7 +1830,7 @@ export function PostStudioPanel({
                         </div>
                       ))}
                       {quality.issues.length > 3 || quality.suggestions.length > 3 ? (
-                        <small>还有 {Math.max(quality.issues.length - 3, 0) + Math.max(quality.suggestions.length - 3, 0)} 条细节，可在完整发布台继续复核。</small>
+                        <small>还有 {Math.max(quality.issues.length - 3, 0) + Math.max(quality.suggestions.length - 3, 0)} 条细节，已收进发布检查详情。</small>
                       ) : null}
                     </div>
                   ) : null}
@@ -1886,7 +1886,7 @@ export function PostStudioPanel({
               <button onClick={() => onNavigate("chat")} type="button">AI 工作台</button>
               <button onClick={() => onNavigate("workflow")} type="button">主题研究台</button>
               <button onClick={() => onNavigate("imageStudio")} type="button">图片创作台</button>
-              <button onClick={() => onNavigate("publish")} type="button">发布装配台</button>
+              <button onClick={() => onNavigate("publish")} type="button">旧发布工具</button>
               <button onClick={() => onNavigate("jobs")} type="button">任务进度</button>
             </div>
           </details>

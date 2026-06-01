@@ -141,7 +141,7 @@ export function AgentFlowPanel({
               新建创作项目
             </button>
             <button className="secondaryButton" onClick={() => onNavigate("chat")} type="button">
-              进入 AI 工作台
+              回到 Post Studio 创作
             </button>
           </div>
           <div className="postProjectStatus">
@@ -242,7 +242,7 @@ export function AgentFlowPanel({
               <DigestCard title="标题怎么学" items={summary?.contentStrengths ?? []} fallback={`${evidenceCount} 条样本已就绪`} />
               <DigestCard title="正文怎么学" items={summary?.learningsForContent ?? []} fallback="等待模型总结正文结构" />
               <DigestCard title="标签怎么学" items={extractTagHints(result)} fallback="根据样本标签和搜索词生成" />
-              <DigestCard title="图片怎么学" items={summary?.learningsForImages ?? summary?.imageStrengths ?? []} fallback="可进入图片创作台继续生成" />
+              <DigestCard title="图片怎么学" items={summary?.learningsForImages ?? summary?.imageStrengths ?? []} fallback="可回到 Post Studio 图片面板继续生成" />
             </div>
           ) : activeJob ? (
             <div className="flowProgressCard">
@@ -306,7 +306,7 @@ export function AgentFlowPanel({
           </div>
           <div className="flowNextActions">
             <button className="secondaryButton" onClick={() => onNavigate("imageStudio")} type="button">
-              去图片创作台
+              回到 Post Studio 图片面板
             </button>
             <button className="primaryButton" disabled={!draft} onClick={() => onNavigate("publish")} type="button">
               发布预览

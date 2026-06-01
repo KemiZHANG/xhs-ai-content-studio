@@ -57,7 +57,7 @@ export function WorkflowResultView({
               type="button"
               onClick={() => onImageStudio?.(creativeBrief)}
             >
-              <strong>进入图片创作台</strong>
+              <strong>生成图片素材</strong>
               <span>带图片风格结论生成配图，可上传产品图或直接生成卡片。</span>
             </button>
           </div>
