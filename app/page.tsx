@@ -1051,7 +1051,7 @@ export default function Home() {
     setActiveConversationId(null);
     setMessages([]);
     setChatInput("");
-    setSection("chat");
+    setSection("flow");
     setNotice(noticeForProjectReset("conversation"));
   }
 
@@ -1086,8 +1086,8 @@ export default function Home() {
     const source = researchResult ?? workflowResult;
     const copyBrief = buildCopyCreativeBrief(source, brief);
     setChatInput(buildDraftPromptFromBrief(copyBrief));
-    setSection("chat");
-    setNotice("已把精简文案简报放入输入框，确认或补充后再发送给 AI。");
+    setSection("flow");
+    setNotice("已把精简文案简报放入 Post Studio 输入框，确认或补充后再发送给 AI。");
   }
 
   function openImageStudioFromEvidence(brief?: string) {
