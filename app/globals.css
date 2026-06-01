@@ -5580,6 +5580,25 @@ textarea {
   margin: 0;
 }
 
+.publishInlineFixes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.publishInlineFixes button {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  min-height: 30px;
+  padding: 0 10px;
+}
+
 .publishAuditMini {
   border: 1px solid var(--line);
   border-radius: 12px;

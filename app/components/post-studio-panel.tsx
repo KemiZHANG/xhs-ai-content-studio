@@ -1721,6 +1721,25 @@ export function PostStudioPanel({
                 </p>
                 <span>确认单：{pendingPublish ? `${pendingPublish.mode === "schedule" ? "定时" : "立即"} · 待人工确认` : "未生成"}</span>
                 {health?.activeAccount?.loginName ? <span>登录名：{health.activeAccount.loginName}</span> : null}
+                {!publishReady ? (
+                  <div className="publishInlineFixes" aria-label="发布前快速处理">
+                    {!hasVisualDirection ? (
+                      <button type="button" onClick={() => onQuickAction(project?.visualDirection ? "confirm_visual_direction" : "plan_visuals")}>
+                        {project?.visualDirection ? "确认图片方向" : "规划图片方向"}
+                      </button>
+                    ) : null}
+                    {(!quality || quality?.canPublish === false || versionStatus?.qualityGateFresh !== true) ? (
+                      <button type="button" onClick={() => onQuickAction("run_quality_gate")}>
+                        运行质量检查
+                      </button>
+                    ) : null}
+                    {!selectedAssets.length ? (
+                      <button type="button" onClick={() => onQuickAction("select_images")}>
+                        选择发布图片
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
               <div className={`publishAuditMini ${auditSummary.state}`}>
                 <div>
