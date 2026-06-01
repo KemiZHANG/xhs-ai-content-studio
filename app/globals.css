@@ -3983,6 +3983,36 @@ textarea {
   color: #fff;
 }
 
+.studioTopComposer {
+  align-items: stretch;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--line));
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(39, 37, 31, 0.06);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 8px;
+  padding: 8px;
+}
+
+.studioTopComposer textarea {
+  border-color: transparent;
+  font-size: 13px;
+  min-height: 44px;
+  resize: vertical;
+}
+
+.studioTopComposer textarea:focus {
+  border-color: rgba(18, 118, 97, 0.28);
+}
+
+.studioTopComposer button {
+  align-self: stretch;
+  gap: 6px;
+  min-width: 82px;
+}
+
 .postReadinessPanel {
   background:
     linear-gradient(135deg, rgba(18, 118, 97, 0.08), rgba(255, 255, 255, 0.76)),

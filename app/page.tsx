@@ -36,9 +36,10 @@ import {
   selectActiveJob,
   selectWorkflowResultForDisplay
 } from "@/app/state/page-derived";
+import { buildPageJobsSnapshotPlan } from "@/app/state/page-jobs";
 import { shouldAutoOpenLatestConversation } from "@/app/state/chat-history-selection";
 import { noticeForProjectReset, resetWorkflowFormForNewProject } from "@/app/state/project-reset";
-import { canApplyWorkspaceSnapshot, isJobForWorkspace } from "@/lib/jobs/context";
+import { isJobForWorkspace } from "@/lib/jobs/context";
 import { buildPublishVersionSnapshot } from "@/lib/post-project/versioning";
 
 import type {
@@ -269,52 +270,48 @@ export default function Home() {
 
   async function applyJobsSnapshot(nextJobs: JobRecord[], streamedWorkspace?: WorkspaceState, streamedPostProject?: PostProject) {
     setJobs(nextJobs);
-    const shouldApplyStreamedWorkspace = canApplyWorkspaceSnapshot(streamedWorkspace, workspace);
-    const activeWorkspace = shouldApplyStreamedWorkspace && streamedWorkspace ? streamedWorkspace : workspace;
-    const activeRecentJobIds = activeWorkspace?.recentJobIds;
-    if (streamedWorkspace && shouldApplyStreamedWorkspace) {
-      setWorkspace(streamedWorkspace);
-      if (streamedWorkspace.currentDraft) {
-        applyCurrentDraft(streamedWorkspace.currentDraft);
+    const plan = buildPageJobsSnapshotPlan({
+      nextJobs,
+      streamedWorkspace,
+      streamedPostProject,
+      currentWorkspace: workspace,
+      autoReturnJobId,
+      autoReturnTarget,
+      currentWorkflowResult: workflowResult
+    });
+    if (plan.applyStreamedWorkspace) {
+      setWorkspace(plan.applyStreamedWorkspace);
+      if (plan.applyStreamedWorkspace.currentDraft) {
+        applyCurrentDraft(plan.applyStreamedWorkspace.currentDraft);
       } else {
         setCurrentDraft(null);
         setPublishDraft({ title: "", content: "", tagsText: "", imagePrompt: "" });
       }
-      setPublishAssetIds(streamedWorkspace.selectedImageIds ?? []);
+      setPublishAssetIds(plan.applyStreamedWorkspace.selectedImageIds ?? []);
     }
-    if (streamedPostProject && shouldApplyStreamedWorkspace) {
-      setPostProject(streamedPostProject);
+    if (plan.applyStreamedPostProject) {
+      setPostProject(plan.applyStreamedPostProject);
     }
-    const autoReturnJob = autoReturnJobId ? nextJobs.find((job) => job.id === autoReturnJobId) : null;
-    if (autoReturnJob?.status === "completed" && autoReturnJob.result && isJobForWorkspace(autoReturnJob, activeWorkspace)) {
-      applyWorkflowResult(autoReturnJob.result);
-      setActiveJobId(autoReturnJob.id);
+    if (plan.autoReturn) {
+      applyWorkflowResult(plan.autoReturn.job.result!);
+      setActiveJobId(plan.autoReturn.job.id);
       setAutoReturnJobId(null);
-      setSection(autoReturnTarget);
-      setNotice("研究完成，已回到结果页。可以继续进入文案创作或图片创作。");
+      setSection(plan.autoReturn.targetSection);
+      setNotice(plan.autoReturn.notice);
       await loadWorkspace();
       await loadPostProject();
-      if (autoReturnJob.result.draft) {
+      if (plan.autoReturn.reloadCurrentDraft) {
         await loadCurrentDraft();
       }
       return;
     }
-    if (autoReturnJob?.status === "completed" && !isJobForWorkspace(autoReturnJob, activeWorkspace)) {
+    if (plan.clearAutoReturn) {
       setAutoReturnJobId(null);
     }
-    if (autoReturnJob?.status === "failed") {
-      setAutoReturnJobId(null);
-    }
-    const latestCompleted = nextJobs.find((job) => job.status === "completed" && job.result && isJobForWorkspace(job, activeWorkspace));
-    if (latestCompleted && activeRecentJobIds && !activeRecentJobIds.includes(latestCompleted.id)) {
-      return;
-    }
-    if (latestCompleted?.result) {
-      if (!workflowResult) {
-        applyWorkflowResult(latestCompleted.result);
-      } else if (latestCompleted.result.status === "research_ready" || latestCompleted.result.researchSummary) {
-        setResearchResult(latestCompleted.result);
-      }
+    if (plan.latestResult?.target === "workflow") {
+      applyWorkflowResult(plan.latestResult.result);
+    } else if (plan.latestResult?.target === "research") {
+      setResearchResult(plan.latestResult.result);
     }
   }
 

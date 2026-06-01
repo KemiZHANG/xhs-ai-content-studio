@@ -597,6 +597,18 @@ export function PostStudioPanel({
               </button>
             ))}
           </div>
+          <form className="studioTopComposer" onSubmit={onChatSubmit}>
+            <textarea
+              aria-label="给 Agent 的下一步指令"
+              value={chatInput}
+              onChange={(event) => onChatInput(event.target.value)}
+              placeholder="直接告诉 Agent 下一步：补充产品卖点 / 标题更生活化 / 用第二张图 / 今晚八点发"
+            />
+            <button className="primaryButton" disabled={busy} type="submit">
+              <Send size={15} />
+              发送
+            </button>
+          </form>
           <details className="nextActionDecision">
             <summary>查看原因与结果</summary>
             <span>为什么：{nextStepCoach.whyLine}</span>
