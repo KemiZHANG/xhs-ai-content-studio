@@ -257,7 +257,8 @@ export function PostStudioPanel({
   const allowedPostActions = (project?.allowedActions ?? []) as PostAction[];
   const stageGuidance = getPostStageGuidance(project?.currentStage ?? "empty", allowedPostActions);
   const nextActions = getOrderedPostNextActions(project?.currentStage ?? "empty", allowedPostActions.length ? allowedPostActions : ["search_research"]);
-  const projectTitle = project?.topic || workspace?.topic || researchForm.topic || "未命名帖子项目";
+  const projectTitle = project?.topic || workspace?.topic || "新帖子项目";
+  const creationTopic = project?.topic || workspace?.topic || researchForm.topic || "未命名帖子项目";
   const canGenerateCopy = Boolean(insights.length || workflowResult?.researchSummary || workspace?.evidenceSummary);
   const latestImagePrompt = publishDraft.imagePrompt || project?.imagePrompts.at(-1)?.value.prompt || "";
   const quality = project?.qualityCheck;
@@ -422,12 +423,12 @@ export function PostStudioPanel({
     () =>
       [
         "请基于当前 PostProject 的证据和 CreativeBrief 生成一篇原创小红书图文笔记，不要重新搜索。",
-        `主题：${projectTitle}`,
+        `主题：${creationTopic}`,
         `内容类型：${researchForm.contentType}`,
         `补充要求：${researchForm.requirements || "真实分享，不硬广，结构清楚，有收藏价值。"}`,
         "请输出：标题候选、最终标题、正文、标签、图片方向和发布前风险提醒。"
       ].join("\n"),
-    [projectTitle, researchForm.contentType, researchForm.requirements]
+    [creationTopic, researchForm.contentType, researchForm.requirements]
   );
   const sideDigest = buildPostSideDigest({
     insightCount: insights.length,
