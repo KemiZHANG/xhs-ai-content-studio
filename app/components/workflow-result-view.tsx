@@ -189,7 +189,7 @@ export function WorkflowResultView({
                 ) : null}
                 {onOpenPublish ? (
                   <button className="primaryButton" onClick={() => onOpenPublish(result.draft ?? undefined)} type="button">
-                    进入发布装配台
+                    回到 Post Studio 发布检查
                   </button>
                 ) : null}
               </div>

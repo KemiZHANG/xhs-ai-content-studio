@@ -250,7 +250,7 @@ export function ImageStudioPanel({
             回到文案对话
           </button>
           <button className="secondaryButton" onClick={onOpenPublish} type="button">
-            进入发布装配台
+            回到 Post Studio 发布检查
           </button>
         </div>
       </section>
