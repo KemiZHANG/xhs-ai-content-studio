@@ -990,17 +990,9 @@ export default function Home() {
     setMessages(conversation.messages);
   }
 
-  async function resetActiveWorkspace(seed: Partial<WorkspaceState> = {}) {
-    const data = (await clientApi("/api/agent/workspace/reset", {
-      method: "POST",
-      body: JSON.stringify(seed)
-    })) as { workspace: WorkspaceState; postProject?: PostProject };
-    setWorkspace(data.workspace);
-    if (data.postProject) {
-      setPostProject(data.postProject);
-    } else {
-      setPostProject(null);
-    }
+  function clearLocalWorkspaceState(seed: Partial<WorkspaceState> = {}) {
+    setWorkspace(null);
+    setPostProject(null);
     setWorkflowResult(null);
     setResearchResult(null);
     setCurrentDraft(null);
@@ -1037,6 +1029,20 @@ export default function Home() {
       tagsText: ""
     }));
     setChatAssetIds([]);
+  }
+
+  async function resetActiveWorkspace(seed: Partial<WorkspaceState> = {}) {
+    clearLocalWorkspaceState(seed);
+    const data = (await clientApi("/api/agent/workspace/reset", {
+      method: "POST",
+      body: JSON.stringify(seed)
+    })) as { workspace: WorkspaceState; postProject?: PostProject };
+    setWorkspace(data.workspace);
+    if (data.postProject) {
+      setPostProject(data.postProject);
+    } else {
+      setPostProject(null);
+    }
     return data.workspace;
   }
 
