@@ -154,7 +154,7 @@ describe("viral application model", () => {
         tone: "真实分享",
         visualMood: "自然光",
         imageMustHave: ["店内空间"],
-        imageMustAvoid: ["虚假认证"],
+        imageMustAvoid: ["虚假 logo"],
         platformStyle: "小红书图文",
         tabooWords: [],
         complianceNotes: [],

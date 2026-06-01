@@ -63,7 +63,7 @@ function projectWithViralEvidence(): PostProject {
           id: "viral-insight-visual",
           sourceType: "viral_library",
           type: "visual",
-          insight: "图片使用自然光桌面近景，主体清楚但不复刻原图",
+          insight: "图片使用自然光桌面近景，主体清晰但不复刻原图",
           sourceSampleIds: ["viral-case-1"],
           confidence: 0.82,
           createdAt: "2026-05-31T00:00:00.000Z"
