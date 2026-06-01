@@ -247,7 +247,7 @@ export function ImageStudioPanel({
                   : "无参考图直接生成"}
           </button>
           <button className="secondaryButton" onClick={onGoChat} type="button">
-            回到文案对话
+            回到 Post Studio 文案
           </button>
           <button className="secondaryButton" onClick={onOpenPublish} type="button">
             回到 Post Studio 发布检查

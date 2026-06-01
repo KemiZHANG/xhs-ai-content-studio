@@ -1497,7 +1497,10 @@ export default function Home() {
                 generateImages: true
               }))
             }
-            onGoChat={() => setSection("chat")}
+            onGoChat={() => {
+              setSection("flow");
+              focusPostStudioTab("brief");
+            }}
             onOpenPublish={() => void openPublishAssembly(undefined, { stayInStudio: true })}
           />
         ) : null}
