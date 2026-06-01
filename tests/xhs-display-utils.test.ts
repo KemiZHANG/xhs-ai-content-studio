@@ -1,14 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { formatMcpEndpoint, modeLabel, titleForSection, subtitleForSection, toDisplayNumber, displaySample } from "@/app/components/xhs-display-utils";
+import { displaySample, formatMcpEndpoint, modeLabel, subtitleForSection, titleForSection, toDisplayNumber } from "@/app/components/xhs-display-utils";
 import type { WorkflowSample } from "@/app/types";
 
 describe("xhs display utils", () => {
-  it("keeps primary navigation copy readable", () => {
+  it("keeps primary navigation copy readable and centered on Post Studio", () => {
     expect(titleForSection("flow")).toBe("Post Studio");
     expect(titleForSection("assets")).toBe("素材管理");
     expect(titleForSection("settings")).toBe("模型与连接设置");
     expect(subtitleForSection("flow")).toContain("帖子项目");
-    expect(subtitleForSection("publish")).toContain("确认单");
+    expect(subtitleForSection("chat")).toContain("旧版自然语言工作台");
+    expect(subtitleForSection("publish")).toContain("优先使用 Post Studio");
     expect(modeLabel("research")).toBe("证据研究");
   });
 
