@@ -58,6 +58,7 @@ import { buildViralApplicationModel } from "@/app/components/viral-application";
 import { buildViralEvidenceSummary } from "@/app/components/viral-evidence-summary";
 import { buildViralLibraryHealth } from "@/app/components/viral-library-health";
 import { buildPublishConfirmationSummary } from "@/app/components/publish-confirmation-summary";
+import { buildPublishSafetyBoundary } from "@/app/components/publish-safety-boundary";
 import { buildPublishAccountSafety } from "@/app/components/publish-account-safety";
 import { buildPublishAuditSafetySummary } from "@/app/components/publish-audit-summary";
 import { buildPostProjectContextSummary } from "@/app/components/post-project-context";
@@ -377,6 +378,12 @@ export function PostStudioPanel({
     accountReady,
     hasVisualDirection,
     qualityGateFresh: versionStatus?.qualityGateFresh === true
+  });
+  const publishSafetyBoundary = buildPublishSafetyBoundary({
+    publishReady,
+    hasPendingConfirmation: Boolean(pendingPublish || activePublishPlan?.status === "awaiting_approval"),
+    modeLabel: publishSummary.modeLabel,
+    blockerCount: publishSummary.blockers.length
   });
   const publishAccountSafety = buildPublishAccountSafety({
     settings,
@@ -1748,6 +1755,15 @@ export function PostStudioPanel({
                 </p>
                 <span>确认单：{pendingPublish ? `${pendingPublish.mode === "schedule" ? "定时" : "立即"} · 待人工确认` : "未生成"}</span>
                 {health?.activeAccount?.loginName ? <span>登录名：{health.activeAccount.loginName}</span> : null}
+                <div className={`publishSafetyBoundary ${publishSafetyBoundary.state}`} aria-label="发布安全边界">
+                  <strong>{publishSafetyBoundary.headline}</strong>
+                  <p>{publishSafetyBoundary.detail}</p>
+                  <div>
+                    {publishSafetyBoundary.checkpoints.map((checkpoint) => (
+                      <em key={checkpoint}>{checkpoint}</em>
+                    ))}
+                  </div>
+                </div>
                 {!publishReady ? (
                   <div className="publishInlineFixes" aria-label="发布前快速处理">
                     {!hasVisualDirection ? (

@@ -5668,6 +5668,50 @@ textarea {
   margin: 0;
 }
 
+.publishSafetyBoundary {
+  border: 1px solid rgba(18, 118, 97, 0.18);
+  border-radius: 10px;
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 10px;
+}
+
+.publishSafetyBoundary.ready {
+  background: rgba(18, 118, 97, 0.08);
+}
+
+.publishSafetyBoundary.pending {
+  background: rgba(31, 91, 255, 0.08);
+  border-color: rgba(31, 91, 255, 0.2);
+}
+
+.publishSafetyBoundary.blocked {
+  background: rgba(190, 122, 20, 0.08);
+  border-color: rgba(190, 122, 20, 0.22);
+}
+
+.publishSafetyBoundary strong {
+  font-size: 12px;
+}
+
+.publishSafetyBoundary div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.publishSafetyBoundary em {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  padding: 4px 7px;
+}
+
 .publishInlineFixes {
   display: flex;
   flex-wrap: wrap;
