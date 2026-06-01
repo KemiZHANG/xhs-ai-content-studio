@@ -82,4 +82,26 @@ describe("post side digest", () => {
     });
     expect(assetCard?.detail).toContain("3 张生成图");
   });
+
+  it("points realtime-only research toward viral RAG before the CreativeBrief", () => {
+    const digest = buildPostSideDigest({
+      insightCount: 4,
+      realtimeInsightCount: 4,
+      viralInsightCount: 0,
+      hasBrief: false,
+      selectedImageCount: 1,
+      generatedImageCount: 0,
+      referenceImageCount: 1,
+      publishReady: false,
+      accountReady: true,
+      qualityFresh: false,
+      activeTab: "insights"
+    });
+
+    expect(digest.cards[0]).toMatchObject({
+      state: "neutral",
+      tab: "viral"
+    });
+    expect(digest.cards[0].detail).toContain("爆款库 RAG");
+  });
 });

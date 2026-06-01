@@ -44,6 +44,7 @@ export function buildPostSideDigest({
   activeTab: DigestStudioTab;
 }): PostSideDigest {
   const evidenceReady = insightCount > 0 && hasBrief;
+  const needsViralRag = realtimeInsightCount > 0 && viralInsightCount === 0 && !hasBrief;
   const assetReady = selectedImageCount > 0;
   const publishState: PostSideDigestCard["state"] = publishReady
     ? "ready"
@@ -58,11 +59,13 @@ export function buildPostSideDigest({
       value: insightCount ? `${insightCount} 条规律` : "待研究",
       detail: evidenceReady
         ? `实时 ${realtimeInsightCount} / 爆款库 ${viralInsightCount}，Brief 已生成。`
+        : needsViralRag
+          ? "已有实时规律，下一步先补爆款库 RAG，再压缩成 CreativeBrief。"
         : insightCount
           ? "已有规律，下一步压缩成 CreativeBrief。"
           : "先搜索真实笔记或检索爆款库。",
       state: evidenceReady ? "ready" : insightCount ? "neutral" : "warn",
-      tab: hasBrief ? "brief" : insightCount ? "insights" : "evidence"
+      tab: hasBrief ? "brief" : needsViralRag ? "viral" : insightCount ? "insights" : "evidence"
     },
     {
       id: "assets",
