@@ -71,7 +71,7 @@ export function buildPostStudioStatusSummary({
         const status = isReady
           ? `已登录${accountLoginName ? ` · ${accountLoginName}` : ""}`
           : account.status === "logged_in"
-            ? "上次显示已登录，切换后需重检"
+            ? "上次显示已登录，切换后需重新检测"
             : account.status === "logged_out"
               ? "未登录"
               : "待检测";
@@ -123,6 +123,8 @@ export function buildPostStudioStatusSummary({
   const readiness = buildPostReadinessReport(project);
   const versionStatus = getPostVersionStatus(project);
   const viralEvidenceCount = project.evidencePack.insights.filter((insight) => insight.sourceType === "viral_library").length;
+  const productReferenceCount = project.productInfo?.referenceAssetIds?.length ?? 0;
+  const auditStatus = project.auditStatus ?? (project.qualityCheck ? (project.qualityCheck.canPublish ? "passed" : "blocked") : "unchecked");
   const blockers = [
     !accountReady ? "小红书账号登录状态未确认，发布前需要重新检测当前账号" : "",
     canvasDirty ? "画布有未保存修改，发布检查前需要先保存" : "",
@@ -158,15 +160,22 @@ export function buildPostStudioStatusSummary({
     chips: [
       chip("研究", evidenceCount ? `${evidenceCount} 条证据` : "待研究", evidenceCount ? "ok" : "warn"),
       chip("RAG", viralEvidenceCount ? `${viralEvidenceCount} 条爆款库` : "待检索", viralEvidenceCount ? "ok" : "neutral"),
+      chip("产品图", productReferenceCount ? `${productReferenceCount} 张` : "可选", productReferenceCount ? "ok" : "neutral"),
       chip("文案", hasDraft ? "已生成" : "待生成", hasDraft ? "ok" : "warn"),
       chip("图片", selectedImageCount ? `${selectedImageCount} 张` : "待选择", selectedImageCount ? "ok" : "warn"),
-      chip("检查", versionStatus.qualityGateFresh ? "已通过" : "待刷新", versionStatus.qualityGateFresh ? "ok" : "warn")
+      chip("检查", auditStatusLabel(auditStatus, versionStatus.qualityGateFresh), auditStatus === "passed" && versionStatus.qualityGateFresh ? "ok" : "warn")
     ]
   };
 }
 
 function chip(label: string, value: string, state: PostStudioStatusChip["state"]): PostStudioStatusChip {
   return { label, value, state };
+}
+
+function auditStatusLabel(auditStatus: string, qualityGateFresh: boolean): string {
+  if (auditStatus === "passed" && qualityGateFresh) return "已通过";
+  if (auditStatus === "blocked") return "有风险";
+  return "待检查";
 }
 
 function formatMcpEndpoint(url: string): string {

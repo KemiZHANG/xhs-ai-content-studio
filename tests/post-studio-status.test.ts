@@ -86,9 +86,10 @@ describe("post studio status summary", () => {
     expect(summary.chips.find((item) => item.label === "文案")).toMatchObject({ value: "待生成", state: "warn" });
   });
 
-  it("surfaces viral-library RAG evidence in the project header", () => {
+  it("surfaces viral-library RAG evidence and product references in the project header", () => {
     const project = createBlankPostProject({
       topic: "广州咖啡馆",
+      productInfo: { name: "咖啡豆", referenceAssetIds: ["asset-1", "asset-2"] },
       evidencePack: {
         sampleIds: ["viral-case-1"],
         insights: [{
@@ -122,6 +123,7 @@ describe("post studio status summary", () => {
     });
 
     expect(summary.chips.find((item) => item.label === "RAG")).toMatchObject({ value: "1 条爆款库", state: "ok" });
+    expect(summary.chips.find((item) => item.label === "产品图")).toMatchObject({ value: "2 张", state: "ok" });
     expect(summary.stageLine).toContain("证据已就绪");
   });
 

@@ -468,6 +468,12 @@ export type PostStage =
 export type PostProject = {
   id: string;
   topic?: string;
+  productInfo?: {
+    name?: string;
+    sellingPoints?: string;
+    scene?: string;
+    referenceAssetIds: string[];
+  };
   targetAudience?: string;
   goal?: string;
   tone?: string;
@@ -558,6 +564,7 @@ export type PostProject = {
   };
   publishPlan?: WorkspacePublishPlan | null;
   agentMemory: string[];
+  auditStatus?: "unchecked" | "passed" | "blocked";
   qualityCheck?: {
     titleScore: number;
     copyScore: number;
