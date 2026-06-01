@@ -4911,6 +4911,12 @@ textarea {
   grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1fr);
 }
 
+.postPreviewMediaColumn {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
 .postCoverPreview {
   align-items: center;
   aspect-ratio: 3 / 4;
@@ -4934,6 +4940,66 @@ textarea {
   display: grid;
   gap: 8px;
   justify-items: center;
+}
+
+.selectedPostImages {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: grid;
+  gap: 10px;
+  padding: 11px;
+}
+
+.selectedPostImages.ready {
+  background: linear-gradient(135deg, rgba(18, 118, 97, 0.11), rgba(255, 255, 255, 0.78));
+  border-color: rgba(18, 118, 97, 0.24);
+}
+
+.selectedPostImages.empty {
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.selectedPostImages strong {
+  color: var(--ink);
+  display: block;
+  font-size: 13px;
+}
+
+.selectedPostImages span {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  line-height: 1.45;
+  margin-top: 4px;
+}
+
+.selectedPostImageThumbs {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.selectedPostImageThumbs img,
+.selectedPostImageThumbs span {
+  aspect-ratio: 1;
+  border: 1px solid rgba(18, 118, 97, 0.18);
+  border-radius: 10px;
+  flex: 0 0 38px;
+  height: 38px;
+}
+
+.selectedPostImageThumbs img {
+  object-fit: cover;
+}
+
+.selectedPostImageThumbs span {
+  align-items: center;
+  background: rgba(18, 118, 97, 0.09);
+  color: var(--accent-strong);
+  display: flex;
+  font-size: 12px;
+  font-weight: 900;
+  justify-content: center;
 }
 
 .creationProvenanceStrip {

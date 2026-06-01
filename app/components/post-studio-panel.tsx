@@ -745,15 +745,31 @@ export function PostStudioPanel({
           </section>
 
           <div className="postPreviewShell">
-            <div className="postCoverPreview">
-              {selectedAssets[0] ? (
-                <img alt={selectedAssets[0].name} src={`/api/assets/file/${selectedAssets[0].id}`} />
-              ) : (
+            <div className="postPreviewMediaColumn">
+              <div className="postCoverPreview">
+                {selectedAssets[0] ? (
+                  <img alt={selectedAssets[0].name} src={`/api/assets/file/${selectedAssets[0].id}`} />
+                ) : (
+                  <div>
+                    <ImagePlus size={28} />
+                    <span>封面待选择</span>
+                  </div>
+                )}
+              </div>
+              <section className={selectedAssets.length ? "selectedPostImages ready" : "selectedPostImages empty"} aria-label="已选择发布图片">
                 <div>
-                  <ImagePlus size={28} />
-                  <span>封面待选择</span>
+                  <strong>{selectedAssets.length ? `已选 ${selectedAssets.length} 张发布图片` : "发布图片未选择"}</strong>
+                  <span>{selectedAssets.length ? "这些图片已同步到当前 PostProject，会进入发布装配与安全检查。" : "在参考图或生成素材里点选图片，或让 Agent 先生成配图。"}</span>
                 </div>
-              )}
+                {selectedAssets.length ? (
+                  <div className="selectedPostImageThumbs">
+                    {selectedAssets.slice(0, 4).map((asset) => (
+                      <img alt={asset.name} key={asset.id} src={`/api/assets/file/${asset.id}`} />
+                    ))}
+                    {selectedAssets.length > 4 ? <span>+{selectedAssets.length - 4}</span> : null}
+                  </div>
+                ) : null}
+              </section>
             </div>
             <div className="postEditStack">
               {copyVersions.length ? (
