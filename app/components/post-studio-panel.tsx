@@ -69,6 +69,7 @@ import { selectRunningJobForWorkspace } from "@/app/components/job-display";
 import { buildCreationProvenance, type CreationProvenanceCard } from "@/app/components/creation-provenance";
 import { buildBriefTabSummary, buildImageTabSummary, buildPublishTabSummary, type StudioTabSummary } from "@/app/components/studio-tab-summary";
 import { buildCreatorMemoryDigest } from "@/lib/agent/memory-digest";
+import { resolvePostCreationTopic, resolvePostStudioTitle } from "@/app/components/post-studio-title";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
@@ -257,8 +258,12 @@ export function PostStudioPanel({
   const allowedPostActions = (project?.allowedActions ?? []) as PostAction[];
   const stageGuidance = getPostStageGuidance(project?.currentStage ?? "empty", allowedPostActions);
   const nextActions = getOrderedPostNextActions(project?.currentStage ?? "empty", allowedPostActions.length ? allowedPostActions : ["search_research"]);
-  const projectTitle = project?.topic || workspace?.topic || "新帖子项目";
-  const creationTopic = project?.topic || workspace?.topic || researchForm.topic || "未命名帖子项目";
+  const projectTitle = resolvePostStudioTitle({ projectTopic: project?.topic, workspaceTopic: workspace?.topic });
+  const creationTopic = resolvePostCreationTopic({
+    projectTopic: project?.topic,
+    workspaceTopic: workspace?.topic,
+    researchTopic: researchForm.topic
+  });
   const canGenerateCopy = Boolean(insights.length || workflowResult?.researchSummary || workspace?.evidenceSummary);
   const latestImagePrompt = publishDraft.imagePrompt || project?.imagePrompts.at(-1)?.value.prompt || "";
   const quality = project?.qualityCheck;
