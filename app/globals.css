@@ -3605,6 +3605,21 @@ textarea {
   font-weight: 900;
 }
 
+.studioStatusProgress button {
+  background: rgba(18, 118, 97, 0.1);
+  border: 1px solid rgba(18, 118, 97, 0.18);
+  border-radius: 999px;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 5px 9px;
+}
+
+.studioStatusProgress button:hover {
+  background: rgba(18, 118, 97, 0.16);
+}
+
 .studioStatusProgress i {
   background: rgba(0, 0, 0, 0.08);
   border-radius: 999px;

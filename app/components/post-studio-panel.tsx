@@ -485,7 +485,13 @@ export function PostStudioPanel({
             <div className="studioStatusProgress" aria-label="帖子项目完成度">
               <div>
                 <span>{statusSummary.stageLine}</span>
-                {statusSummary.primaryActionLabel ? <b>建议：{statusSummary.primaryActionLabel}</b> : null}
+                {statusSummary.primaryAction ? (
+                  <button type="button" onClick={() => onQuickAction(statusSummary.primaryAction!)}>
+                    建议：{statusSummary.primaryActionLabel}
+                  </button>
+                ) : statusSummary.primaryActionLabel ? (
+                  <b>建议：{statusSummary.primaryActionLabel}</b>
+                ) : null}
               </div>
               <i><em style={{ width: `${statusSummary.progressPercent}%` }} /></i>
             </div>
