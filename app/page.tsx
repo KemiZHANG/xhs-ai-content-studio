@@ -1101,7 +1101,7 @@ export default function Home() {
     setNotice("已带入图片创作简报，只包含图片风格和生成要求。");
   }
 
-  async function openPublishAssembly(draft?: NonNullable<WorkflowResult["draft"]>) {
+  async function openPublishAssembly(draft?: NonNullable<WorkflowResult["draft"]>, options: { stayInStudio?: boolean } = {}) {
     if (draft) {
       applyDraftToPublish(draft, publishVisibility);
       await commitCanvasToProject({
@@ -1113,8 +1113,14 @@ export default function Home() {
     } else {
       await commitCanvasToProject();
     }
-    setSection("publish");
-    setNotice("请在发布装配台确认文案、图片、可见范围和发布时间。");
+    if (options.stayInStudio) {
+      focusPostStudioTab("publish");
+      setSection("flow");
+      setNotice("已在 Post Studio 内聚焦发布检查。确认文案、图片、账号、可见范围和时间后再生成确认单。");
+    } else {
+      setSection("publish");
+      setNotice("请在发布装配台确认文案、图片、可见范围和发布时间。");
+    }
   }
 
   async function openPublishAssemblyFromWorkspace(options: { stayInStudio?: boolean } = {}) {
@@ -1421,7 +1427,7 @@ export default function Home() {
             onDraftCommand={(message) => void submitChatMessage(message, true)}
             onCopyStudio={(brief) => openCopyWorkspaceFromEvidence(brief)}
             onImageStudio={(brief) => openImageStudioFromEvidence(brief)}
-            onOpenPublish={(draft) => void openPublishAssembly(draft)}
+            onOpenPublish={(draft) => void openPublishAssembly(draft, { stayInStudio: true })}
           />
         ) : null}
 
@@ -1492,7 +1498,7 @@ export default function Home() {
               }))
             }
             onGoChat={() => setSection("chat")}
-            onOpenPublish={() => void openPublishAssembly()}
+            onOpenPublish={() => void openPublishAssembly(undefined, { stayInStudio: true })}
           />
         ) : null}
 
@@ -1524,8 +1530,8 @@ export default function Home() {
             onDraftCommand={(message) => void submitChatMessage(message, true)}
             onOpenCopyWorkspace={(brief) => openCopyWorkspaceFromEvidence(brief)}
             onOpenImageStudio={() => openImageStudioFromEvidence()}
-            onOpenPublish={(draft) => void openPublishAssembly(draft)}
-            onOpenPublishFromWorkspace={() => void openPublishAssemblyFromWorkspace()}
+            onOpenPublish={(draft) => void openPublishAssembly(draft, { stayInStudio: true })}
+            onOpenPublishFromWorkspace={() => void openPublishAssemblyFromWorkspace({ stayInStudio: true })}
           />
         ) : null}
 
@@ -1582,7 +1588,7 @@ export default function Home() {
             onDraftCommand={(message) => void submitChatMessage(message, true)}
             onCopyStudio={(brief) => openCopyWorkspaceFromEvidence(brief)}
             onImageStudio={(brief) => openImageStudioFromEvidence(brief)}
-            onOpenPublish={(draft) => openPublishAssembly(draft)}
+            onOpenPublish={(draft) => openPublishAssembly(draft, { stayInStudio: true })}
           />
         ) : null}
 
