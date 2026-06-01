@@ -96,7 +96,7 @@ export default function Home() {
   const [pendingPublish, setPendingPublish] = useState<PendingPublishConfirmation | null>(null);
   const [dismissedPublishIntentId, setDismissedPublishIntentId] = useState<string | null>(null);
   const [workflowForm, setWorkflowForm] = useState({
-    topic: "上海安静咖啡馆",
+    topic: "",
     contentType: "探店",
     timeRange: "一周内",
     sampleCount: 8,

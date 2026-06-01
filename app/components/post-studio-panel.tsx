@@ -630,7 +630,11 @@ export function PostStudioPanel({
             <form className="studioResearchBox" onSubmit={onRunResearch}>
               <label>
                 <span>主题</span>
-                <input value={researchForm.topic} onChange={(event) => onResearchFormChange({ ...researchForm, topic: event.target.value })} />
+                <input
+                  placeholder="例如：广州咖啡馆 / 通勤包 / 产品种草"
+                  value={researchForm.topic}
+                  onChange={(event) => onResearchFormChange({ ...researchForm, topic: event.target.value })}
+                />
               </label>
               <div className="formRow">
                 <label>
