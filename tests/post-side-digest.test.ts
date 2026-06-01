@@ -18,6 +18,8 @@ describe("post side digest", () => {
     });
 
     expect(digest.headline).toBe("先处理：证据策略");
+    expect(digest.primaryTab).toBe("evidence");
+    expect(digest.primaryLabel).toBe("去处理：证据策略");
     expect(digest.cards).toHaveLength(4);
     expect(digest.cards[0]).toMatchObject({
       label: "证据策略",
@@ -44,6 +46,8 @@ describe("post side digest", () => {
     });
 
     expect(digest.headline).toBe("右侧素材和证据已收口");
+    expect(digest.primaryTab).toBe("publish");
+    expect(digest.primaryLabel).toBe("继续查看：当前面板");
     expect(digest.cards.map((card) => card.state)).toEqual(["ready", "ready", "ready", "neutral"]);
     expect(digest.cards[0]).toMatchObject({
       value: "8 条规律",

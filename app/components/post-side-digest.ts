@@ -12,6 +12,9 @@ export type PostSideDigestCard = {
 export type PostSideDigest = {
   headline: string;
   detail: string;
+  primaryTab: DigestStudioTab;
+  primaryLabel: string;
+  primaryReason: string;
   cards: PostSideDigestCard[];
 };
 
@@ -100,9 +103,13 @@ export function buildPostSideDigest({
   ];
 
   const firstWarn = cards.find((card) => card.state === "warn");
+  const primaryCard = firstWarn ?? cards.find((card) => card.state === "neutral") ?? cards[0];
   return {
     headline: firstWarn ? `先处理：${firstWarn.label}` : "右侧素材和证据已收口",
     detail: firstWarn?.detail ?? "默认只展示关键证据、当前图片和发布阻塞项，完整数据保留在详情里。",
+    primaryTab: primaryCard.tab,
+    primaryLabel: firstWarn ? `去处理：${primaryCard.label}` : `继续查看：${primaryCard.label}`,
+    primaryReason: primaryCard.detail,
     cards
   };
 }

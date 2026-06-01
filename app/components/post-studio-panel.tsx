@@ -926,6 +926,10 @@ export function PostStudioPanel({
               <strong>{sideDigest.headline}</strong>
               <p>{sideDigest.detail}</p>
             </div>
+            <button className="studioSideDigestPrimary" type="button" onClick={() => setTab(sideDigest.primaryTab)}>
+              <span>{sideDigest.primaryLabel}</span>
+              <strong>{sideDigest.primaryReason}</strong>
+            </button>
             <div className="studioSideDigestGrid">
               {sideDigest.cards.map((card) => (
                 <button
