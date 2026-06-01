@@ -3927,6 +3927,23 @@ textarea {
   padding-left: 8px;
 }
 
+.nextActionDecision summary {
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-weight: 900;
+  list-style-position: inside;
+}
+
+.nextActionDecision:not([open]) {
+  border-left-color: transparent;
+  margin: 0;
+  padding-left: 0;
+}
+
+.nextActionDecision:not([open]) span {
+  display: none;
+}
+
 .nextActionSafety {
   color: #9a3412;
   font-weight: 800;

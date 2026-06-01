@@ -564,11 +564,6 @@ export function PostStudioPanel({
           <span className="nextActionEyebrow">下一步建议</span>
           <strong>{nextStepCoach.headline}</strong>
           <p>{nextStepCoach.detail}</p>
-          <div className="nextActionDecision">
-            <span>为什么：{nextStepCoach.whyLine}</span>
-            <span>完成后：{nextStepCoach.outcomeLine}</span>
-            {nextStepCoach.safetyLine ? <span className="nextActionSafety">{nextStepCoach.safetyLine}</span> : null}
-          </div>
           {nextStepCoach.progressLine ? <small>{nextStepCoach.progressLine}</small> : null}
           <div className="nextActionButtons">
             {nextStepCoach.primaryAction ? (
@@ -582,6 +577,12 @@ export function PostStudioPanel({
               </button>
             ))}
           </div>
+          <details className="nextActionDecision">
+            <summary>查看原因与结果</summary>
+            <span>为什么：{nextStepCoach.whyLine}</span>
+            <span>完成后：{nextStepCoach.outcomeLine}</span>
+            {nextStepCoach.safetyLine ? <span className="nextActionSafety">{nextStepCoach.safetyLine}</span> : null}
+          </details>
           <button className="secondaryButton" onClick={onNewProject} type="button">新建项目</button>
         </div>
         {readiness ? (
