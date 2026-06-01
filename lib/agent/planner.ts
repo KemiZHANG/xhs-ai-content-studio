@@ -289,7 +289,23 @@ function buildStageContinuationPlan(input: CreateAgentPlanInput, message: string
   if (!primaryAction || primaryAction === "recover") {
     return null;
   }
+  if (isPublishRiskAction(primaryAction)) {
+    return buildPlan({
+      intent: "ask",
+      topic: inferTopic(message),
+      steps: [
+        step(
+          "askClarifyingQuestion",
+          "The current PostProject stage is close to publishing, but the user command is vague; require explicit publish, schedule, visibility, and account intent before creating any publish action."
+        )
+      ]
+    });
+  }
   return planFromPostAction(primaryAction, input, message, guidance.title);
+}
+
+function isPublishRiskAction(action: PostAction): boolean {
+  return action === "request_publish_confirmation" || action === "schedule_publish" || action === "publish_now";
 }
 
 function planFromPostAction(
@@ -430,7 +446,7 @@ function isAmbiguousLowSignalRequest(message: string, lower: string): boolean {
   const compact = message.replace(/\s+/g, "");
   if (compact.length > 16) return false;
   if (lower === "ok" || lower === "thanks" || lower === "thank you") return false;
-  return /^(继续|下一步|帮我弄一下|帮我处理|处理一下|搞一下|优化一下|改一下|再来一下|你看着办|随便弄|安排一下|继续吧|继续做)$/.test(compact);
+  return /^(继续|下一步|帮我弄一下|帮我做一下|帮我处理|处理一下|搞一下|优化一下|改一下|再改一下|再来一下|你看着办|随便弄|安排一下|继续吧|继续做)$/.test(compact);
 }
 
 function buildPlan(input: Omit<AgentPlan, "id">): AgentPlan {
@@ -503,7 +519,7 @@ function isAssemblePostRequest(message: string, lower: string): boolean {
 }
 
 function isDraftRevisionRequest(message: string, lower: string): boolean {
-  return /修改|改得|优化|生活化|重写|调整|标题|正文|标签/.test(message) || lower.includes("revise");
+  return /修改|改得|改一下|再改|优化|生活化|重写|调整|润色|标题|正文|标签/.test(message) || lower.includes("revise");
 }
 
 function isDraftCreationFromProjectRequest(message: string, lower: string): boolean {

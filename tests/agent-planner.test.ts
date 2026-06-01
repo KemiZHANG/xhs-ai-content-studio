@@ -196,7 +196,7 @@ describe("agent planner", () => {
 
   it("uses the current PostProject stage to continue vague active-project commands", () => {
     const plan = createAgentPlan({
-      message: "帮我弄一下",
+      message: "帮我做一下",
       hasCurrentDraft: true,
       attachedAssetCount: 0,
       postStage: "copy_ready",
@@ -209,6 +209,36 @@ describe("agent planner", () => {
     expect(plan.steps.map((step) => step.action)).toEqual(["planVisuals"]);
     expect(plan.steps[0].toolName).toBe("workflow.planVisuals");
     expect(plan.steps[0].reason).toContain("Continue from current PostProject stage");
+  });
+
+  it("plans a vague revision phrase against the current draft", () => {
+    const plan = createAgentPlan({
+      message: "再改一下",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      postStage: "copy_ready",
+      hasEvidence: true,
+      hasCreativeBrief: true
+    });
+
+    expect(plan.intent).toBe("revise_draft");
+    expect(plan.steps.map((step) => step.action)).toEqual(["reviseDraft"]);
+    expect(plan.steps[0].toolName).toBe("draft.reviseCurrent");
+  });
+
+  it("asks for a current draft before handling a vague revision phrase", () => {
+    const plan = createAgentPlan({
+      message: "再改一下",
+      hasCurrentDraft: false,
+      attachedAssetCount: 0,
+      postStage: "brief_ready",
+      hasEvidence: true,
+      hasCreativeBrief: true
+    });
+
+    expect(plan.intent).toBe("ask");
+    expect(plan.steps[0].action).toBe("askClarifyingQuestion");
+    expect(plan.steps[0].reason).toContain("revise copy");
   });
 
   it("continues from evidence-ready stage by creating a CreativeBrief", () => {
@@ -240,7 +270,7 @@ describe("agent planner", () => {
     expect(plan.steps[0].toolName).toBe("knowledge.retrieveViralPatterns");
   });
 
-  it("continues from reviewing stage by preparing a guarded publish confirmation", () => {
+  it("asks before continuing from reviewing stage into publish-related actions", () => {
     const plan = createAgentPlan({
       message: "下一步",
       hasCurrentDraft: true,
@@ -251,9 +281,9 @@ describe("agent planner", () => {
       hasSelectedImages: true
     });
 
-    expect(plan.intent).toBe("prepare_publish");
-    expect(plan.steps.map((step) => step.action)).toEqual(["preparePublish"]);
-    expect(plan.steps[0].toolName).toBe("publish.prepare");
+    expect(plan.intent).toBe("ask");
+    expect(plan.steps.map((step) => step.action)).toEqual(["askClarifyingQuestion"]);
+    expect(plan.steps[0].reason).toContain("close to publishing");
   });
 
   it("asks for evidence or brief context before drafting from an under-specified project", () => {
