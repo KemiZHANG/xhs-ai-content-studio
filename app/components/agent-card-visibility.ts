@@ -15,7 +15,7 @@ const priority: AgentResponseCard["type"][] = [
   "stage_guidance"
 ];
 
-export function pickVisibleAgentCards(cards: AgentResponseCard[], limit = 4): AgentResponseCard[] {
+export function pickVisibleAgentCards(cards: AgentResponseCard[], limit = 3): AgentResponseCard[] {
   const sorted = [...cards].sort((left, right) => {
     const leftRank = priority.indexOf(left.type);
     const rightRank = priority.indexOf(right.type);

@@ -19,7 +19,7 @@ describe("agent card visibility", () => {
       card("publish", "publish_check")
     ]);
 
-    expect(visible.map((item) => item.id)).toEqual(["director", "quality", "publish", "copy"]);
+    expect(visible.map((item) => item.id)).toEqual(["director", "quality", "publish"]);
   });
 
   it("keeps duplicate card types from flooding the visible strip", () => {
@@ -31,7 +31,7 @@ describe("agent card visibility", () => {
       card("image", "image_prompt")
     ]);
 
-    expect(visible.map((item) => item.id)).toEqual(["copy-1", "brief", "image", "copy-2"]);
+    expect(visible.map((item) => item.id)).toEqual(["copy-1", "brief", "image"]);
   });
 
   it("marks only decision-critical cards as high priority", () => {

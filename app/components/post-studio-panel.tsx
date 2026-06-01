@@ -2037,6 +2037,13 @@ function AgentStructuredMessage({
 
   return (
     <div className="agentMessageMeta">
+      {message.questions?.length ? (
+        <div className="agentQuestionBox priority">
+          <strong>Agent 还需要你补充</strong>
+          {message.questions.slice(0, 3).map((question) => <p key={question}>{question}</p>)}
+        </div>
+      ) : null}
+
       {cards.length ? (
         <div className="agentCardStrip">
           {cards.map((card) => (
@@ -2060,13 +2067,6 @@ function AgentStructuredMessage({
             <p key={card.id}>{labelForAgentCard(card.type)}：{card.title}</p>
           ))}
         </details>
-      ) : null}
-
-      {message.questions?.length ? (
-        <div className="agentQuestionBox">
-          <strong>Agent 还需要你补充</strong>
-          {message.questions.slice(0, 3).map((question) => <p key={question}>{question}</p>)}
-        </div>
       ) : null}
 
       {trace.length ? (

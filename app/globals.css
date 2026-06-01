@@ -4665,6 +4665,11 @@ textarea {
   padding: 9px;
 }
 
+.agentQuestionBox.priority {
+  background: linear-gradient(135deg, rgba(190, 122, 20, 0.15), rgba(255, 255, 255, 0.74));
+  border-color: rgba(190, 122, 20, 0.3);
+}
+
 .agentQuestionBox strong {
   font-size: 12px;
 }
