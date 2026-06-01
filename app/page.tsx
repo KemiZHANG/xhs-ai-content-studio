@@ -571,15 +571,23 @@ export default function Home() {
   }
 
   async function startResearchJob() {
+    const topic = workflowForm.topic.trim();
+    if (!topic) {
+      setChatInput("我想新建一篇小红书帖子。主题是：；目标人群是：；内容目标是：。请先帮我整理还缺哪些信息，再开始搜索真实笔记。");
+      focusPostStudioTab("insights");
+      setNotice("先补充主题再开始研究。Agent 输入框里已放好需求模板，避免创建空主题任务。");
+      return;
+    }
     setBusy("workflow");
     setNotice("");
     try {
       await resetActiveWorkspace({
-        topic: workflowForm.topic,
+        topic,
         lastUserIntent: "start_research"
       });
       const researchInput = {
         ...workflowForm,
+        topic,
         workflowGoal: "research",
         publishMode: "draft",
         autoPublish: false,
@@ -1059,7 +1067,9 @@ export default function Home() {
     await resetActiveWorkspace({ lastUserIntent: "start_new_project" });
     setActiveConversationId(null);
     setMessages([]);
+    setChatInput("");
     setSection("flow");
+    focusPostStudioTab("insights");
     setNotice(noticeForProjectReset("project"));
   }
 
