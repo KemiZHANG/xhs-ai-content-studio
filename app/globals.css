@@ -3684,6 +3684,15 @@ textarea {
   padding: 10px;
 }
 
+.studioAccountControl.ready {
+  border-color: rgba(18, 118, 97, 0.24);
+}
+
+.studioAccountControl.warn {
+  background: rgba(255, 251, 242, 0.72);
+  border-color: rgba(190, 122, 20, 0.28);
+}
+
 .studioAccountControl > div:first-child,
 .studioAccountControl label {
   display: grid;
@@ -3759,6 +3768,11 @@ textarea {
   color: var(--muted);
   font-size: 11px;
   line-height: 1.45;
+}
+
+.studioAccountControl.warn .studioAccountSwitchHint {
+  color: #8a4b18;
+  font-weight: 800;
 }
 
 @media (max-width: 980px) {

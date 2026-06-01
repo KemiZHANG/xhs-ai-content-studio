@@ -501,7 +501,7 @@ export function PostStudioPanel({
               <ShieldCheck size={15} />
               <span>{statusSummary.accountLine}</span>
             </div>
-            <div className="studioAccountControl">
+            <div className={`studioAccountControl ${statusSummary.accountReady ? "ready" : "warn"}`}>
               <div>
                 <small>发布账号</small>
                 <strong>{statusSummary.accountName}</strong>
