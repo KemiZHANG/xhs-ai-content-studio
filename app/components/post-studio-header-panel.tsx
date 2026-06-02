@@ -75,6 +75,7 @@ export function PostStudioHeaderPanel({
         onChatSubmit={onChatSubmit}
         onNewProject={onNewProject}
         onQuickAction={onQuickAction}
+        projectContextSummary={projectContextSummary}
       />
     </>
   );
@@ -190,7 +191,19 @@ function StudioStatusCard({
       </div>
       {statusSummary.blockers.length ? (
         <ul className="studioStatusBlockers">
-          {statusSummary.blockers.map((item) => <li key={item}>{item}</li>)}
+          {statusSummary.blockers.map((item) => {
+            const action = actionForBlocker(item);
+            return (
+              <li key={item}>
+                <span>{item}</span>
+                {action ? (
+                  <button type="button" onClick={() => onQuickAction(action.action)}>
+                    {action.label}
+                  </button>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       ) : null}
     </div>
@@ -226,6 +239,7 @@ function NextActionBar({
   nextStepCoach,
   chatInput,
   busy,
+  projectContextSummary,
   onQuickAction,
   onChatInput,
   onChatSubmit,
@@ -234,6 +248,7 @@ function NextActionBar({
   nextStepCoach: PostNextStepCoach;
   chatInput: string;
   busy: boolean;
+  projectContextSummary: PostProjectContextSummary;
   onQuickAction: (action: string) => void;
   onChatInput: (value: string) => void;
   onChatSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -292,6 +307,11 @@ function NextActionBar({
           发送
         </button>
       </form>
+      <div className={`topComposerContext ${projectContextSummary.state}`}>
+        <span>这句话会作用于：{projectContextSummary.title}</span>
+        <span>{projectContextSummary.scopeLine}</span>
+        <span>{projectContextSummary.publishLine}</span>
+      </div>
       <details className="nextActionDecision">
         <summary>查看完整决策说明</summary>
         <span>为什么：{nextStepCoach.whyLine}</span>
@@ -301,4 +321,29 @@ function NextActionBar({
       <button className="secondaryButton" onClick={onNewProject} type="button">新建项目</button>
     </div>
   );
+}
+
+function actionForBlocker(blocker: string): { action: string; label: string } | null {
+  if (blocker.includes("账号") || blocker.includes("登录")) {
+    return null;
+  }
+  if (blocker.includes("Quality") || blocker.includes("检查") || blocker.includes("风险")) {
+    return { action: "run_quality_gate", label: "刷新检查" };
+  }
+  if (blocker.includes("图片") || blocker.includes("选图")) {
+    return { action: "select_images", label: "选择图片" };
+  }
+  if (blocker.includes("视觉") || blocker.includes("方向")) {
+    return { action: "plan_visuals", label: "规划图片" };
+  }
+  if (blocker.includes("文案") || blocker.includes("标题") || blocker.includes("正文")) {
+    return { action: "generate_copy", label: "补文案" };
+  }
+  if (blocker.includes("证据") || blocker.includes("研究")) {
+    return { action: "search_research", label: "做研究" };
+  }
+  if (blocker.includes("保存")) {
+    return { action: "assemble_post", label: "保存装配" };
+  }
+  return null;
 }
