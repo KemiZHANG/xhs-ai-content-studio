@@ -178,13 +178,28 @@ const citationReport: EvidenceCitationReport = {
       }],
       missingEvidenceIds: [],
       sourceCounts: { realtime: 1, viral_library: 0, user_input: 0 }
+    },
+    {
+      field: "content",
+      evidenceIds: ["viral-structure-1"],
+      insights: [{
+        id: "viral-structure-1",
+        sourceType: "viral_library",
+        type: "structure",
+        insight: "正文先给可收藏结论，再补充真实体验和选择理由",
+        sourceSampleIds: ["viral-case-1"],
+        confidence: 0.86,
+        createdAt: "2026-06-02T00:00:00.000Z"
+      }],
+      missingEvidenceIds: [],
+      sourceCounts: { realtime: 0, viral_library: 1, user_input: 0 }
     }
   ],
-  allEvidenceIds: ["title-1"],
+  allEvidenceIds: ["title-1", "viral-structure-1"],
   missingEvidenceIds: [],
-  sourceCounts: { realtime: 1, viral_library: 0, user_input: 0 },
+  sourceCounts: { realtime: 1, viral_library: 1, user_input: 0 },
   hasRealtimeEvidence: true,
-  hasViralEvidence: false,
+  hasViralEvidence: true,
   hasUserInputEvidence: false,
   warnings: [],
   summary: "字段级引用 1 条"
@@ -268,6 +283,9 @@ describe("post canvas panel", () => {
     expect(html).toContain("最终帖子画布");
     expect(html).toContain("为什么这样创作");
     expect(html).toContain("创作依据");
+    expect(html).toContain("当前稿件引用");
+    expect(html).toContain("实时研究 1");
+    expect(html).toContain("爆款库 1");
     expect(html).toContain("文案和图片共享当前 CreativeBrief");
     expect(html).toContain("最终帖子已锁定");
     expect(html).toContain("已选 2 张发布图片");
