@@ -7,6 +7,7 @@ import { activeAccountReadinessHint, isHealthForActiveAccount } from "@/app/comp
 import { buildPublishConfirmationReadiness } from "@/app/components/publish-confirmation";
 import { formatMcpEndpoint } from "@/app/components/xhs-display-utils";
 import { StatusLine, StatusPill } from "@/app/components/status-badges";
+import { buildQualityViralCoverageView } from "@/app/components/quality-viral-coverage";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 
 export function PublishAssemblyPanel({
@@ -65,6 +66,7 @@ export function PublishAssemblyPanel({
   const postPlan = postProject?.publishPlan;
   const versionStatus = postProject ? getPostVersionStatus(postProject) : null;
   const versionDiff = postProject ? getPostVersionDiffReport(postProject) : null;
+  const qualityViralCoverage = buildQualityViralCoverageView(quality?.viralCoverage);
   const confirmationReadiness = buildPublishConfirmationReadiness({
     contentReady: ready,
     accountReady,
@@ -177,6 +179,22 @@ export function PublishAssemblyPanel({
             ) : null}
             {quality?.evidenceReview ? (
               <p className="muted">证据覆盖：{quality.evidenceReview.summary}</p>
+            ) : null}
+            {qualityViralCoverage.hasCoverage ? (
+              <div className="qualityViralCoverage compact" aria-label="发布装配爆款库覆盖">
+                <div>
+                  <strong>{qualityViralCoverage.headline}</strong>
+                  <span>{qualityViralCoverage.detail}</span>
+                </div>
+                <div>
+                  {qualityViralCoverage.items.map((item) => (
+                    <em className={item.status} key={item.field}>
+                      <b>{item.label}</b>
+                      {item.line}
+                    </em>
+                  ))}
+                </div>
+              </div>
             ) : null}
           </section>
         ) : null}

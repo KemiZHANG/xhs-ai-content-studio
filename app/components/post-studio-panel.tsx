@@ -57,6 +57,7 @@ import { buildPostStudioStatusSummary } from "@/app/components/post-studio-statu
 import { buildViralApplicationModel } from "@/app/components/viral-application";
 import { buildViralEvidenceSummary } from "@/app/components/viral-evidence-summary";
 import { buildViralLibraryHealth } from "@/app/components/viral-library-health";
+import { buildQualityViralCoverageView, type QualityViralCoverageView } from "@/app/components/quality-viral-coverage";
 import { buildPublishConfirmationSummary } from "@/app/components/publish-confirmation-summary";
 import { buildPublishSafetyBoundary } from "@/app/components/publish-safety-boundary";
 import { buildPublishAccountSafety } from "@/app/components/publish-account-safety";
@@ -270,6 +271,7 @@ export function PostStudioPanel({
   const canGenerateCopy = Boolean(insights.length || workflowResult?.researchSummary || workspace?.evidenceSummary);
   const latestImagePrompt = publishDraft.imagePrompt || project?.imagePrompts.at(-1)?.value.prompt || "";
   const quality = project?.qualityCheck;
+  const qualityViralCoverage = buildQualityViralCoverageView(quality?.viralCoverage);
   const brief = project?.creativeBrief;
   const briefTabSummary = buildBriefTabSummary({
     project,
@@ -1944,6 +1946,7 @@ export function PostStudioPanel({
                   {quality.evidenceReview ? (
                     <p className="muted">证据覆盖：{quality.evidenceReview.summary}</p>
                   ) : null}
+                  <QualityViralCoverageStrip view={qualityViralCoverage} />
                   {quality.originalityReview ? (
                     <p className={quality.originalityReview.isSafe ? "muted" : "qualityWarningText"}>
                       原创边界：{quality.originalityReview.summary}
@@ -2605,6 +2608,26 @@ function ViralEvidenceDigest({
       {onOpenViral ? (
         <button className="textButton" type="button" onClick={onOpenViral}>查看爆款库证据</button>
       ) : null}
+    </div>
+  );
+}
+
+function QualityViralCoverageStrip({ view }: { view: QualityViralCoverageView }) {
+  if (!view.hasCoverage) return null;
+  return (
+    <div className="qualityViralCoverage" aria-label="Quality Gate 爆款库覆盖">
+      <div>
+        <strong>{view.headline}</strong>
+        <span>{view.detail}</span>
+      </div>
+      <div>
+        {view.items.map((item) => (
+          <em className={item.status} key={item.field} title={item.line}>
+            <b>{item.label}</b>
+            {item.line}
+          </em>
+        ))}
+      </div>
     </div>
   );
 }

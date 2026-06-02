@@ -602,6 +602,16 @@ export type PostProject = {
       isSafe: boolean;
       summary: string;
     };
+    viralCoverage?: {
+      fields: Array<{
+        field: "title" | "content" | "tags" | "imagePrompt";
+        viralEvidenceIds: string[];
+        realtimeEvidenceIds: string[];
+        status: "covered" | "missing";
+      }>;
+      missingFields: string[];
+      summary: string;
+    };
     checkedAt: string;
   };
   updatedAt: string;

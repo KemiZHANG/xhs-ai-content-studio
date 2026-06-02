@@ -7429,6 +7429,65 @@ textarea {
   color: var(--accent-strong);
 }
 
+.qualityViralCoverage {
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(18, 118, 97, 0.16);
+  border-radius: 14px;
+  display: grid;
+  gap: 9px;
+  margin-top: 10px;
+  padding: 10px;
+}
+
+.qualityViralCoverage > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.qualityViralCoverage strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.qualityViralCoverage span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.qualityViralCoverage > div:last-child {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.qualityViralCoverage em {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(30, 27, 23, 0.08);
+  border-radius: 10px;
+  color: var(--muted);
+  display: grid;
+  font-size: 11px;
+  font-style: normal;
+  gap: 3px;
+  padding: 7px 8px;
+}
+
+.qualityViralCoverage em b {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.qualityViralCoverage em.covered {
+  border-color: rgba(18, 118, 97, 0.24);
+  box-shadow: inset 3px 0 0 rgba(18, 118, 97, 0.58);
+}
+
+.qualityViralCoverage em.missing {
+  border-color: rgba(185, 107, 25, 0.2);
+  box-shadow: inset 3px 0 0 rgba(185, 107, 25, 0.42);
+}
+
 .advancedEntry {
   border: 1px dashed color-mix(in srgb, var(--line) 85%, transparent);
   border-radius: 12px;
