@@ -3923,6 +3923,37 @@ textarea {
   margin: 0;
 }
 
+.nextActionReasonGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 4px 0;
+}
+
+.nextActionReasonGrid span {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  display: grid;
+  font-size: 11px;
+  gap: 3px;
+  line-height: 1.45;
+  min-width: 0;
+  padding: 8px;
+}
+
+.nextActionReasonGrid span.safety {
+  background: rgba(190, 122, 20, 0.08);
+  border-color: rgba(190, 122, 20, 0.22);
+}
+
+.nextActionReasonGrid small {
+  color: var(--accent-strong);
+  font-size: 10px;
+  font-weight: 900;
+}
+
 .nextActionDecision {
   border-left: 2px solid rgba(18, 118, 97, 0.28);
   color: var(--muted);

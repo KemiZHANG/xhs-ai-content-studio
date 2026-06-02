@@ -245,6 +245,22 @@ function NextActionBar({
       <strong>{nextStepCoach.headline}</strong>
       <p>{nextStepCoach.detail}</p>
       {nextStepCoach.progressLine ? <small>{nextStepCoach.progressLine}</small> : null}
+      <div className="nextActionReasonGrid" aria-label="下一步决策摘要">
+        <span>
+          <small>为什么</small>
+          {nextStepCoach.whyLine}
+        </span>
+        <span>
+          <small>完成后</small>
+          {nextStepCoach.outcomeLine}
+        </span>
+        {nextStepCoach.safetyLine ? (
+          <span className="safety">
+            <small>安全</small>
+            {nextStepCoach.safetyLine}
+          </span>
+        ) : null}
+      </div>
       <div className="nextActionButtons">
         {nextStepCoach.primaryAction ? (
           <button className="isPrimaryNext" type="button" onClick={() => onQuickAction(nextStepCoach.primaryAction!)}>
@@ -277,7 +293,7 @@ function NextActionBar({
         </button>
       </form>
       <details className="nextActionDecision">
-        <summary>查看原因与结果</summary>
+        <summary>查看完整决策说明</summary>
         <span>为什么：{nextStepCoach.whyLine}</span>
         <span>完成后：{nextStepCoach.outcomeLine}</span>
         {nextStepCoach.safetyLine ? <span className="nextActionSafety">{nextStepCoach.safetyLine}</span> : null}
