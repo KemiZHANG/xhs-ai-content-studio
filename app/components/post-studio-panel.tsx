@@ -3,7 +3,6 @@
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
-  CheckCircle2,
   Library,
   MessageSquareText,
   Rocket,
@@ -77,10 +76,8 @@ import {
 } from "@/app/components/post-studio-evidence-tabs";
 import { PostStudioGeneratedTab, PostStudioReferencesTab } from "@/app/components/post-studio-media-tabs";
 import { RecentViralPanel, ViralStrategyCard } from "@/app/components/post-studio-viral-panels";
-import { labelForPublishStatus, PostStudioPublishIntentPanel } from "@/app/components/post-studio-publish-intent-panel";
-import { PostStudioPublishReadinessPanel } from "@/app/components/post-studio-publish-readiness-panel";
-import { PostStudioPublishSafetyPanel } from "@/app/components/post-studio-publish-safety-panel";
-import { PostStudioQualityPanel } from "@/app/components/post-studio-quality-panel";
+import { labelForPublishStatus } from "@/app/components/post-studio-publish-intent-panel";
+import { PostStudioPublishTab } from "@/app/components/post-studio-publish-tab";
 import { buildVersionSwitchGuidance } from "@/app/components/version-switch-guidance";
 import { resolvePostCreationTopic, resolvePostStudioTitle } from "@/app/components/post-studio-title";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
@@ -1073,79 +1070,45 @@ export function PostStudioPanel({
           ) : null}
 
           {tab === "publish" ? (
-            <SideSection icon={CheckCircle2} title="发布检查">
-              <StudioTaskSummary summary={publishTabSummary} onQuickAction={onQuickAction} />
-              <details className="publishChecklistDetails">
-                <summary>
-                  <strong>详细发布检查</strong>
-                  <span>默认收起，关键阻塞项已汇总在确认摘要。</span>
-                </summary>
-                <CheckItem ok={Boolean(publishDraft.title)} label="标题已填写" />
-                <CheckItem ok={Boolean(publishDraft.content)} label="正文已填写" />
-                <CheckItem ok={Boolean(publishDraft.tagsText)} label="标签已填写" />
-                <CheckItem ok={Boolean(selectedAssets.length)} label="已选择图片" />
-                <CheckItem ok={hasVisualDirection} label="图片方向 / Prompt 已确认" />
-                <CheckItem ok={citationTraceReady} label="字段级证据引用可追溯" />
-                <CheckItem ok={versionStatus?.qualityGateFresh === true} label="最终版本与 Quality Gate 一致" />
-                <CheckItem ok={accountReady} label={`账号：${activeAccount?.displayName ?? "未配置"} · ${accountReadyHint}`} />
-                <CheckItem ok={publishVisibility === "仅自己可见"} label={`可见范围：${publishVisibility}`} />
-                <CheckItem ok={!publishScheduleAt || Date.parse(publishScheduleAt) > Date.now()} label={publishScheduleAt ? `定时：${publishScheduleAt}（本地时区）` : "发布时间：立即"} />
-                <CheckItem ok={settings.defaultAutoPublish === false} label="自动发布默认关闭" />
-              </details>
-              <PostStudioPublishSafetyPanel
-                publishSummary={publishSummary}
-                publishAccountSafety={publishAccountSafety}
-                auditSummary={auditSummary}
-                onNavigate={onNavigate}
-              />
-              <PostStudioPublishReadinessPanel
-                publishVisibility={publishVisibility}
-                publishScheduleAt={publishScheduleAt}
-                publishReady={publishReady}
-                publishDraft={publishDraft}
-                selectedImageCount={selectedAssets.length}
-                hasVisualDirection={hasVisualDirection}
-                citationTraceReady={citationTraceReady}
-                accountReady={accountReady}
-                quality={quality}
-                qualityGateFresh={versionStatus?.qualityGateFresh === true}
-                pendingPublish={pendingPublish}
-                activeLoginName={health?.activeAccount?.loginName}
-                publishSafetyBoundary={publishSafetyBoundary}
-                hasExistingVisualDirection={Boolean(project?.visualDirection)}
-                busy={busy}
-                onVisibilityChange={onVisibilityChange}
-                onScheduleAtChange={onScheduleAtChange}
-                onQuickAction={onQuickAction}
-              />
-              <PostStudioPublishIntentPanel
-                activePublishPlan={activePublishPlan}
-                requiredConfirmations={requiredConfirmations}
-                confirmedRequiredCount={confirmedRequiredCount}
-                publishVisibility={publishVisibility}
-                pendingPublish={pendingPublish}
-                busy={busy}
-                canConfirmExisting={publishAccountSafety.canConfirmExisting}
-                staleAccountPublishPlan={staleAccountPublishPlan}
-                activeAccountLabel={activeAccount?.displayName ?? settings.activeAccountId}
-                staleCanvasPublishPlan={staleCanvasPublishPlan}
-                onCancelPublish={onCancelPublish}
-                onConfirmPublish={onConfirmPublish}
-              />
-              <PostStudioQualityPanel
-                quality={quality}
-                qualityViralCoverage={qualityViralCoverage}
-                citationReport={citationReport}
-                citationTraceReady={citationTraceReady}
-              />
-              <div className="inlineActionGrid">
-                <button className="secondaryButton fullWidth" onClick={() => onQuickAction("run_quality_gate")} type="button">刷新质量检查</button>
-                <button className="primaryButton fullWidth" disabled={!publishReady || busy} onClick={onPreparePublish} type="button">
-                  {pendingPublish ? "重新生成确认单" : publishScheduleAt ? "生成定时确认单" : "生成发布确认单"}
-                </button>
-                <button className="secondaryButton fullWidth" onClick={onOpenPublish} type="button">聚焦发布检查</button>
-              </div>
-            </SideSection>
+            <PostStudioPublishTab
+              accountReady={accountReady}
+              accountReadyHint={accountReadyHint}
+              activeAccountLabel={activeAccount?.displayName ?? settings.activeAccountId}
+              activeLoginName={health?.activeAccount?.loginName}
+              activePublishPlan={activePublishPlan}
+              auditSummary={auditSummary}
+              busy={busy}
+              citationReport={citationReport}
+              citationTraceReady={citationTraceReady}
+              confirmedRequiredCount={confirmedRequiredCount}
+              defaultAutoPublish={settings.defaultAutoPublish}
+              hasExistingVisualDirection={Boolean(project?.visualDirection)}
+              hasVisualDirection={hasVisualDirection}
+              onCancelPublish={onCancelPublish}
+              onConfirmPublish={onConfirmPublish}
+              onNavigate={onNavigate}
+              onOpenPublish={onOpenPublish}
+              onPreparePublish={onPreparePublish}
+              onQuickAction={onQuickAction}
+              onScheduleAtChange={onScheduleAtChange}
+              onVisibilityChange={onVisibilityChange}
+              pendingPublish={pendingPublish}
+              publishAccountSafety={publishAccountSafety}
+              publishDraft={publishDraft}
+              publishReady={publishReady}
+              publishSafetyBoundary={publishSafetyBoundary}
+              publishScheduleAt={publishScheduleAt}
+              publishSummary={publishSummary}
+              publishVisibility={publishVisibility}
+              quality={quality}
+              qualityGateFresh={versionStatus?.qualityGateFresh === true}
+              qualityViralCoverage={qualityViralCoverage}
+              requiredConfirmations={requiredConfirmations}
+              selectedImageCount={selectedAssets.length}
+              staleAccountPublishPlan={staleAccountPublishPlan}
+              staleCanvasPublishPlan={staleCanvasPublishPlan}
+              summary={publishTabSummary}
+            />
           ) : null}
 
           <details className="advancedEntry compactAdvancedEntry">
@@ -1631,10 +1594,6 @@ function labelForViralRouteStatus(status: "empty" | "pending" | "ready"): string
   if (status === "ready") return "已应用";
   if (status === "pending") return "待应用";
   return "未开始";
-}
-
-function CheckItem({ ok, label }: { ok: boolean; label: string }) {
-  return <span className={ok ? "checkItem ok" : "checkItem"}>{ok ? "✓" : "·"} {label}</span>;
 }
 
 function labelForStage(stage: PostProject["currentStage"]): string {
