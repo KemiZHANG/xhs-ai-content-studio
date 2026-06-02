@@ -2620,10 +2620,30 @@ describe("agent orchestrator", () => {
   });
 
   it("assembles the current draft and selected image into finalPost before publish confirmation", async () => {
+    const draft = {
+      id: "draft-final",
+      updatedAt: "2026-05-30T00:00:00.000Z",
+      draft: {
+        title: "广州咖啡周末指南",
+        content: "这篇适合想周末找安静咖啡馆的人。先看人均和排队，再看座位光线，最后给适合人群和避峰建议。",
+        tags: ["广州咖啡馆", "探店"],
+        structure: ["适合谁", "体验", "避坑"],
+        imagePrompt: "自然光咖啡馆",
+        basedOnEvidenceIds: ["insight-1", "viral-insight-1"],
+        evidenceReferences: {
+          title: ["insight-1"],
+          content: ["insight-1"],
+          tags: ["insight-1"],
+          imagePrompt: ["viral-insight-1"]
+        }
+      },
+      images: [],
+      visibility: defaultSettings.defaultVisibility
+    };
     await resetPostProject({
       topic: "广州咖啡馆",
       evidencePack: {
-        sampleIds: ["note-1"],
+        sampleIds: ["note-1", "viral-1"],
         insights: [{
           id: "insight-1",
           sourceType: "realtime",
@@ -2631,6 +2651,14 @@ describe("agent orchestrator", () => {
           insight: "真实写排队、人均和适合人群",
           sourceSampleIds: ["note-1"],
           confidence: 0.8,
+          createdAt: "2026-05-30T00:00:00.000Z"
+        }, {
+          id: "viral-insight-1",
+          sourceType: "viral_library",
+          type: "visual",
+          insight: "爆款封面使用自然光、窗边桌面和低饱和暖色来传达真实探店感",
+          sourceSampleIds: ["viral-1"],
+          confidence: 0.82,
           createdAt: "2026-05-30T00:00:00.000Z"
         }]
       },
@@ -2657,26 +2685,10 @@ describe("agent orchestrator", () => {
         mustAvoid: [],
         basedOnEvidenceIds: ["insight-1"]
       },
+      copyDraft: draft,
       selectedImages: ["asset-1"],
       currentStage: "image_ready"
     });
-    const draft = {
-      id: "draft-final",
-      updatedAt: "2026-05-30T00:00:00.000Z",
-      draft: {
-        title: "广州咖啡周末指南",
-        content: "这篇适合想周末找安静咖啡馆的人。先看人均和排队，再看座位光线，最后给适合人群和避峰建议。",
-        tags: ["广州咖啡馆", "探店"],
-        structure: ["适合谁", "体验", "避坑"],
-        imagePrompt: "自然光咖啡馆",
-        basedOnEvidenceIds: ["insight-1"]
-      },
-      images: [],
-      visibility: defaultSettings.defaultVisibility
-    };
-    const { updateWorkspaceState } = await import("@/lib/agent/state");
-    await updateWorkspaceState({ currentDraftId: draft.id, currentDraft: draft, selectedImageIds: ["asset-1"] });
-
     const result = await runAgentTurn({
       message: "把当前内容组合成最终帖子并进入发布检查",
       conversationId: "chat-quality",
@@ -2703,10 +2715,13 @@ describe("agent orchestrator", () => {
     expect(result.postProject?.qualityCheck).toBeTruthy();
     expect(result.postProject?.qualityCheck?.evidenceReview?.summary).toContain("引用证据");
     expect(result.postProject?.qualityCheck?.evidenceAlignment?.summary).toBeTruthy();
+    expect(result.postProject?.qualityCheck?.viralCoverage?.summary).toContain("爆款库覆盖");
     expect(result.answer).toContain("证据覆盖");
     expect(result.answer).toContain("图文证据");
+    expect(result.answer).toContain("爆款库覆盖");
     expect(result.cards.map((card) => card.type)).toContain("quality_check");
     expect(result.cards.find((card) => card.type === "quality_check")?.summary).toContain("图文证据");
+    expect(result.cards.find((card) => card.type === "quality_check")?.summary).toContain("爆款库覆盖");
     expect(result.answer).toContain("Quality Gate");
   });
 

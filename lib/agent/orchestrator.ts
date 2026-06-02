@@ -1796,9 +1796,13 @@ function formatQualityCardSummary(qualityCheck: NonNullable<PostProject["quality
   const alignmentSummary = qualityCheck.evidenceAlignment
     ? `图文证据：${qualityCheck.evidenceAlignment.summary}`
     : "";
+  const viralCoverageSummary = qualityCheck.viralCoverage
+    ? `爆款库覆盖：${qualityCheck.viralCoverage.summary}`
+    : "";
   const issueSummary = qualityCheck.issues.slice(0, 2).join("；");
   return [
     alignmentSummary,
+    viralCoverageSummary,
     issueSummary || "发布前仍需人工确认账号、可见范围、图片版本和定时时间。"
   ].filter(Boolean).join("；");
 }
@@ -2804,6 +2808,7 @@ async function maybeHandleQualityCheckTurn(
       qualityCheck.canPublish ? "结果：通过，可以进入人工发布确认。" : "结果：暂不建议发布，需要先处理风险。",
       qualityCheck.evidenceReview ? `证据覆盖：${qualityCheck.evidenceReview.summary}` : "",
       qualityCheck.evidenceAlignment ? `图文证据：${qualityCheck.evidenceAlignment.summary}` : "",
+      qualityCheck.viralCoverage ? `爆款库覆盖：${qualityCheck.viralCoverage.summary}` : "",
       qualityCheck.issues.length ? `主要问题：${qualityCheck.issues.slice(0, 4).join("；")}` : "",
       qualityCheck.suggestions.length ? `建议：${qualityCheck.suggestions.slice(0, 3).join("；")}` : ""
     ].filter(Boolean).join("\n"),
