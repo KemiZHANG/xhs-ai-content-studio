@@ -92,23 +92,13 @@ export function PostStudioViralTab({
     <section className="studioSideSection">
       <h3><Library size={16} />爆款库证据</h3>
       <strong>{viralCases.length} 条历史爆款规律</strong>
-      <p className="muted">这里长期沉淀标题钩子、正文结构、标签组合、图片风格和评论关注点。默认只显示关键规律，不保存原文合集。</p>
-      <ViralLibraryHealthCard viralLibraryHealth={viralLibraryHealth} />
+      <p className="muted">默认只看当前项目能用的重点规律和应用建议；检索、过滤、健康报告和历史样本放在下方工具区。</p>
       <ViralEvidenceDigest summary={viralEvidenceSummary} />
-      <ViralSearchDrawer
-        caseCount={viralCases.length}
-        form={viralSearchForm}
-        onChange={onSearchFormChange}
-        onResetSearch={onResetSearch}
-        onSearchViralLibrary={onSearchViralLibrary}
-      />
       <RagSufficiencyCard viralPack={viralPack} />
       <ViralApplicationPanel
         viralApplication={viralApplication}
         onQuickAction={onQuickAction}
       />
-      <ViralStrategyCard viralPack={viralPack ?? null} />
-      <RecentViralPanel summaries={latestViralSummaries} onOpenCase={onOpenViralCase} />
       <ViralInsightList
         focusedEvidenceIdSet={focusedEvidenceIdSet}
         focusedEvidenceIds={focusedEvidenceIds}
@@ -124,8 +114,26 @@ export function PostStudioViralTab({
           <Sparkles size={16} />
           刷新当前项目 RAG 证据
         </button>
-        <button className="secondaryButton fullWidth" onClick={onReloadViralLibrary} type="button">只刷新本地爆款库列表</button>
       </div>
+      <details className="viralUtilityDrawer">
+        <summary>
+          <strong>爆款库工具与检索</strong>
+          <span>搜索、过滤、健康报告、最近入库样本</span>
+        </summary>
+        <ViralLibraryHealthCard viralLibraryHealth={viralLibraryHealth} />
+        <ViralSearchDrawer
+          caseCount={viralCases.length}
+          form={viralSearchForm}
+          onChange={onSearchFormChange}
+          onResetSearch={onResetSearch}
+          onSearchViralLibrary={onSearchViralLibrary}
+        />
+        <ViralStrategyCard viralPack={viralPack ?? null} />
+        <RecentViralPanel summaries={latestViralSummaries} onOpenCase={onOpenViralCase} />
+        <button className="secondaryButton fullWidth" onClick={onReloadViralLibrary} type="button">
+          只刷新本地爆款库列表
+        </button>
+      </details>
     </section>
   );
 }
