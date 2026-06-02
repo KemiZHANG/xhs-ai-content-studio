@@ -56,7 +56,7 @@ import { buildPostStudioStatusSummary } from "@/app/components/post-studio-statu
 import { buildViralApplicationModel } from "@/app/components/viral-application";
 import { buildViralEvidenceSummary } from "@/app/components/viral-evidence-summary";
 import { buildViralLibraryHealth } from "@/app/components/viral-library-health";
-import { buildQualityViralCoverageView, type QualityViralCoverageView } from "@/app/components/quality-viral-coverage";
+import { buildQualityViralCoverageView } from "@/app/components/quality-viral-coverage";
 import { buildPublishConfirmationSummary } from "@/app/components/publish-confirmation-summary";
 import { buildPublishSafetyBoundary } from "@/app/components/publish-safety-boundary";
 import { buildPublishAccountSafety } from "@/app/components/publish-account-safety";
@@ -72,6 +72,7 @@ import { buildCreationProvenance, type CreationProvenanceCard } from "@/app/comp
 import { buildBriefTabSummary, buildImageTabSummary, buildPublishTabSummary, type StudioTabSummary } from "@/app/components/studio-tab-summary";
 import { EvidenceCatalogDrawer, EvidenceDrawer, ViralCaseDrawer } from "@/app/components/post-studio-drawers";
 import { RecentViralPanel, ViralStrategyCard } from "@/app/components/post-studio-viral-panels";
+import { PostStudioQualityPanel } from "@/app/components/post-studio-quality-panel";
 import { buildVersionSwitchGuidance } from "@/app/components/version-switch-guidance";
 import { buildCreatorMemoryDigest } from "@/lib/agent/memory-digest";
 import { resolvePostCreationTopic, resolvePostStudioTitle } from "@/app/components/post-studio-title";
@@ -1877,72 +1878,12 @@ export function PostStudioPanel({
                   </p>
                 </div>
               ) : null}
-              {quality ? (
-                <div className="qualityBox">
-                  <strong>{quality.canPublish ? "质量检查通过" : "质量检查需处理"}</strong>
-                  <div className="qualityScores">
-                    <span>标题 {quality.titleScore}</span>
-                    <span>正文 {quality.copyScore}</span>
-                    <span>图文 {quality.visualConsistencyScore}</span>
-                    <span>平台 {quality.platformFitScore}</span>
-                    <span>合规 {quality.complianceScore}</span>
-                  </div>
-                  {quality.issues.slice(0, 3).map((issue) => (
-                    <p className="muted" key={issue}>- {issue}</p>
-                  ))}
-                  {quality.issues.length || quality.suggestions.length ? (
-                    <div className="qualityActionList" aria-label="Quality Gate action list">
-                      {quality.issues.slice(0, 3).map((issue) => (
-                        <div className="qualityActionItem issue" key={`issue-${issue}`}>
-                          <span>阻塞项</span>
-                          <strong>{issue}</strong>
-                        </div>
-                      ))}
-                      {quality.suggestions.slice(0, 3).map((suggestion) => (
-                        <div className="qualityActionItem suggestion" key={`suggestion-${suggestion}`}>
-                          <span>建议优化</span>
-                          <strong>{suggestion}</strong>
-                        </div>
-                      ))}
-                      {quality.issues.length > 3 || quality.suggestions.length > 3 ? (
-                        <small>还有 {Math.max(quality.issues.length - 3, 0) + Math.max(quality.suggestions.length - 3, 0)} 条细节，已收进发布检查详情。</small>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {quality.evidenceReview ? (
-                    <p className="muted">证据覆盖：{quality.evidenceReview.summary}</p>
-                  ) : null}
-                  <QualityViralCoverageStrip view={qualityViralCoverage} />
-                  {quality.originalityReview ? (
-                    <p className={quality.originalityReview.isSafe ? "muted" : "qualityWarningText"}>
-                      原创边界：{quality.originalityReview.summary}
-                    </p>
-                  ) : null}
-                  {citationReport?.allEvidenceIds.length ? (
-                    <div className={citationTraceReady ? "citationAudit ok" : "citationAudit warn"}>
-                      <span>字段级证据追踪</span>
-                      <strong>{citationReport.summary}</strong>
-                      <div>
-                        {citationReport.sections.map((section) => (
-                          <em key={section.field}>{labelForCitationField(section.field)} {section.insights.length}</em>
-                        ))}
-                      </div>
-                      {citationReport.missingEvidenceIds.length ? (
-                        <p>缺失：{citationReport.missingEvidenceIds.slice(0, 3).join(" / ")}</p>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {quality.evidenceAlignment ? (
-                    <div className={quality.evidenceAlignment.isAligned ? "evidenceAlignment ok" : "evidenceAlignment warn"}>
-                      <span>图文证据</span>
-                      <strong>{quality.evidenceAlignment.summary}</strong>
-                      <p>
-                        文案 {quality.evidenceAlignment.copyEvidenceIds.length} 条 · 图片 {quality.evidenceAlignment.visualEvidenceIds.length} 条 · 共同 {quality.evidenceAlignment.sharedEvidenceIds.length} 条
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
+              <PostStudioQualityPanel
+                quality={quality}
+                qualityViralCoverage={qualityViralCoverage}
+                citationReport={citationReport}
+                citationTraceReady={citationTraceReady}
+              />
               <div className="inlineActionGrid">
                 <button className="secondaryButton fullWidth" onClick={() => onQuickAction("run_quality_gate")} type="button">刷新质量检查</button>
                 <button className="primaryButton fullWidth" disabled={!publishReady || busy} onClick={onPreparePublish} type="button">
@@ -2574,26 +2515,6 @@ function ViralEvidenceDigest({
       {onOpenViral ? (
         <button className="textButton" type="button" onClick={onOpenViral}>查看爆款库证据</button>
       ) : null}
-    </div>
-  );
-}
-
-function QualityViralCoverageStrip({ view }: { view: QualityViralCoverageView }) {
-  if (!view.hasCoverage) return null;
-  return (
-    <div className="qualityViralCoverage" aria-label="Quality Gate 爆款库覆盖">
-      <div>
-        <strong>{view.headline}</strong>
-        <span>{view.detail}</span>
-      </div>
-      <div>
-        {view.items.map((item) => (
-          <em className={item.status} key={item.field} title={item.line}>
-            <b>{item.label}</b>
-            {item.line}
-          </em>
-        ))}
-      </div>
     </div>
   );
 }
