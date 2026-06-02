@@ -23,6 +23,33 @@ const navItems: Array<{ id: Section; label: string; icon: LucideIcon }> = [
 
 export const legacyRibbonSections = new Set<Section>(["workflow", "jobs", "imageStudio", "chat", "publish", "history"]);
 
+const legacySectionHints: Partial<Record<Section, { label: string; detail: string }>> = {
+  workflow: {
+    label: "高级研究入口",
+    detail: "日常搜索、证据提炼和后续创作都建议在 Post Studio 内完成。"
+  },
+  jobs: {
+    label: "任务排查入口",
+    detail: "这里只用于查看后台任务细节；当前创作进度会同步回 Post Studio。"
+  },
+  imageStudio: {
+    label: "高级图片工具",
+    detail: "批量生图和图文卡片可在这里处理，最终选图仍回到 Post Studio 组合。"
+  },
+  chat: {
+    label: "旧版 AI 工作台",
+    detail: "新的创作导演 Agent 已集中到 Post Studio，那里会记住当前帖子项目。"
+  },
+  publish: {
+    label: "备用发布装配",
+    detail: "正式发布建议回到 Post Studio 的发布检查页，先锁定版本和确认单。"
+  },
+  history: {
+    label: "旧版历史记录",
+    detail: "用于回看旧运行；继续创作请恢复到当前 Post Studio。"
+  }
+};
+
 export function AppShell({
   section,
   settings,
@@ -132,9 +159,36 @@ export function AppShell({
           </div>
         </header>
 
+        {legacyRibbonSections.has(section) ? (
+          <LegacyReturnBanner section={section} onNavigate={onNavigate} />
+        ) : null}
         {legacyRibbonSections.has(section) ? ribbon : null}
         {children}
       </section>
     </main>
+  );
+}
+
+function LegacyReturnBanner({
+  section,
+  onNavigate
+}: {
+  section: Section;
+  onNavigate: (section: Section) => void;
+}) {
+  const hint = legacySectionHints[section];
+  if (!hint) return null;
+
+  return (
+    <div className="legacyReturnBanner" role="note">
+      <div>
+        <span>{hint.label}</span>
+        <strong>主流程请回到 Post Studio</strong>
+        <p>{hint.detail}</p>
+      </div>
+      <button className="primaryButton" type="button" onClick={() => onNavigate("flow")}>
+        回到 Post Studio
+      </button>
+    </div>
   );
 }

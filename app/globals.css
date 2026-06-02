@@ -588,6 +588,44 @@ h3 {
   font-weight: 700;
 }
 
+.legacyReturnBanner {
+  align-items: center;
+  background: linear-gradient(135deg, rgba(18, 118, 97, 0.08), rgba(255, 255, 255, 0.82));
+  border: 1px solid rgba(18, 118, 97, 0.18);
+  border-radius: 16px;
+  box-shadow: 0 14px 34px rgba(39, 37, 31, 0.06);
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.legacyReturnBanner span {
+  color: var(--accent-strong);
+  display: block;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.legacyReturnBanner strong {
+  color: var(--ink);
+  display: block;
+  font-size: 15px;
+  margin-top: 2px;
+}
+
+.legacyReturnBanner p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 2px 0 0;
+}
+
+.legacyReturnBanner button {
+  flex: 0 0 auto;
+}
+
 .iconButton,
 .primaryButton,
 .secondaryButton {

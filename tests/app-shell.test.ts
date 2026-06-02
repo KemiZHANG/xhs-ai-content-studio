@@ -36,4 +36,30 @@ describe("app shell", () => {
     expect(html).not.toContain("旧版 AI 工作台</span>");
     expect(html).not.toContain("高级主题研究</span>");
   });
+
+  it("shows a clear return-to-Post-Studio banner on legacy work areas", () => {
+    const html = renderToStaticMarkup(createElement(AppShell, {
+      section: "chat",
+      settings: defaultSettings,
+      health: null,
+      settingsBusy: null,
+      modelReady: true,
+      imageReady: true,
+      jobs: [],
+      assets: [],
+      currentDraft: null,
+      notice: "",
+      ribbon: createElement("div", null, "legacy ribbon"),
+      onNavigate: () => undefined,
+      onRefreshHealth: () => undefined,
+      onSwitchAccount: () => undefined,
+      children: createElement("div", null, "content")
+    }));
+
+    expect(html).toContain("旧版 AI 工作台");
+    expect(html).toContain("主流程请回到 Post Studio");
+    expect(html).toContain("新的创作导演 Agent 已集中到 Post Studio");
+    expect(html).toContain("回到 Post Studio");
+    expect(html).toContain("legacy ribbon");
+  });
 });
