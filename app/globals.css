@@ -3963,6 +3963,7 @@ textarea {
 }
 
 .nextActionButtons {
+  align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -3988,6 +3989,29 @@ textarea {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+
+.secondaryNextActions {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.secondaryNextActions summary {
+  cursor: pointer;
+  font-weight: 800;
+  list-style: none;
+  padding: 6px 4px;
+}
+
+.secondaryNextActions summary::-webkit-details-marker {
+  display: none;
+}
+
+.secondaryNextActions div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 6px;
 }
 
 .studioTopComposer {

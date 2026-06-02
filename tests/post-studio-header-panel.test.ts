@@ -103,6 +103,8 @@ describe("post studio header panel", () => {
     expect(html).toContain("图片");
     expect(html).toContain("下一步建议");
     expect(html).toContain("先规划图片方向");
+    expect(html).toContain("现在只做：规划图片方向");
+    expect(html).toContain("其他可选动作");
     expect(html).toContain("把标题更生活化一点");
     expect(html).toContain("查看原因与结果");
     expect(html).toContain("新建项目");

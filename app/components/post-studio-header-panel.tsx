@@ -248,14 +248,21 @@ function NextActionBar({
       <div className="nextActionButtons">
         {nextStepCoach.primaryAction ? (
           <button className="isPrimaryNext" type="button" onClick={() => onQuickAction(nextStepCoach.primaryAction!)}>
-            {nextStepCoach.primaryLabel}
+            现在只做：{nextStepCoach.primaryLabel}
           </button>
         ) : null}
-        {nextStepCoach.secondaryActions.map((item) => (
-          <button key={item.action} type="button" onClick={() => onQuickAction(item.action)}>
-            {item.label}
-          </button>
-        ))}
+        {nextStepCoach.secondaryActions.length ? (
+          <details className="secondaryNextActions">
+            <summary>其他可选动作</summary>
+            <div>
+              {nextStepCoach.secondaryActions.map((item) => (
+                <button key={item.action} type="button" onClick={() => onQuickAction(item.action)}>
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </details>
+        ) : null}
       </div>
       <form className="studioTopComposer" onSubmit={onChatSubmit}>
         <textarea
