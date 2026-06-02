@@ -6748,6 +6748,39 @@ textarea {
   padding: 12px;
 }
 
+.canvasVersionDrawer {
+  gap: 0;
+}
+
+.canvasVersionDrawer[open] {
+  gap: 10px;
+}
+
+.canvasVersionDrawer > summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  list-style: none;
+}
+
+.canvasVersionDrawer > summary::-webkit-details-marker {
+  display: none;
+}
+
+.canvasVersionDrawer > summary span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.canvasVersionDrawer[open] > summary {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+
 .versionSwitcher > div:first-child {
   display: grid;
   gap: 3px;

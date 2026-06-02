@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const guardedFiles = [
   "app/components/post-action-labels.ts",
+  "app/components/post-canvas-panel.tsx",
   "app/components/post-flow-summary.ts",
   "app/components/post-next-step-coach.ts",
   "app/components/post-side-digest.ts",

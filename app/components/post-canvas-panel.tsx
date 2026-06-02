@@ -262,11 +262,11 @@ function CopyVersionSwitcher({
   if (!copyVersions.length) return null;
 
   return (
-    <section className="versionSwitcher" aria-label="文案版本">
-      <div>
+    <details className="versionSwitcher canvasVersionDrawer" aria-label="文案版本">
+      <summary>
         <strong>文案版本</strong>
-        <span>{copyVersionGuidance.detail}</span>
-      </div>
+        <span>最近 {Math.min(copyVersions.length, 4)} 个可回滚版本 · {copyVersionGuidance.detail}</span>
+      </summary>
       <div>
         {copyVersions.slice(-4).map((version, index) => (
           <article className="versionCard" key={version.id}>
@@ -293,7 +293,7 @@ function CopyVersionSwitcher({
           </article>
         ))}
       </div>
-    </section>
+    </details>
   );
 }
 
@@ -370,11 +370,11 @@ function ImagePromptVersionSwitcher({
   if (!imagePromptVersions.length) return null;
 
   return (
-    <section className="versionSwitcher compactVersionSwitcher" aria-label="图片 Prompt 版本">
-      <div>
+    <details className="versionSwitcher compactVersionSwitcher canvasVersionDrawer" aria-label="图片 Prompt 版本">
+      <summary>
         <strong>Prompt 版本</strong>
-        <span>{promptVersionGuidance.detail}</span>
-      </div>
+        <span>最近 {Math.min(imagePromptVersions.length, 3)} 个可切换 Prompt · {promptVersionGuidance.detail}</span>
+      </summary>
       <div>
         {imagePromptVersions.slice(-3).map((version, index) => (
           <article className="versionCard promptVersionCard" key={version.id}>
@@ -397,7 +397,7 @@ function ImagePromptVersionSwitcher({
           </article>
         ))}
       </div>
-    </section>
+    </details>
   );
 }
 

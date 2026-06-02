@@ -226,8 +226,10 @@ describe("post canvas panel", () => {
     expect(html).toContain("最终帖子已锁定");
     expect(html).toContain("已选 2 张发布图片");
     expect(html).toContain("文案版本");
+    expect(html).toContain("最近 1 个可回滚版本");
     expect(html).toContain("广州咖啡馆周末探店");
     expect(html).toContain("Prompt 版本");
+    expect(html).toContain("最近 1 个可切换 Prompt");
     expect(html).toContain("图片方向已确认");
     expect(html).toContain("最终帖子快照");
     expect(html).toContain("版本已确认");
