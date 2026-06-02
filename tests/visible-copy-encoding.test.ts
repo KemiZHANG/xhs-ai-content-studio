@@ -11,6 +11,7 @@ const guardedFiles = [
   "lib/agent/orchestrator.ts",
   "lib/agent/planner.ts",
   "lib/agent/tools/registry.ts",
+  "lib/rag/viral.ts",
   "lib/post-project/guidance.ts",
   "lib/post-project/readiness.ts"
 ];

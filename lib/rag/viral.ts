@@ -261,7 +261,7 @@ async function retrieveViralCasesWithFusion(
         const existing = merged.get(result.case.id);
         const fusionBoost = 1 / (60 + rank + 1);
         const nextScore = Number((result.score + fusionBoost).toFixed(4));
-        const relaxedFilterReason = searchInput === input ? "" : "relaxed audience/pain-point filters";
+        const relaxedFilterReason = searchInput === input ? "" : "已放宽人群/痛点筛选";
         if (!existing) {
           merged.set(result.case.id, {
             ...result,
