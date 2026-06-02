@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { clientApi, getClientActionToken, setClientActionToken } from "@/app/client/api";
+import { clientApi, ClientApiError, getClientActionToken, setClientActionToken } from "@/app/client/api";
 import { toSettingsDraft } from "@/app/hooks/use-settings-health";
 import { defaultSettings } from "@/lib/storage/settings";
 
@@ -53,6 +53,32 @@ describe("client API helper", () => {
     expect(result.ok).toBe(true);
     expect(getClientActionToken()).toBe("token-b");
     expect(retryHeaders.get("X-XHS-Action-Token")).toBe("token-b");
+  });
+
+  it("preserves structured error payloads for UI-specific recovery", async () => {
+    const fetcher = vi.fn(async () =>
+      jsonResponse(422, {
+        error: "没有达到爆款库入库质量门槛的样本",
+        candidateReviews: [{
+          sampleId: "weak-note",
+          shouldSave: false,
+          warnings: ["互动数据太低", "正文信息不足"]
+        }],
+        skippedSampleIds: ["weak-note"]
+      })
+    );
+    vi.stubGlobal("fetch", fetcher);
+
+    await expect(clientApi("/api/viral-knowledge", { method: "POST" })).rejects.toMatchObject({
+      name: "ClientApiError",
+      status: 422,
+      data: expect.objectContaining({
+        candidateReviews: expect.arrayContaining([
+          expect.objectContaining({ sampleId: "weak-note", shouldSave: false })
+        ])
+      })
+    });
+    await expect(clientApi("/api/viral-knowledge", { method: "POST" })).rejects.toBeInstanceOf(ClientApiError);
   });
 });
 

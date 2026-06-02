@@ -39,6 +39,7 @@ import {
 import { buildPageJobsSnapshotPlan } from "@/app/state/page-jobs";
 import { shouldAutoOpenLatestConversation } from "@/app/state/chat-history-selection";
 import { noticeForProjectReset, resetWorkflowFormForNewProject } from "@/app/state/project-reset";
+import { formatViralSaveError } from "@/app/state/viral-save";
 import { isJobForWorkspace } from "@/lib/jobs/context";
 import { buildPublishVersionSnapshot } from "@/lib/post-project/versioning";
 
@@ -548,6 +549,8 @@ export default function Home() {
         ? `已保存 ${savedCases.length} 条样本到爆款库，并为当前项目增加 ${data.addedInsightIds.length} 条可复用创作证据。`
         : "已保存到爆款库：系统会沉淀结构化创作规律，不会把原文当作仿写素材。");
       await loadPostProject();
+    } catch (error) {
+      setNotice(formatViralSaveError(error));
     } finally {
       setBusy(null);
     }

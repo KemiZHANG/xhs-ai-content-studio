@@ -6,6 +6,18 @@ type ApiOptions = {
   retriedActionToken?: boolean;
 };
 
+export class ClientApiError extends Error {
+  status: number;
+  data: unknown;
+
+  constructor(message: string, status: number, data: unknown) {
+    super(message);
+    this.name = "ClientApiError";
+    this.status = status;
+    this.data = data;
+  }
+}
+
 export function setClientActionToken(token: string | undefined): void {
   clientActionToken = token ?? "";
 }
@@ -43,7 +55,7 @@ export async function clientApi<T = unknown>(
     return clientApi(path, init, { retriedActionToken: true });
   }
   if (!response.ok) {
-    throw new Error(data.error ?? "请求失败");
+    throw new ClientApiError(typeof data.error === "string" ? data.error : "请求失败", response.status, data);
   }
 
   return data as T;
