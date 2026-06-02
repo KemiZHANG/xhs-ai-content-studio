@@ -80,6 +80,9 @@ describe("post studio agent pane", () => {
     expect(html).toContain("直接描述你要发什么");
     expect(html).toContain("搜索真实笔记");
     expect(html).toContain("生成原创文案");
+    expect(html).toContain("Agent 发布安全提示");
+    expect(html).toContain("模糊指令会先追问");
+    expect(html).toContain("不会直接调用小红书发布");
     expect(html).toContain("真实笔记研究");
     expect(html).toContain("1 条证据已绑定");
     expect(html).toContain("搜索并提炼证据");

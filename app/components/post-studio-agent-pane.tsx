@@ -86,6 +86,11 @@ export function PostStudioAgentPane({
         </button>
       </div>
 
+      <div className="agentSafetyHint" aria-label="Agent 发布安全提示">
+        <strong>安全规则</strong>
+        <span>模糊指令会先追问；“发布 / 定时发布”只会生成确认单，不会直接调用小红书发布。</span>
+      </div>
+
       <details className="studioResearchDetails" open={!evidenceCount}>
         <summary>
           <span>真实笔记研究</span>

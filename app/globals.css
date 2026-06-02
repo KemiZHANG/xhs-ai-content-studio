@@ -4519,6 +4519,30 @@ textarea {
   line-height: 1.25;
 }
 
+.agentSafetyHint {
+  align-items: center;
+  background: linear-gradient(135deg, rgba(18, 118, 97, 0.1), rgba(255, 255, 255, 0.74));
+  border: 1px solid rgba(18, 118, 97, 0.18);
+  border-radius: 12px;
+  color: var(--muted);
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 9px 11px;
+}
+
+.agentSafetyHint strong {
+  color: var(--accent-strong);
+  flex: 0 0 auto;
+  font-size: 12px;
+}
+
+.agentSafetyHint span {
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: right;
+}
+
 .studioResearchBox,
 .postEditStack,
 .studioComposer,
