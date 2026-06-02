@@ -423,7 +423,12 @@ export function PostStudioPanel({
     publishIntentId: pendingPublish?.publishIntentId ?? project?.publishPlan?.id
   });
   const readiness = project ? buildPostReadinessReport(project) : null;
-  const nextStepCoach = buildPostNextStepCoach({ guidance: stageGuidance, readiness, nextActions });
+  const nextStepCoach = buildPostNextStepCoach({
+    guidance: stageGuidance,
+    readiness,
+    nextActions,
+    qualityViralCoverage
+  });
   const flowSummary = buildPostFlowSummary(readiness);
   const statusSummary = buildPostStudioStatusSummary({
     project,

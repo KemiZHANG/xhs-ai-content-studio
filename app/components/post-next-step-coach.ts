@@ -1,4 +1,5 @@
 import { labelForPostAction } from "@/app/components/post-action-labels";
+import type { QualityViralCoverageView } from "@/app/components/quality-viral-coverage";
 import type { PostStageGuidance } from "@/lib/post-project/guidance";
 import type { PostReadinessReport } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
@@ -22,13 +23,21 @@ export type PostNextStepCoach = {
 export function buildPostNextStepCoach({
   guidance,
   readiness,
-  nextActions
+  nextActions,
+  qualityViralCoverage
 }: {
   guidance: PostStageGuidance;
   readiness: PostReadinessReport | null;
   nextActions: PostAction[];
+  qualityViralCoverage?: QualityViralCoverageView;
 }): PostNextStepCoach {
-  const primaryAction = readiness?.nextAction ?? guidance.primaryAction ?? nextActions[0];
+  const viralMissingFields = qualityViralCoverage?.items
+    .filter((item) => item.status === "missing")
+    .map((item) => item.label) ?? [];
+  const shouldRefreshViralCoverage = Boolean(qualityViralCoverage?.hasCoverage && viralMissingFields.length);
+  const primaryAction = shouldRefreshViralCoverage
+    ? "retrieve_viral_knowledge"
+    : readiness?.nextAction ?? guidance.primaryAction ?? nextActions[0];
   const blocker = readiness?.blockers[0];
   const secondaryActions = nextActions
     .filter((action) => action !== primaryAction)
@@ -37,7 +46,9 @@ export function buildPostNextStepCoach({
 
   return {
     headline: guidance.title,
-    detail: blocker
+    detail: shouldRefreshViralCoverage
+      ? `${guidance.description} Quality Gate 发现爆款库证据还没覆盖：${viralMissingFields.join("、")}。`
+      : blocker
       ? `${guidance.description} 当前最需要补齐：${blocker.label}。${blocker.detail}`
       : guidance.description,
     whyLine: primaryAction ? whyForAction(primaryAction, blocker?.label) : "当前阶段先保持画布稳定，等待你补充更明确的创作目标。",
