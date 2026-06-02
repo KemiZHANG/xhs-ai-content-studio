@@ -22,9 +22,9 @@ XHS AI Content Studio 是一个本地优先的小红书 AI 内容创作 Agent。
 - **真实证据研究**：通过 Xiaohongshu MCP 搜索和读取真实笔记，再提炼标题、正文、标签、图片、评论和用户痛点。
 - **爆款库 RAG**：把高质量样本沉淀为标题钩子、正文结构、标签组合、图片风格、痛点和情绪触发点；检索时使用多 query 融合、语义匹配和多样性选择，后续创作可同时参考实时证据和历史规律。
 - **原创重写**：根据研究结论和用户需求生成新内容，避免直接复制或拼接竞品内容。
-- **图片创作台**：支持 AI 生图、产品图场景化、参考图生成和图文卡片渲染。
+- **图片能力**：在 Post Studio 中选择/生成图片；高级图片工具可用于批量 AI 生图、产品图场景化、参考图生成和图文卡片渲染。
 - **图文卡片引擎**：本地生成小红书常用尺寸卡片，适合干货、清单、教程、避坑类内容。
-- **发布装配台**：统一确认标题、正文、标签、图片、可见范围、账号、立即发布或定时发布。
+- **发布检查**：在 Post Studio 中统一确认标题、正文、标签、图片、可见范围、账号、立即发布或定时发布；备用发布装配页仅用于排查。
 - **发布安全**：默认 `review_required`，真实发布前必须确认；后端会检查内容、图片、账号登录、重复发布和 Quality Gate。
 - **发布审计**：记录发布预览、待确认、发布中、已发布、已定时、失败等事件；正文只保存哈希，不保存完整正文。
 - **本地隐私**：API Key、cookies、草稿、素材和历史默认保存在本机，不提交到 Git。
@@ -103,9 +103,11 @@ API Key 会保存在本地 `data/settings.json`，该目录已被 `.gitignore` �
 5. Agent 会搜索真实笔记、提炼证据、生成 CreativeBrief 和草稿。
 6. 如果发现值得长期复用的高质量样本，可以在右侧证据面板保存到爆款库。
 7. 在 Post Canvas 里检查标题、正文、标签和图片方向。
-8. 到图片创作台生成 AI 图片、产品场景图或图文卡片。
-9. 回到发布装配台，确认最终标题、正文、标签、图片、账号和可见范围。
+8. 在 **Post Studio** 的图片/素材区域生成或选择 AI 图片、产品场景图或图文卡片。
+9. 在 **Post Studio** 的发布检查区确认最终标题、正文、标签、图片、账号、可见范围和定时时间。
 10. 第一次真实发布建议使用“仅自己可见”。
+
+> 高级主题研究、旧版 AI 工作台、高级图片工具和备用发布装配页仍然保留，但它们主要用于排查、批量处理或兼容旧流程。日常创作建议始终从 **Post Studio** 开始并回到 **Post Studio** 完成确认。
 
 ### 多账号说明
 
@@ -188,9 +190,9 @@ It is not just an auto-posting script. It is designed as an evidence-based conte
 - **Evidence-Based Research**: Uses Xiaohongshu MCP to search and read real notes before generating content.
 - **Viral Knowledge RAG**: Saves strong samples as reusable creative patterns, including title hooks, copy structures, tag patterns, image style, pain points, and emotional triggers. Retrieval uses multi-query fusion, semantic matching, and diversity selection.
 - **Original Rewriting**: Generates new Xiaohongshu content from extracted patterns and user requirements.
-- **Image Studio**: Supports AI image generation, product-scene generation, reference-image generation, and local image-text card rendering.
+- **Image Tools**: Select or generate images from Post Studio; the advanced Image Studio remains available for batch AI generation, product-scene images, reference-image generation, and local image-text card rendering.
 - **Card Engine**: Renders Xiaohongshu-style card images locally for guides, lists, tutorials, and educational posts.
-- **Publishing Assembly**: Reviews title, content, tags, images, visibility, account, immediate publishing, and scheduled publishing.
+- **Publishing Checks**: Review title, content, tags, images, visibility, account, immediate publishing, and scheduled publishing inside Post Studio; the legacy assembly page is a fallback/debug entry.
 - **Publishing Safety**: Defaults to `review_required`; real publishing requires confirmation and backend guardrails.
 - **Audit Logs**: Records publish preview, awaiting approval, publishing, published, scheduled, and failed events; stores content hashes instead of full body text.
 - **Local Privacy**: API keys, cookies, drafts, assets, and history stay on the user's machine by default.
@@ -257,9 +259,11 @@ Find high-save Guangzhou coffee shop posts from the last week, analyze title and
 5. The agent searches real posts, extracts evidence, creates a CreativeBrief, and drafts the post.
 6. Save valuable samples into the Viral Knowledge Base when you find reusable patterns.
 7. Review title, body, tags, and image direction in Post Canvas.
-8. Use Image Studio to generate AI images, product-scene images, or image-text cards.
-9. Use Publishing Assembly to confirm the final post, account, visibility, and schedule.
+8. In **Post Studio**, generate or select AI images, product-scene images, or image-text cards from the image/material area.
+9. In **Post Studio**, use the publishing check area to confirm the final title, body, tags, images, account, visibility, and schedule.
 10. Use “private only” for the first real publishing test.
+
+> Advanced Topic Research, Legacy AI Workspace, Advanced Image Studio, and Fallback Publishing Assembly are still available for debugging, batch work, and old-flow compatibility. For daily creation, start in **Post Studio** and return to **Post Studio** for final confirmation.
 
 ### Multi-Account Notes
 
