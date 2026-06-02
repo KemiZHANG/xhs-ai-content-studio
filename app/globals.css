@@ -1402,6 +1402,13 @@ textarea {
   width: 100%;
 }
 
+.historyResetHint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+  margin: -4px 0 0;
+}
+
 .conversationList {
   display: grid;
   gap: 8px;

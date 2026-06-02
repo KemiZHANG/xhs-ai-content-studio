@@ -126,8 +126,9 @@ export function ChatPanel({
           <h2>对话历史</h2>
         </div>
         <button className="secondaryButton fullWidth" onClick={onNewConversation} type="button">
-          新对话
+          新对话 / 清空当前项目
         </button>
+        <p className="historyResetHint">会清空当前 PostProject 的证据、草稿、选图和发布计划，历史记录仍保留。</p>
         <div className="conversationList">
           {conversations.length ? (
             conversations.map((conversation) => (
@@ -161,7 +162,7 @@ export function ChatPanel({
             <p>{conversationWarning}</p>
             {submitGuard.reason ? <p>{submitGuard.reason}</p> : null}
             <button className="secondaryButton" onClick={onNewConversation} type="button">
-              新建干净对话
+              新建干净对话并清空当前项目
             </button>
           </section>
         ) : null}
