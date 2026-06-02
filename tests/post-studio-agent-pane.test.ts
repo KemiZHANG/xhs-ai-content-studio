@@ -85,6 +85,7 @@ describe("post studio agent pane", () => {
     expect(html).toContain("证据: evidence-1");
     expect(html).toContain("生成文案");
     expect(html).toContain("把标题再生活化一点");
+    expect(html).not.toMatch(/[�]|鐖|鍥剧|鏂囨|鍙戝|缁х|璇佹|鎼滅/);
   });
 
   it("keeps the empty-state starter prompts visible before a conversation starts", () => {
@@ -104,8 +105,9 @@ describe("post studio agent pane", () => {
 
     expect(html).toContain("告诉 Agent 你要做什么");
     expect(html).toContain("先搜索证据");
-    expect(html).toContain("找最近一周高收藏笔记");
+    expect(html).toContain("帮我找最近一周高收藏笔记");
     expect(html).toContain("Post Studio 起步指令");
     expect(html).toContain("基于当前证据生成 CreativeBrief");
+    expect(html).not.toMatch(/[�]|鐖|鍥剧|鏂囨|鍙戝|缁х|璇佹|鎼滅/);
   });
 });

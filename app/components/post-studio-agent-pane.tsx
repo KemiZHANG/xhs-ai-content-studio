@@ -259,7 +259,7 @@ function AgentStructuredMessage({
 
       {hiddenCards.length ? (
         <details className="agentHiddenCards">
-          <summary>还有 {hiddenCards.length} 张结构卡已折叠</summary>
+          <summary>还有 {hiddenCards.length} 张结果卡已折叠</summary>
           {hiddenCards.slice(0, 6).map((card) => (
             <p key={card.id}>{labelForAgentCard(card.type)}: {card.title}</p>
           ))}
@@ -335,7 +335,7 @@ function AgentCardInlineDetails({
         {directorSummary.blockerCount ? <small className="agentDirectorBlocker">还有 {directorSummary.blockerCount} 个阻塞项需要处理</small> : null}
         {directorSummary.nextAction ? (
           <button className="miniActionButton primaryInline" type="button" onClick={() => onQuickAction(directorSummary.nextAction!)}>
-            建议下一步: {directorSummary.nextActionLabel}
+            建议下一步 {directorSummary.nextActionLabel}
           </button>
         ) : null}
       </div>
@@ -387,7 +387,7 @@ function AgentCardInlineDetails({
       </div>
       {stageGuidance.primaryAction ? (
         <button className="miniActionButton primaryInline" type="button" onClick={() => onQuickAction(stageGuidance.primaryAction!)}>
-          建议下一步: {labelForPostAction(stageGuidance.primaryAction)}
+          建议下一步 {labelForPostAction(stageGuidance.primaryAction)}
         </button>
       ) : null}
     </div>
