@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Rocket } from "lucide-react";
 import type {
   AssetRecord,
@@ -45,7 +45,7 @@ import { buildGeneratedAssetSummary, buildReferenceAssetSummary } from "@/app/co
 import { buildPostNextStepCoach } from "@/app/components/post-next-step-coach";
 import { buildPostFlowSummary } from "@/app/components/post-flow-summary";
 import { buildPostSideDigest } from "@/app/components/post-side-digest";
-import { buildStudioTabGroups } from "@/app/components/studio-tab-groups";
+import { buildStudioTabGroups, getRecommendedStudioTabForStage } from "@/app/components/studio-tab-groups";
 import { selectRunningJobForWorkspace } from "@/app/components/job-display";
 import { buildCreationProvenance } from "@/app/components/creation-provenance";
 import { buildBriefTabSummary, buildImageTabSummary, buildPublishTabSummary } from "@/app/components/studio-tab-summary";
@@ -173,11 +173,24 @@ export function PostStudioPanel({
   const [evidenceCatalogOpen, setEvidenceCatalogOpen] = useState(false);
   const [selectedViralCase, setSelectedViralCase] = useState<ViralCase | null>(null);
   const [viralSearchForm, setViralSearchForm] = useState(emptyViralSearchForm);
+  const lastAutoTabKey = useRef("");
   useEffect(() => {
     if (focusTab?.tab) {
       setTab(focusTab.tab);
     }
   }, [focusTab?.nonce, focusTab?.tab]);
+  useEffect(() => {
+    if (focusTab?.tab) {
+      return;
+    }
+    const stage = project?.currentStage ?? "empty";
+    const autoTabKey = `${project?.id ?? "empty"}:${stage}`;
+    if (lastAutoTabKey.current === autoTabKey) {
+      return;
+    }
+    lastAutoTabKey.current = autoTabKey;
+    setTab(getRecommendedStudioTabForStage(stage));
+  }, [focusTab?.tab, project?.currentStage, project?.id]);
   const selectedAssets = assets.filter((asset) => publishAssetIds.includes(asset.id));
   const uploadAssets = assets.filter((asset) => asset.kind === "upload");
   const generatedAssets = [...assets].filter((asset) => asset.kind === "generated").sort(sortNewestAsset);

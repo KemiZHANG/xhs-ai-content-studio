@@ -1,3 +1,5 @@
+import type { PostStage } from "@/app/types";
+
 export type StudioTabId = "insights" | "brief" | "evidence" | "viral" | "references" | "generated" | "publish";
 
 export type StudioTabGroup = {
@@ -56,4 +58,30 @@ export function buildStudioTabGroups(activeTab: StudioTabId): StudioTabGroup[] {
       tabs
     };
   });
+}
+
+export function getRecommendedStudioTabForStage(stage: PostStage | undefined): StudioTabId {
+  switch (stage) {
+    case "brief_ready":
+    case "copy_drafting":
+    case "copy_ready":
+    case "visual_planning":
+    case "image_prompt_ready":
+      return "brief";
+    case "image_generating":
+    case "image_ready":
+      return "generated";
+    case "assembling":
+    case "reviewing":
+    case "scheduled":
+    case "published":
+    case "failed":
+      return "publish";
+    case "empty":
+    case "briefing":
+    case "researching":
+    case "evidence_ready":
+    default:
+      return "insights";
+  }
 }

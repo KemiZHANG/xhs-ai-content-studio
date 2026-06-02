@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildStudioTabGroups } from "@/app/components/studio-tab-groups";
+import { buildStudioTabGroups, getRecommendedStudioTabForStage } from "@/app/components/studio-tab-groups";
 
 describe("studio tab groups", () => {
   it("compresses internal tabs into three user-facing workflow groups", () => {
@@ -26,5 +26,12 @@ describe("studio tab groups", () => {
         tabs: [expect.objectContaining({ id: "publish", active: true })]
       })
     ]);
+  });
+
+  it("recommends the side tab that matches the current PostProject stage", () => {
+    expect(getRecommendedStudioTabForStage("researching")).toBe("insights");
+    expect(getRecommendedStudioTabForStage("brief_ready")).toBe("brief");
+    expect(getRecommendedStudioTabForStage("image_generating")).toBe("generated");
+    expect(getRecommendedStudioTabForStage("reviewing")).toBe("publish");
   });
 });
