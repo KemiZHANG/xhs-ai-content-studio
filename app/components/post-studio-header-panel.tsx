@@ -1,0 +1,281 @@
+"use client";
+
+import type { FormEvent } from "react";
+import { Send, ShieldCheck } from "lucide-react";
+import type { PostNextStepCoach } from "@/app/components/post-next-step-coach";
+import type { PostFlowPhase } from "@/app/components/post-flow-summary";
+import type { PostProjectContextSummary } from "@/app/components/post-project-context";
+import type { PostStudioStatusSummary } from "@/app/components/post-studio-status";
+import type { Section } from "@/app/types";
+
+export function PostStudioHeaderPanel({
+  projectTitle,
+  projectContextSummary,
+  statusSummary,
+  flowSummary,
+  nextStepCoach,
+  chatInput,
+  busy,
+  activeAccountId,
+  onQuickAction,
+  onSwitchAccount,
+  onRefreshHealth,
+  onNavigate,
+  onChatInput,
+  onChatSubmit,
+  onNewProject
+}: {
+  projectTitle: string;
+  projectContextSummary: PostProjectContextSummary;
+  statusSummary: PostStudioStatusSummary;
+  flowSummary: PostFlowPhase[];
+  nextStepCoach: PostNextStepCoach;
+  chatInput: string;
+  busy: boolean;
+  activeAccountId: string;
+  onQuickAction: (action: string) => void;
+  onSwitchAccount: (accountId: string) => void;
+  onRefreshHealth: () => void;
+  onNavigate: (section: Section) => void;
+  onChatInput: (value: string) => void;
+  onChatSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onNewProject: () => void;
+}) {
+  return (
+    <>
+      <div>
+        <span className="flowKicker">Post Studio</span>
+        <h2>{projectTitle}</h2>
+        <p>围绕一篇帖子推进：先研究真实笔记，再生成文案、图片方向、发布预览和安全检查。</p>
+        <ProjectContextCard summary={projectContextSummary} />
+        <StudioStatusCard
+          activeAccountId={activeAccountId}
+          statusSummary={statusSummary}
+          onNavigate={onNavigate}
+          onQuickAction={onQuickAction}
+          onRefreshHealth={onRefreshHealth}
+          onSwitchAccount={onSwitchAccount}
+        />
+      </div>
+      <div className="postFlowRail" aria-label="帖子创作流程">
+        {flowSummary.map((phase, index) => (
+          <PostFlowPhaseItem
+            index={index}
+            key={phase.id}
+            phase={phase}
+            onQuickAction={onQuickAction}
+          />
+        ))}
+      </div>
+      <NextActionBar
+        busy={busy}
+        chatInput={chatInput}
+        nextStepCoach={nextStepCoach}
+        onChatInput={onChatInput}
+        onChatSubmit={onChatSubmit}
+        onNewProject={onNewProject}
+        onQuickAction={onQuickAction}
+      />
+    </>
+  );
+}
+
+function ProjectContextCard({ summary }: { summary: PostProjectContextSummary }) {
+  return (
+    <div className={`projectContextCard ${summary.state}`}>
+      <div>
+        <span>当前帖子项目</span>
+        <strong>{summary.title}</strong>
+        <p>{summary.projectLine}</p>
+      </div>
+      <div className="projectContextLines">
+        <span>{summary.accountLine}</span>
+        <span>{summary.scopeLine}</span>
+        <span>{summary.publishLine}</span>
+      </div>
+      <div className="projectContextChips">
+        {summary.chips.map((item) => (
+          <em className={item.state} key={item.label}>
+            <small>{item.label}</small>
+            {item.value}
+          </em>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StudioStatusCard({
+  statusSummary,
+  activeAccountId,
+  onQuickAction,
+  onSwitchAccount,
+  onRefreshHealth,
+  onNavigate
+}: {
+  statusSummary: PostStudioStatusSummary;
+  activeAccountId: string;
+  onQuickAction: (action: string) => void;
+  onSwitchAccount: (accountId: string) => void;
+  onRefreshHealth: () => void;
+  onNavigate: (section: Section) => void;
+}) {
+  return (
+    <div className={`studioStatusSummary ${statusSummary.riskLevel}`}>
+      <div>
+        <span>当前判断</span>
+        <strong>{statusSummary.headline}</strong>
+        <p>{statusSummary.detail}</p>
+      </div>
+      <div className="studioStatusProgress" aria-label="帖子项目完成度">
+        <div>
+          <span>{statusSummary.stageLine}</span>
+          {statusSummary.primaryAction ? (
+            <button type="button" onClick={() => onQuickAction(statusSummary.primaryAction!)}>
+              建议：{statusSummary.primaryActionLabel}
+            </button>
+          ) : statusSummary.primaryActionLabel ? (
+            <b>建议：{statusSummary.primaryActionLabel}</b>
+          ) : null}
+        </div>
+        <i><em style={{ width: `${statusSummary.progressPercent}%` }} /></i>
+      </div>
+      <div className="studioStatusChips">
+        {statusSummary.chips.map((item) => (
+          <em className={item.state} key={item.label}>
+            <small>{item.label}</small>
+            {item.value}
+          </em>
+        ))}
+      </div>
+      <div className="studioAccountLine">
+        <ShieldCheck size={15} />
+        <span>{statusSummary.accountLine}</span>
+      </div>
+      <div className={`studioAccountControl ${statusSummary.accountReady ? "ready" : "warn"}`}>
+        <div>
+          <small>发布账号</small>
+          <strong>{statusSummary.accountName}</strong>
+          <span>{statusSummary.accountLoginName ? `登录名：${statusSummary.accountLoginName}` : "登录名待检测"}</span>
+          <span>MCP：{statusSummary.accountMcpEndpoint}</span>
+        </div>
+        {statusSummary.accountCount > 1 ? (
+          <label>
+            <span>切换</span>
+            <select value={activeAccountId} onChange={(event) => onSwitchAccount(event.target.value)}>
+              {statusSummary.accountOptions.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        <div className="studioAccountButtons">
+          <button className="secondaryButton" type="button" onClick={onRefreshHealth}>
+            检测当前账号
+          </button>
+          <button className="secondaryButton" type="button" onClick={() => onNavigate("settings")}>
+            账号设置
+          </button>
+        </div>
+        <div className="studioAccountOptionList" aria-label="账号切换状态">
+          {statusSummary.accountOptions.slice(0, 3).map((account) => (
+            <span className={account.isReady ? "ready" : account.isActive ? "active" : ""} key={account.id}>
+              {account.detail}
+            </span>
+          ))}
+        </div>
+        <small className="studioAccountSwitchHint">{statusSummary.accountSwitchHint}</small>
+      </div>
+      {statusSummary.blockers.length ? (
+        <ul className="studioStatusBlockers">
+          {statusSummary.blockers.map((item) => <li key={item}>{item}</li>)}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+function PostFlowPhaseItem({
+  phase,
+  index,
+  onQuickAction
+}: {
+  phase: PostFlowPhase;
+  index: number;
+  onQuickAction: (action: string) => void;
+}) {
+  return (
+    <article className={`postFlowPhase ${phase.state}`}>
+      <span className="postFlowIndex">{index + 1}</span>
+      <div>
+        <strong>{phase.label}</strong>
+        <p>{phase.detail}</p>
+      </div>
+      {phase.state === "active" && phase.action ? (
+        <button type="button" onClick={() => onQuickAction(phase.action!)}>
+          {phase.actionLabel}
+        </button>
+      ) : null}
+    </article>
+  );
+}
+
+function NextActionBar({
+  nextStepCoach,
+  chatInput,
+  busy,
+  onQuickAction,
+  onChatInput,
+  onChatSubmit,
+  onNewProject
+}: {
+  nextStepCoach: PostNextStepCoach;
+  chatInput: string;
+  busy: boolean;
+  onQuickAction: (action: string) => void;
+  onChatInput: (value: string) => void;
+  onChatSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onNewProject: () => void;
+}) {
+  return (
+    <div className="nextActionBar">
+      <span className="nextActionEyebrow">下一步建议</span>
+      <strong>{nextStepCoach.headline}</strong>
+      <p>{nextStepCoach.detail}</p>
+      {nextStepCoach.progressLine ? <small>{nextStepCoach.progressLine}</small> : null}
+      <div className="nextActionButtons">
+        {nextStepCoach.primaryAction ? (
+          <button className="isPrimaryNext" type="button" onClick={() => onQuickAction(nextStepCoach.primaryAction!)}>
+            {nextStepCoach.primaryLabel}
+          </button>
+        ) : null}
+        {nextStepCoach.secondaryActions.map((item) => (
+          <button key={item.action} type="button" onClick={() => onQuickAction(item.action)}>
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <form className="studioTopComposer" onSubmit={onChatSubmit}>
+        <textarea
+          aria-label="给 Agent 的下一步指令"
+          value={chatInput}
+          onChange={(event) => onChatInput(event.target.value)}
+          placeholder="直接告诉 Agent 下一步：补充产品卖点 / 标题更生活化 / 用第二张图 / 今晚八点发"
+        />
+        <button className="primaryButton" disabled={busy} type="submit">
+          <Send size={15} />
+          发送
+        </button>
+      </form>
+      <details className="nextActionDecision">
+        <summary>查看原因与结果</summary>
+        <span>为什么：{nextStepCoach.whyLine}</span>
+        <span>完成后：{nextStepCoach.outcomeLine}</span>
+        {nextStepCoach.safetyLine ? <span className="nextActionSafety">{nextStepCoach.safetyLine}</span> : null}
+      </details>
+      <button className="secondaryButton" onClick={onNewProject} type="button">新建项目</button>
+    </div>
+  );
+}
