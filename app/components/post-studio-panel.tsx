@@ -1,9 +1,8 @@
 "use client";
 
-import type { FormEvent, ReactNode } from "react";
+import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Rocket } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import type {
   AssetRecord,
   ChatMessage,
@@ -49,27 +48,20 @@ import { buildPostSideDigest } from "@/app/components/post-side-digest";
 import { buildStudioTabGroups } from "@/app/components/studio-tab-groups";
 import { selectRunningJobForWorkspace } from "@/app/components/job-display";
 import { buildCreationProvenance } from "@/app/components/creation-provenance";
-import { buildBriefTabSummary, buildImageTabSummary, buildPublishTabSummary, type StudioTabSummary } from "@/app/components/studio-tab-summary";
+import { buildBriefTabSummary, buildImageTabSummary, buildPublishTabSummary } from "@/app/components/studio-tab-summary";
 import { EvidenceCatalogDrawer, EvidenceDrawer, ViralCaseDrawer } from "@/app/components/post-studio-drawers";
 import { PostStudioHeaderPanel } from "@/app/components/post-studio-header-panel";
-import { PostStudioSideNavigator } from "@/app/components/post-studio-side-navigator";
 import { PostStudioAgentPane, type PostStudioResearchFormState } from "@/app/components/post-studio-agent-pane";
-import {
-  PostStudioBriefTab,
-  PostStudioEvidenceTab,
-  PostStudioInsightsTab
-} from "@/app/components/post-studio-evidence-tabs";
-import { PostStudioGeneratedTab, PostStudioReferencesTab } from "@/app/components/post-studio-media-tabs";
-import { emptyViralSearchForm, PostStudioViralTab } from "@/app/components/post-studio-viral-tab";
+import { PostStudioSidePane, type StudioTab } from "@/app/components/post-studio-side-pane";
+import { emptyViralSearchForm } from "@/app/components/post-studio-viral-tab";
 import { labelForPublishStatus } from "@/app/components/post-studio-publish-intent-panel";
-import { PostStudioPublishTab } from "@/app/components/post-studio-publish-tab";
 import { buildVersionSwitchGuidance } from "@/app/components/version-switch-guidance";
 import { resolvePostCreationTopic, resolvePostStudioTitle } from "@/app/components/post-studio-title";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
 
-export type StudioTab = "insights" | "brief" | "evidence" | "viral" | "references" | "generated" | "publish";
+export type { StudioTab } from "@/app/components/post-studio-side-pane";
 
 type ResearchForm = PostStudioResearchFormState;
 
@@ -538,172 +530,125 @@ export function PostStudioPanel({
           onCommitCanvas={onCommitCanvas}
         />
 
-        <aside className="panel studioSidePane">
-          <PostStudioSideNavigator
-            activeTab={tab}
-            sideDigest={sideDigest}
-            studioTabGroups={studioTabGroups}
-            onSelectTab={setTab}
-          />
-
-          {tab === "insights" ? (
-            <PostStudioInsightsTab
-              citationReport={citationReport}
-              creatorMemory={creatorMemory}
-              keyLearningInsights={keyLearningInsights}
-              onOpenViral={() => setTab("viral")}
-              projectMemory={project?.agentMemory ?? []}
-              realtimeCount={realtimeInsights.length}
-              totalInsightCount={insights.length}
-              viralCount={viralInsights.length}
-              viralEvidenceSummary={viralEvidenceSummary}
-            />
-          ) : null}
-
-          {tab === "brief" ? (
-            <PostStudioBriefTab
-              brief={brief}
-              briefEvidenceSummary={briefEvidenceSummary}
-              onQuickAction={onQuickAction}
-              summary={briefTabSummary}
-              visualEvidenceSummary={visualEvidenceSummary}
-            />
-          ) : null}
-
-          {tab === "evidence" ? (
-            <PostStudioEvidenceTab
-              evidencePanel={evidencePanel}
-              onOpenEvidenceCatalog={() => setEvidenceCatalogOpen(true)}
-              onOpenSample={setSelectedEvidence}
-              onOpenWorkflow={() => onNavigate("workflow")}
-              onSaveManyToViralLibrary={onSaveManyToViralLibrary}
-              onSaveToViralLibrary={onSaveToViralLibrary}
-              saveableSamples={saveableSamples}
-              summarizeEvidenceSample={summarizeEvidenceSample}
-              viralSaveCandidates={viralSaveCandidates}
-            />
-          ) : null}
-
-          {tab === "viral" ? (
-            <PostStudioViralTab
-              focusedEvidenceIds={focusedEvidenceIds}
-              keyViralInsights={keyViralInsights}
-              latestViralSummaries={latestViralSummaries}
-              onFocusEvidenceIds={onFocusEvidenceIds}
-              onOpenViralCase={setSelectedViralCase}
-              onQuickAction={onQuickAction}
-              onRefreshViralEvidence={onRefreshViralEvidence}
-              onReloadViralLibrary={onReloadViralLibrary}
-              onResetSearch={() => {
-                setViralSearchForm(emptyViralSearchForm);
-                onReloadViralLibrary();
-              }}
-              onSearchFormChange={(patch) => setViralSearchForm((current) => ({ ...current, ...patch }))}
-              onSearchViralLibrary={onSearchViralLibrary}
-              viralApplication={viralApplication}
-              viralCaseById={viralCaseById}
-              viralCases={viralCases}
-              viralEvidenceSummary={viralEvidenceSummary}
-              viralInsights={viralInsights}
-              viralLibraryHealth={viralLibraryHealth}
-              viralPack={viralPack}
-              viralSearchForm={viralSearchForm}
-            />
-          ) : null}
-
-          {tab === "references" ? (
-            <PostStudioReferencesTab
-              assetSummary={referenceAssetSummary}
-              onNavigate={onNavigate}
-              onOpenImageStudio={onOpenImageStudio}
-              onQuickAction={onQuickAction}
-              onSelectPostImages={onSelectPostImages}
-              onUploadReferenceFiles={onUploadReferenceFiles}
-              project={project}
-              publishAssetIds={publishAssetIds}
-              summary={referenceTabSummary}
-            />
-          ) : null}
-
-          {tab === "generated" ? (
-            <PostStudioGeneratedTab
-              assetSummary={generatedAssetSummary}
-              onOpenImageStudio={onOpenImageStudio}
-              onQuickAction={onQuickAction}
-              onSelectPostImages={onSelectPostImages}
-              project={project}
-              publishAssetIds={publishAssetIds}
-              summary={generatedTabSummary}
-            />
-          ) : null}
-
-          {tab === "publish" ? (
-            <PostStudioPublishTab
-              accountReady={accountReady}
-              accountReadyHint={accountReadyHint}
-              activeAccountLabel={activeAccount?.displayName ?? settings.activeAccountId}
-              activeLoginName={health?.activeAccount?.loginName}
-              activePublishPlan={activePublishPlan}
-              auditSummary={auditSummary}
-              busy={busy}
-              citationReport={citationReport}
-              citationTraceReady={citationTraceReady}
-              confirmedRequiredCount={confirmedRequiredCount}
-              defaultAutoPublish={settings.defaultAutoPublish}
-              hasExistingVisualDirection={Boolean(project?.visualDirection)}
-              hasVisualDirection={hasVisualDirection}
-              onCancelPublish={onCancelPublish}
-              onConfirmPublish={onConfirmPublish}
-              onNavigate={onNavigate}
-              onOpenPublish={onOpenPublish}
-              onPreparePublish={onPreparePublish}
-              onQuickAction={onQuickAction}
-              onScheduleAtChange={onScheduleAtChange}
-              onVisibilityChange={onVisibilityChange}
-              pendingPublish={pendingPublish}
-              publishAccountSafety={publishAccountSafety}
-              publishDraft={publishDraft}
-              publishReady={publishReady}
-              publishSafetyBoundary={publishSafetyBoundary}
-              publishScheduleAt={publishScheduleAt}
-              publishSummary={publishSummary}
-              publishVisibility={publishVisibility}
-              quality={quality}
-              qualityGateFresh={versionStatus?.qualityGateFresh === true}
-              qualityViralCoverage={qualityViralCoverage}
-              requiredConfirmations={requiredConfirmations}
-              selectedImageCount={selectedAssets.length}
-              staleAccountPublishPlan={staleAccountPublishPlan}
-              staleCanvasPublishPlan={staleCanvasPublishPlan}
-              summary={publishTabSummary}
-            />
-          ) : null}
-
-          <details className="advancedEntry compactAdvancedEntry">
-            <summary>
-              <strong>高级/调试工具</strong>
-              <span>日常创作留在 Post Studio；只有排查任务或单独批量处理时再展开。</span>
-            </summary>
-            <div className="advancedToolList">
-              <button onClick={() => onNavigate("workflow")} type="button">
-                <strong>独立主题研究</strong>
-                <span>单独复查搜索条件和样本表。</span>
-              </button>
-              <button onClick={() => onNavigate("imageStudio")} type="button">
-                <strong>高级图片工具</strong>
-                <span>批量生成 AI 图片或图文卡片。</span>
-              </button>
-              <button onClick={() => onNavigate("jobs")} type="button">
-                <strong>任务进度</strong>
-                <span>查看后台长任务和失败原因。</span>
-              </button>
-              <button onClick={() => onNavigate("publish")} type="button">
-                <strong>发布装配调试</strong>
-                <span>备用入口；正式发布仍优先在本页确认。</span>
-              </button>
-            </div>
-          </details>
-        </aside>
+        <PostStudioSidePane
+          activeTab={tab}
+          brief={{
+            brief,
+            briefEvidenceSummary,
+            onQuickAction,
+            summary: briefTabSummary,
+            visualEvidenceSummary
+          }}
+          evidence={{
+            evidencePanel,
+            onOpenEvidenceCatalog: () => setEvidenceCatalogOpen(true),
+            onOpenSample: setSelectedEvidence,
+            onOpenWorkflow: () => onNavigate("workflow"),
+            onSaveManyToViralLibrary,
+            onSaveToViralLibrary,
+            saveableSamples,
+            summarizeEvidenceSample,
+            viralSaveCandidates
+          }}
+          generated={{
+            assetSummary: generatedAssetSummary,
+            onOpenImageStudio,
+            onQuickAction,
+            onSelectPostImages,
+            project,
+            publishAssetIds,
+            summary: generatedTabSummary
+          }}
+          insights={{
+            citationReport,
+            creatorMemory,
+            keyLearningInsights,
+            onOpenViral: () => setTab("viral"),
+            projectMemory: project?.agentMemory ?? [],
+            realtimeCount: realtimeInsights.length,
+            totalInsightCount: insights.length,
+            viralCount: viralInsights.length,
+            viralEvidenceSummary
+          }}
+          onNavigate={onNavigate}
+          onSelectTab={setTab}
+          publish={{
+            accountReady,
+            accountReadyHint,
+            activeAccountLabel: activeAccount?.displayName ?? settings.activeAccountId,
+            activeLoginName: health?.activeAccount?.loginName,
+            activePublishPlan,
+            auditSummary,
+            busy,
+            citationReport,
+            citationTraceReady,
+            confirmedRequiredCount,
+            defaultAutoPublish: settings.defaultAutoPublish,
+            hasExistingVisualDirection: Boolean(project?.visualDirection),
+            hasVisualDirection,
+            onCancelPublish,
+            onConfirmPublish,
+            onNavigate,
+            onOpenPublish,
+            onPreparePublish,
+            onQuickAction,
+            onScheduleAtChange,
+            onVisibilityChange,
+            pendingPublish,
+            publishAccountSafety,
+            publishDraft,
+            publishReady,
+            publishSafetyBoundary,
+            publishScheduleAt,
+            publishSummary,
+            publishVisibility,
+            quality,
+            qualityGateFresh: versionStatus?.qualityGateFresh === true,
+            qualityViralCoverage,
+            requiredConfirmations,
+            selectedImageCount: selectedAssets.length,
+            staleAccountPublishPlan,
+            staleCanvasPublishPlan,
+            summary: publishTabSummary
+          }}
+          references={{
+            assetSummary: referenceAssetSummary,
+            onNavigate,
+            onOpenImageStudio,
+            onQuickAction,
+            onSelectPostImages,
+            onUploadReferenceFiles,
+            project,
+            publishAssetIds,
+            summary: referenceTabSummary
+          }}
+          sideDigest={sideDigest}
+          studioTabGroups={studioTabGroups}
+          viral={{
+            focusedEvidenceIds,
+            keyViralInsights,
+            latestViralSummaries,
+            onFocusEvidenceIds,
+            onOpenViralCase: setSelectedViralCase,
+            onQuickAction,
+            onRefreshViralEvidence,
+            onReloadViralLibrary,
+            onResetSearch: () => {
+              setViralSearchForm(emptyViralSearchForm);
+              onReloadViralLibrary();
+            },
+            onSearchFormChange: (patch) => setViralSearchForm((current) => ({ ...current, ...patch })),
+            onSearchViralLibrary,
+            viralApplication,
+            viralCaseById,
+            viralCases,
+            viralEvidenceSummary,
+            viralInsights,
+            viralLibraryHealth,
+            viralPack,
+            viralSearchForm
+          }}
+        />
       </div>
 
       {selectedEvidence ? (
@@ -761,40 +706,6 @@ function ReadinessStep({
       <span>{item.ready ? "✓" : "·"}</span>
       {item.label}
     </button>
-  );
-}
-
-function SideSection({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: ReactNode }) {
-  return (
-    <section className="studioSideSection">
-      <h3><Icon size={16} />{title}</h3>
-      {children}
-    </section>
-  );
-}
-
-function StudioTaskSummary({
-  summary,
-  onQuickAction
-}: {
-  summary: StudioTabSummary;
-  onQuickAction: (action: string) => void;
-}) {
-  return (
-    <article className={`studioTaskSummary ${summary.state}`}>
-      <div>
-        <span>当前状态</span>
-        <strong>{summary.headline}</strong>
-        <p>{summary.detail}</p>
-      </div>
-      {summary.primaryAction ? (
-        <button className="secondaryButton fullWidth" type="button" onClick={() => onQuickAction(summary.primaryAction!)}>
-          {summary.primaryActionLabel}
-        </button>
-      ) : (
-        <small>{summary.primaryActionLabel}</small>
-      )}
-    </article>
   );
 }
 
