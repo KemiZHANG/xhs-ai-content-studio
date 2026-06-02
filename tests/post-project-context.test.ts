@@ -100,6 +100,8 @@ describe("post project context summary", () => {
 
     expect(summary.title).toBe("未命名帖子项目");
     expect(summary.projectLine).toContain("workspace");
+    expect(summary.boundaryLine).toContain("旧证据");
+    expect(summary.boundaryLine).toContain("不会自动带入");
     expect(summary.chips.find((item) => item.label === "项目边界")).toMatchObject({ value: "待创建", state: "warn" });
   });
 });

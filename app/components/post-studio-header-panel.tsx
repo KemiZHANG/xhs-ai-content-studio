@@ -123,6 +123,7 @@ function ProjectContextCard({ summary }: { summary: PostProjectContextSummary })
         <span>当前帖子项目</span>
         <strong>{summary.title}</strong>
         <p>{summary.projectLine}</p>
+        <small>{summary.boundaryLine}</small>
       </div>
       <div className="projectContextLines">
         <span>{summary.accountLine}</span>
