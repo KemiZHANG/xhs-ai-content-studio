@@ -6215,6 +6215,45 @@ textarea {
   margin: 4px 0 0;
 }
 
+.viralApplicationProgress {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(39, 37, 31, 0.08);
+  border-radius: 999px;
+  display: grid;
+  gap: 7px;
+  padding: 9px 11px 10px;
+}
+
+.viralApplicationProgress > div {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.viralApplicationProgress strong {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.viralApplicationProgress span {
+  color: var(--muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viralApplicationProgress i {
+  background: linear-gradient(90deg, var(--accent), rgba(18, 118, 97, 0.48));
+  border-radius: 999px;
+  display: block;
+  height: 5px;
+  min-width: 8%;
+  transition: width 160ms ease;
+}
+
 .viralApplicationRoutes {
   display: grid;
   gap: 8px;

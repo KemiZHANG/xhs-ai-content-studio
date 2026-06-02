@@ -289,6 +289,10 @@ function ViralApplicationPanel({
   viralApplication: ViralApplicationModel;
   onQuickAction: (action: string) => void;
 }) {
+  const readyRoutes = viralApplication.routes.filter((route) => route.status === "ready").length;
+  const totalRoutes = viralApplication.routes.length || 1;
+  const progressPercent = Math.round((readyRoutes / totalRoutes) * 100);
+
   return (
     <div className={viralApplication.evidenceCount ? "viralApplyPanel ready" : "viralApplyPanel"}>
       <div>
@@ -304,6 +308,13 @@ function ViralApplicationPanel({
           {viralApplication.missingEvidence.length ? <span>缺口：{viralApplication.missingEvidence.slice(0, 3).join(" / ")}</span> : null}
           <span>{viralApplication.recommendation}</span>
         </div>
+      </div>
+      <div className="viralApplicationProgress" aria-label="爆款库应用进度">
+        <div>
+          <strong>{readyRoutes}/{totalRoutes} 已应用</strong>
+          <span>{readyRoutes === totalRoutes ? "Brief、文案和图片方向都已接入爆款库证据" : "先应用到 Brief，再带到文案和图片方向"}</span>
+        </div>
+        <i style={{ width: `${progressPercent}%` }} />
       </div>
       <div className="viralApplicationRoutes" aria-label="爆款库应用路径">
         {viralApplication.routes.map((route) => (
