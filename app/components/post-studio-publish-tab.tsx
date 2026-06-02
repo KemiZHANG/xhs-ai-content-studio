@@ -125,12 +125,6 @@ export function PostStudioPublishTab({
         <CheckItem ok={!publishScheduleAt || Date.parse(publishScheduleAt) > Date.now()} label={publishScheduleAt ? `定时: ${publishScheduleAt} (本地时区)` : "发布时间: 立即"} />
         <CheckItem ok={defaultAutoPublish === false} label="自动发布默认关闭" />
       </details>
-      <PostStudioPublishSafetyPanel
-        publishSummary={publishSummary}
-        publishAccountSafety={publishAccountSafety}
-        auditSummary={auditSummary}
-        onNavigate={onNavigate}
-      />
       <PostStudioPublishReadinessPanel
         publishVisibility={publishVisibility}
         publishScheduleAt={publishScheduleAt}
@@ -151,26 +145,38 @@ export function PostStudioPublishTab({
         onScheduleAtChange={onScheduleAtChange}
         onQuickAction={onQuickAction}
       />
-      <PostStudioPublishIntentPanel
-        activePublishPlan={activePublishPlan}
-        requiredConfirmations={requiredConfirmations}
-        confirmedRequiredCount={confirmedRequiredCount}
-        publishVisibility={publishVisibility}
-        pendingPublish={pendingPublish}
-        busy={busy}
-        canConfirmExisting={publishAccountSafety.canConfirmExisting}
-        staleAccountPublishPlan={staleAccountPublishPlan}
-        activeAccountLabel={activeAccountLabel}
-        staleCanvasPublishPlan={staleCanvasPublishPlan}
-        onCancelPublish={onCancelPublish}
-        onConfirmPublish={onConfirmPublish}
-      />
-      <PostStudioQualityPanel
-        quality={quality}
-        qualityViralCoverage={qualityViralCoverage}
-        citationReport={citationReport}
-        citationTraceReady={citationTraceReady}
-      />
+      <details className="publishDetailsDrawer">
+        <summary>
+          <strong>发布详情与审计</strong>
+          <span>确认单、Quality Gate、账号安全和审计记录</span>
+        </summary>
+        <PostStudioPublishSafetyPanel
+          publishSummary={publishSummary}
+          publishAccountSafety={publishAccountSafety}
+          auditSummary={auditSummary}
+          onNavigate={onNavigate}
+        />
+        <PostStudioPublishIntentPanel
+          activePublishPlan={activePublishPlan}
+          requiredConfirmations={requiredConfirmations}
+          confirmedRequiredCount={confirmedRequiredCount}
+          publishVisibility={publishVisibility}
+          pendingPublish={pendingPublish}
+          busy={busy}
+          canConfirmExisting={publishAccountSafety.canConfirmExisting}
+          staleAccountPublishPlan={staleAccountPublishPlan}
+          activeAccountLabel={activeAccountLabel}
+          staleCanvasPublishPlan={staleCanvasPublishPlan}
+          onCancelPublish={onCancelPublish}
+          onConfirmPublish={onConfirmPublish}
+        />
+        <PostStudioQualityPanel
+          quality={quality}
+          qualityViralCoverage={qualityViralCoverage}
+          citationReport={citationReport}
+          citationTraceReady={citationTraceReady}
+        />
+      </details>
       <div className="inlineActionGrid">
         <button className="secondaryButton fullWidth" onClick={() => onQuickAction("run_quality_gate")} type="button">刷新质量检查</button>
         <button className="primaryButton fullWidth" disabled={!publishReady || busy} onClick={onPreparePublish} type="button">

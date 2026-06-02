@@ -113,6 +113,8 @@ describe("post studio publish tab", () => {
     expect(html).toContain("安全边界：本页只生成发布确认单");
     expect(html).toContain("一句话指令不会直接发到小红书");
     expect(html).toContain("详细发布检查");
+    expect(html).toContain("发布详情与审计");
+    expect(html).toContain("确认单、Quality Gate、账号安全和审计记录");
     expect(html).toContain("标题已填写");
     expect(html).toContain("发布前安全摘要");
     expect(html).toContain("发布安全边界已满足");
