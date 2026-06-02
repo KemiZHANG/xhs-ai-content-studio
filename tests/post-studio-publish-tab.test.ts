@@ -126,6 +126,11 @@ describe("post studio publish tab", () => {
     expect(html).toContain("安全边界：本页只生成发布确认单");
     expect(html).toContain("一句话指令不会直接发到小红书");
     expect(html).toContain("发布目标确认摘要");
+    expect(html).toContain("真实发布闸门");
+    expect(html).toContain("当前不会直接发布到小红书");
+    expect(html).toContain("生成确认单只是锁定当前版本");
+    expect(html).toContain("自动发布：关闭");
+    expect(html).toContain("确认单：未生成");
     expect(html).toContain("发布目标");
     expect(html).toContain("测试账号");
     expect(html).toContain("登录名：xhs-user");

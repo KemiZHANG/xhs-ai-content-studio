@@ -6439,6 +6439,59 @@ textarea {
   white-space: nowrap;
 }
 
+.publishManualGate {
+  background: linear-gradient(135deg, rgba(18, 118, 97, 0.1), rgba(255, 255, 255, 0.78));
+  border: 1px solid rgba(18, 118, 97, 0.18);
+  border-radius: 14px;
+  display: grid;
+  gap: 12px;
+  padding: 13px;
+}
+
+.publishManualGate.pending {
+  background: linear-gradient(135deg, rgba(190, 123, 22, 0.12), rgba(255, 255, 255, 0.78));
+  border-color: rgba(190, 123, 22, 0.2);
+}
+
+.publishManualGate span,
+.publishManualGate p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.publishManualGate strong {
+  color: var(--ink);
+  display: block;
+  font-size: 14px;
+  margin: 3px 0;
+}
+
+.manualGateChecks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.manualGateChecks em {
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(23, 23, 23, 0.08);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  padding: 5px 8px;
+}
+
+.manualGateChecks em.ok {
+  color: var(--accent-strong);
+}
+
+.manualGateChecks em.warn {
+  color: #9a5a00;
+}
+
 .publishFixChecklist {
   display: grid;
   gap: 6px;

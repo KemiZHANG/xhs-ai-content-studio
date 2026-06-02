@@ -139,6 +139,13 @@ export function PostStudioPublishTab({
         publishVisibility={publishVisibility}
         selectedImageCount={selectedImageCount}
       />
+      <PublishManualGate
+        defaultAutoPublish={defaultAutoPublish}
+        pendingPublish={pendingPublish}
+        requiredConfirmations={requiredConfirmations}
+        confirmedRequiredCount={confirmedRequiredCount}
+        publishScheduleAt={publishScheduleAt}
+      />
       <StudioTaskSummary summary={summary} onQuickAction={onQuickAction} />
       <article className={`publishFocusSummary ${publishSummary.riskLevel}`}>
         <span>{publishSummary.modeLabel}</span>
@@ -293,6 +300,41 @@ function PublishTargetSummary({
           <dd>{defaultAutoPublish ? "已开启" : "默认关闭"}</dd>
         </div>
       </dl>
+    </section>
+  );
+}
+
+function PublishManualGate({
+  defaultAutoPublish,
+  pendingPublish,
+  requiredConfirmations,
+  confirmedRequiredCount,
+  publishScheduleAt
+}: {
+  defaultAutoPublish: boolean;
+  pendingPublish: PendingPublishConfirmation | null;
+  requiredConfirmations: RequiredConfirmation[];
+  confirmedRequiredCount: number;
+  publishScheduleAt: string;
+}) {
+  const requiredTotal = requiredConfirmations.length;
+  const waitingCount = Math.max(0, requiredTotal - confirmedRequiredCount);
+  return (
+    <section className={pendingPublish ? "publishManualGate pending" : "publishManualGate"} aria-label="真实发布闸门">
+      <div>
+        <span>真实发布闸门</span>
+        <strong>{pendingPublish ? "确认单已生成，等待你手动确认" : "当前不会直接发布到小红书"}</strong>
+        <p>
+          {pendingPublish
+            ? `还需确认 ${waitingCount}/${requiredTotal} 项；确认前不会调用小红书 MCP。`
+            : "生成确认单只是锁定当前版本，真正发布前仍要核对账号、可见范围、图片版本和时间。"}
+        </p>
+      </div>
+      <div className="manualGateChecks">
+        <em className={defaultAutoPublish ? "warn" : "ok"}>自动发布：{defaultAutoPublish ? "已开启但仍需确认单" : "关闭"}</em>
+        <em className={pendingPublish ? "warn" : "ok"}>确认单：{pendingPublish ? "待人工确认" : "未生成"}</em>
+        <em className={publishScheduleAt ? "warn" : "ok"}>时间：{publishScheduleAt ? "定时需确认时区" : "立即发布也需确认"}</em>
+      </div>
     </section>
   );
 }
