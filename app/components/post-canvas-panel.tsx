@@ -70,14 +70,16 @@ export function PostCanvasPanel({
       <div className="panelHeader compact">
         <div>
           <h2>Post Canvas</h2>
-          <p>最终帖子画布。标题、正文、标签、图片和预览在这里合并。</p>
+          <p>最终帖子画布。标题、正文、标签、图片和发布预览在这里合并。</p>
         </div>
         <button className="secondaryButton" disabled={!canGenerateCopy} onClick={() => onGenerateCopy(generatedCopyPrompt)} type="button">
           <Bot size={16} />
           生成文案
         </button>
       </div>
+
       <CreationProvenanceStrip cards={creationProvenance} onOpenEvidence={onOpenEvidence} />
+      <CanvasEvidenceBridge project={project} citationReport={citationReport} />
       <CanvasVersionSummary canvasDirty={canvasDirty} display={canvasVersionDisplay} />
 
       <div className="postPreviewShell">
@@ -137,7 +139,7 @@ function CreationProvenanceStrip({
       <div className="creationProvenanceHeader">
         <div>
           <span>为什么这样创作</span>
-          <strong>Brief、文案和图片方向都要能追溯到 evidencePack</strong>
+          <strong>Brief、文案和图片方向都需要能追溯到 evidencePack</strong>
         </div>
         <button className="textButton" type="button" onClick={onOpenEvidence}>
           查看证据
@@ -156,6 +158,32 @@ function CreationProvenanceStrip({
             </small>
           </article>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function CanvasEvidenceBridge({
+  project,
+  citationReport
+}: {
+  project: PostProject | null;
+  citationReport: EvidenceCitationReport | null;
+}) {
+  const briefCount = project?.creativeBrief?.basedOnEvidenceIds.length ?? 0;
+  const copyCount = project?.copyDraft?.draft.basedOnEvidenceIds?.length ?? 0;
+  const visualCount = project?.visualDirection?.basedOnEvidenceIds.length ?? 0;
+  const total = citationReport?.allEvidenceIds.length ?? briefCount + copyCount + visualCount;
+
+  return (
+    <section className="evidenceReferenceStrip" aria-label="Brief 与证据来源">
+      <strong>创作依据</strong>
+      <span>文案和图片共享当前 CreativeBrief；没有证据支持的内容不会标记为研究结论。</span>
+      <div className="citationBadgeRow">
+        <em className={briefCount ? "ok" : "warn"}>Brief {briefCount}</em>
+        <em className={copyCount ? "ok" : "warn"}>文案 {copyCount}</em>
+        <em className={visualCount ? "ok" : "warn"}>图片 {visualCount}</em>
+        <em className={total ? "ok" : "warn"}>总证据 {total}</em>
       </div>
     </section>
   );
@@ -203,7 +231,7 @@ function PostPreviewMediaColumn({ selectedAssets }: { selectedAssets: AssetRecor
       <section className={selectedAssets.length ? "selectedPostImages ready" : "selectedPostImages empty"} aria-label="已选择发布图片">
         <div>
           <strong>{selectedAssets.length ? `已选 ${selectedAssets.length} 张发布图片` : "发布图片未选择"}</strong>
-          <span>{selectedAssets.length ? "这些图片已同步到当前 PostProject，会进入发布装配与安全检查。" : "在参考图或生成素材里点选图片，或让 Agent 先生成配图。"}</span>
+          <span>{selectedAssets.length ? "这些图片已同步到当前 PostProject，会进入发布装配与安全检查。" : "在参考图或生成素材里选择图片，或让 Agent 先生成配图。"}</span>
         </div>
         {selectedAssets.length ? (
           <div className="selectedPostImageThumbs">
@@ -260,7 +288,7 @@ function CopyVersionSwitcher({
                 onSelectCopyVersion(version.id);
               }}
             >
-              回滚到此版本
+              回到此版本
             </button>
           </article>
         ))}
@@ -312,7 +340,7 @@ function PostDraftEditor({
           <p>
             {project.visualDirection.mood} · {project.visualDirection.composition}
           </p>
-          {project.visualDirection.confirmedAt ? <small>确认时间：{formatDateTime(project.visualDirection.confirmedAt)}</small> : null}
+          {project.visualDirection.confirmedAt ? <small>确认时间: {formatDateTime(project.visualDirection.confirmedAt)}</small> : null}
           {!visualDirectionConfirmed ? (
             <button className="secondaryButton compactButton" type="button" onClick={() => onQuickAction("confirm_visual_direction")}>
               确认图片方向
@@ -356,7 +384,7 @@ function ImagePromptVersionSwitcher({
             </div>
             <p>{summarizePromptDiff(latestImagePrompt, version.value.prompt)}</p>
             <small className={`versionSwitchHint ${promptVersionGuidance.state}`}>{promptVersionGuidance.label}</small>
-            {version.value.negativePrompt ? <small>避免：{version.value.negativePrompt.slice(0, 90)}</small> : null}
+            {version.value.negativePrompt ? <small>避免: {version.value.negativePrompt.slice(0, 90)}</small> : null}
             <button
               type="button"
               onClick={() => {
@@ -392,10 +420,10 @@ function FinalPostAndVersionStatus({
         <section className="finalPostSnapshot" aria-label="最终帖子快照">
           <strong>最终帖子快照</strong>
           <div>
-            <span>文案版本：{project.finalPost.copyVersionId ?? "当前画布"}</span>
-            <span>图片：{project.finalPost.imageIds.length} 张</span>
-            <span>Prompt：{project.finalPost.imagePromptVersionIds.length} 个</span>
-            <span>证据：{project.finalPost.basedOnEvidenceIds?.length ?? 0} 条</span>
+            <span>文案版本: {project.finalPost.copyVersionId ?? "当前画布"}</span>
+            <span>图片: {project.finalPost.imageIds.length} 张</span>
+            <span>Prompt: {project.finalPost.imagePromptVersionIds.length} 个</span>
+            <span>证据: {project.finalPost.basedOnEvidenceIds?.length ?? 0} 条</span>
           </div>
         </section>
       ) : null}
@@ -410,14 +438,14 @@ function FinalPostAndVersionStatus({
                 .slice(0, 3)
                 .map((change) => (
                   <small key={change.field}>
-                    {change.label}：{change.beforeSummary} → {change.afterSummary}
+                    {change.label}: {change.beforeSummary} {"->"} {change.afterSummary}
                   </small>
                 ))}
             </div>
           ) : null}
           <div>
-            <span>文案：{versionStatus.activeCopyVersionId ?? "待生成"}</span>
-            <span>Prompt：{versionStatus.activeImagePromptVersionIds.length || 0} 个</span>
+            <span>文案: {versionStatus.activeCopyVersionId ?? "待生成"}</span>
+            <span>Prompt: {versionStatus.activeImagePromptVersionIds.length || 0} 个</span>
           </div>
           {versionStatus.warnings.slice(0, 3).map((warning) => (
             <small key={warning}>{warning}</small>

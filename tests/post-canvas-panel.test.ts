@@ -43,6 +43,21 @@ const selectedAssets: AssetRecord[] = [
 
 const project: PostProject = createBlankPostProject({
   topic: "广州咖啡馆",
+  creativeBrief: {
+    audience: "周末探店人群",
+    painPoint: "想找安静、好拍、不踩雷的咖啡馆",
+    contentAngle: "真实周末探店清单",
+    emotionalHook: "给自己留一个舒服下午",
+    proofPoints: ["环境稳定", "出片自然", "菜单不踩雷"],
+    tone: "真实分享",
+    visualMood: "自然光、安静、温暖",
+    imageMustHave: ["咖啡杯", "窗边光线"],
+    imageMustAvoid: ["虚假 logo", "夸张功效"],
+    platformStyle: "小红书真实探店",
+    tabooWords: ["最强", "必爆"],
+    complianceNotes: ["不虚构销量和认证"],
+    basedOnEvidenceIds: ["title-1", "copy-1", "visual-1"]
+  },
   visualDirection: {
     mood: "自然光",
     composition: "桌面近景",
@@ -52,6 +67,20 @@ const project: PostProject = createBlankPostProject({
     basedOnEvidenceIds: ["visual-1"],
     confirmationStatus: "confirmed",
     confirmedAt: "2026-06-02T09:00:00.000Z"
+  },
+  copyDraft: {
+    id: "draft-1",
+    updatedAt: "2026-06-02T08:30:00.000Z",
+    draft: {
+      title: publishDraft.title,
+      content: publishDraft.content,
+      tags: ["广州咖啡", "周末探店"],
+      structure: ["适合谁", "真实体验", "收藏理由"],
+      imagePrompt: publishDraft.imagePrompt,
+      basedOnEvidenceIds: ["title-1", "copy-1", "tag-1", "visual-1"]
+    },
+    images: [],
+    visibility: "仅自己可见"
   },
   copyVersions: [{
     id: "copy-v1",
@@ -106,7 +135,7 @@ const creationProvenance: CreationProvenanceCard[] = [
     id: "brief",
     label: "Brief",
     headline: "策略来自研究证据",
-    detail: "标题、正文和图片方向共享同一批 evidencePack。",
+    detail: "标题、正文和图片方向共享同一组 evidencePack。",
     state: "ready",
     sourceLine: "实时 3 / 爆款库 1",
     evidenceCount: 4,
@@ -162,7 +191,7 @@ const citationReport: EvidenceCitationReport = {
 };
 
 describe("post canvas panel", () => {
-  it("renders the unified copy, image, version, final post, and evidence canvas", () => {
+  it("renders a readable unified copy, image, version, final post, and evidence canvas", () => {
     const html = renderToStaticMarkup(createElement(PostCanvasPanel, {
       canGenerateCopy: true,
       generatedCopyPrompt: "生成探店文案",
@@ -190,7 +219,10 @@ describe("post canvas panel", () => {
     }));
 
     expect(html).toContain("Post Canvas");
+    expect(html).toContain("最终帖子画布");
     expect(html).toContain("为什么这样创作");
+    expect(html).toContain("创作依据");
+    expect(html).toContain("文案和图片共享当前 CreativeBrief");
     expect(html).toContain("最终帖子已锁定");
     expect(html).toContain("已选 2 张发布图片");
     expect(html).toContain("文案版本");

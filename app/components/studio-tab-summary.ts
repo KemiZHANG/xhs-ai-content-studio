@@ -68,7 +68,7 @@ export function buildImageTabSummary({
       headline: `已选 ${selectedCount} 张发布图片`,
       detail: hiddenCount
         ? `默认只展示当前选图和少量${isGenerated ? "生成图" : "参考图"}，还有 ${hiddenCount} 张已折叠。`
-        : `当前选图会进入最终帖子；更多素材可去 Assets 管理。`,
+        : "当前选图会进入最终帖子；更多素材可去 Assets 管理。",
       state: "ready",
       primaryActionLabel: "进入发布检查",
       primaryAction: "run_quality_gate"

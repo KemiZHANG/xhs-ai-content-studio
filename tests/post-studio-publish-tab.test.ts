@@ -16,7 +16,7 @@ const publishDraft: PublishDraftState = {
 };
 
 describe("post studio publish tab", () => {
-  it("renders publish safety checks and confirmation actions", () => {
+  it("renders readable publish safety checks and confirmation actions", () => {
     const html = renderToStaticMarkup(createElement(PostStudioPublishTab, {
       summary: {
         headline: "可以生成发布确认单",

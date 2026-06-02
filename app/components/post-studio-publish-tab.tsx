@@ -120,9 +120,9 @@ export function PostStudioPublishTab({
         <CheckItem ok={hasVisualDirection} label="图片方向 / Prompt 已确认" />
         <CheckItem ok={citationTraceReady} label="字段级证据引用可追溯" />
         <CheckItem ok={qualityGateFresh} label="最终版本与 Quality Gate 一致" />
-        <CheckItem ok={accountReady} label={`账号：${activeAccountLabel} · ${accountReadyHint}`} />
-        <CheckItem ok={publishVisibility === "仅自己可见"} label={`可见范围：${publishVisibility}`} />
-        <CheckItem ok={!publishScheduleAt || Date.parse(publishScheduleAt) > Date.now()} label={publishScheduleAt ? `定时：${publishScheduleAt}（本地时区）` : "发布时间：立即"} />
+        <CheckItem ok={accountReady} label={`账号: ${activeAccountLabel} · ${accountReadyHint}`} />
+        <CheckItem ok={publishVisibility === "仅自己可见"} label={`可见范围: ${publishVisibility}`} />
+        <CheckItem ok={!publishScheduleAt || Date.parse(publishScheduleAt) > Date.now()} label={publishScheduleAt ? `定时: ${publishScheduleAt} (本地时区)` : "发布时间: 立即"} />
         <CheckItem ok={defaultAutoPublish === false} label="自动发布默认关闭" />
       </details>
       <PostStudioPublishSafetyPanel
