@@ -128,6 +128,8 @@ export function PostStudioEvidenceTab({
   onSaveToViralLibrary: (sample: SampleEvidence) => void;
 }) {
   const openPrimary = evidencePanel.totalCount ? onOpenEvidenceCatalog : onOpenWorkflow;
+  const visibleSaveCandidates = viralSaveCandidates.candidates.slice(0, 3);
+  const hiddenSaveCandidateCount = Math.max(0, viralSaveCandidates.candidates.length - visibleSaveCandidates.length);
 
   return (
     <>
@@ -155,7 +157,7 @@ export function PostStudioEvidenceTab({
               </button>
             </div>
             <div className="miniEvidenceList">
-              {viralSaveCandidates.candidates.map((candidate) => {
+              {visibleSaveCandidates.map((candidate) => {
                 const sample = candidate.sample;
 
                 return (
@@ -176,6 +178,15 @@ export function PostStudioEvidenceTab({
                   </article>
                 );
               })}
+              {hiddenSaveCandidateCount ? (
+                <details className="compressedEvidenceDetails">
+                  <summary>还有 {hiddenSaveCandidateCount} 条候选已收起</summary>
+                  <p>默认只展示最值得判断的 3 条，避免研究证据把创作区挤满；完整样本可以打开证据目录查看。</p>
+                  <button className="textButton" type="button" onClick={onOpenEvidenceCatalog}>
+                    打开完整证据目录
+                  </button>
+                </details>
+              ) : null}
             </div>
           </>
         ) : null}

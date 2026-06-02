@@ -232,4 +232,31 @@ describe("post studio evidence tabs", () => {
     expect(html).toContain("保存到爆款库");
     expect(html).toContain("打开完整证据目录");
   });
+
+  it("keeps viral save candidates compressed by default", () => {
+    const candidates = Array.from({ length: 5 }, (_, index) => ({
+      ...saveCandidates.candidates[0],
+      sample: {
+        ...sample,
+        id: `sample-${index + 1}`,
+        title: `候选样本 ${index + 1}`
+      }
+    }));
+    const html = renderToStaticMarkup(createElement(PostStudioEvidenceTab, {
+      evidencePanel: { ...evidencePanel, totalCount: 5 },
+      viralSaveCandidates: { ...saveCandidates, candidates, totalCount: 5 },
+      saveableSamples: candidates.map((item) => item.sample),
+      summarizeEvidenceSample: (item) => item.reasonHighlights[0] ?? item.detailText,
+      onOpenEvidenceCatalog: () => undefined,
+      onOpenWorkflow: () => undefined,
+      onSaveManyToViralLibrary: () => undefined,
+      onOpenSample: () => undefined,
+      onSaveToViralLibrary: () => undefined
+    }));
+
+    expect(html).toContain("候选样本 1");
+    expect(html).toContain("候选样本 3");
+    expect(html).not.toContain("候选样本 4");
+    expect(html).toContain("还有 2 条候选已收起");
+  });
 });

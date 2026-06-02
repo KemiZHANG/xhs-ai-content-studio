@@ -5456,6 +5456,28 @@ textarea {
   color: var(--warn);
 }
 
+.compressedEvidenceDetails {
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px dashed var(--line-strong);
+  border-radius: 10px;
+  color: var(--muted);
+  display: grid;
+  gap: 6px;
+  padding: 9px 10px;
+}
+
+.compressedEvidenceDetails summary {
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.compressedEvidenceDetails p {
+  font-size: 12px;
+  margin: 0;
+}
+
 .viralCandidateIntro {
   background: rgba(18, 118, 97, 0.06);
   border: 1px solid rgba(18, 118, 97, 0.16);
