@@ -8,7 +8,9 @@ describe("xhs display utils", () => {
     expect(titleForSection("assets")).toBe("素材管理");
     expect(titleForSection("settings")).toBe("模型与连接设置");
     expect(subtitleForSection("flow")).toContain("帖子项目");
-    expect(subtitleForSection("chat")).toContain("旧版自然语言工作台");
+    expect(titleForSection("workflow")).toBe("高级主题研究");
+    expect(titleForSection("chat")).toBe("旧版 AI 工作台");
+    expect(subtitleForSection("chat")).toContain("回到 Post Studio");
     expect(subtitleForSection("publish")).toContain("优先使用 Post Studio");
     expect(modeLabel("research")).toBe("证据研究");
   });

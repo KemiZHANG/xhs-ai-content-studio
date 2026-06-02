@@ -4,15 +4,15 @@ import type { ResearchSummary, SampleEvidence, Section, WorkflowResult, Workflow
 export function titleForSection(section: Section): string {
   const titles: Record<Section, string> = {
     flow: "Post Studio",
-    dashboard: "控制台",
-    workflow: "主题研究台",
-    jobs: "任务进度",
+    dashboard: "高级控制台",
+    workflow: "高级主题研究",
+    jobs: "高级任务进度",
     assets: "素材管理",
-    imageStudio: "图片创作台",
-    chat: "AI 工作台",
-    publish: "发布装配台",
+    imageStudio: "高级图片工具",
+    chat: "旧版 AI 工作台",
+    publish: "备用发布装配",
     audit: "发布审计",
-    history: "历史记录",
+    history: "旧版历史记录",
     settings: "模型与连接设置"
   };
   return titles[section];
@@ -21,15 +21,15 @@ export function titleForSection(section: Section): string {
 export function subtitleForSection(section: Section): string {
   const subtitles: Record<Section, string> = {
     flow: "围绕一个帖子项目完成研究、文案、图片、发布检查和人工确认。",
-    dashboard: "查看 MCP、模型、任务和发布安全状态。",
-    workflow: "按主题、类型、时间和样本数搜索真实笔记，只做研究分析，不生成、不发布。",
-    jobs: "追踪搜索、分析、生成图片和发布任务的后台进度。",
+    dashboard: "高级状态页。日常创作请回到 Post Studio，这里只用于排查 MCP、模型、任务和发布安全状态。",
+    workflow: "高级研究入口。日常从 Post Studio 左侧发起研究；这里只用于单独复查搜索条件和样本表。",
+    jobs: "高级任务页。日常只看 Post Studio 左侧进度；这里用于排查后台任务失败原因。",
     assets: "管理产品原图、参考图和生成结果；主要从 Post Studio 上传和选择使用。",
-    imageStudio: "在 AI 生图和图文卡片之间切换，产出可进入 Post Studio 的视觉素材。",
-    chat: "旧版自然语言工作台；新的创作建议回到 Post Studio 完成。",
-    publish: "旧版发布装配入口；当前项目发布请优先使用 Post Studio，真实发布前仍需先生成确认单。",
+    imageStudio: "高级图片工具。日常在 Post Studio 右侧选择/生成图片；这里用于批量 AI 生图和图文卡片。",
+    chat: "旧版自然语言工作台；新的创作、修改和发布建议都回到 Post Studio 完成。",
+    publish: "备用发布装配入口；当前项目发布请优先使用 Post Studio，真实发布前仍需先生成确认单。",
     audit: "回看发布预览、确认单、阻止原因、真实发布和定时发布记录。",
-    history: "回看研究记录、证据、草稿和生成结果。",
+    history: "旧版历史页。日常只从 Post Studio 恢复项目；这里用于回看研究记录、证据、草稿和生成结果。",
     settings: "配置本地 MCP、文本模型、图片模型、账号档案与发布权限。"
   };
   return subtitles[section];
