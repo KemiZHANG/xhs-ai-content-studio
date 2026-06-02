@@ -4160,8 +4160,9 @@ textarea {
 .studioAgentPane {
   display: flex;
   flex-direction: column;
-  height: min(780px, calc(100vh - 130px));
-  min-height: min(620px, calc(100vh - 130px));
+  height: min(820px, calc(100svh - 132px));
+  max-height: calc(100svh - 132px);
+  min-height: min(620px, calc(100svh - 132px));
   overflow: hidden;
   position: sticky;
   top: 20px;
@@ -4191,7 +4192,7 @@ textarea {
 }
 
 .studioAgentPane .studioResearchBox {
-  max-height: 250px;
+  max-height: 210px;
   overflow: auto;
 }
 
@@ -4311,7 +4312,8 @@ textarea {
   min-height: 0;
   overscroll-behavior: contain;
   overflow: auto;
-  padding: 0 4px 8px 0;
+  padding: 0 4px 96px 0;
+  scroll-padding-bottom: 110px;
   scrollbar-gutter: stable;
 }
 
@@ -4939,11 +4941,14 @@ textarea {
 }
 
 .studioComposer {
+  align-items: end;
   background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, transparent), var(--surface) 36%);
   border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
   border-radius: 16px;
   box-shadow: 0 -18px 34px color-mix(in srgb, var(--surface) 90%, transparent), 0 14px 34px rgba(17, 24, 39, 0.08);
+  display: grid;
   flex: 0 0 auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   margin-top: 12px;
   padding: 10px;
   position: sticky;
@@ -4955,6 +4960,11 @@ textarea {
   max-height: 104px;
   min-height: 58px;
   resize: vertical;
+}
+
+.studioComposer .primaryButton {
+  min-height: 58px;
+  white-space: nowrap;
 }
 
 .postPreviewShell {
@@ -7727,6 +7737,7 @@ textarea {
     border: 1px solid var(--line);
     border-radius: 14px;
     bottom: 12px;
+    grid-template-columns: 1fr;
     padding: 10px;
   }
 
