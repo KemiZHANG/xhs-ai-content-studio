@@ -29,13 +29,13 @@ const phaseDefinitions: Array<{
     id: "viral",
     label: "爆款库",
     stepIds: ["viral_rag"],
-    doneDetail: "爆款库规律已合入或设为可选增强"
+    doneDetail: "爆款库规律已合入，或本次可选跳过"
   },
   {
     id: "brief",
     label: "Brief",
     stepIds: ["brief"],
-    doneDetail: "文案和图片共享同一份策略"
+    doneDetail: "文案和图片已共享同一份策略"
   },
   {
     id: "copy",
@@ -53,7 +53,7 @@ const phaseDefinitions: Array<{
     id: "publish",
     label: "检查发布",
     stepIds: ["assembly", "quality", "confirmation"],
-    doneDetail: "发布计划已生成或已通过确认"
+    doneDetail: "发布计划已生成，或已通过确认"
   }
 ];
 

@@ -71,7 +71,7 @@ export function buildPostStudioStatusSummary({
         const status = isReady
           ? `已登录${accountLoginName ? ` · ${accountLoginName}` : ""}`
           : account.status === "logged_in"
-            ? "上次显示已登录，切换后需重新检测"
+            ? "上次显示已登录，切换后需要重新检测"
             : account.status === "logged_out"
               ? "未登录"
               : "待检测";
@@ -97,8 +97,8 @@ export function buildPostStudioStatusSummary({
 
   if (!project) {
     return {
-      headline: "先新建一个帖子项目",
-      detail: "当前还没有 PostProject。先输入主题做研究，后续文案、图片、发布都会绑定到同一个项目。",
+      headline: "先新建一篇帖子项目",
+      detail: "当前还没有 PostProject。先输入主题做研究，后续文案、图片、发布都会绑定到同一篇帖子。",
       accountLine,
       accountReady,
       accountName,
