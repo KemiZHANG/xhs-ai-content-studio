@@ -11,7 +11,7 @@ export function titleForSection(section: Section): string {
     imageStudio: "高级图片工具",
     chat: "旧版 AI 工作台",
     publish: "备用发布装配",
-    audit: "发布审计",
+    audit: "发布历史",
     history: "旧版历史记录",
     settings: "模型与连接设置"
   };
