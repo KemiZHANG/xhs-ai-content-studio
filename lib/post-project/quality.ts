@@ -1,4 +1,5 @@
 import { buildEvidenceCitationReport } from "@/lib/post-project/citations";
+import type { EvidenceCitationReport } from "@/lib/post-project/citations";
 import type { FinalPost, PostProject, QualityCheck } from "@/lib/post-project/types";
 
 const exaggeratedWords = ["最", "第一", "必买", "永久", "绝对", "无敌", "闭眼入", "封神"];
@@ -40,6 +41,7 @@ export function runPostQualityGate(project: Pick<
   const citationReport = project.copyDraft && evidencePack?.insights.length
     ? buildEvidenceCitationReport({ evidencePack, creativeBrief: project.creativeBrief }, draftEvidenceIds, project.copyDraft.draft.evidenceReferences)
     : null;
+  const viralCoverage = citationReport ? buildViralCoverageReview(citationReport) : undefined;
   const finalImageIds = finalPost?.imageIds ?? [];
   const selectedImageIds = project.selectedImages ?? [];
   const imageProvenanceIssues = findGeneratedImageProvenanceIssues(project, finalImageIds);
@@ -59,6 +61,9 @@ export function runPostQualityGate(project: Pick<
   }
   if (project.copyDraft && evidenceReview.realtimeEvidenceIds.length && !evidenceReview.viralEvidenceIds.length) {
     suggestions.push("当前发布稿只引用了实时研究，建议补充爆款库长期规律来校准标题钩子、正文结构和图片风格。");
+  }
+  if (viralCoverage?.missingFields.length && viralCoverage.fields.some((field) => field.viralEvidenceIds.length)) {
+    suggestions.push(`爆款库证据未覆盖：${viralCoverage.missingFields.join("、")}，建议补充相应的标题、正文、标签或图片规律。`);
   }
   if (ragSufficiencyIssue) {
     issues.push(ragSufficiencyIssue);
@@ -228,8 +233,47 @@ export function runPostQualityGate(project: Pick<
     evidenceReview,
     evidenceAlignment,
     originalityReview,
+    viralCoverage,
     checkedAt: new Date().toISOString()
   };
+}
+
+function buildViralCoverageReview(report: EvidenceCitationReport): NonNullable<QualityCheck["viralCoverage"]> {
+  const fields = report.sections.map((section) => {
+    const viralEvidenceIds = section.insights
+      .filter((insight) => insight.sourceType === "viral_library")
+      .map((insight) => insight.id);
+    const realtimeEvidenceIds = section.insights
+      .filter((insight) => (insight.sourceType ?? "realtime") === "realtime")
+      .map((insight) => insight.id);
+    return {
+      field: section.field,
+      viralEvidenceIds,
+      realtimeEvidenceIds,
+      status: viralEvidenceIds.length ? "covered" as const : "missing" as const
+    };
+  });
+  const missingFields = fields
+    .filter((field) => field.status === "missing")
+    .map((field) => labelForQualityCitationField(field.field));
+  const coveredCount = fields.length - missingFields.length;
+  return {
+    fields,
+    missingFields,
+    summary: missingFields.length
+      ? `爆款库覆盖 ${coveredCount}/${fields.length} 项，缺少：${missingFields.join("、")}`
+      : `爆款库已覆盖 ${fields.length}/${fields.length} 个创作字段`
+  };
+}
+
+function labelForQualityCitationField(field: EvidenceCitationReport["sections"][number]["field"]): string {
+  const labels: Record<EvidenceCitationReport["sections"][number]["field"], string> = {
+    title: "标题",
+    content: "正文",
+    tags: "标签",
+    imagePrompt: "图片方向"
+  };
+  return labels[field];
 }
 
 function findGeneratedImageProvenanceIssues(

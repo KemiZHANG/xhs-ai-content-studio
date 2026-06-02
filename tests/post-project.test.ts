@@ -704,6 +704,15 @@ describe("post project", () => {
     expect(quality.evidenceReview?.summary).toContain("爆款库 1 条");
     expect(quality.evidenceAlignment?.isAligned).toBe(true);
     expect(quality.evidenceAlignment?.sharedEvidenceIds).toEqual(["viral-insight-style"]);
+    expect(quality.viralCoverage?.summary).toContain("爆款库覆盖");
+    expect(quality.viralCoverage?.fields.find((field) => field.field === "imagePrompt")).toMatchObject({
+      status: "covered",
+      viralEvidenceIds: ["viral-insight-style"]
+    });
+    expect(quality.viralCoverage?.fields.find((field) => field.field === "tags")).toMatchObject({
+      status: "missing"
+    });
+    expect(quality.suggestions.join(" ")).toContain("爆款库证据未覆盖");
   });
 
   it("blocks publish quality when the draft only cites viral-library evidence", () => {
