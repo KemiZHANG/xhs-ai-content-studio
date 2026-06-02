@@ -69,6 +69,10 @@ describe("post studio publish readiness panel", () => {
     expect(html).toContain("字段级证据引用");
     expect(html).toContain("小红书登录账号");
     expect(html).toContain("发布安全边界");
+    expect(html).toContain("补齐标题/正文/标签");
+    expect(html).toContain("补文案");
+    expect(html).toContain("补证据引用");
+    expect(html).toContain("补证据");
     expect(html).toContain("规划图片方向");
     expect(html).toContain("运行质量检查");
     expect(html).toContain("选择发布图片");

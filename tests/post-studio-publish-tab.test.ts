@@ -22,6 +22,9 @@ describe("post studio publish tab", () => {
     } as unknown as PublishConfirmationSummary);
 
     expect(model.blockerPreview).toEqual(["缺少图片", "未确认账号", "Quality Gate 过期"]);
+    expect(model.blockerActions[0]).toMatchObject({ text: "缺少图片", action: "select_images", actionLabel: "选择图片" });
+    expect(model.blockerActions[1]).toMatchObject({ text: "未确认账号" });
+    expect(model.blockerActions[2]).toMatchObject({ text: "Quality Gate 过期", action: "run_quality_gate" });
     expect(model.hiddenBlockerCount).toBe(1);
     expect(model.hasBlockers).toBe(true);
   });

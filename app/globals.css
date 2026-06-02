@@ -6071,6 +6071,52 @@ textarea {
   margin: 0;
 }
 
+.publishFixChecklist {
+  display: grid;
+  gap: 6px;
+}
+
+.publishFixChecklist span {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
+  border-radius: 10px;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 7px 8px;
+}
+
+.publishFixChecklist span.actionable {
+  border-color: rgba(190, 122, 20, 0.2);
+}
+
+.publishFixChecklist em {
+  color: var(--ink);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+  min-width: 0;
+}
+
+.publishFixChecklist small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.publishFixChecklist button,
+.publishFocusBlockers button {
+  background: rgba(190, 122, 20, 0.1);
+  border: 1px solid rgba(190, 122, 20, 0.2);
+  border-radius: 999px;
+  color: #9a5b08;
+  cursor: pointer;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 4px 7px;
+}
+
 .publishSafetyBoundary {
   border: 1px solid rgba(18, 118, 97, 0.18);
   border-radius: 10px;
@@ -6276,13 +6322,23 @@ textarea {
 }
 
 .publishFocusSummary li {
+  align-items: center;
   background: color-mix(in srgb, #b94137 8%, var(--surface));
   border: 1px solid color-mix(in srgb, #b94137 18%, var(--line));
   border-radius: 10px;
   color: var(--text);
+  display: flex;
   font-size: 12px;
+  gap: 8px;
+  justify-content: space-between;
   line-height: 1.45;
   padding: 7px 9px;
+}
+
+.publishFocusSummary li span {
+  color: var(--text);
+  font-size: 12px;
+  min-width: 0;
 }
 
 .publishFinalSummary.ok {

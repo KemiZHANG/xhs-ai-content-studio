@@ -23,10 +23,21 @@ import type { EvidenceCitationReport } from "@/lib/post-project/citations";
 
 type RequiredConfirmation = NonNullable<WorkspacePublishPlan["confirmationChecklist"]>[number];
 
+type PublishFocusBlocker = {
+  text: string;
+  action?: string;
+  actionLabel?: string;
+};
+
 export function buildPublishFocusModel(publishSummary: PublishConfirmationSummary) {
   const blockerPreview = publishSummary.visibleBlockers.slice(0, 3);
+  const blockerActions = blockerPreview.map((text) => ({
+    text,
+    ...actionForPublishBlocker(text)
+  }));
   return {
     blockerPreview,
+    blockerActions,
     hiddenBlockerCount: Math.max(0, publishSummary.visibleBlockers.length - blockerPreview.length),
     hasBlockers: blockerPreview.length > 0
   };
@@ -124,8 +135,17 @@ export function PostStudioPublishTab({
         <strong>{publishSummary.decisionLine}</strong>
         <p>{publishSummary.nextStepLine}</p>
         {publishFocus.hasBlockers ? (
-          <ul>
-            {publishFocus.blockerPreview.map((blocker) => <li key={blocker}>{blocker}</li>)}
+          <ul className="publishFocusBlockers">
+            {publishFocus.blockerActions.map((blocker: PublishFocusBlocker) => (
+              <li key={blocker.text}>
+                <span>{blocker.text}</span>
+                {blocker.action ? (
+                  <button type="button" onClick={() => onQuickAction(blocker.action!)}>
+                    {blocker.actionLabel}
+                  </button>
+                ) : null}
+              </li>
+            ))}
           </ul>
         ) : (
           <small>暂无关键阻塞项，下一步只会生成发布确认单。</small>
@@ -241,4 +261,29 @@ function StudioTaskSummary({
 
 function CheckItem({ ok, label }: { ok: boolean; label: string }) {
   return <span className={ok ? "checkItem ok" : "checkItem"}>{ok ? "✓" : "!"} {label}</span>;
+}
+
+function actionForPublishBlocker(blocker: string): Pick<PublishFocusBlocker, "action" | "actionLabel"> {
+  if (blocker.includes("图片方向") || blocker.includes("Prompt") || blocker.includes("视觉")) {
+    return { action: "plan_visuals", actionLabel: "规划图片" };
+  }
+  if (blocker.includes("图片")) {
+    return { action: "select_images", actionLabel: "选择图片" };
+  }
+  if (blocker.includes("Quality") || blocker.includes("质量") || blocker.includes("风险")) {
+    return { action: "run_quality_gate", actionLabel: "刷新检查" };
+  }
+  if (blocker.includes("标题") || blocker.includes("正文") || blocker.includes("标签") || blocker.includes("文案")) {
+    return { action: "generate_copy", actionLabel: "补文案" };
+  }
+  if (blocker.includes("证据") || blocker.includes("引用")) {
+    return { action: "create_creative_brief", actionLabel: "补证据" };
+  }
+  if (blocker.includes("版本") || blocker.includes("快照") || blocker.includes("画布")) {
+    return { action: "assemble_post", actionLabel: "重新装配" };
+  }
+  if (blocker.includes("定时") || blocker.includes("时间")) {
+    return { action: "schedule_publish", actionLabel: "改时间" };
+  }
+  return {};
 }

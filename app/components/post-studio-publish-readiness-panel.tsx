@@ -43,6 +43,18 @@ export function PostStudioPublishReadinessPanel({
   onScheduleAtChange: (value: string) => void;
   onQuickAction: (action: string) => void;
 }) {
+  const fixChecklist = buildPublishFixChecklist({
+    publishDraft,
+    selectedImageCount,
+    hasVisualDirection,
+    citationTraceReady,
+    accountReady,
+    quality,
+    qualityGateFresh,
+    publishScheduleAt,
+    hasExistingVisualDirection
+  });
+
   return (
     <>
       <div className="publishInlineControls">
@@ -76,6 +88,22 @@ export function PostStudioPublishReadinessPanel({
                 qualityGateFresh
               })}
         </p>
+        {!publishReady && fixChecklist.length ? (
+          <div className="publishFixChecklist" aria-label="发布前阻塞清单">
+            {fixChecklist.slice(0, 5).map((item) => (
+              <span className={item.action ? "actionable" : ""} key={item.label}>
+                <em>{item.label}</em>
+                {item.action ? (
+                  <button disabled={busy} type="button" onClick={() => onQuickAction(item.action!)}>
+                    {item.actionLabel}
+                  </button>
+                ) : (
+                  <small>{item.detail}</small>
+                )}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <span>确认单: {pendingPublish ? `${pendingPublish.mode === "schedule" ? "定时" : "立即"} · 待人工确认` : "未生成"}</span>
         {activeLoginName ? <span>登录名: {activeLoginName}</span> : null}
         <div className={`publishSafetyBoundary ${publishSafetyBoundary.state}`} aria-label="发布安全边界">
@@ -109,6 +137,92 @@ export function PostStudioPublishReadinessPanel({
       </div>
     </>
   );
+}
+
+type PublishFixChecklistItem = {
+  label: string;
+  detail: string;
+  action?: string;
+  actionLabel?: string;
+};
+
+function buildPublishFixChecklist({
+  publishDraft,
+  selectedImageCount,
+  hasVisualDirection,
+  citationTraceReady,
+  accountReady,
+  quality,
+  qualityGateFresh,
+  publishScheduleAt,
+  hasExistingVisualDirection
+}: {
+  publishDraft: PublishDraftState;
+  selectedImageCount: number;
+  hasVisualDirection: boolean;
+  citationTraceReady: boolean;
+  accountReady: boolean;
+  quality?: PostProject["qualityCheck"];
+  qualityGateFresh: boolean;
+  publishScheduleAt: string;
+  hasExistingVisualDirection: boolean;
+}): PublishFixChecklistItem[] {
+  const items: PublishFixChecklistItem[] = [];
+  if (!publishDraft.title.trim() || !publishDraft.content.trim() || !publishDraft.tagsText.trim()) {
+    items.push({
+      label: "补齐标题/正文/标签",
+      detail: "最终发布稿需要完整文案",
+      action: "generate_copy",
+      actionLabel: "补文案"
+    });
+  }
+  if (!hasVisualDirection) {
+    items.push({
+      label: hasExistingVisualDirection ? "确认图片方向" : "规划图片方向",
+      detail: "图片方向会影响生图和发布风险",
+      action: hasExistingVisualDirection ? "confirm_visual_direction" : "plan_visuals",
+      actionLabel: hasExistingVisualDirection ? "确认方向" : "去规划"
+    });
+  }
+  if (!selectedImageCount) {
+    items.push({
+      label: "选择发布图片",
+      detail: "至少选择一张图片",
+      action: "select_images",
+      actionLabel: "选图"
+    });
+  }
+  if (!citationTraceReady) {
+    items.push({
+      label: "补证据引用",
+      detail: "标题、正文、标签、图片方向需要可追溯",
+      action: "create_creative_brief",
+      actionLabel: "补证据"
+    });
+  }
+  if (!quality || quality.canPublish === false || !qualityGateFresh) {
+    items.push({
+      label: quality?.canPublish === true && !qualityGateFresh ? "刷新 Quality Gate" : "运行 Quality Gate",
+      detail: "检查夸张标题、广告感、图文一致和合规风险",
+      action: "run_quality_gate",
+      actionLabel: "检查"
+    });
+  }
+  if (!accountReady) {
+    items.push({
+      label: "确认小红书账号",
+      detail: "用上方账号卡检测当前 MCP 登录状态"
+    });
+  }
+  if (publishScheduleAt && Number.isNaN(Date.parse(publishScheduleAt))) {
+    items.push({
+      label: "修正定时时间",
+      detail: "时间格式无效",
+      action: "schedule_publish",
+      actionLabel: "改时间"
+    });
+  }
+  return items;
 }
 
 function buildPublishReadinessHint({
