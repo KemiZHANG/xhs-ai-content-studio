@@ -112,12 +112,14 @@
 每次产品级改动后运行：
 
 ```powershell
+npm run acceptance
 npm test
 npm run typecheck
 npm run build
 ```
 
 通过标准：
+- 验收测试能覆盖 Post Studio 文档锚点、PostProject、Agent、RAG、Canvas 和发布检查。
 - 全量测试通过。
 - TypeScript 无错误。
 - Next.js 生产构建通过。
@@ -129,4 +131,3 @@ npm run build
 - 定时发布到小红书。
 - 使用真实付费模型进行大量生图。
 - 读取或切换多个真实小红书账号。
-

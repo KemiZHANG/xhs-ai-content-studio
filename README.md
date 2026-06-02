@@ -141,6 +141,7 @@ API Key 会保存在本地 `data/settings.json`，该目录已被 `.gitignore` �
 
 ```powershell
 npm run dev
+npm run acceptance
 npm test
 npm run typecheck
 npm run build
@@ -301,6 +302,7 @@ To verify that the local workspace is working end to end, follow the [Post Studi
 
 ```powershell
 npm run dev
+npm run acceptance
 npm test
 npm run typecheck
 npm run build
