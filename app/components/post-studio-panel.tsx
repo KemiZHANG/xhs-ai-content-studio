@@ -3,12 +3,10 @@
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Library,
   MessageSquareText,
   Rocket,
   Search,
-  Send,
-  Sparkles
+  Send
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type {
@@ -71,11 +69,10 @@ import { PostStudioSideNavigator } from "@/app/components/post-studio-side-navig
 import {
   PostStudioBriefTab,
   PostStudioEvidenceTab,
-  PostStudioInsightsTab,
-  ViralEvidenceDigest
+  PostStudioInsightsTab
 } from "@/app/components/post-studio-evidence-tabs";
 import { PostStudioGeneratedTab, PostStudioReferencesTab } from "@/app/components/post-studio-media-tabs";
-import { RecentViralPanel, ViralStrategyCard } from "@/app/components/post-studio-viral-panels";
+import { emptyViralSearchForm, PostStudioViralTab } from "@/app/components/post-studio-viral-tab";
 import { labelForPublishStatus } from "@/app/components/post-studio-publish-intent-panel";
 import { PostStudioPublishTab } from "@/app/components/post-studio-publish-tab";
 import { buildVersionSwitchGuidance } from "@/app/components/version-switch-guidance";
@@ -202,22 +199,7 @@ export function PostStudioPanel({
   const [selectedEvidence, setSelectedEvidence] = useState<SampleEvidence | null>(null);
   const [evidenceCatalogOpen, setEvidenceCatalogOpen] = useState(false);
   const [selectedViralCase, setSelectedViralCase] = useState<ViralCase | null>(null);
-  const [viralSearchForm, setViralSearchForm] = useState({
-    query: "",
-    category: "",
-    tags: "",
-    audience: "",
-    painPoint: "",
-    createdAfter: "",
-    createdBefore: "",
-    minLikes: "",
-    minCollects: "",
-    minComments: "",
-    minShares: "",
-    minScore: "",
-    sortBy: "score" as NonNullable<ViralLibrarySearchFilters["sortBy"]>,
-    sortOrder: "desc" as NonNullable<ViralLibrarySearchFilters["sortOrder"]>
-  });
+  const [viralSearchForm, setViralSearchForm] = useState(emptyViralSearchForm);
   useEffect(() => {
     if (focusTab?.tab) {
       setTab(focusTab.tab);
@@ -244,7 +226,6 @@ export function PostStudioPanel({
   const insights = project?.evidencePack.insights ?? [];
   const viralInsights = insights.filter((insight) => insight.sourceType === "viral_library");
   const focusedEvidenceIds = project?.focusedEvidenceIds ?? [];
-  const focusedEvidenceIdSet = new Set(focusedEvidenceIds);
   const realtimeInsights = insights.filter((insight) => insight.sourceType !== "viral_library");
   const keyLearningInsights = pickKeyLearningInsights(insights);
   const keyViralInsights = pickKeyViralInsights(viralInsights);
@@ -711,336 +692,30 @@ export function PostStudioPanel({
           ) : null}
 
           {tab === "viral" ? (
-            <SideSection icon={Library} title="爆款库证据">
-              <strong>{viralCases.length} 条历史爆款规律</strong>
-              <p className="muted">这里长期沉淀标题钩子、正文结构、标签组合、图片风格和评论关注点。默认只显示关键规律，不保存原文合集。</p>
-              <div className={viralLibraryHealth.status === "ready" ? "viralLibraryHealth ready" : "viralLibraryHealth"}>
-                <div>
-                  <strong>{viralLibraryHealth.headline}</strong>
-                  <p>{viralLibraryHealth.detail}</p>
-                </div>
-                <div className="viralLibraryHealthStats">
-                  {viralLibraryHealth.stats.map((item) => (
-                    <span className={item.tone} key={item.label}>
-                      {item.label} <b>{item.value}</b>
-                    </span>
-                  ))}
-                </div>
-                {viralLibraryHealth.warnings.length ? (
-                  <small>风险：{viralLibraryHealth.warnings.slice(0, 2).join(" / ")}</small>
-                ) : null}
-                {viralLibraryHealth.recommendations.length ? (
-                  <small>建议：{viralLibraryHealth.recommendations.slice(0, 2).join(" / ")}</small>
-                ) : null}
-              </div>
-              <ViralEvidenceDigest summary={viralEvidenceSummary} />
-              <details className="viralSearchDrawer">
-                <summary>
-                  <div>
-                    <strong>检索 / 过滤爆款库</strong>
-                    <span>默认收起，避免把创作证据挤到页面下方。</span>
-                  </div>
-                  <em>{viralCases.length} 条可检索</em>
-                </summary>
-                <form
-                  className="viralSearchPanel"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    onSearchViralLibrary({
-                      query: viralSearchForm.query,
-                      category: viralSearchForm.category,
-                      tags: viralSearchForm.tags,
-                      audience: viralSearchForm.audience,
-                      painPoint: viralSearchForm.painPoint,
-                      createdAfter: viralSearchForm.createdAfter,
-                      createdBefore: viralSearchForm.createdBefore,
-                      minLikes: viralSearchForm.minLikes,
-                      minCollects: viralSearchForm.minCollects,
-                      minComments: viralSearchForm.minComments,
-                      minShares: viralSearchForm.minShares,
-                      minScore: viralSearchForm.minScore,
-                      sortBy: viralSearchForm.sortBy,
-                      sortOrder: viralSearchForm.sortOrder
-                    });
-                  }}
-                >
-                <label>
-                  <span>知识库检索</span>
-                  <input
-                    value={viralSearchForm.query}
-                    onChange={(event) => setViralSearchForm((current) => ({ ...current, query: event.target.value }))}
-                    placeholder="例如：广州咖啡馆、通勤包、产品种草"
-                  />
-                </label>
-                <div className="viralSearchGrid">
-                  <label>
-                    <span>类目</span>
-                    <input
-                      value={viralSearchForm.category}
-                      onChange={(event) => setViralSearchForm((current) => ({ ...current, category: event.target.value }))}
-                      placeholder="探店 / 干货 / 种草"
-                    />
-                  </label>
-                  <label>
-                    <span>目标人群</span>
-                    <input
-                      value={viralSearchForm.audience}
-                      onChange={(event) => setViralSearchForm((current) => ({ ...current, audience: event.target.value }))}
-                      placeholder="例如：上班族"
-                    />
-                  </label>
-                  <label>
-                    <span>痛点</span>
-                    <input
-                      value={viralSearchForm.painPoint}
-                      onChange={(event) => setViralSearchForm((current) => ({ ...current, painPoint: event.target.value }))}
-                      placeholder="例如：不知道怎么选"
-                    />
-                  </label>
-                  <label>
-                    <span>标签</span>
-                    <input
-                      value={viralSearchForm.tags}
-                      onChange={(event) => setViralSearchForm((current) => ({ ...current, tags: event.target.value }))}
-                      placeholder="逗号分隔"
-                    />
-                  </label>
-                </div>
-                <details className="viralAdvancedSearch">
-                  <summary>高级过滤</summary>
-                  <div className="viralSearchGrid">
-                    <label>
-                      <span>入库开始日期</span>
-                      <input
-                        type="date"
-                        value={viralSearchForm.createdAfter}
-                        onChange={(event) => setViralSearchForm((current) => ({ ...current, createdAfter: event.target.value }))}
-                      />
-                    </label>
-                    <label>
-                      <span>入库结束日期</span>
-                      <input
-                        type="date"
-                        value={viralSearchForm.createdBefore}
-                        onChange={(event) => setViralSearchForm((current) => ({ ...current, createdBefore: event.target.value }))}
-                      />
-                    </label>
-                    <label>
-                      <span>最低点赞</span>
-                      <input
-                        inputMode="numeric"
-                        value={viralSearchForm.minLikes}
-                        onChange={(event) => setViralSearchForm((current) => ({ ...current, minLikes: event.target.value }))}
-                        placeholder="可选"
-                      />
-                    </label>
-                  <label>
-                    <span>最低收藏</span>
-                    <input
-                      inputMode="numeric"
-                      value={viralSearchForm.minCollects}
-                      onChange={(event) => setViralSearchForm((current) => ({ ...current, minCollects: event.target.value }))}
-                      placeholder="可选"
-                    />
-                  </label>
-                    <label>
-                      <span>最低评论</span>
-                      <input
-                        inputMode="numeric"
-                        value={viralSearchForm.minComments}
-                        onChange={(event) => setViralSearchForm((current) => ({ ...current, minComments: event.target.value }))}
-                        placeholder="可选"
-                      />
-                    </label>
-                    <label>
-                      <span>最低分享</span>
-                      <input
-                        inputMode="numeric"
-                        value={viralSearchForm.minShares}
-                        onChange={(event) => setViralSearchForm((current) => ({ ...current, minShares: event.target.value }))}
-                        placeholder="可选"
-                      />
-                    </label>
-                    <label>
-                      <span>最低评分</span>
-                      <input
-                        inputMode="decimal"
-                        value={viralSearchForm.minScore}
-                        onChange={(event) => setViralSearchForm((current) => ({ ...current, minScore: event.target.value }))}
-                        placeholder="可选"
-                      />
-                    </label>
-                    <label>
-                      <span>排序</span>
-                      <select
-                        value={viralSearchForm.sortBy}
-                        onChange={(event) => setViralSearchForm((current) => ({ ...current, sortBy: event.target.value as typeof current.sortBy }))}
-                      >
-                        <option value="score">综合分</option>
-                        <option value="collects">收藏</option>
-                        <option value="likes">点赞</option>
-                        <option value="comments">评论</option>
-                        <option value="shares">分享</option>
-                        <option value="createdAt">入库时间</option>
-                      </select>
-                    </label>
-                    <label>
-                      <span>排序方向</span>
-                      <select
-                        value={viralSearchForm.sortOrder}
-                        onChange={(event) => setViralSearchForm((current) => ({ ...current, sortOrder: event.target.value as typeof current.sortOrder }))}
-                      >
-                        <option value="desc">高到低 / 最新</option>
-                        <option value="asc">低到高 / 最早</option>
-                      </select>
-                    </label>
-                  </div>
-                </details>
-                <div className="viralSearchActions">
-                  <button className="primaryButton" type="submit">检索爆款规律</button>
-                  <button
-                    className="secondaryButton"
-                    type="button"
-                    onClick={() => {
-                      setViralSearchForm({
-                        query: "",
-                        category: "",
-                        tags: "",
-                        audience: "",
-                        painPoint: "",
-                        createdAfter: "",
-                        createdBefore: "",
-                        minLikes: "",
-                        minCollects: "",
-                        minComments: "",
-                        minShares: "",
-                        minScore: "",
-                        sortBy: "score",
-                        sortOrder: "desc"
-                      });
-                      onReloadViralLibrary();
-                    }}
-                  >
-                    重置
-                  </button>
-                </div>
-                </form>
-              </details>
-              {viralPack?.sufficiency ? (
-                <div className={viralPack.sufficiency.isEnough ? "ragStatus good" : "ragStatus warn"}>
-                  <strong>{viralPack.sufficiency.isEnough ? "RAG 证据充足" : "RAG 证据还不够"}</strong>
-                  <p>{viralPack.sufficiency.recommendation}</p>
-                  {viralPack.filterSummary ? (
-                    <small className="ragFilterLine">本次筛选：{viralPack.filterSummary}</small>
-                  ) : null}
-                  {viralPack.rewrittenQueries?.length ? (
-                    <small>检索扩展：{viralPack.rewrittenQueries.slice(0, 3).join(" / ")}</small>
-                  ) : null}
-                </div>
-              ) : null}
-              <div className={viralApplication.evidenceCount ? "viralApplyPanel ready" : "viralApplyPanel"}>
-                <div>
-                  <strong>{viralApplication.headline}</strong>
-                  <p>{viralApplication.detail}</p>
-                  {viralApplication.evidenceCount ? <small>当前已接入 {viralApplication.evidenceCount} 条爆款库 evidencePack 结论。</small> : null}
-                  {viralApplication.focusedCount ? <small>本次重点：{viralApplication.focusedCount} 条，生成时会优先引用。</small> : null}
-                  {viralApplication.citedEvidenceIds.length ? (
-                    <small>已被当前创作引用：{viralApplication.citedEvidenceIds.slice(0, 4).join(" / ")}</small>
-                  ) : null}
-                  <div className={`ragReadinessLine ${viralApplication.ragStatus}`}>
-                    <strong>{viralApplication.ragLine}</strong>
-                    {viralApplication.missingEvidence.length ? <span>缺口：{viralApplication.missingEvidence.slice(0, 3).join(" / ")}</span> : null}
-                    <span>{viralApplication.recommendation}</span>
-                  </div>
-                </div>
-                <div className="viralApplicationRoutes" aria-label="爆款库应用路径">
-                  {viralApplication.routes.map((route) => (
-                    <article className={`viralApplicationRoute ${route.status}`} key={route.id}>
-                      <span>{route.label}</span>
-                      <strong>{labelForViralRouteStatus(route.status)}</strong>
-                      <p>{route.detail}</p>
-                      {route.evidenceIds.length ? <small>证据：{route.evidenceIds.slice(0, 3).join(" / ")}</small> : null}
-                    </article>
-                  ))}
-                </div>
-                <div className="inlineActionGrid">
-                  {viralApplication.actions.map((item) => (
-                    <button
-                      className={item.primary ? "primaryButton fullWidth" : "secondaryButton fullWidth"}
-                      key={item.id}
-                      onClick={() => onQuickAction(item.action)}
-                      type="button"
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <ViralStrategyCard viralPack={viralPack} />
-              <RecentViralPanel summaries={latestViralSummaries} onOpenCase={setSelectedViralCase} />
-              {viralInsights.length ? (
-                <div className="miniEvidenceList">
-                  {keyViralInsights.map((insight) => (
-                    <article className="keyViralInsight" key={insight.id}>
-                      <span>{labelForInsight(insight.type)} · 爆款库 · 置信 {Math.round(insight.confidence * 100)}%</span>
-                      <p>{insight.insight}</p>
-                      <small>{focusedEvidenceIdSet.has(insight.id) ? "本次重点 · " : ""}{insight.id}</small>
-                      <div className="evidenceActions">
-                        <button
-                          className={focusedEvidenceIdSet.has(insight.id) ? "textButton activeTextButton" : "textButton"}
-                          type="button"
-                          onClick={() => onFocusEvidenceIds(toggleFocusedEvidenceId(focusedEvidenceIds, insight.id))}
-                        >
-                          {focusedEvidenceIdSet.has(insight.id) ? "取消重点" : "设为本次重点"}
-                        </button>
-                      </div>
-                      {findViralCaseForInsight(insight, viralCaseById) ? (
-                        <div className="evidenceActions">
-                          <button
-                            className="textButton"
-                            type="button"
-                            onClick={() => {
-                              const source = findViralCaseForInsight(insight, viralCaseById);
-                              if (source) setSelectedViralCase(source);
-                            }}
-                          >
-                            查看来源规律
-                          </button>
-                        </div>
-                      ) : null}
-                    </article>
-                  ))}
-                  {viralInsights.length > keyViralInsights.length ? (
-                    <p className="muted">已默认压缩展示 {keyViralInsights.length} 条关键规律，完整 {viralInsights.length} 条已写入 evidencePack，生成文案和图片方向时可追溯引用。</p>
-                  ) : null}
-                </div>
-              ) : viralCases.length ? (
-                <div className="miniEvidenceList">
-                  {viralCases.slice(0, 5).map((item) => (
-                    <article key={item.id}>
-                      <strong>{item.hookType}</strong>
-                      <span className="viralAngleLine">{item.hookType} · {item.category} · {item.imageStyle}</span>
-                      <p>{item.extractedInsights.reusableRules[0] || item.contentStructure.join(" / ")}</p>
-                      <span>赞 {item.metrics.likes} · 藏 {item.metrics.collects}{item.quality ? ` · 规律质量 ${Math.round(item.quality.score * 100)}%` : ""}</span>
-                      <div className="evidenceActions">
-                        <button className="textButton" type="button" onClick={() => setSelectedViralCase(item)}>
-                          查看规律
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <p className="muted">还没有爆款库样本。可以先在“研究证据”里把高质量样本保存进库。</p>
-              )}
-              <div className="sideActionStack">
-                <button className="primaryButton fullWidth" onClick={onRefreshViralEvidence} type="button">
-                  <Sparkles size={16} />
-                  刷新当前项目 RAG 证据
-                </button>
-                <button className="secondaryButton fullWidth" onClick={onReloadViralLibrary} type="button">只刷新本地爆款库列表</button>
-              </div>
-            </SideSection>
+            <PostStudioViralTab
+              focusedEvidenceIds={focusedEvidenceIds}
+              keyViralInsights={keyViralInsights}
+              latestViralSummaries={latestViralSummaries}
+              onFocusEvidenceIds={onFocusEvidenceIds}
+              onOpenViralCase={setSelectedViralCase}
+              onQuickAction={onQuickAction}
+              onRefreshViralEvidence={onRefreshViralEvidence}
+              onReloadViralLibrary={onReloadViralLibrary}
+              onResetSearch={() => {
+                setViralSearchForm(emptyViralSearchForm);
+                onReloadViralLibrary();
+              }}
+              onSearchFormChange={(patch) => setViralSearchForm((current) => ({ ...current, ...patch }))}
+              onSearchViralLibrary={onSearchViralLibrary}
+              viralApplication={viralApplication}
+              viralCaseById={viralCaseById}
+              viralCases={viralCases}
+              viralEvidenceSummary={viralEvidenceSummary}
+              viralInsights={viralInsights}
+              viralLibraryHealth={viralLibraryHealth}
+              viralPack={viralPack}
+              viralSearchForm={viralSearchForm}
+            />
           ) : null}
 
           {tab === "references" ? (
@@ -1161,12 +836,6 @@ export function PostStudioPanel({
 
 function uniqueStringList(values: string[]): string[] {
   return Array.from(new Set(values.filter(Boolean)));
-}
-
-function toggleFocusedEvidenceId(currentIds: string[], id: string): string[] {
-  return currentIds.includes(id)
-    ? currentIds.filter((item) => item !== id)
-    : [...currentIds, id].slice(-8);
 }
 
 function StudioChatBubble({
@@ -1549,14 +1218,6 @@ function pickKeyViralInsights(insights: ProjectInsight[]): ProjectInsight[] {
   return selected.length ? selected : insights.slice(0, 5);
 }
 
-function findViralCaseForInsight(insight: ProjectInsight, viralCaseById: Map<string, ViralCase>): ViralCase | undefined {
-  for (const id of insight.sourceSampleIds) {
-    const viralCase = viralCaseById.get(id);
-    if (viralCase) return viralCase;
-  }
-  return undefined;
-}
-
 function pickViralLearningLines(item: ViralCase): string[] {
   return uniqueText([
     ...(item.creativeSafety?.reusablePatterns ?? []),
@@ -1590,12 +1251,6 @@ function uniqueText(values: string[]): string[] {
   return result;
 }
 
-function labelForViralRouteStatus(status: "empty" | "pending" | "ready"): string {
-  if (status === "ready") return "已应用";
-  if (status === "pending") return "待应用";
-  return "未开始";
-}
-
 function labelForStage(stage: PostProject["currentStage"]): string {
   const labels: Record<PostProject["currentStage"], string> = {
     empty: "空项目",
@@ -1620,21 +1275,6 @@ function labelForStage(stage: PostProject["currentStage"]): string {
 
 function labelForAction(action: string): string {
   return labelForPostAction(action);
-}
-
-function labelForInsight(type: string): string {
-  const labels: Record<string, string> = {
-    title: "标题",
-    copy: "正文",
-    tag: "标签",
-    visual: "图片",
-    comment: "评论",
-    audience: "人群",
-    pain_point: "痛点",
-    structure: "结构",
-    hook: "钩子"
-  };
-  return labels[type] ?? type;
 }
 
 function labelForAgentCard(type: string): string {
