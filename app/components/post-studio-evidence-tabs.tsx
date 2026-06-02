@@ -44,14 +44,14 @@ export function PostStudioInsightsTab({
       <ViralEvidenceDigest summary={viralEvidenceSummary} compact onOpenViral={onOpenViral} />
       {keyLearningInsights.length ? (
         <>
-          {keyLearningInsights.map((insight) => (
+          {keyLearningInsights.slice(0, 5).map((insight) => (
             <article className="insightLine" key={insight.id}>
               <span>{labelForInsight(insight.type)} · {labelForSource(insight.sourceType)}</span>
               <p>{insight.insight}</p>
             </article>
           ))}
           {totalInsightCount > keyLearningInsights.length ? (
-            <p className="muted">已压缩展示 {keyLearningInsights.length} 条核心规律；完整实时样本、爆款库来源和评论在“证据 / 爆款库”里查看。</p>
+            <p className="muted">已压缩展示 {Math.min(keyLearningInsights.length, 5)} 条核心规律；完整实时样本、爆款库来源和评论在“证据 / 爆款库”里查看。</p>
           ) : null}
           <CitationSummaryBox citationReport={citationReport} />
           <CreatorMemorySummary memory={creatorMemory} projectMemory={projectMemory} />
@@ -240,7 +240,7 @@ export function ViralEvidenceDigest({
       </div>
       {summary.sourceCases.length && !compact ? (
         <div className="viralEvidenceSources">
-          {summary.sourceCases.map((item) => (
+          {summary.sourceCases.slice(0, 5).map((item) => (
             <span
               key={item.id}
               title={[
