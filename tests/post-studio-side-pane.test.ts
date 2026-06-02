@@ -2,6 +2,8 @@ import { createElement } from "react";
 import type { ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { buildPostSideDigest } from "@/app/components/post-side-digest";
+import { buildStudioTabGroups } from "@/app/components/studio-tab-groups";
 import { PostStudioSidePane } from "@/app/components/post-studio-side-pane";
 
 type SidePaneProps = ComponentProps<typeof PostStudioSidePane>;
@@ -16,23 +18,23 @@ const baseSummary = {
 
 describe("post studio side pane", () => {
   it("renders the active insight tab and keeps advanced tools readable and folded", () => {
+    const sideDigest = buildPostSideDigest({
+      insightCount: 2,
+      realtimeInsightCount: 2,
+      viralInsightCount: 0,
+      hasBrief: false,
+      selectedImageCount: 0,
+      generatedImageCount: 0,
+      referenceImageCount: 1,
+      publishReady: false,
+      accountReady: true,
+      qualityFresh: false,
+      activeTab: "insights"
+    });
     const props = {
       activeTab: "insights",
-      sideDigest: {
-        headline: "右侧工作区",
-        detail: "聚焦证据和素材。",
-        primaryTab: "brief",
-        primaryLabel: "下一步",
-        primaryReason: "生成 Brief",
-        cards: [{ id: "brief", tab: "brief", label: "Brief", value: "ready", detail: "已准备", state: "ready" }]
-      },
-      studioTabGroups: [{
-        id: "evidence",
-        label: "证据",
-        detail: "研究结论",
-        active: true,
-        tabs: [{ id: "insights", label: "可学习结论", active: true }]
-      }],
+      sideDigest,
+      studioTabGroups: buildStudioTabGroups("insights"),
       insights: {
         citationReport: null,
         creatorMemory: null,
@@ -41,7 +43,7 @@ describe("post studio side pane", () => {
         projectMemory: [],
         realtimeCount: 2,
         totalInsightCount: 2,
-        viralCount: 1,
+        viralCount: 0,
         viralEvidenceSummary: {
           hasEvidence: false,
           headline: "爆款库证据",
@@ -65,11 +67,13 @@ describe("post studio side pane", () => {
 
     const html = renderToStaticMarkup(createElement(PostStudioSidePane, props));
 
-    expect(html).toContain("右侧工作区");
+    expect(html).toContain("先处理：证据策略");
+    expect(html).toContain("已有实时规律，下一步先补爆款库 RAG");
     expect(html).toContain("可学习结论");
     expect(html).toContain("爆款库证据");
     expect(html).toContain("高级 / 调试工具");
     expect(html).toContain("日常创作留在 Post Studio");
     expect(html).toContain("独立主题研究");
+    expect(html).not.toMatch(/[�]|鐖|鍥剧|鏂囨|鍙戝|璇佹|鎼滅|寰呯/);
   });
 });

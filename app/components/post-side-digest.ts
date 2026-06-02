@@ -61,9 +61,9 @@ export function buildPostSideDigest({
         ? `实时 ${realtimeInsightCount} / 爆款库 ${viralInsightCount}，Brief 已生成。`
         : needsViralRag
           ? "已有实时规律，下一步先补爆款库 RAG，再压缩成 CreativeBrief。"
-        : insightCount
-          ? "已有规律，下一步压缩成 CreativeBrief。"
-          : "先搜索真实笔记或检索爆款库。",
+          : insightCount
+            ? "已有规律，下一步压缩成 CreativeBrief。"
+            : "先搜索真实笔记或检索爆款库。",
       state: evidenceReady ? "ready" : insightCount ? "neutral" : "warn",
       tab: hasBrief ? "brief" : needsViralRag ? "viral" : insightCount ? "insights" : "evidence"
     },
@@ -105,13 +105,17 @@ export function buildPostSideDigest({
     }
   ];
 
+  const evidenceCard = cards.find((card) => card.id === "evidence");
   const firstWarn = cards.find((card) => card.state === "warn");
-  const primaryCard = firstWarn ?? cards.find((card) => card.state === "neutral") ?? cards[0];
+  const primaryCard = needsViralRag && evidenceCard
+    ? evidenceCard
+    : firstWarn ?? cards.find((card) => card.state === "neutral") ?? cards[0];
+  const needsAttention = primaryCard.state !== "ready";
   return {
-    headline: firstWarn ? `先处理：${firstWarn.label}` : "右侧素材和证据已收口",
-    detail: firstWarn?.detail ?? "默认只展示关键证据、当前图片和发布阻塞项，完整数据保留在详情里。",
+    headline: needsAttention ? `先处理：${primaryCard.label}` : "右侧素材和证据已收口",
+    detail: needsAttention ? primaryCard.detail : "默认只展示关键证据、当前图片和发布阻塞项，完整数据保留在详情里。",
     primaryTab: primaryCard.tab,
-    primaryLabel: firstWarn ? `去处理：${primaryCard.label}` : `继续查看：${primaryCard.label}`,
+    primaryLabel: needsAttention ? `去处理：${primaryCard.label}` : `继续查看：${primaryCard.label}`,
     primaryReason: primaryCard.detail,
     cards
   };
