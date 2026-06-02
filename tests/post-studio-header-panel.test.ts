@@ -101,6 +101,9 @@ describe("post studio header panel", () => {
     expect(html).toContain("帖子创作流程");
     expect(html).toContain("实时研究");
     expect(html).toContain("图片");
+    expect(html).toContain("主线进度");
+    expect(html).toContain("2/3 已完成");
+    expect(html).toContain("当前只处理：图片");
     expect(html).toContain("下一步建议");
     expect(html).toContain("先规划图片方向");
     expect(html).toContain("下一步决策摘要");

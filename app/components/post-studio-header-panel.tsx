@@ -67,6 +67,7 @@ export function PostStudioHeaderPanel({
           />
         ))}
       </div>
+      <PostFlowFocusStrip flowSummary={flowSummary} onQuickAction={onQuickAction} />
       <NextActionBar
         busy={busy}
         chatInput={chatInput}
@@ -78,6 +79,40 @@ export function PostStudioHeaderPanel({
         projectContextSummary={projectContextSummary}
       />
     </>
+  );
+}
+
+function PostFlowFocusStrip({
+  flowSummary,
+  onQuickAction
+}: {
+  flowSummary: PostFlowPhase[];
+  onQuickAction: (action: string) => void;
+}) {
+  const doneCount = flowSummary.filter((phase) => phase.state === "done").length;
+  const activePhase = flowSummary.find((phase) => phase.state === "active") ?? flowSummary.find((phase) => phase.state !== "done");
+  const remainingCount = Math.max(0, flowSummary.length - doneCount);
+
+  return (
+    <div className="postFlowFocusStrip">
+      <div>
+        <span>主线进度</span>
+        <strong>{doneCount}/{flowSummary.length} 已完成</strong>
+        <p>{activePhase ? `当前只处理：${activePhase.label}。${activePhase.detail}` : "全部阶段已完成，进入最终人工确认。"}</p>
+      </div>
+      <div className="postFlowFocusTrail" aria-label="主线阶段摘要">
+        {flowSummary.map((phase) => (
+          <em className={phase.state} key={phase.id}>{phase.label}</em>
+        ))}
+      </div>
+      {activePhase?.action ? (
+        <button type="button" onClick={() => onQuickAction(activePhase.action!)}>
+          {activePhase.actionLabel}
+        </button>
+      ) : (
+        <small>还剩 {remainingCount} 个阶段</small>
+      )}
+    </div>
   );
 }
 

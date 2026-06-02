@@ -3962,6 +3962,89 @@ textarea {
   padding: 5px 8px;
 }
 
+.postFlowFocusStrip {
+  align-items: center;
+  background:
+    linear-gradient(135deg, rgba(18, 118, 97, 0.08), rgba(255, 255, 255, 0.74)),
+    var(--surface-subtle);
+  border: 1px solid rgba(18, 118, 97, 0.16);
+  border-radius: 14px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) auto;
+  padding: 10px 12px;
+}
+
+.postFlowFocusStrip span {
+  color: var(--accent-strong);
+  display: block;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.postFlowFocusStrip strong {
+  color: var(--ink);
+  display: block;
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+.postFlowFocusStrip p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 2px 0 0;
+}
+
+.postFlowFocusStrip button {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+  min-height: 34px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.postFlowFocusStrip small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.postFlowFocusTrail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.postFlowFocusTrail em {
+  background: rgba(39, 37, 31, 0.06);
+  border: 1px solid rgba(39, 37, 31, 0.08);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  padding: 4px 7px;
+}
+
+.postFlowFocusTrail em.done {
+  background: rgba(18, 118, 97, 0.1);
+  border-color: rgba(18, 118, 97, 0.18);
+  color: var(--accent-strong);
+}
+
+.postFlowFocusTrail em.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .nextActionBar strong {
   color: var(--ink);
   font-size: 14px;
