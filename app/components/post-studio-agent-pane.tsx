@@ -54,6 +54,10 @@ export function PostStudioAgentPane({
   onQuickAction: (action: string) => void;
 }) {
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
+  const focusComposer = () => {
+    composerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    composerRef.current?.focus();
+  };
 
   return (
     <section className="panel studioAgentPane">
@@ -62,7 +66,7 @@ export function PostStudioAgentPane({
           <h2>AI Agent</h2>
           <p>像内容导演一样工作：先判断阶段和信息是否足够，再搜索、总结、生成或追问。</p>
         </div>
-        <button className="secondaryButton compactButton" type="button" onClick={() => composerRef.current?.focus()}>
+        <button className="secondaryButton compactButton" type="button" onClick={focusComposer}>
           继续输入
         </button>
       </div>
@@ -139,6 +143,7 @@ export function PostStudioAgentPane({
       </div>
 
       <form className="studioComposer" onSubmit={onChatSubmit}>
+        <span className="studioComposerHint">输入框固定在底部，可随时继续改文案、选图或发布</span>
         <textarea ref={composerRef} value={chatInput} onChange={(event) => onChatInput(event.target.value)} placeholder="继续追问：再生活化一点 / 用第二张图 / 今晚八点发..." />
         <button className="primaryButton" disabled={busy} type="submit">
           <Send size={16} />

@@ -84,6 +84,7 @@ describe("post studio agent pane", () => {
     expect(html).toContain("Brief 已就绪");
     expect(html).toContain("证据: evidence-1");
     expect(html).toContain("生成文案");
+    expect(html).toContain("输入框固定在底部");
     expect(html).toContain("把标题再生活化一点");
     expect(html).not.toMatch(/[�]|鐖|鍥剧|鏂囨|鍙戝|缁х|璇佹|鎼滅/);
   });

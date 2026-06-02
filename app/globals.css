@@ -5081,6 +5081,14 @@ textarea {
   z-index: 4;
 }
 
+.studioComposerHint {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  grid-column: 1 / -1;
+  line-height: 1.35;
+}
+
 .studioComposer textarea {
   max-height: 104px;
   min-height: 58px;
