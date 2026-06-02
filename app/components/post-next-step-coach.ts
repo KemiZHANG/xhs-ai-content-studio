@@ -67,20 +67,20 @@ function whyForAction(action: PostAction, blockerLabel?: string): string {
   const reasons: Partial<Record<PostAction, string>> = {
     start_brief: `${blocker}先把主题、人群和目标说清楚，后续研究、文案和图片才会围绕同一篇帖子推进。`,
     update_brief_inputs: `${blocker}补齐需求能减少 Agent 猜测，避免内容偏离账号定位。`,
-    search_research: `${blocker}先拿真实小红书样本，才能把后续结论标记为证据，而不是凭空建议。`,
-    retrieve_viral_knowledge: `${blocker}实时样本解决“现在流行什么”，爆款库补长期可复用的标题、结构和图片规律。`,
+    search_research: `${blocker}先拿真实小红书样本，后续结论才能标记为证据，而不是凭空建议。`,
+    retrieve_viral_knowledge: `${blocker}实时样本看当下趋势，爆款库补长期可复用的标题、结构和图片规律。`,
     create_creative_brief: `${blocker}CreativeBrief 是文案和图片共用的策略层，先生成它能避免图文割裂。`,
-    generate_copy: `${blocker}已有证据或 Brief 后再写文案，可以把标题、正文、标签都绑定到 evidencePack。`,
-    revise_copy: `${blocker}当前已有草稿，修改会保留项目上下文和证据引用，不会重新发散。`,
-    plan_visuals: `${blocker}文案可用后先规划图片方向，能保证图文围绕同一个角度展开。`,
-    confirm_visual_direction: `${blocker}图片方向会影响生图和发布风险，确认后再进入生图更稳。`,
-    generate_image_prompts: `${blocker}先把 Prompt 版本固化，后续生成图片和发布快照才可追溯。`,
-    generate_images: `${blocker}图片方向确认后再生成图片，能减少产品外观跑偏和风格不一致。`,
-    generate_cards: `${blocker}卡片适合干货/清单型笔记，能稳定生成封面和正文页素材。`,
-    select_images: `${blocker}选定图片后才能把文案和图片组合成同一篇最终帖子。`,
+    generate_copy: `${blocker}有证据或 Brief 后再写文案，可以把标题、正文、标签都绑定到 evidencePack。`,
+    revise_copy: `${blocker}修改会保留项目上下文和证据引用，不会重新发散。`,
+    plan_visuals: `${blocker}先规划图片方向，保证配图和文案围绕同一角度展开。`,
+    confirm_visual_direction: `${blocker}图片方向会影响生图和发布风险，确认后再进入下一步更稳。`,
+    generate_image_prompts: `${blocker}先固化 Prompt 版本，后续图片和发布快照才可追溯。`,
+    generate_images: `${blocker}方向确认后再生图，可以减少产品外观跑偏和风格不一致。`,
+    generate_cards: `${blocker}图文卡片适合干货/清单型笔记，可稳定生成封面和正文页素材。`,
+    select_images: `${blocker}选定图片后，才能把文案和图片组合成同一篇最终帖子。`,
     assemble_post: `${blocker}组装会把当前文案、标签、图片和 Prompt 锁成最终预览。`,
     run_quality_gate: `${blocker}发布前需要检查夸张标题、广告感、图文一致和合规风险。`,
-    request_publish_confirmation: `${blocker}确认单会锁定账号、可见范围、发布时间和版本快照，避免误发。`,
+    request_publish_confirmation: `${blocker}确认单会锁定账号、可见范围、时间和版本快照，避免误发。`,
     schedule_publish: `${blocker}定时发布必须先锁定未来时间和版本快照。`,
     publish_now: `${blocker}立即发布前仍要走确认单，避免一句话误触真实外部动作。`,
     summarize_evidence: `${blocker}先压缩证据，主界面只保留 3-5 条可学习结论。`,
@@ -106,7 +106,7 @@ function outcomeForAction(action: PostAction): string {
     schedule_publish: "完成后生成待人工确认的定时发布单。",
     publish_now: "完成后生成待人工确认的立即发布单。",
     revise_copy: "完成后会生成或更新文案版本，并使旧发布确认单失效。",
-    update_brief_inputs: "完成后 Agent 会重新评估是需要研究、Brief，还是直接创作。",
+    update_brief_inputs: "完成后 Agent 会重新评估需要研究、Brief，还是直接创作。",
     start_brief: "完成后得到一个干净的新 PostProject。",
     summarize_evidence: "完成后右侧证据面板只保留关键结论，原始样本进详情。",
     recover: "完成后回到可继续操作的安全状态。"
@@ -116,7 +116,7 @@ function outcomeForAction(action: PostAction): string {
 
 function safetyForAction(action: PostAction): string | undefined {
   if (["request_publish_confirmation", "schedule_publish", "publish_now"].includes(action)) {
-    return "安全提醒：这里仍然只是生成确认单，真实发布必须人工确认账号、可见范围和时间。";
+    return "安全提醒：这里只生成确认单，真实发布必须人工确认账号、可见范围和时间。";
   }
   if (action === "run_quality_gate") {
     return "安全提醒：Quality Gate 会检查夸张、虚假数据、功效承诺、图文不一致和原创边界。";

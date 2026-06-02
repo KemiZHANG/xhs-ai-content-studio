@@ -26,6 +26,7 @@ describe("post next step coach", () => {
     expect(coach.whyLine).toContain("真实小红书样本");
     expect(coach.outcomeLine).toContain("证据");
     expect(coach.progressLine).toContain("准备度");
+    expect(`${coach.detail} ${coach.whyLine} ${coach.outcomeLine}`).not.toMatch(/[�]|鐖|鍥剧|鏂囨|鍙戝|璇佹|鎼滅/);
   });
 
   it("keeps fallback actions concise", () => {
@@ -38,7 +39,7 @@ describe("post next step coach", () => {
 
     expect(coach.primaryAction).toBe("plan_visuals");
     expect(coach.primaryLabel).toBe("规划图片");
-    expect(coach.whyLine).toContain("图文");
+    expect(coach.whyLine).toContain("文案");
     expect(coach.outcomeLine).toContain("图片方向");
     expect(coach.secondaryActions.map((item) => item.label)).toEqual(["修改文案", "生成卡片"]);
   });

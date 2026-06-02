@@ -103,5 +103,6 @@ describe("post flow summary", () => {
 
     expect(phases.map((phase) => phase.state)).toEqual(["done", "done", "done", "done", "active", "todo"]);
     expect(phases[4].action).toBe("plan_visuals");
+    expect(phases[4].actionLabel).toBe("规划图片");
   });
 });
