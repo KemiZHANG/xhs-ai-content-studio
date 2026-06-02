@@ -4940,6 +4940,31 @@ textarea {
   text-align: center;
 }
 
+.agentStarterPrompts {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+  width: min(100%, 360px);
+}
+
+.agentStarterPrompts button {
+  background: color-mix(in srgb, var(--surface) 92%, var(--accent) 8%);
+  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--accent) 28%);
+  border-radius: 10px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.35;
+  padding: 9px 10px;
+  text-align: left;
+}
+
+.agentStarterPrompts button:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+  color: var(--accent-strong);
+}
+
 .studioComposer {
   align-items: end;
   background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, transparent), var(--surface) 36%);

@@ -21,6 +21,12 @@ export type PostStudioResearchFormState = {
   requirements: string;
 };
 
+const starterPrompts = [
+  "帮我找最近一周高收藏笔记，分析标题、正文、标签和图片风格。",
+  "基于当前证据生成 CreativeBrief，然后给我一版原创小红书文案。",
+  "根据当前文案规划图片方向，生成适合小红书的图片 Prompt。"
+];
+
 export function PostStudioAgentPane({
   evidenceCount,
   researchForm,
@@ -115,6 +121,13 @@ export function PostStudioAgentPane({
             <MessageSquareText size={22} />
             <strong>告诉 Agent 你要做什么</strong>
             <p>例如：找最近一周高收藏笔记，分析标题和图片风格，再生成一篇适合探店账号的图文笔记。</p>
+            <div className="agentStarterPrompts" aria-label="Post Studio 起步指令">
+              {starterPrompts.map((prompt) => (
+                <button key={prompt} type="button" onClick={() => onChatInput(prompt)}>
+                  {prompt}
+                </button>
+              ))}
+            </div>
           </div>
         ) : null}
       </div>

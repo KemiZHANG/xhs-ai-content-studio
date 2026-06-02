@@ -104,5 +104,7 @@ describe("post studio agent pane", () => {
     expect(html).toContain("告诉 Agent 你要做什么");
     expect(html).toContain("先搜索证据");
     expect(html).toContain("例如：找最近一周高收藏笔记");
+    expect(html).toContain("Post Studio 起步指令");
+    expect(html).toContain("基于当前证据生成 CreativeBrief");
   });
 });
