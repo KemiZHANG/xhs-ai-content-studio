@@ -181,6 +181,49 @@ textarea:focus-visible,
   box-shadow: inset 3px 0 0 #ff2442;
 }
 
+.sidebarMainPath {
+  background:
+    linear-gradient(145deg, rgba(255, 36, 66, 0.16), rgba(18, 118, 97, 0.12)),
+    rgba(25, 25, 30, 0.72);
+  border: 1px solid rgba(233, 249, 244, 0.15);
+  border-radius: 14px;
+  color: #e9f5f1;
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.sidebarMainPath span {
+  color: #aebfba;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.sidebarMainPath strong {
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.sidebarMainPath p {
+  color: #bfd0ca;
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.sidebarMainPath button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(233, 249, 244, 0.18);
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+  min-height: 30px;
+  padding: 0 10px;
+}
+
 .accountStatusCard {
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04)),

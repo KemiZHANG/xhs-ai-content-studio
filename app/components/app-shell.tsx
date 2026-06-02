@@ -115,6 +115,13 @@ export function AppShell({
           })}
         </nav>
 
+        <div className="sidebarMainPath" role="note">
+          <span>日常主流程</span>
+          <strong>创作始终回到 Post Studio</strong>
+          <p>Assets、Publish History、Settings 只做素材、记录和配置；研究、文案、图片、发布检查都在一个帖子项目里完成。</p>
+          <button type="button" onClick={() => onNavigate("flow")}>打开主工作台</button>
+        </div>
+
         <AccountStatusCard
           settings={settings}
           health={health}

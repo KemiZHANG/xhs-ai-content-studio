@@ -29,6 +29,9 @@ describe("app shell", () => {
     expect(html).toContain("Assets");
     expect(html).toContain("Publish History");
     expect(html).toContain("Settings");
+    expect(html).toContain("日常主流程");
+    expect(html).toContain("创作始终回到 Post Studio");
+    expect(html).toContain("打开主工作台");
     expect(html).toContain("文本模型已配置");
     expect(html).toContain("缺少图片模型");
     expect(html).toContain("当前草稿");
