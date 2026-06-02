@@ -40,7 +40,7 @@ afterEach(async () => {
 });
 
 describe("viral RAG retrieval", () => {
-  it("rewrites a user need into diverse retrieval queries", () => {
+  it("rewrites a user need into diverse Chinese retrieval queries", () => {
     const queries = rewriteRetrievalQueries({
       query: "广州咖啡馆 探店账号",
       topic: "广州咖啡馆",
@@ -52,9 +52,10 @@ describe("viral RAG retrieval", () => {
     expect(queries.length).toBeGreaterThanOrEqual(4);
     expect(queries.join(" ")).toContain("标题钩子");
     expect(queries.join(" ")).toContain("图片风格");
+    expect(queries.join(" ")).not.toMatch(/[�]|鈮|骞|鎺|涓|鐖/);
   });
 
-  it("returns viral_library insights with sufficiency metadata", async () => {
+  it("returns readable viral_library insights with sufficiency metadata", async () => {
     const viralCase = await createViralCaseFromEvidence({
       sample,
       topic: "广州咖啡馆",
@@ -81,9 +82,12 @@ describe("viral RAG retrieval", () => {
     expect(pack.filterSummary).toContain("收藏 ≥ 1000");
     expect(pack.filterSummary).toContain("分享 ≥ 20");
     expect(pack.filterSummary).toContain("按收藏降序排序");
+    expect(pack.filterSummary).not.toMatch(/[�]|鈮|骞|鎺|涓|鐖/);
     expect(pack.insights.every((item) => item.sourceType === "viral_library")).toBe(true);
     expect(pack.insights.map((item) => item.type)).toContain("comment");
     expect(pack.strategyReport.audiencePainPoints.join(" ")).toContain("评论关注点");
+    expect(pack.strategyReport.summary).toContain("可复用策略");
+    expect(pack.strategyReport.summary).not.toMatch(/[�]|鈮|骞|鎺|涓|鐖/);
     expect(pack.sufficiency.realtimeCount).toBe(4);
     expect(pack.sufficiency.viralCount).toBe(1);
     const trace = pack.evidenceTrace ?? [];
@@ -131,7 +135,7 @@ describe("viral RAG retrieval", () => {
     expect(weakQuality.warnings.join(" ")).toContain("防复制约束不足");
   });
 
-  it("marks evidence insufficient when key dimensions are missing", () => {
+  it("marks evidence insufficient with readable guidance when key dimensions are missing", () => {
     const sufficiency = evaluateRagSufficiency({
       realtimeCount: 1,
       viralCount: 0,
@@ -143,6 +147,7 @@ describe("viral RAG retrieval", () => {
     expect(sufficiency.isEnough).toBe(false);
     expect(sufficiency.missing.join(" ")).toContain("实时小红书样本不足");
     expect(sufficiency.recommendation).toContain("建议继续搜索");
+    expect(sufficiency.recommendation).not.toMatch(/[�]|鈮|骞|鎺|涓|鐖/);
   });
 
   it("exposes viral knowledge as replaceable retriever adapters", async () => {
