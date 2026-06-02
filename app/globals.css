@@ -5939,6 +5939,27 @@ textarea {
   padding: 12px;
 }
 
+.publishGuardNotice {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-radius: 12px;
+  color: var(--text);
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+}
+
+.publishGuardNotice strong {
+  color: var(--accent-strong);
+  font-size: 13px;
+}
+
+.publishGuardNotice p {
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+}
+
 .publishFinalSummary.ok {
   background: linear-gradient(135deg, rgba(18, 118, 97, 0.12), rgba(255, 255, 255, 0.86));
   border-color: rgba(18, 118, 97, 0.26);

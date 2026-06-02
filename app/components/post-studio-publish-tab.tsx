@@ -103,6 +103,10 @@ export function PostStudioPublishTab({
   return (
     <section className="studioSideSection">
       <h3><CheckCircle2 size={16} />发布检查</h3>
+      <div className="publishGuardNotice">
+        <strong>安全边界：本页只生成发布确认单</strong>
+        <p>真实发布或定时发布前，仍必须人工确认账号、可见范围、图片版本和时间；一句话指令不会直接发到小红书。</p>
+      </div>
       <StudioTaskSummary summary={summary} onQuickAction={onQuickAction} />
       <details className="publishChecklistDetails">
         <summary>
