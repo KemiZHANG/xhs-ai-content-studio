@@ -44,6 +44,6 @@ export function resetWorkflowFormForNewProject<T extends ResettableWorkflowForm>
 
 export function noticeForProjectReset(kind: ProjectResetKind): string {
   return kind === "conversation"
-    ? "已开启干净的新帖子对话：当前项目的证据、草稿、图片选择和发布计划已清空。"
-    : "已新建干净的帖子项目：研究证据、草稿、图片选择和发布计划已清空。";
+    ? "已开启干净的新帖子对话：当前项目的证据、草稿、图片选择和发布计划已清空；历史只保留在左侧记录里，不会带入本次创作。"
+    : "已新建干净的帖子项目：研究证据、草稿、图片选择和发布计划已清空；旧任务和历史只作为记录保留。";
 }

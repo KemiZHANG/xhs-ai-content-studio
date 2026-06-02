@@ -136,7 +136,7 @@ export default function Home() {
     width: 1080,
     height: 1440
   });
-  const [chatInput, setChatInput] = useState("帮我分析最近一周「咖啡探店」的高收藏笔记");
+  const [chatInput, setChatInput] = useState("");
   const [chatAssetIds, setChatAssetIds] = useState<string[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatConversations, setChatConversations] = useState<ChatConversation[]>([]);
@@ -1068,6 +1068,7 @@ export default function Home() {
     setMessages([]);
     setChatInput("");
     setSection("flow");
+    focusPostStudioTab("insights");
     setNotice(noticeForProjectReset("conversation"));
   }
 
