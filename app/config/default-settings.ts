@@ -1,6 +1,8 @@
 import { modelProviderPresets } from "@/lib/models/presets";
 import type { RedactedSettings } from "@/app/types";
 
+export const publishVisibilityValues = ["公开可见", "仅自己可见", "仅互关好友可见"] as const;
+
 export const defaultSettings: RedactedSettings = {
   mcpUrl: "http://localhost:18060/mcp",
   textBaseUrl: modelProviderPresets.gemini.text.textBaseUrl,

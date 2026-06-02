@@ -2,6 +2,7 @@
 
 import type { PublishSafetyBoundaryModel } from "@/app/components/publish-safety-boundary";
 import type { PendingPublishConfirmation, PostProject, PublishDraftState, RedactedSettings } from "@/app/types";
+import { publishVisibilityValues } from "@/app/config/default-settings";
 
 export function PostStudioPublishReadinessPanel({
   publishVisibility,
@@ -48,9 +49,9 @@ export function PostStudioPublishReadinessPanel({
         <label>
           <span>可见范围</span>
           <select value={publishVisibility} onChange={(event) => onVisibilityChange(event.target.value as RedactedSettings["defaultVisibility"])}>
-            <option>仅自己可见</option>
-            <option>公开可见</option>
-            <option>仅互关好友可见</option>
+            {publishVisibilityValues.map((value) => (
+              <option key={value} value={value}>{value}</option>
+            ))}
           </select>
         </label>
         <label>
@@ -75,8 +76,8 @@ export function PostStudioPublishReadinessPanel({
                 qualityGateFresh
               })}
         </p>
-        <span>确认单：{pendingPublish ? `${pendingPublish.mode === "schedule" ? "定时" : "立即"} · 待人工确认` : "未生成"}</span>
-        {activeLoginName ? <span>登录名：{activeLoginName}</span> : null}
+        <span>确认单: {pendingPublish ? `${pendingPublish.mode === "schedule" ? "定时" : "立即"} · 待人工确认` : "未生成"}</span>
+        {activeLoginName ? <span>登录名: {activeLoginName}</span> : null}
         <div className={`publishSafetyBoundary ${publishSafetyBoundary.state}`} aria-label="发布安全边界">
           <strong>{publishSafetyBoundary.headline}</strong>
           <p>{publishSafetyBoundary.detail}</p>
@@ -143,11 +144,11 @@ function buildPublishReadinessHint({
     missing.push("Quality Gate 未运行");
   }
   if (quality?.canPublish === false) {
-    const issueText = quality.issues.slice(0, 2).join("；") || "需要处理质量检查问题";
-    missing.push(`Quality Gate：${issueText}`);
+    const issueText = quality.issues.slice(0, 2).join("，") || "需要处理质量检查问题";
+    missing.push(`Quality Gate: ${issueText}`);
   }
   if (quality?.canPublish === true && !qualityGateFresh) {
-    missing.push("版本状态：画布改动后需要重新运行 Quality Gate");
+    missing.push("版本状态: 画布改动后需要重新运行 Quality Gate");
   }
-  return missing.length ? `还缺：${missing.join("、")}。` : "请先刷新质量检查，再进入人工发布确认。";
+  return missing.length ? `还缺: ${missing.join("、")}。` : "请先刷新质量检查，再进入人工发布确认。";
 }
