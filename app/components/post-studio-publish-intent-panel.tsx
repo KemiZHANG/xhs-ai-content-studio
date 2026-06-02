@@ -99,7 +99,7 @@ function PublishVersionLock({
 }) {
   return (
     <div className={versionSnapshot.qualityGateFresh ? "publishVersionLock ok" : "publishVersionLock warn"}>
-      <strong>{versionSnapshot.qualityGateFresh ? "版本快照已锁定" : "版本快照需复核"}</strong>
+      <strong>{versionSnapshot.qualityGateFresh ? "版本快照已锁定" : "版本快照需要复核"}</strong>
       <p>{versionSnapshot.summary}</p>
       <div>
         <span>文案：{versionSnapshot.copyVersionId ?? "待生成"}</span>

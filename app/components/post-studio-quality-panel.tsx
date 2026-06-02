@@ -1,8 +1,8 @@
 "use client";
 
 import type { QualityViralCoverageView } from "@/app/components/quality-viral-coverage";
-import type { EvidenceCitationReport } from "@/lib/post-project/citations";
 import type { PostProject } from "@/app/types";
+import type { EvidenceCitationReport } from "@/lib/post-project/citations";
 
 type QualityCheck = NonNullable<PostProject["qualityCheck"]>;
 
@@ -21,7 +21,7 @@ export function PostStudioQualityPanel({
 
   return (
     <div className="qualityBox">
-      <strong>{quality.canPublish ? "质量检查通过" : "质量检查需处理"}</strong>
+      <strong>{quality.canPublish ? "质量检查通过" : "质量检查需要处理"}</strong>
       <div className="qualityScores">
         <span>标题 {quality.titleScore}</span>
         <span>正文 {quality.copyScore}</span>
