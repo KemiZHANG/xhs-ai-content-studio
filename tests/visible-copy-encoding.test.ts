@@ -8,6 +8,9 @@ const guardedFiles = [
   "app/components/post-next-step-coach.ts",
   "app/components/post-studio-status.ts",
   "app/components/post-studio-panel.tsx",
+  "lib/agent/orchestrator.ts",
+  "lib/agent/planner.ts",
+  "lib/agent/tools/registry.ts",
   "lib/post-project/guidance.ts",
   "lib/post-project/readiness.ts"
 ];

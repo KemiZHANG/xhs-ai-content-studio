@@ -401,6 +401,108 @@ describe("API route contracts", () => {
     );
   });
 
+  it("returns structured director-agent fields from the direct chat route branch", async () => {
+    const conversation = { id: "chat-structured", title: "studio", createdAt: "", updatedAt: "", messages: [] };
+    const cards = [
+      { id: "card-brief", type: "creative_brief", title: "CreativeBrief", summary: "文案和图片共享同一份策略" },
+      { id: "card-quality", type: "quality_check", title: "发布前检查", summary: "需要人工确认" }
+    ];
+    const quickActions = [
+      { id: "qa-copy", label: "生成文案", action: "generate_copy" },
+      { id: "qa-quality", label: "发布前检查", action: "run_quality_gate" }
+    ];
+    const toolTrace = [
+      { id: "trace-plan", label: "project.createCreativeBrief", status: "completed", detail: "已生成 Brief", createdAt: "2026-06-01T00:00:00.000Z" }
+    ];
+    const runAgentTurn = vi.fn(async () => ({
+      answer: "structured answer",
+      reply: "structured answer",
+      stage: "brief_ready",
+      intent: "create_creative_brief",
+      intentConfidence: 0.91,
+      needsUserInput: false,
+      questions: [],
+      workspacePatch: { lastUserIntent: "create_creative_brief" },
+      cards,
+      quickActions,
+      toolTrace
+    }));
+    const appendChatTurn = vi.fn(async () => conversation);
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings,
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/storage/history", () => ({
+      listHistory: async () => []
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      readCurrentDraft: async () => null,
+      writeCurrentDraft: vi.fn(),
+      createDraftRecord: vi.fn()
+    }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: vi.fn()
+    }));
+    vi.doMock("@/lib/chat/router", () => ({
+      classifyChatRequest: () => ({ kind: "direct" })
+    }));
+    vi.doMock("@/lib/agent/memory", () => ({
+      readCreatorMemoryProfile: vi.fn(async () => null),
+      updateCreatorMemoryFromTurn: vi.fn(async () => null)
+    }));
+    vi.doMock("@/lib/agent/orchestrator", () => ({
+      runAgentTurn
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      appendPostProjectMemoryFromTurn: vi.fn(async () => undefined)
+    }));
+    vi.doMock("@/lib/storage/chat", () => ({
+      appendChatTurn,
+      getChatConversation: vi.fn(async () => ({ ...conversation, messages: [] }))
+    }));
+    vi.doMock("@/lib/mcp/xhs", () => ({
+      createXhsMcpClient: () => ({})
+    }));
+    vi.doMock("@/lib/models/provider", () => ({
+      createModelProvider: () => ({})
+    }));
+    vi.doMock("@/lib/workflows/one-click", () => ({
+      runOneClickWorkflow: vi.fn()
+    }));
+
+    const { POST } = await import("@/app/api/chat/route");
+    const response = await POST(jsonRequest({ message: "生成 CreativeBrief", conversationId: "chat-structured" }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      answer: "structured answer",
+      reply: "structured answer",
+      stage: "brief_ready",
+      intent: "create_creative_brief",
+      intentConfidence: 0.91,
+      needsUserInput: false,
+      questions: [],
+      workspacePatch: { lastUserIntent: "create_creative_brief" },
+      cards,
+      quickActions,
+      toolTrace,
+      conversation
+    });
+    expect(appendChatTurn).toHaveBeenCalledWith(expect.objectContaining({
+      assistantMeta: expect.objectContaining({
+        cards,
+        quickActions,
+        toolTrace,
+        intent: "create_creative_brief",
+        intentConfidence: 0.91,
+        needsUserInput: false,
+        stage: "brief_ready"
+      })
+    }));
+  });
+
   it("syncs direct chat workflow results into PostProject before returning the response", async () => {
     const conversation = { id: "chat-1", title: "coffee", createdAt: "", updatedAt: "", messages: [] };
     const draftRecord = {
