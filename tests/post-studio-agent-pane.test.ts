@@ -25,7 +25,7 @@ const assistantMessage = {
     id: "card-1",
     type: "creative_brief",
     title: "Brief 已就绪",
-    summary: "可基于证据生成文案",
+    summary: "可基于证据生成文案。",
     data: { basedOnEvidenceIds: ["evidence-1"] }
   }],
   quickActions: [{ id: "qa-1", label: "生成文案", action: "generate_copy" }],
@@ -56,7 +56,7 @@ const runningJob: JobRecord = {
 };
 
 describe("post studio agent pane", () => {
-  it("renders research entry, running progress, assistant cards, and composer", () => {
+  it("renders readable research entry, running progress, assistant cards, and composer", () => {
     const html = renderToStaticMarkup(createElement(PostStudioAgentPane, {
       evidenceCount: 1,
       researchForm,
@@ -75,18 +75,19 @@ describe("post studio agent pane", () => {
     }));
 
     expect(html).toContain("AI Agent");
+    expect(html).toContain("继续输入");
     expect(html).toContain("真实笔记研究");
     expect(html).toContain("1 条证据已绑定");
     expect(html).toContain("搜索并提炼证据");
     expect(html).toContain("研究广州咖啡馆");
     expect(html).toContain("48%");
     expect(html).toContain("Brief 已就绪");
-    expect(html).toContain("证据：evidence-1");
+    expect(html).toContain("证据: evidence-1");
     expect(html).toContain("生成文案");
     expect(html).toContain("把标题再生活化一点");
   });
 
-  it("keeps the empty-state prompt visible before a conversation starts", () => {
+  it("keeps the empty-state starter prompts visible before a conversation starts", () => {
     const html = renderToStaticMarkup(createElement(PostStudioAgentPane, {
       evidenceCount: 0,
       researchForm,
@@ -103,7 +104,7 @@ describe("post studio agent pane", () => {
 
     expect(html).toContain("告诉 Agent 你要做什么");
     expect(html).toContain("先搜索证据");
-    expect(html).toContain("例如：找最近一周高收藏笔记");
+    expect(html).toContain("找最近一周高收藏笔记");
     expect(html).toContain("Post Studio 起步指令");
     expect(html).toContain("基于当前证据生成 CreativeBrief");
   });

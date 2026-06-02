@@ -58,7 +58,7 @@ export function PostStudioSidePane({
 
       <details className="advancedEntry compactAdvancedEntry">
         <summary>
-          <strong>高级/调试工具</strong>
+          <strong>高级 / 调试工具</strong>
           <span>日常创作留在 Post Studio；只有排查任务或单独批量处理时再展开。</span>
         </summary>
         <div className="advancedToolList">

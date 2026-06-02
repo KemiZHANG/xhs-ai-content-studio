@@ -15,7 +15,7 @@ const baseSummary = {
 };
 
 describe("post studio side pane", () => {
-  it("renders the active insight tab and keeps advanced tools folded", () => {
+  it("renders the active insight tab and keeps advanced tools readable and folded", () => {
     const props = {
       activeTab: "insights",
       sideDigest: {
@@ -68,6 +68,8 @@ describe("post studio side pane", () => {
     expect(html).toContain("右侧工作区");
     expect(html).toContain("可学习结论");
     expect(html).toContain("爆款库证据");
-    expect(html).toContain("高级/调试工具");
+    expect(html).toContain("高级 / 调试工具");
+    expect(html).toContain("日常创作留在 Post Studio");
+    expect(html).toContain("独立主题研究");
   });
 });

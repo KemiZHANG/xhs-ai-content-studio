@@ -1,6 +1,7 @@
 "use client";
 
 import type { FormEvent } from "react";
+import { useRef } from "react";
 import { MessageSquareText, Search, Send } from "lucide-react";
 import { isHighPriorityAgentCard, pickVisibleAgentCards } from "@/app/components/agent-card-visibility";
 import { buildAgentMessageDisplay } from "@/app/components/agent-message-display";
@@ -52,6 +53,8 @@ export function PostStudioAgentPane({
   onChatSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onQuickAction: (action: string) => void;
 }) {
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
+
   return (
     <section className="panel studioAgentPane">
       <div className="panelHeader compact">
@@ -59,6 +62,9 @@ export function PostStudioAgentPane({
           <h2>AI Agent</h2>
           <p>像内容导演一样工作：先判断阶段和信息是否足够，再搜索、总结、生成或追问。</p>
         </div>
+        <button className="secondaryButton compactButton" type="button" onClick={() => composerRef.current?.focus()}>
+          继续输入
+        </button>
       </div>
 
       <details className="studioResearchDetails" open={!evidenceCount}>
@@ -133,7 +139,7 @@ export function PostStudioAgentPane({
       </div>
 
       <form className="studioComposer" onSubmit={onChatSubmit}>
-        <textarea value={chatInput} onChange={(event) => onChatInput(event.target.value)} placeholder="继续追问：再生活化一点 / 用第二张图 / 今晚八点发..." />
+        <textarea ref={composerRef} value={chatInput} onChange={(event) => onChatInput(event.target.value)} placeholder="继续追问：再生活化一点 / 用第二张图 / 今晚八点发..." />
         <button className="primaryButton" disabled={busy} type="submit">
           <Send size={16} />
           发送
@@ -244,7 +250,7 @@ function AgentStructuredMessage({
               <p>{card.summary}</p>
               <AgentCardInlineDetails card={card} onQuickAction={onQuickAction} />
               {extractEvidenceIdsFromAgentCard(card).length ? (
-                <small>证据：{extractEvidenceIdsFromAgentCard(card).slice(0, 3).join(" / ")}</small>
+                <small>证据: {extractEvidenceIdsFromAgentCard(card).slice(0, 3).join(" / ")}</small>
               ) : null}
             </article>
           ))}
@@ -255,7 +261,7 @@ function AgentStructuredMessage({
         <details className="agentHiddenCards">
           <summary>还有 {hiddenCards.length} 张结构卡已折叠</summary>
           {hiddenCards.slice(0, 6).map((card) => (
-            <p key={card.id}>{labelForAgentCard(card.type)}：{card.title}</p>
+            <p key={card.id}>{labelForAgentCard(card.type)}: {card.title}</p>
           ))}
         </details>
       ) : null}
@@ -266,7 +272,7 @@ function AgentStructuredMessage({
           {trace.map((item) => (
             <div key={item.id}>
               <span className={`traceStatus ${item.status}`}>{labelForTraceStatus(item.status)}</span>
-              <p>{item.label}：{item.detail}</p>
+              <p>{item.label}: {item.detail}</p>
             </div>
           ))}
           {traceSummary.recoveryHint ? <p className="traceRecoveryHint">{traceSummary.recoveryHint}</p> : null}
@@ -329,7 +335,7 @@ function AgentCardInlineDetails({
         {directorSummary.blockerCount ? <small className="agentDirectorBlocker">还有 {directorSummary.blockerCount} 个阻塞项需要处理</small> : null}
         {directorSummary.nextAction ? (
           <button className="miniActionButton primaryInline" type="button" onClick={() => onQuickAction(directorSummary.nextAction!)}>
-            建议下一步：{directorSummary.nextActionLabel}
+            建议下一步: {directorSummary.nextActionLabel}
           </button>
         ) : null}
       </div>
@@ -381,7 +387,7 @@ function AgentCardInlineDetails({
       </div>
       {stageGuidance.primaryAction ? (
         <button className="miniActionButton primaryInline" type="button" onClick={() => onQuickAction(stageGuidance.primaryAction!)}>
-          建议下一步：{labelForPostAction(stageGuidance.primaryAction)}
+          建议下一步: {labelForPostAction(stageGuidance.primaryAction)}
         </button>
       ) : null}
     </div>
