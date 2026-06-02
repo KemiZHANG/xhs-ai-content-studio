@@ -49,6 +49,8 @@ describe("project reset state", () => {
   it("explains that new conversations also create a clean post workspace", () => {
     expect(noticeForProjectReset("conversation")).toContain("新帖子对话");
     expect(noticeForProjectReset("conversation")).toContain("发布计划已清空");
+    expect(noticeForProjectReset("conversation")).toContain("不会带入本次创作");
     expect(noticeForProjectReset("project")).toContain("新建干净的帖子项目");
+    expect(noticeForProjectReset("project")).toContain("旧任务和历史只作为记录保留");
   });
 });

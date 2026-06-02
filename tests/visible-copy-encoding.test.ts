@@ -11,6 +11,7 @@ const guardedFiles = [
   "app/components/post-studio-side-pane.tsx",
   "app/components/post-studio-viral-tab.tsx",
   "app/components/viral-evidence-summary.ts",
+  "app/state/project-reset.ts",
   "app/api/viral-knowledge/route.ts",
   "lib/agent/orchestrator.ts",
   "lib/agent/planner.ts",
