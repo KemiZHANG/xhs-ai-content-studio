@@ -5623,6 +5623,43 @@ textarea {
   margin: 0;
 }
 
+.viralCoverageStrip {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.viralCoverageStrip span {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(30, 27, 23, 0.08);
+  border-radius: 10px;
+  color: var(--muted);
+  display: grid;
+  font-size: 11px;
+  gap: 3px;
+  min-width: 0;
+  padding: 7px 8px;
+}
+
+.viralCoverageStrip b {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.viralCoverageStrip .cited {
+  border-color: rgba(18, 118, 97, 0.24);
+  box-shadow: inset 3px 0 0 rgba(18, 118, 97, 0.58);
+}
+
+.viralCoverageStrip .ready {
+  border-color: rgba(185, 107, 25, 0.22);
+  box-shadow: inset 3px 0 0 rgba(185, 107, 25, 0.48);
+}
+
+.viralCoverageStrip .missing {
+  opacity: 0.72;
+}
+
 .viralEvidenceSources {
   display: flex;
   flex-wrap: wrap;

@@ -124,6 +124,28 @@ describe("viral evidence summary", () => {
       isFocused: true,
       isCited: true
     });
+    expect(summary.coverage).toEqual([
+      expect.objectContaining({
+        id: "title",
+        status: "cited",
+        evidenceIds: ["viral-insight-hook"]
+      }),
+      expect.objectContaining({
+        id: "copy",
+        status: "missing",
+        evidenceIds: []
+      }),
+      expect.objectContaining({
+        id: "tag",
+        status: "missing",
+        evidenceIds: []
+      }),
+      expect.objectContaining({
+        id: "visual",
+        status: "ready",
+        evidenceIds: ["viral-insight-visual"]
+      })
+    ]);
     expect(summary.sourceCases[0]).toMatchObject({
       id: "viral-case-1",
       hookType: "场景收藏钩子",
@@ -166,6 +188,7 @@ describe("viral evidence summary", () => {
     });
 
     expect(summary.hasEvidence).toBe(false);
+    expect(summary.coverage.map((item) => item.status)).toEqual(["missing", "missing", "missing", "missing"]);
     expect(summary.sourceLine).toContain("可检索历史样本 1 条");
     expect(summary.missingLine).toBe("请保存更多高收藏样本");
   });

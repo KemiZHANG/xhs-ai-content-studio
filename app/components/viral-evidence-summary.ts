@@ -16,6 +16,13 @@ export type ViralEvidenceSummaryModel = {
     isFocused: boolean;
     isCited: boolean;
   }>;
+  coverage: Array<{
+    id: "title" | "copy" | "tag" | "visual";
+    label: string;
+    status: "ready" | "cited" | "missing";
+    evidenceIds: string[];
+    line: string;
+  }>;
   sourceCases: Array<{
     id: string;
     title: string;
@@ -73,6 +80,7 @@ export function buildViralEvidenceSummary({
     }));
   const citedCount = viralInsights.filter((insight) => citedIds.has(insight.id)).length;
   const focusedCount = viralInsights.filter((insight) => focusedIds.has(insight.id)).length;
+  const coverage = buildViralCoverage({ viralInsights, citedIds });
   const sufficiency = viralKnowledge?.sufficiency;
   const sourceLine = `爆款库 evidencePack ${viralInsights.length} 条 · 本次重点 ${focusedCount} 条 · 已被创作引用 ${citedCount} 条`;
 
@@ -83,6 +91,7 @@ export function buildViralEvidenceSummary({
       detail: "刷新 RAG 或把高质量实时样本保存进爆款库后，这里只展示可复用规律，不展示原文合集。",
       sourceLine: `可检索历史样本 ${viralCases.length} 条`,
       keyInsights: [],
+      coverage,
       sourceCases: [],
       traceLine: "当前文案和图片方向暂未引用 viral_library 证据。",
       missingLine: sufficiency?.recommendation
@@ -97,6 +106,7 @@ export function buildViralEvidenceSummary({
       : "Agent 会把这些规律用于 CreativeBrief、标题/正文/标签和图片方向，但只复用结构、风格和决策逻辑，不复制原文原图。",
     sourceLine,
     keyInsights,
+    coverage,
     sourceCases,
     traceLine: buildTraceLine({ citedCount, focusedCount, viralInsightCount: viralInsights.length }),
     missingLine: sufficiency?.isEnough === false && sufficiency.missing.length
@@ -130,6 +140,45 @@ function pickKeyViralInsights(
     usedTypes.add(insight.type);
   }
   return selected.length ? selected : insights.slice(0, 5);
+}
+
+function buildViralCoverage({
+  viralInsights,
+  citedIds
+}: {
+  viralInsights: ProjectInsight[];
+  citedIds: Set<string>;
+}): ViralEvidenceSummaryModel["coverage"] {
+  const fields: Array<{
+    id: ViralEvidenceSummaryModel["coverage"][number]["id"];
+    label: string;
+    types: ProjectInsight["type"][];
+  }> = [
+    { id: "title", label: "标题", types: ["title", "hook"] },
+    { id: "copy", label: "正文", types: ["copy", "structure", "pain_point", "audience", "comment"] },
+    { id: "tag", label: "标签", types: ["tag"] },
+    { id: "visual", label: "图片", types: ["visual"] }
+  ];
+
+  return fields.map((field) => {
+    const evidenceIds = viralInsights
+      .filter((insight) => field.types.includes(insight.type))
+      .map((insight) => insight.id);
+    const citedCount = evidenceIds.filter((id) => citedIds.has(id)).length;
+    const status = citedCount ? "cited" : evidenceIds.length ? "ready" : "missing";
+    const line = status === "cited"
+      ? `已引用 ${citedCount}/${evidenceIds.length} 条`
+      : status === "ready"
+        ? `可用 ${evidenceIds.length} 条，尚未引用`
+        : "缺少爆款库证据";
+    return {
+      id: field.id,
+      label: field.label,
+      status,
+      evidenceIds: evidenceIds.slice(0, 5),
+      line
+    };
+  });
 }
 
 function buildTraceLine({

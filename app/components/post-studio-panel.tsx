@@ -2575,6 +2575,14 @@ function ViralEvidenceDigest({
           ))}
         </div>
       ) : null}
+      <div className="viralCoverageStrip" aria-label="爆款库创作覆盖">
+        {summary.coverage.map((item) => (
+          <span className={item.status} key={item.id} title={item.evidenceIds.join(" / ") || item.line}>
+            <b>{item.label}</b>
+            {item.line}
+          </span>
+        ))}
+      </div>
       {summary.sourceCases.length && !compact ? (
         <div className="viralEvidenceSources">
           {summary.sourceCases.map((item) => (
