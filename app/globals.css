@@ -6089,6 +6089,65 @@ textarea {
   margin: 0;
 }
 
+.publishFocusSummary {
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.publishFocusSummary.ok {
+  border-color: rgba(18, 118, 97, 0.24);
+}
+
+.publishFocusSummary.warn {
+  border-color: rgba(190, 122, 20, 0.28);
+}
+
+.publishFocusSummary.blocked {
+  border-color: rgba(185, 65, 55, 0.28);
+}
+
+.publishFocusSummary span,
+.publishFocusSummary small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.publishFocusSummary strong {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.publishFocusSummary p {
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.publishFocusSummary ul {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.publishFocusSummary li {
+  background: color-mix(in srgb, #b94137 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, #b94137 18%, var(--line));
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 7px 9px;
+}
+
 .publishFinalSummary.ok {
   background: linear-gradient(135deg, rgba(18, 118, 97, 0.12), rgba(255, 255, 255, 0.86));
   border-color: rgba(18, 118, 97, 0.26);

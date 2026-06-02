@@ -12,6 +12,7 @@ const guardedFiles = [
   "app/components/post-studio-media-tabs.tsx",
   "app/components/post-studio-status.ts",
   "app/components/post-studio-panel.tsx",
+  "app/components/post-studio-publish-tab.tsx",
   "app/components/post-studio-side-pane.tsx",
   "app/components/post-studio-viral-tab.tsx",
   "app/components/studio-tab-groups.ts",

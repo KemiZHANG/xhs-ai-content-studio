@@ -5,7 +5,7 @@ import type { PublishAccountSafety } from "@/app/components/publish-account-safe
 import type { PublishAuditSafetySummary } from "@/app/components/publish-audit-summary";
 import type { PublishConfirmationSummary } from "@/app/components/publish-confirmation-summary";
 import type { PublishSafetyBoundaryModel } from "@/app/components/publish-safety-boundary";
-import { PostStudioPublishTab } from "@/app/components/post-studio-publish-tab";
+import { buildPublishFocusModel, PostStudioPublishTab } from "@/app/components/post-studio-publish-tab";
 import type { PublishDraftState } from "@/app/types";
 
 const publishDraft: PublishDraftState = {
@@ -16,6 +16,16 @@ const publishDraft: PublishDraftState = {
 };
 
 describe("post studio publish tab", () => {
+  it("compresses publish blockers into a short first-screen focus model", () => {
+    const model = buildPublishFocusModel({
+      visibleBlockers: ["缺少图片", "未确认账号", "Quality Gate 过期", "定时时间无效"]
+    } as unknown as PublishConfirmationSummary);
+
+    expect(model.blockerPreview).toEqual(["缺少图片", "未确认账号", "Quality Gate 过期"]);
+    expect(model.hiddenBlockerCount).toBe(1);
+    expect(model.hasBlockers).toBe(true);
+  });
+
   it("renders readable publish safety checks and confirmation actions", () => {
     const html = renderToStaticMarkup(createElement(PostStudioPublishTab, {
       summary: {
@@ -112,6 +122,8 @@ describe("post studio publish tab", () => {
     expect(html).toContain("发布检查");
     expect(html).toContain("安全边界：本页只生成发布确认单");
     expect(html).toContain("一句话指令不会直接发到小红书");
+    expect(html).toContain("可以进入人工确认");
+    expect(html).toContain("下一步只会生成发布确认单");
     expect(html).toContain("详细发布检查");
     expect(html).toContain("发布详情与审计");
     expect(html).toContain("确认单、Quality Gate、账号安全和审计记录");

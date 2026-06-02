@@ -23,6 +23,15 @@ import type { EvidenceCitationReport } from "@/lib/post-project/citations";
 
 type RequiredConfirmation = NonNullable<WorkspacePublishPlan["confirmationChecklist"]>[number];
 
+export function buildPublishFocusModel(publishSummary: PublishConfirmationSummary) {
+  const blockerPreview = publishSummary.visibleBlockers.slice(0, 3);
+  return {
+    blockerPreview,
+    hiddenBlockerCount: Math.max(0, publishSummary.visibleBlockers.length - blockerPreview.length),
+    hasBlockers: blockerPreview.length > 0
+  };
+}
+
 export function PostStudioPublishTab({
   summary,
   publishDraft,
@@ -100,6 +109,8 @@ export function PostStudioPublishTab({
   onPreparePublish: () => void;
   onOpenPublish: () => void;
 }) {
+  const publishFocus = buildPublishFocusModel(publishSummary);
+
   return (
     <section className="studioSideSection">
       <h3><CheckCircle2 size={16} />发布检查</h3>
@@ -108,6 +119,21 @@ export function PostStudioPublishTab({
         <p>真实发布或定时发布前，仍必须人工确认账号、可见范围、图片版本和时间；一句话指令不会直接发到小红书。</p>
       </div>
       <StudioTaskSummary summary={summary} onQuickAction={onQuickAction} />
+      <article className={`publishFocusSummary ${publishSummary.riskLevel}`}>
+        <span>{publishSummary.modeLabel}</span>
+        <strong>{publishSummary.decisionLine}</strong>
+        <p>{publishSummary.nextStepLine}</p>
+        {publishFocus.hasBlockers ? (
+          <ul>
+            {publishFocus.blockerPreview.map((blocker) => <li key={blocker}>{blocker}</li>)}
+          </ul>
+        ) : (
+          <small>暂无关键阻塞项，下一步只会生成发布确认单。</small>
+        )}
+        {publishFocus.hiddenBlockerCount ? (
+          <small>还有 {publishFocus.hiddenBlockerCount} 项已收进下方详情。</small>
+        ) : null}
+      </article>
       <details className="publishChecklistDetails">
         <summary>
           <strong>详细发布检查</strong>
