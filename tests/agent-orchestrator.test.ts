@@ -320,7 +320,9 @@ describe("agent orchestrator", () => {
     ]);
   });
 
-  it("reviews an existing publish confirmation instead of preparing a duplicate publish intent", async () => {
+  it.each(["确认发布，就这样发", "可以发了", "确认定时发布"])(
+    "reviews an existing publish confirmation for %s instead of publishing from chat",
+    async (message) => {
     const imagePath = path.join(tempDir, "generated-assets", "generated", "confirm.png");
     const publishIntent = {
       ...createPublishIntent({
@@ -355,8 +357,8 @@ describe("agent orchestrator", () => {
     });
     let publishCalls = 0;
     const result = await runAgentTurn({
-      message: "确认发布，就这样发",
-      conversationId: "chat-review-confirmation",
+      message,
+      conversationId: `chat-review-confirmation-${message}`,
       settings: defaultSettings,
       history: [],
       currentDraft: null,
@@ -386,7 +388,8 @@ describe("agent orchestrator", () => {
       "confirm_publish",
       "cancel_publish"
     ]);
-  });
+    }
+  );
 
   it("cancels an existing publish confirmation without external publishing", async () => {
     const publishIntent = {
