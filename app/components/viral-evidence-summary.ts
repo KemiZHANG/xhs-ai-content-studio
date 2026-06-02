@@ -74,7 +74,7 @@ export function buildViralEvidenceSummary({
       hookType: item.hookType,
       category: item.category,
       score: item.metrics.score,
-      safetySummary: item.creativeSafety?.summary ?? "只复用结构和风格，不复制原文原图。",
+      safetySummary: item.creativeSafety?.summary ?? "只复用结构、风格和决策逻辑，不复制原文原图。",
       reusablePatterns: (item.creativeSafety?.reusablePatterns ?? item.extractedInsights.reusableRules).slice(0, 2),
       doNotCopy: (item.creativeSafety?.doNotCopy ?? item.extractedInsights.avoidCopying).slice(0, 2)
     }));
@@ -103,7 +103,7 @@ export function buildViralEvidenceSummary({
     headline: focusedCount ? "已选定本次重点爆款规律" : "爆款库规律已接入当前帖子",
     detail: sufficiency?.isEnough === false
       ? `证据仍偏薄：${sufficiency.recommendation}`
-      : "Agent 会把这些规律用于 CreativeBrief、标题/正文/标签和图片方向，但只复用结构、风格和决策逻辑，不复制原文原图。",
+      : "Agent 会把这些规律用于 CreativeBrief、标题、正文、标签和图片方向，但只复用结构、风格和决策逻辑，不复制原文原图。",
     sourceLine,
     keyInsights,
     coverage,

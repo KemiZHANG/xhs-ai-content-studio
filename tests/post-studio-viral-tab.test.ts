@@ -146,7 +146,7 @@ describe("post studio viral tab", () => {
     }));
 
     expect(html).toContain("爆款库证据");
-    expect(html).toContain("默认只看当前项目能用的重点规律和应用建议");
+    expect(html).toContain("默认只看当前帖子可用的重点规律和应用建议");
     expect(html).toContain("爆款库工具与检索");
     expect(html).toContain("检索 / 过滤爆款库");
     expect(html).toContain("RAG 证据充足");

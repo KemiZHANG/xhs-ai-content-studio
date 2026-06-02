@@ -92,13 +92,12 @@ export function PostStudioViralTab({
     <section className="studioSideSection">
       <h3><Library size={16} />爆款库证据</h3>
       <strong>{viralCases.length} 条历史爆款规律</strong>
-      <p className="muted">默认只看当前项目能用的重点规律和应用建议；检索、过滤、健康报告和历史样本放在下方工具区。</p>
+      <p className="muted">
+        默认只看当前帖子可用的重点规律和应用建议；检索、过滤、健康报告和历史样本放在下方工具区。
+      </p>
       <ViralEvidenceDigest summary={viralEvidenceSummary} />
       <RagSufficiencyCard viralPack={viralPack} />
-      <ViralApplicationPanel
-        viralApplication={viralApplication}
-        onQuickAction={onQuickAction}
-      />
+      <ViralApplicationPanel viralApplication={viralApplication} onQuickAction={onQuickAction} />
       <ViralInsightList
         focusedEvidenceIdSet={focusedEvidenceIdSet}
         focusedEvidenceIds={focusedEvidenceIds}
@@ -374,7 +373,9 @@ function ViralInsightList({
           );
         })}
         {viralInsights.length > keyViralInsights.length ? (
-          <p className="muted">已默认压缩展示 {keyViralInsights.length} 条关键规律，完整 {viralInsights.length} 条已写入 evidencePack，生成文案和图片方向时可追溯引用。</p>
+          <p className="muted">
+            已默认压缩展示 {keyViralInsights.length} 条关键规律，完整 {viralInsights.length} 条已写入 evidencePack，可被文案和图片方向追溯引用。
+          </p>
         ) : null}
       </div>
     );

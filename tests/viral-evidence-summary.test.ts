@@ -47,6 +47,7 @@ function projectWithViralEvidence(): PostProject {
   return {
     id: "post-1",
     topic: "广州咖啡馆",
+    productInfo: { referenceAssetIds: [] },
     evidencePack: {
       sampleIds: ["viral-case-1"],
       insights: [
