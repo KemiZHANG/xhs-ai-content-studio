@@ -4461,6 +4461,42 @@ textarea {
   top: 20px;
 }
 
+.agentStartRail {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.agentStartRail button {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  gap: 3px;
+  min-height: 58px;
+  padding: 9px;
+  text-align: left;
+}
+
+.agentStartRail button:hover {
+  border-color: rgba(18, 118, 97, 0.24);
+  box-shadow: 0 10px 22px rgba(39, 37, 31, 0.07);
+}
+
+.agentStartRail span {
+  color: var(--accent-strong);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.agentStartRail strong {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
 .studioResearchBox,
 .postEditStack,
 .studioComposer,

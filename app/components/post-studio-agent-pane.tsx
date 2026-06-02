@@ -71,6 +71,21 @@ export function PostStudioAgentPane({
         </button>
       </div>
 
+      <div className="agentStartRail" aria-label="Post Studio 快速开始">
+        <button type="button" onClick={focusComposer}>
+          <span>自然语言</span>
+          <strong>直接描述你要发什么</strong>
+        </button>
+        <button type="button" onClick={() => onQuickAction("search_research")}>
+          <span>第一步</span>
+          <strong>搜索真实笔记</strong>
+        </button>
+        <button type="button" onClick={() => onQuickAction(evidenceCount ? "generate_copy" : "search_research")}>
+          <span>{evidenceCount ? "下一步" : "先补证据"}</span>
+          <strong>{evidenceCount ? "生成原创文案" : "先做研究"}</strong>
+        </button>
+      </div>
+
       <details className="studioResearchDetails" open={!evidenceCount}>
         <summary>
           <span>真实笔记研究</span>

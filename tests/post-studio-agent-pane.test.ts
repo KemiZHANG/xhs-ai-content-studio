@@ -76,6 +76,10 @@ describe("post studio agent pane", () => {
 
     expect(html).toContain("AI Agent");
     expect(html).toContain("继续输入");
+    expect(html).toContain("Post Studio 快速开始");
+    expect(html).toContain("直接描述你要发什么");
+    expect(html).toContain("搜索真实笔记");
+    expect(html).toContain("生成原创文案");
     expect(html).toContain("真实笔记研究");
     expect(html).toContain("1 条证据已绑定");
     expect(html).toContain("搜索并提炼证据");
@@ -105,6 +109,7 @@ describe("post studio agent pane", () => {
     }));
 
     expect(html).toContain("告诉 Agent 你要做什么");
+    expect(html).toContain("先做研究");
     expect(html).toContain("先搜索证据");
     expect(html).toContain("帮我找最近一周高收藏笔记");
     expect(html).toContain("Post Studio 起步指令");
