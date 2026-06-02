@@ -129,6 +129,16 @@ export function PostStudioPublishTab({
         <strong>安全边界：本页只生成发布确认单</strong>
         <p>真实发布或定时发布前，仍必须人工确认账号、可见范围、图片版本和时间；一句话指令不会直接发到小红书。</p>
       </div>
+      <PublishTargetSummary
+        accountReady={accountReady}
+        activeAccountLabel={activeAccountLabel}
+        accountReadyHint={accountReadyHint}
+        activeLoginName={activeLoginName}
+        defaultAutoPublish={defaultAutoPublish}
+        publishScheduleAt={publishScheduleAt}
+        publishVisibility={publishVisibility}
+        selectedImageCount={selectedImageCount}
+      />
       <StudioTaskSummary summary={summary} onQuickAction={onQuickAction} />
       <article className={`publishFocusSummary ${publishSummary.riskLevel}`}>
         <span>{publishSummary.modeLabel}</span>
@@ -230,6 +240,59 @@ export function PostStudioPublishTab({
         </button>
         <button className="secondaryButton fullWidth" onClick={onOpenPublish} type="button">聚焦发布检查</button>
       </div>
+    </section>
+  );
+}
+
+function PublishTargetSummary({
+  accountReady,
+  activeAccountLabel,
+  accountReadyHint,
+  activeLoginName,
+  defaultAutoPublish,
+  publishScheduleAt,
+  publishVisibility,
+  selectedImageCount
+}: {
+  accountReady: boolean;
+  activeAccountLabel: string;
+  accountReadyHint: string;
+  activeLoginName?: string;
+  defaultAutoPublish: boolean;
+  publishScheduleAt: string;
+  publishVisibility: RedactedSettings["defaultVisibility"];
+  selectedImageCount: number;
+}) {
+  const timingLabel = publishScheduleAt ? `${publishScheduleAt} 本地时区` : "立即发布";
+  return (
+    <section className="publishTargetSummary" aria-label="发布目标确认摘要">
+      <div>
+        <span>发布目标</span>
+        <strong>{activeAccountLabel || "未选择账号"}</strong>
+        <small>{activeLoginName ? `登录名：${activeLoginName}` : accountReadyHint}</small>
+      </div>
+      <dl>
+        <div className={accountReady ? "ok" : "warn"}>
+          <dt>账号</dt>
+          <dd>{accountReady ? "可用" : "需登录/切换"}</dd>
+        </div>
+        <div className={publishVisibility === "仅自己可见" ? "ok" : "warn"}>
+          <dt>可见范围</dt>
+          <dd>{publishVisibility}</dd>
+        </div>
+        <div className={publishScheduleAt ? "warn" : "ok"}>
+          <dt>时间</dt>
+          <dd>{timingLabel}</dd>
+        </div>
+        <div className={selectedImageCount ? "ok" : "warn"}>
+          <dt>图片</dt>
+          <dd>{selectedImageCount ? `${selectedImageCount} 张` : "未选择"}</dd>
+        </div>
+        <div className={defaultAutoPublish ? "warn" : "ok"}>
+          <dt>自动发布</dt>
+          <dd>{defaultAutoPublish ? "已开启" : "默认关闭"}</dd>
+        </div>
+      </dl>
     </section>
   );
 }
