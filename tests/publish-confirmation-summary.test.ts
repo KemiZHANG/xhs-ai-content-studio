@@ -198,6 +198,92 @@ describe("publish confirmation summary", () => {
     ]);
     expect(summary.accountSafetyLine).toContain("http://localhost:18060/mcp");
     expect(summary.versionLine).toContain("版本快照已锁定");
+    expect(summary.timingLine).toContain("时区 +08:00");
+  });
+
+  it("blocks scheduled publish summaries when the schedule time lacks an explicit timezone", () => {
+    const summary = buildPublishConfirmationSummary({
+      draft: readyDraft,
+      selectedImageCount: 1,
+      activePlan: null,
+      pendingPublish: null,
+      project: project(),
+      activeAccountName: "主账号",
+      activeLoginName: "xhs-user",
+      visibility: "仅自己可见",
+      scheduleAt: "2099-05-31T20:00:00",
+      publishReady: true,
+      citationTraceReady: true,
+      canvasDirty: false,
+      accountReady: true,
+      hasVisualDirection: true,
+      qualityGateFresh: true
+    });
+
+    expect(summary.riskLevel).toBe("blocked");
+    expect(summary.timingLine).toContain("缺少明确时区");
+    expect(summary.blockers).toContain("定时时间必须包含明确时区");
+  });
+
+  it("surfaces publish evidence citation and checklist details in the first-screen summary", () => {
+    const summary = buildPublishConfirmationSummary({
+      draft: readyDraft,
+      selectedImageCount: 1,
+      activePlan: {
+        status: "awaiting_approval",
+        visibility: "仅自己可见",
+        images: ["asset-1"],
+        tags: ["广州咖啡", "探店"],
+        accountName: "主账号",
+        loginName: "xhs-user",
+        confirmationChecklist: [
+          {
+            required: true,
+            confirmed: false,
+            label: "Quality Gate",
+            detail: "参考证据：实时研究 2 条、爆款库 1 条。缺失证据 1 个"
+          }
+        ],
+        evidenceCitationSummary: {
+          summary: "参考证据：实时研究 2 条、爆款库 1 条。",
+          missingEvidenceIds: ["missing-image"],
+          warnings: ["图片 Prompt 缺少可追溯证据"],
+          sourceCounts: { realtime: 2, viral_library: 1, user_input: 0 },
+          fieldCounts: { title: 2, content: 2, tags: 1, imagePrompt: 0 }
+        },
+        versionSnapshot: {
+          qualityGateFresh: true,
+          qualityCanPublish: true,
+          finalPostMatchesCanvas: true,
+          warnings: []
+        }
+      },
+      pendingPublish: null,
+      project: project(),
+      activeAccountName: "主账号",
+      activeLoginName: "xhs-user",
+      visibility: "仅自己可见",
+      scheduleAt: "",
+      publishReady: true,
+      citationTraceReady: true,
+      canvasDirty: false,
+      accountReady: true,
+      hasVisualDirection: true,
+      qualityGateFresh: true
+    });
+
+    expect(summary.evidenceLine).toContain("参考证据：实时研究 2 条、爆款库 1 条。");
+    expect(summary.evidenceLine).toContain("实时 2 / 爆款库 1 / 用户输入 0");
+    expect(summary.evidenceLine).toContain("标题 2 / 正文 2 / 标签 1 / 图片Prompt 0");
+    expect(summary.evidenceLine).toContain("缺失 1 / 警告 1");
+    expect(summary.confirmationItems).toEqual([
+      {
+        label: "Quality Gate",
+        confirmed: false,
+        required: true,
+        detail: "参考证据：实时研究 2 条、爆款库 1 条。缺失证据 1 个"
+      }
+    ]);
   });
 
   it("summarizes evidence sources across realtime, viral library and user input", () => {
@@ -344,6 +430,7 @@ describe("publish confirmation summary", () => {
         "缺少发布图片",
         "字段级证据引用未通过",
         "Quality Gate 未通过",
+        "定时时间必须包含明确时区",
         "定时时间必须晚于当前时间"
       ])
     );

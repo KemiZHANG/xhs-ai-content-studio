@@ -305,6 +305,7 @@ export function PostStudioPanel({
         loginName: pendingPublish.loginName,
         mcpUrl: pendingPublish.mcpUrl,
         confirmationChecklist: project?.publishPlan?.confirmationChecklist ?? [],
+        evidenceCitationSummary: project?.publishPlan?.evidenceCitationSummary,
         versionSnapshot: project?.publishPlan?.versionSnapshot
       }
     : !canvasDirty && project?.publishPlan && projectPublishPlanMatchesActiveAccount
@@ -318,6 +319,7 @@ export function PostStudioPanel({
           loginName: health?.activeAccount?.loginName,
           mcpUrl: activeAccount?.mcpUrl ?? settings.mcpUrl,
           confirmationChecklist: project.publishPlan.confirmationChecklist ?? [],
+          evidenceCitationSummary: project.publishPlan.evidenceCitationSummary,
           versionSnapshot: project.publishPlan.versionSnapshot
         }
       : null;
@@ -1706,6 +1708,7 @@ export function PostStudioPanel({
                       <span className={item.confirmed ? "confirmed" : item.required ? "required" : "optional"} key={`${item.label}-${item.required}`}>
                         <b>{item.confirmed ? "已确认" : item.required ? "待确认" : "可选"}</b>
                         {item.label}
+                        {item.detail ? <small>{item.detail}</small> : null}
                       </span>
                     ))}
                   </div>

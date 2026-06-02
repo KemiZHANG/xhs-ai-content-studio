@@ -415,6 +415,13 @@ export type WorkspacePublishPlan = {
     confirmed: boolean;
     detail: string;
   }>;
+  evidenceCitationSummary?: {
+    summary: string;
+    missingEvidenceIds: string[];
+    warnings: string[];
+    sourceCounts: Record<string, number>;
+    fieldCounts: Record<"title" | "content" | "tags" | "imagePrompt", number>;
+  };
   versionSnapshot?: {
     copyVersionId?: string;
     imagePromptVersionIds: string[];

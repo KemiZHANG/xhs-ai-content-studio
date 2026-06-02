@@ -15,6 +15,13 @@ export type PublishConfirmationSummaryPlan = {
     label?: string;
     detail?: string;
   }>;
+  evidenceCitationSummary?: {
+    summary?: string;
+    missingEvidenceIds?: string[];
+    warnings?: string[];
+    sourceCounts?: Record<string, number>;
+    fieldCounts?: Partial<Record<"title" | "content" | "tags" | "imagePrompt", number>>;
+  };
   versionSnapshot?: {
     qualityGateFresh?: boolean;
     qualityCanPublish?: boolean;
@@ -64,6 +71,7 @@ export type PublishConfirmationSummary = {
     label: string;
     confirmed: boolean;
     required: boolean;
+    detail?: string;
   }>;
   visibleBlockers: string[];
   riskLevel: "ok" | "warn" | "blocked";
@@ -93,6 +101,7 @@ export function buildPublishConfirmationSummary({
   const planTags = pendingPublish?.payload.tags ?? activePlan?.tags ?? parseTags(draft.tagsText);
   const quality = project?.qualityCheck;
   const snapshot = activePlan?.versionSnapshot;
+  const evidenceCitationSummary = activePlan?.evidenceCitationSummary;
   const evidenceIds = uniqueStrings([
     ...(project?.finalPost?.basedOnEvidenceIds ?? []),
     ...(project?.copyDraft?.draft.basedOnEvidenceIds ?? []),
@@ -106,7 +115,8 @@ export function buildPublishConfirmationSummary({
     .map((item) => ({
       label: item.label!.trim(),
       confirmed: item.confirmed === true,
-      required: item.required === true
+      required: item.required === true,
+      ...(item.detail?.trim() ? { detail: item.detail.trim() } : {})
     }));
   const confirmedChecklist = requiredChecklist.filter((item) => item.confirmed).length;
   const pendingChecklistLabels = requiredChecklist
@@ -156,13 +166,15 @@ export function buildPublishConfirmationSummary({
       accountLine,
       mcpUrl: pendingPublish?.mcpUrl ?? activePlan?.mcpUrl
     }),
-    timingLine: planScheduleAt ? `${planScheduleAt}（本地时区）` : "确认后立即发布",
+    timingLine: formatTimingLine(planScheduleAt),
     visibilityLine: planVisibility || "未选择",
     contentLine: `标题 ${draft.title.trim().length} 字 / 正文 ${draft.content.trim().length} 字 / 标签 ${planTags.length} 个`,
     imageLine: `${Math.max(selectedImageCount, planImages.length)} 张图片${hasVisualDirection ? "，图片方向已确认" : "，缺图片方向"}`,
-    evidenceLine: citationTraceReady
-      ? `字段级证据可追溯，引用 ${evidenceIds.length} 条证据`
-      : "字段级证据引用还未通过",
+    evidenceLine: formatEvidenceLine({
+      citationTraceReady,
+      evidenceIds,
+      evidenceCitationSummary
+    }),
     evidenceSourceLine: formatEvidenceSourceLine(evidenceSourceCounts),
     versionLine: formatVersionLine(snapshot, Boolean(project?.finalPost)),
     qualityLine: quality
@@ -274,10 +286,31 @@ function buildBlockers({
   if (!qualityGateFresh) blockers.push("最终版本与 Quality Gate 需要重新同步");
   if (!finalPostMatchesCanvas) blockers.push("发布确认单版本快照已失效");
   if (scheduleAt && Number.isNaN(Date.parse(scheduleAt))) blockers.push("定时时间格式无效");
+  if (scheduleAt && !hasExplicitTimezone(scheduleAt)) blockers.push("定时时间必须包含明确时区");
   if (scheduleAt && !Number.isNaN(Date.parse(scheduleAt)) && Date.parse(scheduleAt) <= Date.now()) {
     blockers.push("定时时间必须晚于当前时间");
   }
   return blockers;
+}
+
+function formatTimingLine(scheduleAt?: string): string {
+  if (!scheduleAt) {
+    return "确认后立即发布";
+  }
+  const timezone = extractScheduleTimezone(scheduleAt);
+  return timezone
+    ? `${scheduleAt}（时区 ${timezone}）`
+    : `${scheduleAt}（缺少明确时区；请使用 2026-06-02T20:00:00+08:00 这类格式）`;
+}
+
+function hasExplicitTimezone(scheduleAt: string): boolean {
+  return /[zZ]$|[+-]\d{2}:\d{2}$/.test(scheduleAt.trim());
+}
+
+function extractScheduleTimezone(scheduleAt: string): string | null {
+  const trimmed = scheduleAt.trim();
+  if (/[zZ]$/.test(trimmed)) return "UTC";
+  return trimmed.match(/([+-]\d{2}:\d{2})$/)?.[1] ?? null;
 }
 
 function formatAccountSafetyLine({ accountLine, mcpUrl }: { accountLine: string; mcpUrl?: string }): string {
@@ -292,6 +325,39 @@ function formatEvidenceSourceLine(counts: { realtime: number; viral: number; use
     `用户输入 ${counts.userInput}`
   ];
   return `证据来源：${parts.join(" / ")}`;
+}
+
+function formatEvidenceLine({
+  citationTraceReady,
+  evidenceIds,
+  evidenceCitationSummary
+}: {
+  citationTraceReady: boolean;
+  evidenceIds: string[];
+  evidenceCitationSummary?: PublishConfirmationSummaryPlan["evidenceCitationSummary"];
+}): string {
+  const base = citationTraceReady
+    ? `字段级证据可追溯，引用 ${evidenceIds.length} 条证据`
+    : "字段级证据引用还未通过";
+  if (!evidenceCitationSummary) return base;
+
+  const sourceCounts = evidenceCitationSummary.sourceCounts ?? {};
+  const fieldCounts = evidenceCitationSummary.fieldCounts ?? {};
+  const sourceLine = [
+    `实时 ${Number(sourceCounts.realtime ?? 0)}`,
+    `爆款库 ${Number(sourceCounts.viral_library ?? 0)}`,
+    `用户输入 ${Number(sourceCounts.user_input ?? 0)}`
+  ].join(" / ");
+  const fieldLine = [
+    `标题 ${Number(fieldCounts.title ?? 0)}`,
+    `正文 ${Number(fieldCounts.content ?? 0)}`,
+    `标签 ${Number(fieldCounts.tags ?? 0)}`,
+    `图片Prompt ${Number(fieldCounts.imagePrompt ?? 0)}`
+  ].join(" / ");
+  const missing = evidenceCitationSummary.missingEvidenceIds?.length ?? 0;
+  const warnings = evidenceCitationSummary.warnings?.filter(Boolean).length ?? 0;
+  const summary = evidenceCitationSummary.summary?.trim();
+  return `${base}；${summary ? `${summary}；` : ""}${sourceLine}；${fieldLine}；缺失 ${missing} / 警告 ${warnings}`;
 }
 
 function formatVersionLine(

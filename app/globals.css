@@ -5950,15 +5950,16 @@ textarea {
   align-items: center;
   background: rgba(255, 255, 255, 0.62);
   border: 1px solid rgba(30, 27, 23, 0.08);
-  border-radius: 999px;
+  border-radius: 16px;
   color: var(--ink);
   display: inline-flex;
+  flex-wrap: wrap;
   font-size: 11px;
   gap: 6px;
-  line-height: 1;
+  line-height: 1.25;
   max-width: 100%;
   min-height: 28px;
-  padding: 0 9px;
+  padding: 6px 9px;
 }
 
 .publishConfirmationChips b {
@@ -5979,6 +5980,16 @@ textarea {
 
 .publishConfirmationChips .optional b {
   background: #7c766e;
+}
+
+.publishConfirmationChips small {
+  color: rgba(30, 27, 23, 0.66);
+  flex-basis: 100%;
+  font-size: 10px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .publishSnapshotDetails {
