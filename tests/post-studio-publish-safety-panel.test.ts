@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { PostStudioPublishSafetyPanel } from "@/app/components/post-studio-publish-safety-panel";
@@ -62,14 +63,12 @@ const auditSummary: PublishAuditSafetySummary = {
 
 describe("post studio publish safety panel", () => {
   it("renders publish snapshot, account safety, and audit summary", () => {
-    const html = renderToStaticMarkup(
-      <PostStudioPublishSafetyPanel
-        publishSummary={publishSummary}
-        publishAccountSafety={publishAccountSafety}
-        auditSummary={auditSummary}
-        onNavigate={() => undefined}
-      />
-    );
+    const html = renderToStaticMarkup(createElement(PostStudioPublishSafetyPanel, {
+      publishSummary,
+      publishAccountSafety,
+      auditSummary,
+      onNavigate: () => undefined
+    }));
 
     expect(html).toContain("发布确认单已生成");
     expect(html).toContain("定时发布");
