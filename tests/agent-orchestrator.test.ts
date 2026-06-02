@@ -1117,6 +1117,96 @@ describe("agent orchestrator", () => {
     expect(actions).not.toContain("publish_now");
   });
 
+  it("keeps a vague real Chinese next-step command behind publish confirmation", async () => {
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: {
+        sampleIds: ["note-1"],
+        insights: [{
+          id: "insight-title",
+          sourceType: "realtime",
+          type: "title",
+          insight: "标题先给场景和收益",
+          sourceSampleIds: ["note-1"],
+          confidence: 0.8,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }]
+      },
+      copyDraft: {
+        id: "draft-ready",
+        updatedAt: "2026-05-31T00:00:00.000Z",
+        draft: {
+          title: "广州周末安静咖啡馆",
+          content: "适合坐一下午的真实探店清单。",
+          tags: ["广州咖啡"],
+          structure: [],
+          imagePrompt: "自然光咖啡桌面",
+          basedOnEvidenceIds: ["insight-title"]
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      },
+      finalPost: {
+        title: "广州周末安静咖啡馆",
+        content: "适合坐一下午的真实探店清单。",
+        tags: ["广州咖啡"],
+        imageIds: ["asset-1"],
+        coverImageId: "asset-1",
+        copyVersionId: "copy-draft-ready",
+        imagePromptVersionIds: ["prompt-ready"],
+        basedOnEvidenceIds: ["insight-title"]
+      },
+      selectedImages: ["asset-1"],
+      qualityCheck: {
+        titleScore: 90,
+        copyScore: 90,
+        visualConsistencyScore: 90,
+        platformFitScore: 90,
+        complianceScore: 90,
+        canPublish: true,
+        issues: [],
+        suggestions: [],
+        checkedAt: "2026-05-31T00:00:00.000Z"
+      },
+      currentStage: "reviewing"
+    });
+
+    let publishCalls = 0;
+    const result = await runAgentTurn({
+      message: "下一步",
+      conversationId: "chat-real-chinese-vague-next-step",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => {
+          publishCalls += 1;
+          return { ok: true };
+        }
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      },
+      runChatAgentImpl: vi.fn(async () => ({ answer: "legacy answer" }))
+    });
+
+    const actions = result.quickActions.map((action) => action.action);
+    expect(publishCalls).toBe(0);
+    expect(result.intent).toBe("ask");
+    expect(result.needsUserInput).toBe(true);
+    expect(actions).toContain("search_research");
+    expect(actions).not.toContain("publish_now");
+    expect(actions).not.toContain("schedule_publish");
+    expect(actions).not.toContain("request_publish_confirmation");
+    expect(result.answer).toContain("信息还不够明确");
+  });
+
   it("plans visual direction from the active PostProject before image generation", async () => {
     await resetPostProject({
       topic: "广州咖啡馆",
