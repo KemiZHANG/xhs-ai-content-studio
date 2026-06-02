@@ -133,6 +133,10 @@ API Key 会保存在本地 `data/settings.json`，该目录已被 `.gitignore` �
 - `review_required`：默认安全模式，发布前必须确认。
 - `auto_publish_allowed`：允许更自动化的发布，但仍会经过后端安全检查。
 
+### 验收清单
+
+如果你想确认本地功能是否完整跑通，请参考 [Post Studio 验收清单](docs/post-studio-acceptance.md)。它覆盖从新建 PostProject、真实研究、爆款库 RAG、CreativeBrief、文案、图片、最终帖子、Quality Gate 到发布确认的完整检查步骤。真实发布和定时发布需要你明确授权后再测试。
+
 ### 常用命令
 
 ```powershell
@@ -288,6 +292,10 @@ Policies:
 - `draft_only`: Research, draft, and image generation only.
 - `review_required`: Default safety mode. Publishing requires confirmation.
 - `auto_publish_allowed`: Allows more automation while still passing backend guardrails.
+
+### Acceptance Checklist
+
+To verify that the local workspace is working end to end, follow the [Post Studio acceptance checklist](docs/post-studio-acceptance.md). It covers a clean PostProject, real research, Viral Knowledge RAG, CreativeBrief, copy, images, final post assembly, Quality Gate, and publishing confirmation. Real publishing and scheduled publishing should only be tested after explicit user authorization.
 
 ### Useful Commands
 
