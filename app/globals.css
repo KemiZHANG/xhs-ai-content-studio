@@ -3840,31 +3840,53 @@ textarea {
 }
 
 .studioAccountOptionList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.studioAccountOptionList span {
+.studioAccountOptionList article {
   background: rgba(39, 37, 31, 0.06);
   border: 1px solid rgba(39, 37, 31, 0.08);
-  border-radius: 999px;
+  border-radius: 12px;
   color: var(--muted);
-  font-size: 11px;
-  font-weight: 800;
-  padding: 5px 8px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px;
 }
 
-.studioAccountOptionList span.active {
+.studioAccountOptionList article.active {
   background: rgba(190, 122, 20, 0.11);
   border-color: rgba(190, 122, 20, 0.24);
   color: #8a4b18;
 }
 
-.studioAccountOptionList span.ready {
+.studioAccountOptionList article.ready {
   background: rgba(18, 118, 97, 0.1);
   border-color: rgba(18, 118, 97, 0.2);
   color: var(--accent-strong);
+}
+
+.studioAccountOptionList strong {
+  color: var(--ink);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studioAccountOptionList span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.studioAccountOptionList em {
+  color: inherit;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
 }
 
 .studioAccountSwitchHint {

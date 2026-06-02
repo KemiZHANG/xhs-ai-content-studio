@@ -217,9 +217,11 @@ function StudioStatusCard({
         </div>
         <div className="studioAccountOptionList" aria-label="账号切换状态">
           {statusSummary.accountOptions.slice(0, 3).map((account) => (
-            <span className={account.isReady ? "ready" : account.isActive ? "active" : ""} key={account.id}>
-              {account.detail}
-            </span>
+            <article className={account.isReady ? "ready" : account.isActive ? "active" : ""} key={account.id}>
+              <strong>{account.label}</strong>
+              <span>{account.detail}</span>
+              {account.isActive ? <em>当前使用</em> : <em>可切换</em>}
+            </article>
           ))}
         </div>
         <small className="studioAccountSwitchHint">{statusSummary.accountSwitchHint}</small>

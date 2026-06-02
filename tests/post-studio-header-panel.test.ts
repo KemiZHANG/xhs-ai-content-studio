@@ -98,6 +98,9 @@ describe("post studio header panel", () => {
     expect(html).toContain("发布账号");
     expect(html).toContain("xiaohongshu-mcp");
     expect(html).toContain("切换");
+    expect(html).toContain("当前使用");
+    expect(html).toContain("可切换");
+    expect(html).toContain("备用账号");
     expect(html).toContain("帖子创作流程");
     expect(html).toContain("实时研究");
     expect(html).toContain("图片");
