@@ -500,6 +500,22 @@ describe("viral knowledge base", () => {
     expect(Array.isArray(payload.readiness.blockers)).toBe(true);
   });
 
+  it("returns readable API errors when no research sample can be saved", async () => {
+    const token = await getLocalActionToken();
+    const response = await POST(new Request("http://localhost/api/viral-knowledge", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        [ACTION_TOKEN_HEADER]: token
+      },
+      body: JSON.stringify({})
+    }));
+    const payload = await response.json() as { error: string };
+
+    expect(response.status).toBe(400);
+    expect(payload.error).toContain("缺少可入库的研究样本");
+  });
+
   it("reviews research sample quality before saving to the viral knowledge API", async () => {
     const review = reviewViralSaveCandidate(sample);
 
@@ -547,6 +563,7 @@ describe("viral knowledge base", () => {
     };
 
     expect(rejected.status).toBe(422);
+    expect(rejectedPayload.error).toContain("爆款库入库质量门槛");
     expect(rejectedPayload.candidateReviews[0]).toMatchObject({ sampleId: "weak-note", shouldSave: false });
     expect(rejectedPayload.candidateReviews[0].warnings.length).toBeGreaterThan(0);
     expect(rejectedPayload.skippedSampleIds).toEqual(["weak-note"]);
@@ -567,7 +584,7 @@ describe("viral knowledge base", () => {
       })
     }));
     const forcedPayload = await forced.json() as {
-      cases: Array<{ sourceSampleId: string }>;
+      cases: Array<{ sourceSampleId: string; topic: string; category: string }>;
       candidateReviews: Array<{ sampleId: string; shouldSave: boolean }>;
       skippedSampleIds: string[];
     };
@@ -575,8 +592,52 @@ describe("viral knowledge base", () => {
     expect(forced.status).toBe(200);
     expect(forcedPayload.cases).toHaveLength(1);
     expect(forcedPayload.cases[0].sourceSampleId).toBe("weak-note");
+    expect(forcedPayload.cases[0].topic).toBe("Weak topic");
+    expect(forcedPayload.cases[0].category).toBe("Cafe review");
     expect(forcedPayload.candidateReviews[0].shouldSave).toBe(false);
     expect(forcedPayload.skippedSampleIds).toEqual([]);
+  });
+
+  it("uses readable default topic and category when forced saves omit metadata", async () => {
+    const token = await getLocalActionToken();
+    const weakSample: SampleEvidence = {
+      id: "weak-default-note",
+      title: "Short note",
+      author: "author",
+      likes: 0,
+      collects: 0,
+      comments: 0,
+      shares: 0,
+      score: 0,
+      url: "",
+      imageUrls: [],
+      cachedImageUrls: [],
+      detailText: "",
+      commentSnippets: [],
+      reasonHighlights: []
+    };
+
+    const response = await POST(new Request("http://localhost/api/viral-knowledge", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        [ACTION_TOKEN_HEADER]: token
+      },
+      body: JSON.stringify({
+        sample: weakSample,
+        useModel: false,
+        force: true
+      })
+    }));
+    const payload = await response.json() as {
+      cases: Array<{ topic: string; category: string }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.cases[0]).toMatchObject({
+      topic: "未分类主题",
+      category: "小红书图文"
+    });
   });
 
   it("saves multiple research samples through the API and attaches deduped evidence", async () => {

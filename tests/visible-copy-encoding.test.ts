@@ -8,10 +8,12 @@ const guardedFiles = [
   "app/components/post-next-step-coach.ts",
   "app/components/post-studio-status.ts",
   "app/components/post-studio-panel.tsx",
+  "app/api/viral-knowledge/route.ts",
   "lib/agent/orchestrator.ts",
   "lib/agent/planner.ts",
   "lib/agent/tools/registry.ts",
   "lib/rag/viral.ts",
+  "lib/viral-knowledge/store.ts",
   "lib/post-project/guidance.ts",
   "lib/post-project/readiness.ts"
 ];
