@@ -86,6 +86,7 @@ describe("post studio media tabs", () => {
     expect(html).toContain("图片参考");
     expect(html).toContain("拖入或粘贴产品图");
     expect(html).toContain("上传产品图 / 参考图");
+    expect(html).toContain("素材管理与高级工具");
     expect(html).toContain("管理全部素材");
     expect(html).toContain("最终帖子图片");
   });
@@ -104,6 +105,7 @@ describe("post studio media tabs", () => {
     expect(html).toContain("已生成素材");
     expect(html).toContain("Agent 生成配图");
     expect(html).toContain("生成图文卡片");
+    expect(html).toContain("更多生成参数");
     expect(html).toContain("Prompt prompt-v1");
     expect(html).toContain("证据 1");
   });

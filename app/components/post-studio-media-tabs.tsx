@@ -61,9 +61,15 @@ export function PostStudioReferencesTab({
             }}
           />
         </label>
+      </div>
+      <details className="mediaUtilityDrawer">
+        <summary>
+          <strong>素材管理与高级工具</strong>
+          <span>打开完整素材库或独立图片创作台</span>
+        </summary>
         <button className="secondaryButton fullWidth" onClick={onOpenImageStudio} type="button">高级图片创作台</button>
         <button className="secondaryButton fullWidth" onClick={() => onNavigate("assets")} type="button">管理全部素材</button>
-      </div>
+      </details>
     </MediaSideSection>
   );
 }
@@ -108,8 +114,14 @@ export function PostStudioGeneratedTab({
       <div className="inlineActionGrid">
         <button className="secondaryButton fullWidth" onClick={() => onQuickAction("generate_images")} type="button">Agent 生成配图</button>
         <button className="secondaryButton fullWidth" onClick={() => onQuickAction("generate_cards")} type="button">生成图文卡片</button>
-        <button className="secondaryButton fullWidth" onClick={onOpenImageStudio} type="button">高级图片工具</button>
       </div>
+      <details className="mediaUtilityDrawer">
+        <summary>
+          <strong>更多生成参数</strong>
+          <span>需要批量、尺寸或复杂卡片设置时再打开</span>
+        </summary>
+        <button className="secondaryButton fullWidth" onClick={onOpenImageStudio} type="button">高级图片工具</button>
+      </details>
     </MediaSideSection>
   );
 }

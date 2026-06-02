@@ -4946,6 +4946,44 @@ textarea {
   font-weight: 900;
 }
 
+.mediaUtilityDrawer {
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px dashed var(--line-strong);
+  border-radius: 12px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.mediaUtilityDrawer > summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  list-style: none;
+}
+
+.mediaUtilityDrawer > summary::-webkit-details-marker {
+  display: none;
+}
+
+.mediaUtilityDrawer > summary strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.mediaUtilityDrawer > summary span {
+  color: var(--muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+.mediaUtilityDrawer[open] > summary {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+
 .assetCompressionLine {
   background: rgba(18, 118, 97, 0.06);
   border: 1px solid rgba(18, 118, 97, 0.12);
