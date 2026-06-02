@@ -4,7 +4,6 @@ import type { FormEvent, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
-  ImagePlus,
   Library,
   MessageSquareText,
   Rocket,
@@ -76,6 +75,7 @@ import {
   PostStudioInsightsTab,
   ViralEvidenceDigest
 } from "@/app/components/post-studio-evidence-tabs";
+import { PostStudioGeneratedTab, PostStudioReferencesTab } from "@/app/components/post-studio-media-tabs";
 import { RecentViralPanel, ViralStrategyCard } from "@/app/components/post-studio-viral-panels";
 import { labelForPublishStatus, PostStudioPublishIntentPanel } from "@/app/components/post-studio-publish-intent-panel";
 import { PostStudioPublishReadinessPanel } from "@/app/components/post-studio-publish-readiness-panel";
@@ -1047,130 +1047,29 @@ export function PostStudioPanel({
           ) : null}
 
           {tab === "references" ? (
-            <SideSection icon={ImagePlus} title="图片参考">
-              <StudioTaskSummary summary={referenceTabSummary} onQuickAction={onQuickAction} />
-              <p className="muted">这里主要放产品原图、参考图和当前选中图。默认不铺开全部素材，更多管理在 Assets。</p>
-              <p className="assetCompressionLine">{referenceAssetSummary.compressionLine}</p>
-              <div
-                className="studioReferenceDropzone"
-                onDragOver={(event) => {
-                  if (hasImageFiles(event.dataTransfer.files)) {
-                    event.preventDefault();
-                  }
-                }}
-                onDrop={(event) => {
-                  if (!hasImageFiles(event.dataTransfer.files)) return;
-                  event.preventDefault();
-                  onUploadReferenceFiles(event.dataTransfer.files);
-                }}
-                onPaste={(event) => {
-                  if (!hasImageFiles(event.clipboardData.files)) return;
-                  event.preventDefault();
-                  onUploadReferenceFiles(event.clipboardData.files);
-                }}
-                tabIndex={0}
-              >
-                <ImagePlus size={18} />
-                <span>拖入或粘贴产品图 / 参考图</span>
-              </div>
-              {referenceAssetSummary.previewAssets.length ? (
-                <div className="studioAssetGrid selectable">
-                  {referenceAssetSummary.previewAssets.map((asset) => {
-                    const selected = publishAssetIds.includes(asset.id);
-                    return (
-                      <button
-                        className={selected ? "studioAssetPick selected" : "studioAssetPick"}
-                        key={asset.id}
-                        type="button"
-                        onClick={() =>
-                          onSelectPostImages(
-                            selected
-                              ? publishAssetIds.filter((id) => id !== asset.id)
-                              : [...publishAssetIds, asset.id]
-                          )
-                        }
-                      >
-                        <img alt={asset.name} src={`/api/assets/file/${asset.id}`} />
-                        <span>{selected ? "已选" : "参考图"}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="muted">还没有产品图或参考图。可以直接在这里上传，也可以让 Agent 先生成图片方向。</p>
-              )}
-              {project?.finalPost?.imageIds.length ? (
-                <p className="muted">最终帖子图片：{project.finalPost.imageIds.slice(0, 4).join(" / ")}</p>
-              ) : null}
-              <div className="inlineActionGrid">
-                <label className="secondaryButton fullWidth studioInlineUpload">
-                  上传产品图 / 参考图
-                  <input
-                    accept="image/*"
-                    multiple
-                    type="file"
-                    onChange={(event) => {
-                      if (event.target.files?.length) {
-                        onUploadReferenceFiles(event.target.files);
-                        event.target.value = "";
-                      }
-                    }}
-                  />
-                </label>
-                <button className="secondaryButton fullWidth" onClick={onOpenImageStudio} type="button">高级图片创作台</button>
-                <button className="secondaryButton fullWidth" onClick={() => onNavigate("assets")} type="button">管理全部素材</button>
-              </div>
-            </SideSection>
+            <PostStudioReferencesTab
+              assetSummary={referenceAssetSummary}
+              onNavigate={onNavigate}
+              onOpenImageStudio={onOpenImageStudio}
+              onQuickAction={onQuickAction}
+              onSelectPostImages={onSelectPostImages}
+              onUploadReferenceFiles={onUploadReferenceFiles}
+              project={project}
+              publishAssetIds={publishAssetIds}
+              summary={referenceTabSummary}
+            />
           ) : null}
 
           {tab === "generated" ? (
-            <SideSection icon={ImagePlus} title="已生成素材">
-              <StudioTaskSummary summary={generatedTabSummary} onQuickAction={onQuickAction} />
-              <div className={`assetPanelSummary ${generatedAssetSummary.state}`}>
-                <strong>{generatedAssetSummary.headline}</strong>
-                <p>{generatedAssetSummary.detail}</p>
-                <small>{generatedAssetSummary.compressionLine}</small>
-                <span>{generatedAssetSummary.actionHint}</span>
-              </div>
-              {generatedAssetSummary.previewAssets.length ? (
-                <div className="studioAssetGrid selectable">
-                  {generatedAssetSummary.previewAssets.map((asset) => {
-                    const selected = publishAssetIds.includes(asset.id);
-                    const projectImage = project?.generatedImages.find((image) => (image.assetId ?? image.id) === asset.id);
-                    return (
-                      <button
-                        className={selected ? "studioAssetPick selected" : "studioAssetPick"}
-                        key={asset.id}
-                        type="button"
-                        onClick={() =>
-                          onSelectPostImages(
-                            selected
-                              ? publishAssetIds.filter((id) => id !== asset.id)
-                              : [...publishAssetIds, asset.id]
-                          )
-                        }
-                      >
-                        <img alt={asset.name} src={`/api/assets/file/${asset.id}`} />
-                        <span>{selected ? "已选" : "生成图"}</span>
-                        {projectImage?.promptVersionId || projectImage?.basedOnEvidenceIds?.length ? (
-                          <small>
-                            {projectImage.promptVersionId ? `Prompt ${projectImage.promptVersionId}` : "Prompt 待绑定"}
-                            {projectImage.basedOnEvidenceIds?.length ? ` · 证据 ${projectImage.basedOnEvidenceIds.length}` : ""}
-                          </small>
-                        ) : null}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="muted">可以让 Agent 在当前项目里生成配图；需要更多参数时再打开高级图片工具。</p>
-              )}
-              <div className="inlineActionGrid">
-                <button className="secondaryButton fullWidth" onClick={() => onQuickAction("generate_images")} type="button">Agent 生成配图</button>
-                <button className="secondaryButton fullWidth" onClick={() => onQuickAction("generate_cards")} type="button">生成图文卡片</button>
-                <button className="secondaryButton fullWidth" onClick={onOpenImageStudio} type="button">高级图片工具</button>
-              </div>
-            </SideSection>
+            <PostStudioGeneratedTab
+              assetSummary={generatedAssetSummary}
+              onOpenImageStudio={onOpenImageStudio}
+              onQuickAction={onQuickAction}
+              onSelectPostImages={onSelectPostImages}
+              project={project}
+              publishAssetIds={publishAssetIds}
+              summary={generatedTabSummary}
+            />
           ) : null}
 
           {tab === "publish" ? (
@@ -1295,10 +1194,6 @@ export function PostStudioPanel({
       ) : null}
     </div>
   );
-}
-
-function hasImageFiles(files: FileList | File[]): boolean {
-  return Array.from(files).some((file) => file.type.startsWith("image/"));
 }
 
 function uniqueStringList(values: string[]): string[] {
