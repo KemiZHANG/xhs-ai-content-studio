@@ -2,6 +2,65 @@ import { describe, expect, it } from "vitest";
 import { createAgentPlan } from "@/lib/agent/planner";
 
 describe("agent planner", () => {
+  it("understands real Chinese research-to-draft requests", () => {
+    const plan = createAgentPlan({
+      message: "帮我找最近一周广州咖啡馆高收藏笔记，分析标题和图片风格，再生成一篇适合探店账号的图文笔记",
+      hasCurrentDraft: false,
+      attachedAssetCount: 0
+    });
+
+    expect(plan.intent).toBe("research_to_draft");
+    expect(plan.steps.map((step) => step.action)).toEqual([
+      "research",
+      "retrieveViralKnowledge",
+      "summarizeEvidence",
+      "createCreativeBrief",
+      "generateDraft",
+      "planVisuals"
+    ]);
+    expect(plan.topic).toContain("广州咖啡馆");
+    expect(plan.timeRange).toBe("一周内");
+    expect(plan.ragFilters?.sortBy).toBe("collects");
+  });
+
+  it("understands real Chinese project reset, image selection, and scheduling language", () => {
+    const reset = createAgentPlan({
+      message: "新建一个帖子项目，主题是通勤包",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      postStage: "copy_ready"
+    });
+    const schedule = createAgentPlan({
+      message: "就用第二张图，今晚 8 点发",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      hasSelectedImages: true,
+      postStage: "image_ready"
+    });
+
+    expect(reset.intent).toBe("start_project");
+    expect(reset.topic).toBe("通勤包");
+    expect(schedule.intent).toBe("schedule_publish");
+    expect(schedule.selectedImageIndex).toBe(2);
+    expect(schedule.scheduleText).toContain("今晚 8 点");
+  });
+
+  it("asks for clarification for real Chinese vague commands near publishing", () => {
+    const plan = createAgentPlan({
+      message: "下一步",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      postStage: "reviewing",
+      hasEvidence: true,
+      hasCreativeBrief: true,
+      hasSelectedImages: true
+    });
+
+    expect(plan.intent).toBe("ask");
+    expect(plan.steps.map((step) => step.action)).toEqual(["askClarifyingQuestion"]);
+    expect(plan.steps[0].reason).toContain("close to publishing");
+  });
+
   it("plans a clean project reset when the user starts a new post project", () => {
     const plan = createAgentPlan({
       message: "新建一个帖子项目，主题是通勤包，目标人群是上班族，内容目标是生成真实通勤分享",
