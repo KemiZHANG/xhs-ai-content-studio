@@ -191,6 +191,52 @@ const citationReport: EvidenceCitationReport = {
 };
 
 describe("post canvas panel", () => {
+  it("shows a compact starter guide before copy and images exist", () => {
+    const emptyDraft: PublishDraftState = {
+      title: "",
+      content: "",
+      tagsText: "",
+      imagePrompt: ""
+    };
+    const html = renderToStaticMarkup(createElement(PostCanvasPanel, {
+      canGenerateCopy: false,
+      generatedCopyPrompt: "生成探店文案",
+      creationProvenance: [],
+      canvasVersionDisplay: {
+        tone: "neutral",
+        label: "待生成",
+        detail: "等待文案和图片。",
+        changedLabels: [],
+        lanes: []
+      },
+      canvasDirty: false,
+      selectedAssets: [],
+      copyVersions: [],
+      copyVersionGuidance: { state: "empty", label: "待生成", detail: "暂无版本" },
+      publishDraft: emptyDraft,
+      latestImagePrompt: "",
+      project: null,
+      imagePromptVersions: [],
+      promptVersionGuidance: { state: "empty", label: "待生成", detail: "暂无 Prompt" },
+      versionStatus: null,
+      versionDiff: null,
+      citationReport: null,
+      onGenerateCopy: () => undefined,
+      onOpenEvidence: () => undefined,
+      onDraftChange: () => undefined,
+      onSelectCopyVersion: () => undefined,
+      onSelectImagePromptVersion: () => undefined,
+      onQuickAction: () => undefined,
+      onCommitCanvas: () => undefined
+    }));
+
+    expect(html).toContain("Post Canvas 起步引导");
+    expect(html).toContain("空画布");
+    expect(html).toContain("先让 Agent 建立证据");
+    expect(html).toContain("搜索真实笔记");
+    expect(html).toContain("选择图片");
+  });
+
   it("renders a readable unified copy, image, version, final post, and evidence canvas", () => {
     const html = renderToStaticMarkup(createElement(PostCanvasPanel, {
       canGenerateCopy: true,

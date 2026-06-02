@@ -65,6 +65,9 @@ export function PostCanvasPanel({
   onQuickAction: (action: string) => void;
   onCommitCanvas: () => void;
 }) {
+  const hasDraftContent = Boolean(publishDraft.title.trim() || publishDraft.content.trim() || publishDraft.tagsText.trim());
+  const showCanvasStarter = !hasDraftContent && !selectedAssets.length;
+
   return (
     <section className="panel postCanvasPane">
       <div className="panelHeader compact">
@@ -77,6 +80,14 @@ export function PostCanvasPanel({
           生成文案
         </button>
       </div>
+
+      {showCanvasStarter ? (
+        <CanvasStarterGuide
+          canGenerateCopy={canGenerateCopy}
+          onGenerateCopy={() => onGenerateCopy(generatedCopyPrompt)}
+          onQuickAction={onQuickAction}
+        />
+      ) : null}
 
       <CreationProvenanceStrip cards={creationProvenance} onOpenEvidence={onOpenEvidence} />
       <CanvasEvidenceBridge project={project} citationReport={citationReport} />
@@ -123,6 +134,31 @@ export function PostCanvasPanel({
         onCommitCanvas={onCommitCanvas}
         onQuickAction={onQuickAction}
       />
+    </section>
+  );
+}
+
+function CanvasStarterGuide({
+  canGenerateCopy,
+  onGenerateCopy,
+  onQuickAction
+}: {
+  canGenerateCopy: boolean;
+  onGenerateCopy: () => void;
+  onQuickAction: (action: string) => void;
+}) {
+  return (
+    <section className="canvasStarterGuide" aria-label="Post Canvas 起步引导">
+      <div>
+        <span>空画布</span>
+        <strong>先让 Agent 建立证据，再把文案和图片放到同一篇帖子里</strong>
+        <p>这里最终只负责承载标题、正文、标签、图片和发布预览；研究和生成动作会同步写回当前 PostProject。</p>
+      </div>
+      <div>
+        <button type="button" onClick={() => onQuickAction("search_research")}>搜索真实笔记</button>
+        <button disabled={!canGenerateCopy} type="button" onClick={onGenerateCopy}>生成文案</button>
+        <button type="button" onClick={() => onQuickAction("select_images")}>选择图片</button>
+      </div>
     </section>
   );
 }

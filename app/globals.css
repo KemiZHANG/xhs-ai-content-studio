@@ -5360,6 +5360,66 @@ textarea {
   white-space: nowrap;
 }
 
+.canvasStarterGuide {
+  align-items: center;
+  background:
+    linear-gradient(135deg, rgba(18, 118, 97, 0.08), rgba(255, 255, 255, 0.78)),
+    var(--surface-subtle);
+  border: 1px solid rgba(18, 118, 97, 0.16);
+  border-radius: 14px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 12px;
+}
+
+.canvasStarterGuide span {
+  color: var(--accent-strong);
+  display: block;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.canvasStarterGuide strong {
+  color: var(--ink);
+  display: block;
+  font-size: 14px;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.canvasStarterGuide p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 3px 0 0;
+}
+
+.canvasStarterGuide > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.canvasStarterGuide button {
+  background: rgba(18, 118, 97, 0.08);
+  border: 1px solid rgba(18, 118, 97, 0.16);
+  border-radius: 999px;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+  min-height: 32px;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.canvasStarterGuide button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .postPreviewShell {
   display: grid;
   gap: 16px;
