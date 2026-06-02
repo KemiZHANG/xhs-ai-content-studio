@@ -3,7 +3,6 @@
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Bot,
   CheckCircle2,
   FileText,
   ImagePlus,
@@ -12,7 +11,6 @@ import {
   Rocket,
   Search,
   Send,
-  ShieldCheck,
   Sparkles
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -38,11 +36,11 @@ import { getOrderedPostNextActions, getPostStageGuidance } from "@/lib/post-proj
 import { buildEvidenceCitationReport, buildEvidenceReferenceSummary } from "@/lib/post-project/citations";
 import { activeAccountReadinessHint, isHealthForActiveAccount } from "@/app/components/account-readiness";
 import { isPublishPlanForActiveAccount } from "@/app/components/publish-confirmation";
-import { citationFieldBadges, formatCitationStripSummary } from "@/app/components/evidence-citation-display";
 import { isHighPriorityAgentCard, pickVisibleAgentCards } from "@/app/components/agent-card-visibility";
 import { buildAgentMessageDisplay } from "@/app/components/agent-message-display";
 import { buildAgentTraceSummary } from "@/app/components/agent-trace-summary";
 import { extractStageGuidanceDisplay } from "@/app/components/agent-stage-guidance";
+import { PostCanvasPanel } from "@/app/components/post-canvas-panel";
 import { extractAgentDirectorSummaryDisplay } from "@/app/components/agent-director-summary-display";
 import { extractAgentCreationProvenanceDisplay } from "@/app/components/agent-creation-provenance-display";
 import { selectStudioChatWindow } from "@/app/components/studio-chat-window";
@@ -68,7 +66,7 @@ import { buildPostFlowSummary } from "@/app/components/post-flow-summary";
 import { buildPostSideDigest } from "@/app/components/post-side-digest";
 import { buildStudioTabGroups } from "@/app/components/studio-tab-groups";
 import { selectRunningJobForWorkspace } from "@/app/components/job-display";
-import { buildCreationProvenance, type CreationProvenanceCard } from "@/app/components/creation-provenance";
+import { buildCreationProvenance } from "@/app/components/creation-provenance";
 import { buildBriefTabSummary, buildImageTabSummary, buildPublishTabSummary, type StudioTabSummary } from "@/app/components/studio-tab-summary";
 import { EvidenceCatalogDrawer, EvidenceDrawer, ViralCaseDrawer } from "@/app/components/post-studio-drawers";
 import { PostStudioHeaderPanel } from "@/app/components/post-studio-header-panel";
@@ -638,236 +636,31 @@ export function PostStudioPanel({
           </form>
         </section>
 
-        <section className="panel postCanvasPane">
-          <div className="panelHeader compact">
-            <div>
-              <h2>Post Canvas</h2>
-              <p>最终帖子画布。标题、正文、标签、图片和预览在这里合并。</p>
-            </div>
-            <button className="secondaryButton" disabled={!canGenerateCopy} onClick={() => onGenerateCopy(generatedCopyPrompt)} type="button">
-              <Bot size={16} />
-              生成文案
-            </button>
-          </div>
-          <CreationProvenanceStrip cards={creationProvenance} onOpenEvidence={() => setTab("insights")} />
-          <section className={`canvasVersionSummary ${canvasVersionDisplay.tone}`} aria-label="画布版本同步摘要">
-            <div>
-              <span>版本同步</span>
-              <strong>{canvasDirty ? "画布有未保存修改" : canvasVersionDisplay.label}</strong>
-              <p>{canvasDirty ? "请先保存画布，再组装最终稿或运行发布检查。" : canvasVersionDisplay.detail}</p>
-            </div>
-            <div className="canvasVersionLanes">
-              {canvasVersionDisplay.lanes.map((lane) => (
-                <span className={lane.state} key={lane.id}>
-                  <small>{lane.label}</small>
-                  {lane.value}
-                </span>
-              ))}
-            </div>
-          </section>
-
-          <div className="postPreviewShell">
-            <div className="postPreviewMediaColumn">
-              <div className="postCoverPreview">
-                {selectedAssets[0] ? (
-                  <img alt={selectedAssets[0].name} src={`/api/assets/file/${selectedAssets[0].id}`} />
-                ) : (
-                  <div>
-                    <ImagePlus size={28} />
-                    <span>封面待选择</span>
-                  </div>
-                )}
-              </div>
-              <section className={selectedAssets.length ? "selectedPostImages ready" : "selectedPostImages empty"} aria-label="已选择发布图片">
-                <div>
-                  <strong>{selectedAssets.length ? `已选 ${selectedAssets.length} 张发布图片` : "发布图片未选择"}</strong>
-                  <span>{selectedAssets.length ? "这些图片已同步到当前 PostProject，会进入发布装配与安全检查。" : "在参考图或生成素材里点选图片，或让 Agent 先生成配图。"}</span>
-                </div>
-                {selectedAssets.length ? (
-                  <div className="selectedPostImageThumbs">
-                    {selectedAssets.slice(0, 4).map((asset) => (
-                      <img alt={asset.name} key={asset.id} src={`/api/assets/file/${asset.id}`} />
-                    ))}
-                    {selectedAssets.length > 4 ? <span>+{selectedAssets.length - 4}</span> : null}
-                  </div>
-                ) : null}
-              </section>
-            </div>
-            <div className="postEditStack">
-              {copyVersions.length ? (
-                <section className="versionSwitcher" aria-label="文案版本">
-                  <div>
-                    <strong>文案版本</strong>
-                    <span>{copyVersionGuidance.detail}</span>
-                  </div>
-                  <div>
-                    {copyVersions.slice(-4).map((version, index) => (
-                      <article className="versionCard" key={version.id}>
-                        <div>
-                          <strong>{version.value.title || version.label || `版本 ${index + 1}`}</strong>
-                          <span>{formatDateTime(version.createdAt)} · 证据 {version.basedOnEvidenceIds.length}</span>
-                        </div>
-                        <p>{summarizeDraftDiff(publishDraft, version.value)}</p>
-                        <small className={`versionSwitchHint ${copyVersionGuidance.state}`}>{copyVersionGuidance.label}</small>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onDraftChange({
-                              title: version.value.title,
-                              content: version.value.content,
-                              tagsText: version.value.tags.map((tag) => `#${tag}`).join(" "),
-                              imagePrompt: version.value.imagePrompt || publishDraft.imagePrompt
-                            });
-                            onSelectCopyVersion(version.id);
-                          }}
-                        >
-                          回滚到此版本
-                        </button>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              ) : null}
-              <label>
-                <span>标题</span>
-                <input value={publishDraft.title} onChange={(event) => onDraftChange({ ...publishDraft, title: event.target.value })} placeholder="生成或手动填写标题" />
-              </label>
-              <label>
-                <span>正文</span>
-                <textarea value={publishDraft.content} onChange={(event) => onDraftChange({ ...publishDraft, content: event.target.value })} placeholder="正文会从 Agent 草稿同步过来，也可以直接编辑。" />
-              </label>
-              <label>
-                <span>标签</span>
-                <input value={publishDraft.tagsText} onChange={(event) => onDraftChange({ ...publishDraft, tagsText: event.target.value })} placeholder="#小红书 #探店" />
-              </label>
-              <label>
-                <span>图片方向 / Prompt</span>
-                <textarea
-                  value={latestImagePrompt}
-                  onChange={(event) => onDraftChange({ ...publishDraft, imagePrompt: event.target.value })}
-                  placeholder="文案和图片共享 CreativeBrief，图片方向会沉淀在这里。"
-                />
-              </label>
-              {project?.visualDirection ? (
-                <section className={project.visualDirection.confirmedAt || project.visualDirection.confirmationStatus === "confirmed" ? "versionIntegrity ok" : "versionIntegrity warn"} aria-label="图片方向确认状态">
-                  <strong>{project.visualDirection.confirmedAt || project.visualDirection.confirmationStatus === "confirmed" ? "图片方向已确认" : "图片方向待确认"}</strong>
-                  <p>
-                    {project.visualDirection.mood} · {project.visualDirection.composition}
-                  </p>
-                  {project.visualDirection.confirmedAt ? <small>确认时间：{formatDateTime(project.visualDirection.confirmedAt)}</small> : null}
-                  {!(project.visualDirection.confirmedAt || project.visualDirection.confirmationStatus === "confirmed") ? (
-                    <button className="secondaryButton compactButton" type="button" onClick={() => onQuickAction("confirm_visual_direction")}>
-                      确认图片方向
-                    </button>
-                  ) : null}
-                </section>
-              ) : null}
-              {imagePromptVersions.length ? (
-                <section className="versionSwitcher compactVersionSwitcher" aria-label="图片 Prompt 版本">
-                  <div>
-                    <strong>Prompt 版本</strong>
-                    <span>{promptVersionGuidance.detail}</span>
-                  </div>
-                  <div>
-                    {imagePromptVersions.slice(-3).map((version, index) => (
-                      <article className="versionCard promptVersionCard" key={version.id}>
-                        <div>
-                          <strong>{version.label || `Prompt ${index + 1}`}</strong>
-                          <span>{formatDateTime(version.createdAt)} · 证据 {version.basedOnEvidenceIds.length}</span>
-                        </div>
-                        <p>{summarizePromptDiff(latestImagePrompt, version.value.prompt)}</p>
-                        <small className={`versionSwitchHint ${promptVersionGuidance.state}`}>{promptVersionGuidance.label}</small>
-                        {version.value.negativePrompt ? <small>避免：{version.value.negativePrompt.slice(0, 90)}</small> : null}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onDraftChange({ ...publishDraft, imagePrompt: version.value.prompt });
-                            onSelectImagePromptVersion(version.id);
-                          }}
-                        >
-                          使用此 Prompt
-                        </button>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              ) : null}
-              {project?.finalPost ? (
-                <section className="finalPostSnapshot" aria-label="最终帖子快照">
-                  <strong>最终帖子快照</strong>
-                  <div>
-                    <span>文案版本：{project.finalPost.copyVersionId ?? "当前画布"}</span>
-                    <span>图片：{project.finalPost.imageIds.length} 张</span>
-                    <span>Prompt：{project.finalPost.imagePromptVersionIds.length} 个</span>
-                    <span>证据：{project.finalPost.basedOnEvidenceIds?.length ?? 0} 条</span>
-                  </div>
-                </section>
-              ) : null}
-              {versionStatus ? (
-                <section className={versionStatus.qualityGateFresh ? "versionIntegrity ok" : "versionIntegrity warn"} aria-label="版本与发布检查状态">
-                  <strong>{canvasDirty ? "画布有未保存修改" : versionStatus.qualityGateFresh ? "版本已确认" : "版本需要复核"}</strong>
-                  <p>{canvasDirty ? "请先保存画布到当前 PostProject，再运行发布检查，避免误用旧草稿或旧图片。" : versionStatus.summary}</p>
-                  {versionDiff?.hasChanges ? (
-                    <div className="versionDiffList" aria-label="版本差异">
-                      {versionDiff.changes
-                        .filter((change) => change.changed)
-                        .slice(0, 3)
-                        .map((change) => (
-                          <small key={change.field}>
-                            {change.label}：{change.beforeSummary} → {change.afterSummary}
-                          </small>
-                        ))}
-                    </div>
-                  ) : null}
-                  <div>
-                    <span>文案：{versionStatus.activeCopyVersionId ?? "待生成"}</span>
-                    <span>Prompt：{versionStatus.activeImagePromptVersionIds.length || 0} 个</span>
-                  </div>
-                  {versionStatus.warnings.slice(0, 3).map((warning) => (
-                    <small key={warning}>{warning}</small>
-                  ))}
-                </section>
-              ) : null}
-              {citationReport?.allEvidenceIds.length ? (
-                <section className="evidenceReferenceStrip" aria-label="文案证据引用">
-                  <strong>证据引用</strong>
-                  <span>{formatCitationStripSummary(citationReport)}</span>
-                  <div className="citationBadgeRow">
-                    {citationFieldBadges(citationReport).map((badge) => (
-                      <em className={badge.status} key={badge.label}>
-                        {badge.label} {badge.count}
-                      </em>
-                    ))}
-                  </div>
-                  {citationReport.warnings.length ? <small>{citationReport.warnings[0]}</small> : null}
-                </section>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="canvasActionRow">
-            <button className={canvasDirty ? "primaryButton" : "secondaryButton"} disabled={!publishDraft.title && !publishDraft.content} onClick={onCommitCanvas} type="button">
-              <FileText size={16} />
-              {canvasDirty ? "保存画布" : "画布已同步"}
-            </button>
-            <button className="secondaryButton" onClick={() => onQuickAction("plan_visuals")} type="button">
-              <Sparkles size={16} />
-              规划图片方向
-            </button>
-            <button className="secondaryButton" onClick={() => onQuickAction("generate_images")} type="button">
-              <ImagePlus size={16} />
-              Agent 生图
-            </button>
-            <button className="secondaryButton" onClick={() => onQuickAction("generate_cards")} disabled={!publishDraft.title || !publishDraft.content} type="button">
-              <ImagePlus size={16} />
-              生成图文卡片
-            </button>
-            <button className="primaryButton" onClick={() => onQuickAction("run_quality_gate")} disabled={!publishDraft.title || !publishDraft.content || canvasDirty} type="button">
-              <ShieldCheck size={16} />
-              {canvasDirty ? "先保存再检查" : "发布检查"}
-            </button>
-          </div>
-        </section>
+        <PostCanvasPanel
+          canGenerateCopy={canGenerateCopy}
+          generatedCopyPrompt={generatedCopyPrompt}
+          creationProvenance={creationProvenance}
+          canvasVersionDisplay={canvasVersionDisplay}
+          canvasDirty={canvasDirty}
+          selectedAssets={selectedAssets}
+          copyVersions={copyVersions}
+          copyVersionGuidance={copyVersionGuidance}
+          publishDraft={publishDraft}
+          latestImagePrompt={latestImagePrompt}
+          project={project}
+          imagePromptVersions={imagePromptVersions}
+          promptVersionGuidance={promptVersionGuidance}
+          versionStatus={versionStatus}
+          versionDiff={versionDiff}
+          citationReport={citationReport}
+          onGenerateCopy={onGenerateCopy}
+          onOpenEvidence={() => setTab("insights")}
+          onDraftChange={onDraftChange}
+          onSelectCopyVersion={onSelectCopyVersion}
+          onSelectImagePromptVersion={onSelectImagePromptVersion}
+          onQuickAction={onQuickAction}
+          onCommitCanvas={onCommitCanvas}
+        />
 
         <aside className="panel studioSidePane">
           <div className="studioSideDigest">
@@ -1872,42 +1665,6 @@ function AgentCardInlineDetails({
   );
 }
 
-function CreationProvenanceStrip({
-  cards,
-  onOpenEvidence
-}: {
-  cards: CreationProvenanceCard[];
-  onOpenEvidence: () => void;
-}) {
-  return (
-    <section className="creationProvenanceStrip" aria-label="创作证据追溯">
-      <div className="creationProvenanceHeader">
-        <div>
-          <span>为什么这样创作</span>
-          <strong>Brief、文案和图片方向都要能追溯到 evidencePack</strong>
-        </div>
-        <button className="textButton" type="button" onClick={onOpenEvidence}>
-          查看证据
-        </button>
-      </div>
-      <div className="creationProvenanceGrid">
-        {cards.map((card) => (
-          <article className={`creationProvenanceCard ${card.state}`} key={card.id}>
-            <span>{card.label}</span>
-            <strong>{card.headline}</strong>
-            <p>{card.detail}</p>
-            {card.safetyLine ? <p className="creationProvenanceSafety">{card.safetyLine}</p> : null}
-            <small>
-              {card.sourceLine} · 证据 {card.evidenceCount}
-              {card.missingCount ? ` · 待补 ${card.missingCount}` : ""}
-            </small>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function AgentIntentBadge({
   intent,
   confidence,
@@ -2440,42 +2197,6 @@ function hasTraceableVisualDirection(project: PostProject | null): boolean {
 
 function isSampleEvidence(value: unknown): value is SampleEvidence {
   return Boolean(value) && typeof value === "object" && typeof (value as { id?: unknown }).id === "string" && typeof (value as { title?: unknown }).title === "string";
-}
-
-function summarizeDraftDiff(current: PublishDraftState, version: NonNullable<WorkflowResult["draft"]>): string {
-  const changes = [];
-  if (current.title.trim() && current.title.trim() !== version.title.trim()) changes.push("标题不同");
-  const currentLength = current.content.trim().length;
-  const nextLength = version.content.trim().length;
-  if (currentLength && currentLength !== nextLength) changes.push(`正文 ${nextLength - currentLength > 0 ? "+" : ""}${nextLength - currentLength} 字`);
-  const currentTags = parseTags(current.tagsText).join("|");
-  const versionTags = version.tags.join("|");
-  if (currentTags && currentTags !== versionTags) changes.push("标签不同");
-  return changes.length ? changes.join(" · ") : "当前画布一致";
-}
-
-function summarizePromptDiff(currentPrompt: string, nextPrompt: string): string {
-  const current = currentPrompt.trim();
-  const next = nextPrompt.trim();
-  if (!current) return next ? `将填入 ${next.length} 字图片 Prompt` : "Prompt 为空";
-  if (current === next) return "当前 Prompt 一致";
-  const delta = next.length - current.length;
-  return `Prompt ${delta > 0 ? "+" : ""}${delta} 字 · ${next.slice(0, 58)}${next.length > 58 ? "..." : ""}`;
-}
-
-function formatDateTime(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("zh-CN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
-
-function parseTags(value: string): string[] {
-  return value.split(/[\s#，,、]+/).map((item) => item.trim()).filter(Boolean);
 }
 
 function uniqueAssets(assets: AssetRecord[]): AssetRecord[] {
