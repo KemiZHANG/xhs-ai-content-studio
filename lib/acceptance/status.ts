@@ -5,6 +5,13 @@ export type AcceptanceCoverageItem = {
   evidence: string[];
 };
 
+export type AcceptanceEvidenceField = {
+  key: string;
+  label: string;
+  example: string;
+  required: boolean;
+};
+
 export type AcceptanceExternalGate = {
   id: "real_publish" | "scheduled_publish" | "multi_account_switching" | "large_scale_image_generation";
   label: string;
@@ -13,6 +20,7 @@ export type AcceptanceExternalGate = {
   firstSafeStep: string;
   proofRequired: string;
   checklist: string[];
+  evidenceFields: AcceptanceEvidenceField[];
   canBeAutomated: boolean;
 };
 
@@ -90,6 +98,13 @@ const manualGates: AcceptanceExternalGate[] = [
       "Verify the note appears in the active Xiaohongshu account.",
       "Verify Publish History records a published receipt with account, MCP URL, visibility, image count, and idempotency key."
     ],
+    evidenceFields: [
+      { key: "accountName", label: "Account name", example: "咖啡探店号", required: true },
+      { key: "mcpUrl", label: "MCP URL", example: "http://localhost:18060/mcp", required: true },
+      { key: "visibility", label: "Visibility", example: "仅自己可见", required: true },
+      { key: "publishReceipt", label: "Publish receipt", example: "published receipt id or MCP response summary", required: true },
+      { key: "xhsProof", label: "Xiaohongshu proof", example: "private note visible in the selected account", required: true }
+    ],
     canBeAutomated: false
   },
   {
@@ -105,6 +120,13 @@ const manualGates: AcceptanceExternalGate[] = [
       "Manually confirm only after the schedule time, account, visibility, title, copy, tags, images, and Quality Gate match.",
       "Verify Xiaohongshu or the MCP response shows a future scheduled task.",
       "Verify Publish History records a scheduled receipt with schedule time, timezone, account, MCP URL, and idempotency key."
+    ],
+    evidenceFields: [
+      { key: "accountName", label: "Account name", example: "咖啡探店号", required: true },
+      { key: "mcpUrl", label: "MCP URL", example: "http://localhost:18060/mcp", required: true },
+      { key: "scheduledAt", label: "Scheduled time", example: "2026-06-03 20:00 Asia/Shanghai", required: true },
+      { key: "scheduleReceipt", label: "Schedule receipt", example: "scheduled receipt id or MCP response summary", required: true },
+      { key: "futureTaskProof", label: "Future task proof", example: "future scheduled task appears in account or MCP response", required: true }
     ],
     canBeAutomated: false
   },
@@ -123,6 +145,13 @@ const manualGates: AcceptanceExternalGate[] = [
       "Verify the old publish confirmation is invalidated and a new confirmation is required.",
       "Verify audit or Publish History records the correct account ID when available and MCP URL for each account-specific action."
     ],
+    evidenceFields: [
+      { key: "accountA", label: "Account A", example: "display name + account id if available", required: true },
+      { key: "accountAMcpUrl", label: "Account A MCP URL", example: "http://localhost:18060/mcp", required: true },
+      { key: "accountB", label: "Account B", example: "display name + account id if available", required: true },
+      { key: "accountBMcpUrl", label: "Account B MCP URL", example: "http://localhost:18061/mcp", required: true },
+      { key: "confirmationInvalidation", label: "Confirmation invalidation", example: "old confirmation expired after switching accounts", required: true }
+    ],
     canBeAutomated: false
   },
   {
@@ -138,6 +167,13 @@ const manualGates: AcceptanceExternalGate[] = [
       "Verify generated images are saved as assets and can be selected in Post Studio.",
       "Verify failed image calls do not retry indefinitely.",
       "Verify cost and usage expectations before running a larger batch."
+    ],
+    evidenceFields: [
+      { key: "imageModel", label: "Image model", example: "gemini-2.5-flash-image", required: true },
+      { key: "batchSize", label: "Batch size", example: "3", required: true },
+      { key: "assetIds", label: "Generated asset IDs", example: "asset_001, asset_002", required: true },
+      { key: "retryBehavior", label: "Retry behavior", example: "failed calls stop within configured retry limit", required: true },
+      { key: "costLimit", label: "Cost or quota check", example: "dailyImageCallLimit respected", required: true }
     ],
     canBeAutomated: false
   }

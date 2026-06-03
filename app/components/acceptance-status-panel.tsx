@@ -52,6 +52,14 @@ export function AcceptanceStatusPanel() {
                   <li key={item}>{item}</li>
                 ))}
               </ol>
+              <div className="acceptanceEvidenceFields" aria-label={`${gate.label} 证据字段`}>
+                <span>证据字段</span>
+                {gate.evidenceFields.map((field) => (
+                  <code key={field.key}>
+                    {field.label}{field.required ? " *" : ""}: {field.example}
+                  </code>
+                ))}
+              </div>
             </article>
           ))}
         </div>

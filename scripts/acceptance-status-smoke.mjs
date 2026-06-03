@@ -65,6 +65,10 @@ try {
     if (gate.canBeAutomated !== false) fail(`manual gate ${gate.id || "unknown"} must not be marked automatable`);
     if (!gate.proofRequired || typeof gate.proofRequired !== "string") fail(`manual gate ${gate.id || "unknown"} is missing proofRequired`);
     if (!Array.isArray(gate.checklist) || gate.checklist.length < 5) fail(`manual gate ${gate.id || "unknown"} is missing an executable checklist`);
+    if (!Array.isArray(gate.evidenceFields) || gate.evidenceFields.length < 5) fail(`manual gate ${gate.id || "unknown"} is missing evidence field templates`);
+    if (gate.evidenceFields.some((field) => !field?.key || !field?.label || !field?.example || field.required !== true)) {
+      fail(`manual gate ${gate.id || "unknown"} has incomplete evidence field templates`);
+    }
   }
   for (const command of ["npm run verify", "npm run smoke:safe", "npm run smoke:accounts"]) {
     if (!status.recommendedCommands?.includes(command)) fail(`recommended commands are missing ${command}`);

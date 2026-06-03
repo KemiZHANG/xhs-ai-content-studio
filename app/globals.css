@@ -8815,6 +8815,30 @@ textarea {
   padding-left: 2px;
 }
 
+.acceptanceEvidenceFields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.acceptanceEvidenceFields span {
+  color: var(--muted);
+  flex-basis: 100%;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.acceptanceEvidenceFields code {
+  background: rgba(20, 184, 166, 0.08);
+  border: 1px solid rgba(20, 184, 166, 0.18);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 11px;
+  padding: 5px 8px;
+}
+
 .acceptanceCommandList code {
   background: rgba(15, 23, 42, 0.06);
   border: 1px solid rgba(15, 23, 42, 0.08);

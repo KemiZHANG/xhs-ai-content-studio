@@ -21,6 +21,8 @@ describe("acceptance status smoke script", () => {
     expect(script).toContain("proofRequired");
     expect(script).toContain("checklist");
     expect(script).toContain("executable checklist");
+    expect(script).toContain("evidenceFields");
+    expect(script).toContain("evidence field templates");
     expect(script).toContain("nextManualGateId");
     expect(script).toContain("nextSafeCommand");
     expect(script).toContain("real_publish");

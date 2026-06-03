@@ -19,7 +19,11 @@ describe("acceptance status panel", () => {
     expect(html).toContain("真实发布到小红书");
     expect(html).toContain("多个真实账号切换验收");
     expect(html).toContain("Create a private visibility publish confirmation in Post Studio.");
+    expect(html).toContain("证据字段");
+    expect(html).toContain("Publish receipt");
+    expect(html).toContain("MCP URL");
     expect(html).toContain("Verify the old publish confirmation is invalidated and a new confirmation is required.");
+    expect(html).toContain("Confirmation invalidation");
     expect(html).toContain("npm run smoke:safe");
     expect(html).toContain("docs/multi-account-acceptance.md");
   });
