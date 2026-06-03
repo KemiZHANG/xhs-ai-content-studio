@@ -13,6 +13,7 @@
 7. 如需接口级确认，可访问 `/api/health/mcp`，结果应显示 `reachable: true`、`loggedIn: true`。
 8. 启动网页后可运行 `npm run smoke:local`，确认网页、MCP、登录状态和当前 PostProject 都可读。
 9. 如需验证真实研究链路，可运行 `npm run smoke:research`，它只搜索、读取详情和生成证据，不生成草稿、不生成图片、不发布。
+10. 如需验证发布接口仍停留在预览/确认单阶段，可运行 `npm run smoke:publish-dry-run`，它只调用 dry-run，不确认、不定时、不发布。
 
 通过标准：
 - 页面默认把日常创作引导回 Post Studio。
@@ -21,6 +22,7 @@
 - 如果健康检查返回 `fetch failed`，先启动 MCP 或重新登录，不要把它判断成 Post Studio 前端损坏。
 - `npm run smoke:local` 是只读检查，不会搜索、生成图片或发布。
 - `npm run smoke:research` 是研究链路检查，会读取小红书真实数据，但强制 `research` 模式，不会调用发布接口。
+- `npm run smoke:publish-dry-run` 是发布预览检查，只验证确认单和风险提示，不会触发小红书写入动作。
 
 ## 2. 新建 PostProject
 

@@ -12,7 +12,8 @@
     "acceptance": "vitest run tests",
     "verify": "npm run acceptance && npm run typecheck && npm run build",
     "smoke:local": "node scripts/local-smoke.mjs",
-    "smoke:research": "node scripts/research-smoke.mjs"
+    "smoke:research": "node scripts/research-smoke.mjs",
+    "smoke:publish-dry-run": "node scripts/publish-dry-run-smoke.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.16.0",

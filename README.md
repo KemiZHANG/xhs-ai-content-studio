@@ -180,6 +180,14 @@ npm run smoke:research
 
 这个命令只执行最小研究：搜索小红书、读取详情、生成证据摘要。它强制使用 `research` 模式，不生成草稿、不生成图片、不调用发布接口。
 
+如果要确认发布链路仍停留在“预览/确认单”阶段，可以运行：
+
+```powershell
+npm run smoke:publish-dry-run
+```
+
+这个命令只调用发布接口的 `dryRun` 预览模式，要求返回确认信息和风险提示，不会确认发布、不会定时、不会调用真实小红书发布。
+
 ### 常用命令
 
 ```powershell
@@ -188,6 +196,7 @@ npm run verify
 npm run acceptance
 npm run smoke:local
 npm run smoke:research
+npm run smoke:publish-dry-run
 npm test
 npm run typecheck
 npm run build
@@ -387,6 +396,14 @@ npm run smoke:research
 
 This command runs the smallest research-only flow: search Xiaohongshu, read details, and build evidence. It forces `research` mode and does not create drafts, generate images, or call publishing APIs.
 
+To verify that publishing still stops at preview/confirmation, run:
+
+```powershell
+npm run smoke:publish-dry-run
+```
+
+This command only calls `/api/publish` in `dryRun` preview mode. It expects confirmation metadata and risk information, and it does not confirm, schedule, or trigger real Xiaohongshu publishing.
+
 ### Useful Commands
 
 ```powershell
@@ -395,6 +412,7 @@ npm run verify
 npm run acceptance
 npm run smoke:local
 npm run smoke:research
+npm run smoke:publish-dry-run
 npm test
 npm run typecheck
 npm run build
