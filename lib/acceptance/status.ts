@@ -75,6 +75,36 @@ export type AcceptanceEvidencePackage = {
   }>;
 };
 
+export type AcceptanceCompletionMatrix = {
+  generatedAt: string;
+  completionPercent: number;
+  canMarkComplete: boolean;
+  automatedCoverage: Array<{
+    id: string;
+    label: string;
+    status: "verified";
+    evidence: string[];
+  }>;
+  manualExternalGates: Array<{
+    id: AcceptanceExternalGate["id"];
+    label: string;
+    status: "validated" | "pending_manual_validation";
+    reason: string;
+    guide: string;
+    firstSafeStep: string;
+    proofRequired: string;
+    evidenceFields: string[];
+    canBeAutomated: false;
+  }>;
+  remainingWork: Array<{
+    id: AcceptanceExternalGate["id"];
+    label: string;
+    nextStep: string;
+    guide: string;
+  }>;
+  recommendedCommands: string[];
+};
+
 const verified: AcceptanceCoverageItem[] = [
   {
     id: "post_project",
@@ -336,5 +366,43 @@ export function buildAcceptanceEvidencePackage(
       ]) as Record<string, string | boolean>,
       manualOnly: true
     }))
+  };
+}
+
+export function buildAcceptanceCompletionMatrix(
+  status: AcceptanceStatus = buildAcceptanceStatus(),
+  generatedAt = "manual-completion-matrix"
+): AcceptanceCompletionMatrix {
+  const validated = new Set(status.validatedManualGateIds);
+  return {
+    generatedAt,
+    completionPercent: status.completionPercent,
+    canMarkComplete: status.canMarkComplete,
+    automatedCoverage: status.verified.map((item) => ({
+      id: item.id,
+      label: item.label,
+      status: "verified",
+      evidence: item.evidence
+    })),
+    manualExternalGates: status.manualGates.map((gate) => ({
+      id: gate.id,
+      label: gate.label,
+      status: validated.has(gate.id) ? "validated" : "pending_manual_validation",
+      reason: gate.reason,
+      guide: gate.guide,
+      firstSafeStep: gate.firstSafeStep,
+      proofRequired: gate.proofRequired,
+      evidenceFields: gate.evidenceFields.map((field) => field.key),
+      canBeAutomated: false
+    })),
+    remainingWork: status.manualGates
+      .filter((gate) => !validated.has(gate.id))
+      .map((gate) => ({
+        id: gate.id,
+        label: gate.label,
+        nextStep: gate.firstSafeStep,
+        guide: gate.guide
+      })),
+    recommendedCommands: status.recommendedCommands
   };
 }

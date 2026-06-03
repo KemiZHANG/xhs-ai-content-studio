@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GET } from "@/app/api/acceptance/status/route";
 import {
+  buildAcceptanceCompletionMatrix,
   buildAcceptanceDeliverySummary,
   buildAcceptanceEvidencePackage,
   buildAcceptanceStatus
@@ -101,6 +102,39 @@ describe("acceptance status", () => {
     });
   });
 
+  it("builds a machine-readable completion matrix from the same status source", () => {
+    const matrix = buildAcceptanceCompletionMatrix(buildAcceptanceStatus(), "2026-06-03T00:00:00.000Z");
+
+    expect(matrix.generatedAt).toBe("2026-06-03T00:00:00.000Z");
+    expect(matrix.completionPercent).toBe(99);
+    expect(matrix.canMarkComplete).toBe(false);
+    expect(matrix.automatedCoverage.map((item) => item.id)).toEqual([
+      "post_project",
+      "post_studio",
+      "agent_director",
+      "creative_brief",
+      "viral_rag",
+      "publish_safety"
+    ]);
+    expect(matrix.automatedCoverage.every((item) => item.status === "verified")).toBe(true);
+    expect(matrix.manualExternalGates.map((gate) => gate.id)).toEqual([
+      "real_publish",
+      "scheduled_publish",
+      "multi_account_switching",
+      "large_scale_image_generation"
+    ]);
+    expect(matrix.manualExternalGates.every((gate) => gate.status === "pending_manual_validation")).toBe(true);
+    expect(matrix.manualExternalGates.every((gate) => gate.canBeAutomated === false)).toBe(true);
+    expect(matrix.manualExternalGates.find((gate) => gate.id === "real_publish")?.evidenceFields).toContain("publishReceipt");
+    expect(matrix.remainingWork.map((item) => item.id)).toEqual([
+      "real_publish",
+      "scheduled_publish",
+      "multi_account_switching",
+      "large_scale_image_generation"
+    ]);
+    expect(matrix.recommendedCommands).toContain("npm run acceptance:status");
+  });
+
   it("exposes a read-only API contract for frontend status panels", async () => {
     const response = await GET();
     const payload = await response.json() as {
@@ -108,6 +142,7 @@ describe("acceptance status", () => {
       status: ReturnType<typeof buildAcceptanceStatus>;
       deliverySummary: ReturnType<typeof buildAcceptanceDeliverySummary>;
       evidencePackage: ReturnType<typeof buildAcceptanceEvidencePackage>;
+      completionMatrix: ReturnType<typeof buildAcceptanceCompletionMatrix>;
     };
 
     expect(payload.ok).toBe(true);
@@ -124,5 +159,8 @@ describe("acceptance status", () => {
     expect(payload.evidencePackage.dryRunCommand).toBe("node scripts/import-acceptance-validation-records.mjs --dry-run");
     expect(payload.evidencePackage.gates[0]?.evidenceRecordTemplate).toHaveProperty("validated", false);
     expect(payload.evidencePackage.gates[0]?.manualOnly).toBe(true);
+    expect(payload.completionMatrix.completionPercent).toBe(99);
+    expect(payload.completionMatrix.remainingWork[0]?.id).toBe("real_publish");
+    expect(payload.completionMatrix.manualExternalGates.every((gate) => gate.canBeAutomated === false)).toBe(true);
   });
 });

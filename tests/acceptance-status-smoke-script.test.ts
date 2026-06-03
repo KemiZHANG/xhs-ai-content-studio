@@ -20,6 +20,9 @@ describe("acceptance status smoke script", () => {
     expect(script).toContain("disagree on canMarkComplete");
     expect(script).toContain("deliverySummary");
     expect(script).toContain("evidencePackage");
+    expect(script).toContain("completionMatrix");
+    expect(script).toContain("Completion matrix");
+    expect(script).toContain("remaining work does not match pending manual gates");
     expect(script).toContain("schemaVersion");
     expect(script).toContain("manualOnly");
     expect(script).toContain("evidenceRecordTemplate");

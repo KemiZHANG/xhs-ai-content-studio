@@ -40,6 +40,7 @@ try {
   const status = result.data?.status;
   const deliverySummary = result.data?.deliverySummary;
   const evidencePackage = result.data?.evidencePackage;
+  const completionMatrix = result.data?.completionMatrix;
   if (!result.data?.ok || !status || typeof status !== "object") {
     fail("/api/acceptance/status did not return an ok status payload");
     process.exit();
@@ -50,6 +51,10 @@ try {
   }
   if (!evidencePackage || typeof evidencePackage !== "object") {
     fail("/api/acceptance/status did not return evidencePackage");
+    process.exit();
+  }
+  if (!completionMatrix || typeof completionMatrix !== "object") {
+    fail("/api/acceptance/status did not return completionMatrix");
     process.exit();
   }
 
@@ -63,6 +68,7 @@ try {
   line("Delivery state", deliverySummary.stateLabel || "missing");
   line("Next safe command", deliverySummary.nextSafeCommand || "missing");
   line("Evidence package", `v${evidencePackage.schemaVersion || "missing"}`);
+  line("Completion matrix", `${completionMatrix.automatedCoverage?.length || 0} automated, ${completionMatrix.remainingWork?.length || 0} remaining`);
   line("Validation records", String(validationResult.data.records.length));
   line("Recommended commands", Array.isArray(status.recommendedCommands) ? status.recommendedCommands.join(", ") : "missing");
 
@@ -80,6 +86,20 @@ try {
     fail("evidencePackage should expose the validation record dry-run command");
   }
   if (!Array.isArray(evidencePackage.gates) || evidencePackage.gates.length < 4) fail("evidencePackage is missing manual gate templates");
+  if (completionMatrix.completionPercent !== status.completionPercent) fail("completionMatrix and status disagree on completionPercent");
+  if (completionMatrix.canMarkComplete !== status.canMarkComplete) fail("completionMatrix and status disagree on canMarkComplete");
+  if (!Array.isArray(completionMatrix.automatedCoverage) || completionMatrix.automatedCoverage.length !== status.verified.length) {
+    fail("completionMatrix automated coverage does not match status.verified");
+  }
+  if (!Array.isArray(completionMatrix.manualExternalGates) || completionMatrix.manualExternalGates.length !== status.manualGates.length) {
+    fail("completionMatrix manual gates do not match status.manualGates");
+  }
+  if (!Array.isArray(completionMatrix.remainingWork) || completionMatrix.remainingWork.length !== status.pendingManualGateIds.length) {
+    fail("completionMatrix remaining work does not match pending manual gates");
+  }
+  if (completionMatrix.manualExternalGates.some((gate) => gate.canBeAutomated !== false)) {
+    fail("completionMatrix manual gates must remain non-automatable");
+  }
   if (!validationResult.data.status || typeof validationResult.data.status !== "object") fail("validation records endpoint is missing status");
   if (!validationResult.data.deliverySummary || typeof validationResult.data.deliverySummary !== "object") {
     fail("validation records endpoint is missing deliverySummary");
