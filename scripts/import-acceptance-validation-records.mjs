@@ -10,6 +10,24 @@ function fail(message) {
   process.exit(1);
 }
 
+function isFilled(value) {
+  return typeof value === "string" ? value.trim().length > 0 : value === true;
+}
+
+function validateRecord(gate, record, template) {
+  const issues = [];
+  if (record.validated !== true) issues.push("validated must be true");
+  for (const key of ["validatedAt", "operator", "notes"]) {
+    if (!isFilled(template[key])) issues.push(`fill ${key}`);
+  }
+  for (const field of Array.isArray(gate.evidenceFields) ? gate.evidenceFields : []) {
+    if (field.required && !isFilled(record.evidence[field.key])) {
+      issues.push(`fill ${field.key} (${field.label})`);
+    }
+  }
+  return issues;
+}
+
 async function postJson(path, body) {
   const response = await fetch(`${baseUrl}${path}`, {
     method: "POST",
@@ -56,6 +74,10 @@ for (const gate of evidencePackage.gates) {
       ])
     )
   };
+  const issues = validateRecord(gate, record, template);
+  if (issues.length) {
+    fail(`${gate.id} has incomplete manual evidence: ${issues.join("; ")}`);
+  }
   if (dryRun) {
     previewRecords.push(record);
     continue;

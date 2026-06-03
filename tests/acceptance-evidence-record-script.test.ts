@@ -15,6 +15,9 @@ describe("acceptance evidence record script", () => {
     expect(script).toContain("/api/acceptance/validation-records");
     expect(script).toContain("XHS_ACCEPTANCE_RECORD_DRY_RUN");
     expect(script).toContain("--dry-run");
+    expect(script).toContain("validateRecord");
+    expect(script).toContain("has incomplete manual evidence");
+    expect(script).toContain("validated must be true");
     expect(script).toContain("No local record was written");
     expect(script).toContain("evidenceRecordTemplate");
     expect(script).toContain("No MCP, model, publish, or schedule action was triggered.");
