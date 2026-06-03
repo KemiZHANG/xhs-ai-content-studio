@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
+import { readAcceptanceValidationRecords } from "@/lib/acceptance/records";
 import { buildAcceptanceDeliverySummary, buildAcceptanceEvidencePackage, buildAcceptanceStatus } from "@/lib/acceptance/status";
 
 export const runtime = "nodejs";
 
 export async function GET() {
-  const status = buildAcceptanceStatus();
+  const validationRecords = await readAcceptanceValidationRecords();
+  const status = buildAcceptanceStatus(validationRecords);
   return NextResponse.json({
     ok: true,
+    validationRecords,
     status,
     deliverySummary: buildAcceptanceDeliverySummary(status),
     evidencePackage: buildAcceptanceEvidencePackage(status, new Date().toISOString())

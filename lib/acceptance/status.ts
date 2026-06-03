@@ -5,6 +5,14 @@ export type AcceptanceCoverageItem = {
   evidence: string[];
 };
 
+export type AcceptanceValidationRecordInput = {
+  gateId?: string;
+  validated?: boolean;
+  validatedAt?: string;
+  operator?: string;
+  evidence?: Record<string, string>;
+};
+
 export type AcceptanceEvidenceField = {
   key: string;
   label: string;
@@ -30,6 +38,8 @@ export type AcceptanceStatus = {
   canMarkComplete: boolean;
   verified: AcceptanceCoverageItem[];
   manualGates: AcceptanceExternalGate[];
+  validatedManualGateIds: AcceptanceExternalGate["id"][];
+  pendingManualGateIds: AcceptanceExternalGate["id"][];
   recommendedCommands: string[];
 };
 
@@ -198,13 +208,20 @@ const manualGates: AcceptanceExternalGate[] = [
   }
 ];
 
-export function buildAcceptanceStatus(): AcceptanceStatus {
+export function buildAcceptanceStatus(records: AcceptanceValidationRecordInput[] = []): AcceptanceStatus {
+  const progress = summarizeAcceptanceValidationProgress(manualGates, records);
+  const canMarkComplete = progress.allValidated;
+
   return {
-    completionPercent: 99,
-    summary: "核心 Post Studio Agent、PostProject、CreativeBrief、RAG、图片、发布确认和安全审计已由代码、测试和 smoke 覆盖；剩余为真实外部账号动作验收。",
-    canMarkComplete: false,
+    completionPercent: canMarkComplete ? 100 : 99,
+    summary: canMarkComplete
+      ? "核心 Post Studio Agent、PostProject、CreativeBrief、RAG、图片、发布确认、安全审计和真实外部账号动作均已有验收记录。"
+      : "核心 Post Studio Agent、PostProject、CreativeBrief、RAG、图片、发布确认和安全审计已由代码、测试和 smoke 覆盖；剩余为真实外部账号动作验收。",
+    canMarkComplete,
     verified,
     manualGates,
+    validatedManualGateIds: progress.validatedGateIds,
+    pendingManualGateIds: progress.pendingGateIds,
     recommendedCommands: [
       "npm run verify",
       "npm run smoke:safe",
@@ -213,6 +230,54 @@ export function buildAcceptanceStatus(): AcceptanceStatus {
       "npm run smoke:accounts"
     ]
   };
+}
+
+function summarizeAcceptanceValidationProgress(
+  gates: AcceptanceExternalGate[],
+  records: AcceptanceValidationRecordInput[]
+) {
+  const recordByGate = new Map(records.map((record) => [record.gateId, record]));
+  const validatedGateIds = gates
+    .filter((gate) => validateAcceptanceValidationRecordInput(gate, recordByGate.get(gate.id) ?? {}).valid)
+    .map((gate) => gate.id);
+  const pendingGateIds = gates
+    .map((gate) => gate.id)
+    .filter((gateId) => !validatedGateIds.includes(gateId));
+
+  return {
+    validatedGateIds,
+    pendingGateIds,
+    allValidated: pendingGateIds.length === 0 && gates.length > 0
+  };
+}
+
+function validateAcceptanceValidationRecordInput(
+  gate: AcceptanceExternalGate,
+  record: AcceptanceValidationRecordInput
+) {
+  const errors: string[] = [];
+  if (record.gateId !== gate.id) {
+    errors.push(`gateId must be ${gate.id}`);
+  }
+  if (record.validated !== true) {
+    errors.push("validated must be true after manual verification");
+  }
+  if (!record.validatedAt || Number.isNaN(Date.parse(record.validatedAt))) {
+    errors.push("validatedAt must be a valid ISO timestamp");
+  }
+  if (!record.operator?.trim()) {
+    errors.push("operator is required");
+  }
+
+  const evidence = record.evidence ?? {};
+  for (const field of gate.evidenceFields) {
+    const value = evidence[field.key];
+    if (field.required && (!value || !String(value).trim())) {
+      errors.push(`missing required evidence field: ${field.key}`);
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
 }
 
 export function buildAcceptanceDeliverySummary(status: AcceptanceStatus = buildAcceptanceStatus()): AcceptanceDeliverySummary {
@@ -227,12 +292,12 @@ export function buildAcceptanceDeliverySummary(status: AcceptanceStatus = buildA
     stateLabel: status.canMarkComplete ? "可标记完成" : "仍需人工外部验收",
     completionLine: `当前完成度 ${status.completionPercent}%`,
     verifiedLine: `已自动覆盖 ${status.verified.length} 项核心能力`,
-    manualGateLine: status.manualGates.length
-      ? `仍有 ${status.manualGates.length} 项必须人工确认：${status.manualGates.map((gate) => gate.label).join("、")}`
+    manualGateLine: status.pendingManualGateIds.length
+      ? `仍有 ${status.pendingManualGateIds.length} 项必须人工确认：${status.manualGates.filter((gate) => status.pendingManualGateIds.includes(gate.id)).map((gate) => gate.label).join("、")}`
       : "没有剩余人工闸门",
-    nextManualGateId: nextGate?.id ?? null,
+    nextManualGateId: status.pendingManualGateIds[0] ?? nextGate?.id ?? null,
     nextSafeCommand: safeCommand,
-    safeToAutomateCompletion: status.canMarkComplete && status.manualGates.length === 0
+    safeToAutomateCompletion: status.canMarkComplete && status.pendingManualGateIds.length === 0
   };
 }
 
