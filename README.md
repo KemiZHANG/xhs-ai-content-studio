@@ -155,12 +155,21 @@ npm run smoke:local
 
 这个命令只检查网页、MCP 登录、工具数量和当前 PostProject，不会搜索、生成图片或发布。
 
+如果要确认真实研究链路，可以运行：
+
+```powershell
+npm run smoke:research
+```
+
+这个命令只执行最小研究：搜索小红书、读取详情、生成证据摘要。它强制使用 `research` 模式，不生成草稿、不生成图片、不调用发布接口。
+
 ### 常用命令
 
 ```powershell
 npm run dev
 npm run acceptance
 npm run smoke:local
+npm run smoke:research
 npm test
 npm run typecheck
 npm run build
@@ -335,12 +344,21 @@ npm run smoke:local
 
 This command only checks the web app, MCP login, tool count, and active PostProject. It does not search, generate images, or publish.
 
+To verify the real research chain, run:
+
+```powershell
+npm run smoke:research
+```
+
+This command runs the smallest research-only flow: search Xiaohongshu, read details, and build evidence. It forces `research` mode and does not create drafts, generate images, or call publishing APIs.
+
 ### Useful Commands
 
 ```powershell
 npm run dev
 npm run acceptance
 npm run smoke:local
+npm run smoke:research
 npm test
 npm run typecheck
 npm run build

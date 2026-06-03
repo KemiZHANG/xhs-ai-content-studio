@@ -12,6 +12,7 @@
 6. 在账号区域确认小红书 MCP 可访问，并能看到当前账号状态。
 7. 如需接口级确认，可访问 `/api/health/mcp`，结果应显示 `reachable: true`、`loggedIn: true`。
 8. 启动网页后可运行 `npm run smoke:local`，确认网页、MCP、登录状态和当前 PostProject 都可读。
+9. 如需验证真实研究链路，可运行 `npm run smoke:research`，它只搜索、读取详情和生成证据，不生成草稿、不生成图片、不发布。
 
 通过标准：
 - 页面默认把日常创作引导回 Post Studio。
@@ -19,6 +20,7 @@
 - 未登录或模型缺失时，页面能给出可理解的状态提示。
 - 如果健康检查返回 `fetch failed`，先启动 MCP 或重新登录，不要把它判断成 Post Studio 前端损坏。
 - `npm run smoke:local` 是只读检查，不会搜索、生成图片或发布。
+- `npm run smoke:research` 是研究链路检查，会读取小红书真实数据，但强制 `research` 模式，不会调用发布接口。
 
 ## 2. 新建 PostProject
 
