@@ -1,10 +1,25 @@
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 
 const inputPath = resolve(process.env.XHS_ACCEPTANCE_EVIDENCE_PATH || "data/manual-acceptance-evidence-package.json");
+const reportPath = resolve(process.env.XHS_ACCEPTANCE_REPORT_PATH || "data/manual-acceptance-validation-report.json");
 
-function fail(message) {
+async function writeReport(report) {
+  await mkdir(dirname(reportPath), { recursive: true });
+  await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+}
+
+async function fail(message, issues = []) {
+  await writeReport({
+    ok: false,
+    validatedAt: new Date().toISOString(),
+    inputPath,
+    reportPath,
+    message,
+    issues
+  });
   console.error(`Acceptance evidence validation failed: ${message}`);
+  console.error(`Validation report written to ${reportPath}`);
   process.exit(1);
 }
 
@@ -16,11 +31,11 @@ let evidencePackage;
 try {
   evidencePackage = JSON.parse(await readFile(inputPath, "utf8"));
 } catch (error) {
-  fail(`could not read ${inputPath}. Export it first with npm run acceptance:evidence-package`);
+  await fail(`could not read ${inputPath}. Export it first with npm run acceptance:evidence-package`);
 }
 
 if (evidencePackage?.schemaVersion !== 1 || !Array.isArray(evidencePackage.gates)) {
-  fail("input is not an evidencePackage v1 file");
+  await fail("input is not an evidencePackage v1 file");
 }
 
 const issues = [];
@@ -53,8 +68,18 @@ if (issues.length > 0) {
   for (const issue of issues) {
     console.error(`- ${issue}`);
   }
-  fail(`${issues.length} required evidence item(s) are missing`);
+  await fail(`${issues.length} required evidence item(s) are missing`, issues);
 }
 
+await writeReport({
+  ok: true,
+  validatedAt: new Date().toISOString(),
+  inputPath,
+  reportPath,
+  message: "All required manual external validation evidence fields are complete.",
+  gates: evidencePackage.gates.map((gate) => gate.id)
+});
+
 console.log(`Acceptance evidence package is complete: ${inputPath}`);
+console.log(`Validation report written to ${reportPath}`);
 console.log("Local validation only. No MCP, model, publish, or schedule action was triggered.");

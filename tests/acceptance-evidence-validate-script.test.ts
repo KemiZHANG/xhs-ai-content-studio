@@ -13,7 +13,11 @@ describe("acceptance evidence package validation script", () => {
 
     expect(pkg.scripts?.["acceptance:validate-evidence"]).toBe("node scripts/validate-acceptance-evidence-package.mjs");
     expect(script).toContain("manual-acceptance-evidence-package.json");
+    expect(script).toContain("manual-acceptance-validation-report.json");
     expect(script).toContain("XHS_ACCEPTANCE_EVIDENCE_PATH");
+    expect(script).toContain("XHS_ACCEPTANCE_REPORT_PATH");
+    expect(script).toContain("writeReport");
+    expect(script).toContain("Validation report written");
     expect(script).toContain("validatedAt");
     expect(script).toContain("operator");
     expect(script).toContain("evidenceFields");
@@ -23,6 +27,8 @@ describe("acceptance evidence package validation script", () => {
     expect(script).not.toContain("/api/workflows/one-click");
     expect(readme).toContain("npm run acceptance:validate-evidence");
     expect(readme).toContain("只校验本地 JSON");
+    expect(readme).toContain("data/manual-acceptance-validation-report.json");
+    expect(readme).toContain("XHS_ACCEPTANCE_REPORT_PATH");
     expect(readme).toContain("only validates the local JSON file");
   });
 });

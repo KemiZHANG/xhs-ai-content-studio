@@ -250,7 +250,7 @@ npm run acceptance:evidence-package
 npm run acceptance:validate-evidence
 ```
 
-这个命令只校验本地 JSON 是否填完整，不会调用 MCP、模型、发布或定时。
+这个命令只校验本地 JSON 是否填完整，不会调用 MCP、模型、发布或定时。它会把校验结果写入 `data/manual-acceptance-validation-report.json`，也可以用 `XHS_ACCEPTANCE_REPORT_PATH` 指定报告路径。
 
 ### 常用命令
 
@@ -537,7 +537,7 @@ After real-world validation, fill the exported JSON's `evidenceRecordTemplate` f
 npm run acceptance:validate-evidence
 ```
 
-This command only validates the local JSON file. It does not call MCP, models, publishing, or scheduling.
+This command only validates the local JSON file. It does not call MCP, models, publishing, or scheduling. It writes the validation result to `data/manual-acceptance-validation-report.json`; set `XHS_ACCEPTANCE_REPORT_PATH` to choose another report path.
 
 ### Useful Commands
 
