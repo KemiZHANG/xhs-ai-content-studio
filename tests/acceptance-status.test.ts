@@ -54,11 +54,15 @@ describe("acceptance status", () => {
     const payload = await response.json() as {
       ok: boolean;
       status: ReturnType<typeof buildAcceptanceStatus>;
+      deliverySummary: ReturnType<typeof buildAcceptanceDeliverySummary>;
     };
 
     expect(payload.ok).toBe(true);
     expect(payload.status.completionPercent).toBe(98);
     expect(payload.status.canMarkComplete).toBe(false);
     expect(payload.status.manualGates.length).toBeGreaterThanOrEqual(3);
+    expect(payload.deliverySummary.completionLine).toBe("当前完成度 98%");
+    expect(payload.deliverySummary.nextSafeCommand).toBe("npm run smoke:safe");
+    expect(payload.deliverySummary.safeToAutomateCompletion).toBe(false);
   });
 });

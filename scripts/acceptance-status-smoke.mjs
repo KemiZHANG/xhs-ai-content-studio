@@ -28,8 +28,13 @@ try {
   }
 
   const status = result.data?.status;
+  const deliverySummary = result.data?.deliverySummary;
   if (!result.data?.ok || !status || typeof status !== "object") {
     fail("/api/acceptance/status did not return an ok status payload");
+    process.exit();
+  }
+  if (!deliverySummary || typeof deliverySummary !== "object") {
+    fail("/api/acceptance/status did not return deliverySummary");
     process.exit();
   }
 
@@ -40,10 +45,15 @@ try {
   line("Can mark complete", String(Boolean(status.canMarkComplete)));
   line("Verified coverage", verifiedIds.join(", ") || "missing");
   line("Manual gates", manualGateIds.join(", ") || "missing");
+  line("Delivery state", deliverySummary.stateLabel || "missing");
+  line("Next safe command", deliverySummary.nextSafeCommand || "missing");
   line("Recommended commands", Array.isArray(status.recommendedCommands) ? status.recommendedCommands.join(", ") : "missing");
 
   if (status.completionPercent !== 98) fail("completionPercent should stay at 98 until real external validation is done");
   if (status.canMarkComplete !== false) fail("canMarkComplete must stay false while real publish/schedule/account gates remain manual");
+  if (deliverySummary.safeToAutomateCompletion !== false) fail("deliverySummary must not allow automated completion while manual gates remain");
+  if (deliverySummary.nextManualGateId !== "real_publish") fail("deliverySummary should keep real publish as the first manual gate");
+  if (deliverySummary.nextSafeCommand !== "npm run smoke:safe") fail("deliverySummary should point to npm run smoke:safe as the next safe command");
 
   for (const id of ["post_project", "post_studio", "agent_director", "creative_brief", "viral_rag", "publish_safety"]) {
     if (!verifiedIds.includes(id)) fail(`verified coverage is missing ${id}`);
@@ -61,4 +71,3 @@ try {
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error));
 }
-

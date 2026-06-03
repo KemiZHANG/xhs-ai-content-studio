@@ -13,8 +13,12 @@ describe("acceptance status smoke script", () => {
     expect(pkg.scripts?.["smoke:acceptance-status"]).toBe("node scripts/acceptance-status-smoke.mjs");
     expect(pkg.scripts?.["smoke:safe"]).toContain("npm run smoke:acceptance-status");
     expect(script).toContain("/api/acceptance/status");
+    expect(script).toContain("deliverySummary");
     expect(script).toContain("completionPercent !== 98");
     expect(script).toContain("canMarkComplete must stay false");
+    expect(script).toContain("safeToAutomateCompletion");
+    expect(script).toContain("nextManualGateId");
+    expect(script).toContain("nextSafeCommand");
     expect(script).toContain("real_publish");
     expect(script).toContain("scheduled_publish");
     expect(script).toContain("multi_account_switching");
@@ -24,4 +28,3 @@ describe("acceptance status smoke script", () => {
     expect(script).not.toContain("/api/workflows/one-click");
   });
 });
-
