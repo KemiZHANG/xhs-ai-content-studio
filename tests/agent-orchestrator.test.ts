@@ -63,6 +63,18 @@ describe("agent orchestrator", () => {
       id: "card-stage-guidance",
       type: "stage_guidance"
     });
+    const clarifyCard = result.cards.find((card) => card.type === "clarify_next_steps");
+    expect(clarifyCard).toMatchObject({
+      id: "card-clarify-next-steps",
+      title: "补充信息后再执行"
+    });
+    expect(clarifyCard?.summary).toContain("具体主题");
+    expect(clarifyCard?.data).toMatchObject({
+      stage: "empty",
+      intent: "ask",
+      safetyNote: "意图不清晰时不会调用搜索、生图、发布或定时工具。"
+    });
+    expect((clarifyCard?.data as { replyTemplate?: string }).replyTemplate).toContain("你可以直接回复");
     const stageCardData = result.cards.find((card) => card.type === "stage_guidance")?.data as
       | { stage?: string; readiness?: { progress?: number; nextAction?: string; blockers?: Array<{ id: string }> } }
       | undefined;

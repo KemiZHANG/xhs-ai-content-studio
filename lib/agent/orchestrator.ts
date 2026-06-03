@@ -1346,6 +1346,9 @@ function buildCardsFromTurn(
   if (plan) {
     cards.push(buildDirectorSummaryCard({ workspace, currentDraft, postProject, plan }));
   }
+  if (plan && shouldShowClarifyNextStepsCard(plan)) {
+    cards.push(buildClarifyNextStepsCard({ plan, workspace, postProject }));
+  }
   if (plan && shouldShowAgentPlanCard(plan)) {
     const plannedSteps = plan.steps.map((step, index) => ({
       index: index + 1,
@@ -1585,6 +1588,41 @@ function buildDirectorSummaryCard({
       evidenceCount: postProject?.evidencePack.insights.length ?? 0,
       memoryHints: postProject?.agentMemory.slice(0, 3) ?? [],
       memorySignalCount: postProject?.agentMemory.length ?? 0
+    }
+  };
+}
+
+function shouldShowClarifyNextStepsCard(plan: AgentPlan): boolean {
+  return plan.intent === "ask" || plan.steps.some((step) => step.action === "askClarifyingQuestion");
+}
+
+function buildClarifyNextStepsCard({
+  plan,
+  workspace,
+  postProject
+}: {
+  plan: AgentPlan;
+  workspace: WorkspaceState;
+  postProject?: PostProject | null;
+}): AgentResponseCard {
+  const questions = buildClarifyingQuestions(plan, workspace, postProject);
+  const quickActions = buildQuickActions(plan, workspace, postProject);
+  const stage = postProject?.currentStage ?? inferStageFromWorkspace(workspace);
+  const guidance = getPostStageGuidance(stage, postProject?.allowedActions ?? []);
+  return {
+    id: "card-clarify-next-steps",
+    type: "clarify_next_steps",
+    title: "补充信息后再执行",
+    summary: questions.slice(0, 2).join("；") || guidance.description,
+    data: {
+      stage,
+      stageTitle: guidance.title,
+      intent: plan.intent,
+      intentConfidence: inferIntentConfidence(plan, workspace),
+      questions,
+      replyTemplate: buildClarifyingReplyTemplate(questions),
+      quickActions,
+      safetyNote: "意图不清晰时不会调用搜索、生图、发布或定时工具。"
     }
   };
 }

@@ -344,6 +344,7 @@ export type AgentResponseCardType =
   | "director_summary"
   | "agent_plan"
   | "stage_guidance"
+  | "clarify_next_steps"
   | "evidence_summary"
   | "viral_knowledge"
   | "evidence_citations"
