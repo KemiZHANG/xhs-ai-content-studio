@@ -19,6 +19,7 @@
     "smoke:research": "node scripts/research-smoke.mjs",
     "smoke:publish-dry-run": "node scripts/publish-dry-run-smoke.mjs",
     "smoke:acceptance-status": "node scripts/acceptance-status-smoke.mjs",
+    "acceptance:status": "node scripts/acceptance-status-smoke.mjs",
     "acceptance:evidence-package": "node scripts/export-acceptance-evidence-package.mjs",
     "acceptance:validate-evidence": "node scripts/validate-acceptance-evidence-package.mjs",
     "acceptance:record-evidence": "node scripts/import-acceptance-validation-records.mjs"

@@ -48,6 +48,7 @@ describe("acceptance status", () => {
     expect(status.recommendedCommands).toContain("npm run verify");
     expect(status.recommendedCommands).toContain("npm run smoke:safe");
     expect(status.recommendedCommands).toContain("npm run smoke:accounts");
+    expect(status.recommendedCommands).toContain("npm run acceptance:status");
     expect(status.recommendedCommands).toContain("npm run acceptance:evidence-package");
     expect(status.recommendedCommands).toContain("npm run acceptance:validate-evidence");
     expect(status.recommendedCommands).toContain("npm run acceptance:record-evidence");

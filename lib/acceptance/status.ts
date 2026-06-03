@@ -230,6 +230,7 @@ export function buildAcceptanceStatus(records: AcceptanceValidationRecordInput[]
       "npm run smoke:research",
       "npm run smoke:publish-dry-run",
       "npm run smoke:accounts",
+      "npm run acceptance:status",
       "npm run acceptance:evidence-package",
       "npm run acceptance:validate-evidence",
       "npm run acceptance:record-evidence"

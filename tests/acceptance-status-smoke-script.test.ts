@@ -11,6 +11,7 @@ describe("acceptance status smoke script", () => {
     const script = readText("scripts/acceptance-status-smoke.mjs");
 
     expect(pkg.scripts?.["smoke:acceptance-status"]).toBe("node scripts/acceptance-status-smoke.mjs");
+    expect(pkg.scripts?.["acceptance:status"]).toBe("node scripts/acceptance-status-smoke.mjs");
     expect(pkg.scripts?.["smoke:safe"]).toContain("npm run smoke:acceptance-status");
     expect(script).toContain("/api/acceptance/status");
     expect(script).toContain("/api/acceptance/validation-records");
@@ -40,5 +41,13 @@ describe("acceptance status smoke script", () => {
     expect(script).not.toContain("/api/publish");
     expect(script).not.toContain("/api/chat");
     expect(script).not.toContain("/api/workflows/one-click");
+  });
+
+  it("documents the friendlier acceptance status command", () => {
+    const readme = readText("README.md");
+
+    expect(readme).toContain("npm run acceptance:status");
+    expect(readme).toContain("npm run smoke:acceptance-status");
+    expect(readme).toContain("current completion and external manual gates");
   });
 });

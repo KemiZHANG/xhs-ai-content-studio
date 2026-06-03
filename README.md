@@ -225,6 +225,12 @@ npm run smoke:publish-dry-run
 也可以读取当前完成度和外部人工验收闸门：
 
 ```powershell
+npm run acceptance:status
+```
+
+旧的 smoke 命令也仍然可用：
+
+```powershell
 npm run smoke:acceptance-status
 ```
 
@@ -531,6 +537,12 @@ npm run smoke:publish-dry-run
 This command only calls `/api/publish` in `dryRun` preview mode. It expects confirmation metadata and risk information, and it does not confirm, schedule, or trigger real Xiaohongshu publishing.
 
 You can also read the current completion and external manual gates:
+
+```powershell
+npm run acceptance:status
+```
+
+The older smoke command is still available too:
 
 ```powershell
 npm run smoke:acceptance-status
