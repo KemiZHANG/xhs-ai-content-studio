@@ -34,6 +34,12 @@ export function AcceptanceStatusPanel() {
         </article>
       </div>
 
+      <article className="acceptanceEvidencePackageCard">
+        <span>验收证据包</span>
+        <strong>/api/acceptance/status · evidencePackage v1</strong>
+        <p>只读导出真实发布、定时发布、多账号和生图验收模板；读取它不会调用 MCP、模型、发布或定时任务。</p>
+      </article>
+
       <details className="acceptanceStatusDetails">
         <summary>查看外部验收闸门和安全命令</summary>
         <div className="acceptanceGateList">
