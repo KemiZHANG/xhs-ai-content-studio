@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "acceptance": "vitest run tests",
+    "verify": "npm run acceptance && npm run typecheck && npm run build",
     "smoke:local": "node scripts/local-smoke.mjs",
     "smoke:research": "node scripts/research-smoke.mjs"
   },

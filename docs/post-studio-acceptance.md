@@ -119,6 +119,7 @@
 每次产品级改动后运行：
 
 ```powershell
+npm run verify
 npm run acceptance
 npm test
 npm run typecheck
@@ -126,6 +127,7 @@ npm run build
 ```
 
 通过标准：
+- `npm run verify` 会连续运行完整产品测试、TypeScript 检查和生产构建，是每次提交前推荐的一键验证命令。
 - `npm run acceptance` 会运行 `tests` 目录下的完整产品测试套件，覆盖 Post Studio 文档锚点、PostProject、Agent、RAG、Canvas、发布检查、MCP、素材、任务、模型设置和旧流程回归。
 - 全量测试通过。
 - TypeScript 无错误。

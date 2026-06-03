@@ -167,6 +167,7 @@ npm run smoke:research
 
 ```powershell
 npm run dev
+npm run verify
 npm run acceptance
 npm run smoke:local
 npm run smoke:research
@@ -356,6 +357,7 @@ This command runs the smallest research-only flow: search Xiaohongshu, read deta
 
 ```powershell
 npm run dev
+npm run verify
 npm run acceptance
 npm run smoke:local
 npm run smoke:research
