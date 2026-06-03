@@ -27,6 +27,7 @@ import type {
   WorkflowRun,
   WorkspaceState
 } from "@/app/types";
+import { AcceptanceStatusCompactPanel } from "@/app/components/acceptance-status-panel";
 import { getJobDisplayMeta } from "@/app/components/job-display";
 import { modeLabel } from "@/app/components/xhs-display-utils";
 import { Metric, StatusPill } from "@/app/components/status-badges";
@@ -69,6 +70,7 @@ export function Dashboard({
         </div>
 
         {health?.message ? <pre className="logBox">{health.message}</pre> : null}
+        <AcceptanceStatusCompactPanel />
       </section>
 
       <section className="panel">

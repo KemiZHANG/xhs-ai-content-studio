@@ -8824,6 +8824,45 @@ textarea {
   padding: 4px 7px;
 }
 
+.acceptanceCompactPanel {
+  align-items: center;
+  background: rgba(20, 184, 166, 0.08);
+  border: 1px solid rgba(20, 184, 166, 0.18);
+  border-radius: 14px;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding: 13px 14px;
+}
+
+.acceptanceCompactPanel span {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.acceptanceCompactPanel strong {
+  display: block;
+}
+
+.acceptanceCompactPanel p {
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 5px 0 0;
+}
+
+.acceptanceCompactPanel code {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(20, 184, 166, 0.2);
+  border-radius: 10px;
+  color: var(--text);
+  flex: 0 0 auto;
+  font-size: 12px;
+  padding: 8px 10px;
+}
+
 @media (max-width: 640px) {
   .content {
     padding: 18px;
@@ -8867,6 +8906,11 @@ textarea {
 
   .acceptanceStatusGrid {
     grid-template-columns: 1fr;
+  }
+
+  .acceptanceCompactPanel {
+    align-items: stretch;
+    flex-direction: column;
   }
 
 }

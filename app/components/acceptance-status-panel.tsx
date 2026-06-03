@@ -57,3 +57,19 @@ export function AcceptanceStatusPanel() {
     </section>
   );
 }
+
+export function AcceptanceStatusCompactPanel() {
+  const status = buildAcceptanceStatus();
+  const delivery = buildAcceptanceDeliverySummary(status);
+
+  return (
+    <section className="acceptanceCompactPanel" aria-label="交付验收摘要">
+      <div>
+        <span>交付状态</span>
+        <strong>{delivery.completionLine} · {delivery.stateLabel}</strong>
+        <p>{delivery.manualGateLine}</p>
+      </div>
+      <code>{delivery.nextSafeCommand}</code>
+    </section>
+  );
+}
