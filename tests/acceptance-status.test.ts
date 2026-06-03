@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GET } from "@/app/api/acceptance/status/route";
-import { buildAcceptanceStatus } from "@/lib/acceptance/status";
+import { buildAcceptanceDeliverySummary, buildAcceptanceStatus } from "@/lib/acceptance/status";
 
 describe("acceptance status", () => {
   it("keeps completion honest while external gates remain manual", () => {
@@ -36,6 +36,19 @@ describe("acceptance status", () => {
     expect(status.manualGates.find((gate) => gate.id === "real_publish")?.firstSafeStep).toContain("仅自己可见");
   });
 
+  it("builds a delivery summary that cannot hide remaining manual gates", () => {
+    const summary = buildAcceptanceDeliverySummary();
+
+    expect(summary.headline).toContain("真实外部动作闸门");
+    expect(summary.stateLabel).toBe("仍需人工外部验收");
+    expect(summary.completionLine).toBe("当前完成度 98%");
+    expect(summary.verifiedLine).toContain("6 项核心能力");
+    expect(summary.manualGateLine).toContain("真实发布到小红书");
+    expect(summary.nextManualGateId).toBe("real_publish");
+    expect(summary.nextSafeCommand).toBe("npm run smoke:safe");
+    expect(summary.safeToAutomateCompletion).toBe(false);
+  });
+
   it("exposes a read-only API contract for frontend status panels", async () => {
     const response = await GET();
     const payload = await response.json() as {
@@ -49,4 +62,3 @@ describe("acceptance status", () => {
     expect(payload.status.manualGates.length).toBeGreaterThanOrEqual(3);
   });
 });
-

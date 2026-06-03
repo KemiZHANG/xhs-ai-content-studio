@@ -22,6 +22,17 @@ export type AcceptanceStatus = {
   recommendedCommands: string[];
 };
 
+export type AcceptanceDeliverySummary = {
+  headline: string;
+  stateLabel: string;
+  completionLine: string;
+  verifiedLine: string;
+  manualGateLine: string;
+  nextManualGateId: AcceptanceExternalGate["id"] | null;
+  nextSafeCommand: string;
+  safeToAutomateCompletion: boolean;
+};
+
 const verified: AcceptanceCoverageItem[] = [
   {
     id: "post_project",
@@ -109,3 +120,23 @@ export function buildAcceptanceStatus(): AcceptanceStatus {
   };
 }
 
+export function buildAcceptanceDeliverySummary(status: AcceptanceStatus = buildAcceptanceStatus()): AcceptanceDeliverySummary {
+  const nextGate = status.manualGates[0] ?? null;
+  const safeCommand =
+    status.recommendedCommands.find((command) => command === "npm run smoke:safe") ??
+    status.recommendedCommands[0] ??
+    "npm run verify";
+
+  return {
+    headline: status.canMarkComplete ? "项目已完成全部验收" : "项目主体已就绪，仍保留真实外部动作闸门",
+    stateLabel: status.canMarkComplete ? "可标记完成" : "仍需人工外部验收",
+    completionLine: `当前完成度 ${status.completionPercent}%`,
+    verifiedLine: `已自动覆盖 ${status.verified.length} 项核心能力`,
+    manualGateLine: status.manualGates.length
+      ? `仍有 ${status.manualGates.length} 项必须人工确认：${status.manualGates.map((gate) => gate.label).join("、")}`
+      : "没有剩余人工闸门",
+    nextManualGateId: nextGate?.id ?? null,
+    nextSafeCommand: safeCommand,
+    safeToAutomateCompletion: status.canMarkComplete && status.manualGates.length === 0
+  };
+}

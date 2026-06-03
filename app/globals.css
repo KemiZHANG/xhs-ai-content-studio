@@ -8810,6 +8810,20 @@ textarea {
   padding: 9px 10px;
 }
 
+.acceptanceNextCommand {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 10px 0 0;
+}
+
+.acceptanceNextCommand code {
+  background: rgba(20, 184, 166, 0.1);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 4px 7px;
+}
+
 @media (max-width: 640px) {
   .content {
     padding: 18px;

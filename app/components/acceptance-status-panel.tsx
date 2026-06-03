@@ -1,23 +1,23 @@
 "use client";
 
 import { ShieldCheck } from "lucide-react";
-import { buildAcceptanceStatus } from "@/lib/acceptance/status";
+import { buildAcceptanceDeliverySummary, buildAcceptanceStatus } from "@/lib/acceptance/status";
 
 export function AcceptanceStatusPanel() {
   const status = buildAcceptanceStatus();
-  const manualLabels = status.manualGates.map((gate) => gate.label).join("、");
+  const delivery = buildAcceptanceDeliverySummary(status);
 
   return (
     <section className="settingsGroup acceptanceStatusPanel" aria-label="项目验收状态">
       <div className="acceptanceStatusHeader">
         <div>
           <h3>项目验收状态</h3>
-          <p>{status.summary}</p>
+          <p>{delivery.headline}。{status.summary}</p>
         </div>
         <div className="acceptancePercent">
           <ShieldCheck size={18} />
           <strong>{status.completionPercent}%</strong>
-          <span>{status.canMarkComplete ? "可标记完成" : "仍需外部验收"}</span>
+          <span>{delivery.stateLabel}</span>
         </div>
       </div>
 
@@ -25,12 +25,12 @@ export function AcceptanceStatusPanel() {
         <article>
           <span>已由代码和测试覆盖</span>
           <strong>{status.verified.length} 项</strong>
-          <p>{status.verified.slice(0, 3).map((item) => item.label).join("、")} 等。</p>
+          <p>{delivery.verifiedLine}：{status.verified.slice(0, 3).map((item) => item.label).join("、")} 等。</p>
         </article>
         <article className="warn">
           <span>必须人工确认</span>
           <strong>{status.manualGates.length} 项</strong>
-          <p>{manualLabels}</p>
+          <p>{delivery.manualGateLine}</p>
         </article>
       </div>
 
@@ -52,8 +52,8 @@ export function AcceptanceStatusPanel() {
             <code key={command}>{command}</code>
           ))}
         </div>
+        <p className="acceptanceNextCommand">下一步安全命令：<code>{delivery.nextSafeCommand}</code></p>
       </details>
     </section>
   );
 }
-
