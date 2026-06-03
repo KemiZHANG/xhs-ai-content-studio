@@ -234,7 +234,7 @@ npm run smoke:acceptance-status
 http://localhost:3000/api/acceptance/status
 ```
 
-这个接口只返回代码覆盖项、推荐 smoke 命令和仍需人工确认的真实外部动作，不会调用 MCP、模型、发布或定时。
+这个接口只返回代码覆盖项、推荐 smoke 命令和仍需人工确认的真实外部动作，不会调用 MCP、模型、发布或定时。返回值里的 `evidencePackage` 是只读验收证据模板，包含每个真实外部闸门的 checklist、证据字段和 `evidenceRecordTemplate`，可以保存为 JSON 用于真实发布、定时发布、多账号切换和生图验收留档。
 
 ### 常用命令
 
@@ -503,7 +503,7 @@ Or open:
 http://localhost:3000/api/acceptance/status
 ```
 
-This endpoint only returns covered areas, recommended smoke commands, and remaining manual external checks. It does not call MCP, models, publishing, or scheduling.
+This endpoint only returns covered areas, recommended smoke commands, and remaining manual external checks. It does not call MCP, models, publishing, or scheduling. The `evidencePackage` field is a read-only validation evidence template with each external gate's checklist, evidence fields, and `evidenceRecordTemplate`; save it as JSON when recording real publishing, scheduled publishing, multi-account, or image-generation validation.
 
 ### Useful Commands
 

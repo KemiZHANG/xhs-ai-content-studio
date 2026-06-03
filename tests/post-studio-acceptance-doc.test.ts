@@ -19,6 +19,10 @@ describe("post studio acceptance documentation", () => {
     expect(readme).toContain("npm run smoke:local");
     expect(readme).toContain("npm run smoke:research");
     expect(readme).toContain("npm run smoke:publish-dry-run");
+    expect(readme).toContain("evidencePackage");
+    expect(readme).toContain("evidenceRecordTemplate");
+    expect(readme).toContain("只读验收证据模板");
+    expect(readme).toContain("read-only validation evidence template");
     expect(readme).toContain("Post Studio 常用指令");
     expect(readme).toContain("Useful Post Studio Prompts");
     expect(readme).toContain("真实发布仍需要在发布检查区人工确认");
