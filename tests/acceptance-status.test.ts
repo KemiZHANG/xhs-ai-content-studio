@@ -53,6 +53,7 @@ describe("acceptance status", () => {
     expect(status.recommendedCommands).toContain("npm run acceptance:evidence-package");
     expect(status.recommendedCommands).toContain("npm run acceptance:validate-evidence");
     expect(status.recommendedCommands).toContain("npm run acceptance:record-evidence");
+    expect(status.recommendedCommands).toContain("npm run acceptance:export-records");
     expect(status.manualGates.find((gate) => gate.id === "real_publish")?.guide).toBe("docs/real-publish-acceptance.md");
     expect(status.manualGates.find((gate) => gate.id === "multi_account_switching")?.guide).toBe("docs/multi-account-acceptance.md");
     expect(status.manualGates.find((gate) => gate.id === "real_publish")?.firstSafeStep).toContain("仅自己可见");
@@ -85,7 +86,8 @@ describe("acceptance status", () => {
     expect(evidencePackage.commands).toEqual(expect.arrayContaining([
       "npm run acceptance:evidence-package",
       "npm run acceptance:validate-evidence",
-      "npm run acceptance:record-evidence"
+      "npm run acceptance:record-evidence",
+      "npm run acceptance:export-records"
     ]));
     expect(evidencePackage.gates.map((gate) => gate.id)).toEqual([
       "real_publish",
@@ -133,6 +135,7 @@ describe("acceptance status", () => {
       "large_scale_image_generation"
     ]);
     expect(matrix.recommendedCommands).toContain("npm run acceptance:status");
+    expect(matrix.recommendedCommands).toContain("npm run acceptance:export-records");
   });
 
   it("exposes a read-only API contract for frontend status panels", async () => {
@@ -162,5 +165,6 @@ describe("acceptance status", () => {
     expect(payload.completionMatrix.completionPercent).toBe(99);
     expect(payload.completionMatrix.remainingWork[0]?.id).toBe("real_publish");
     expect(payload.completionMatrix.manualExternalGates.every((gate) => gate.canBeAutomated === false)).toBe(true);
+    expect(payload.completionMatrix.recommendedCommands).toContain("npm run acceptance:export-records");
   });
 });

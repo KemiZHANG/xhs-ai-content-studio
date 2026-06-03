@@ -47,6 +47,8 @@ describe("acceptance status smoke script", () => {
     expect(script).toContain("evidence field templates");
     expect(script).toContain("nextManualGateId");
     expect(script).toContain("nextSafeCommand");
+    expect(script).toContain("npm run acceptance:record-evidence");
+    expect(script).toContain("npm run acceptance:export-records");
     expect(script).toContain("real_publish");
     expect(script).toContain("scheduled_publish");
     expect(script).toContain("multi_account_switching");

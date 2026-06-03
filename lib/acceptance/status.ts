@@ -263,7 +263,8 @@ export function buildAcceptanceStatus(records: AcceptanceValidationRecordInput[]
       "npm run acceptance:status",
       "npm run acceptance:evidence-package",
       "npm run acceptance:validate-evidence",
-      "npm run acceptance:record-evidence"
+      "npm run acceptance:record-evidence",
+      "npm run acceptance:export-records"
     ]
   };
 }

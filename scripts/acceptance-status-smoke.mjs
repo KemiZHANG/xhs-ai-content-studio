@@ -174,7 +174,13 @@ try {
       fail(`evidence package gate ${gate.id || "unknown"} is missing a validation record template`);
     }
   }
-  for (const command of ["npm run verify", "npm run smoke:safe", "npm run smoke:accounts"]) {
+  for (const command of [
+    "npm run verify",
+    "npm run smoke:safe",
+    "npm run smoke:accounts",
+    "npm run acceptance:record-evidence",
+    "npm run acceptance:export-records"
+  ]) {
     if (!status.recommendedCommands?.includes(command)) fail(`recommended commands are missing ${command}`);
   }
 
