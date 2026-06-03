@@ -109,6 +109,23 @@ API Key 会保存在本地 `data/settings.json`，该目录已被 `.gitignore` �
 
 > 高级主题研究、旧版 AI 工作台、高级图片工具和备用发布装配页仍然保留，但它们主要用于排查、批量处理或兼容旧流程。日常创作建议始终从 **Post Studio** 开始并回到 **Post Studio** 完成确认。
 
+### Post Studio 常用指令
+
+在 Post Studio 里，你可以像和内容创作导演沟通一样输入：
+
+```text
+新建项目：主题是广州咖啡馆，目标人群是周末探店女生，语气真实生活化。
+帮我找最近一周广州咖啡馆高收藏笔记，分析标题、正文、标签和图片风格。
+把高质量样本保存到爆款库，并基于实时证据和爆款库规律生成 CreativeBrief。
+基于当前 CreativeBrief 生成一篇原创小红书图文笔记，不要重新搜索。
+把标题再生活化一点，正文减少广告感。
+确认当前图片方向，然后生成 3 张小红书封面图。
+就用第二张图，把当前文案和图片组装成最终帖子并运行 Quality Gate。
+今晚 8 点生成定时发布确认单，仅自己可见。
+```
+
+Agent 会读取当前 PostProject，所以“再生活化一点”“用第二张图”“今晚 8 点发”这类上下文指令会作用在当前帖子项目上。真实发布仍需要在发布检查区人工确认。
+
 ### 多账号说明
 
 项目支持保存多个小红书账号档案。每个账号档案对应一个 MCP 地址。
@@ -298,6 +315,23 @@ Find high-save Guangzhou coffee shop posts from the last week, analyze title and
 10. Use “private only” for the first real publishing test.
 
 > Advanced Topic Research, Legacy AI Workspace, Advanced Image Studio, and Fallback Publishing Assembly are still available for debugging, batch work, and old-flow compatibility. For daily creation, start in **Post Studio** and return to **Post Studio** for final confirmation.
+
+### Useful Post Studio Prompts
+
+In Post Studio, you can talk to the agent like a content director:
+
+```text
+Start a new project: topic is Guangzhou coffee shops, audience is weekend cafe visitors, tone is honest and lifestyle-driven.
+Find high-save Guangzhou coffee shop notes from the last week and analyze titles, copy, tags, and image style.
+Save strong samples to the Viral Knowledge Base, then create a CreativeBrief from realtime evidence and viral patterns.
+Generate an original Xiaohongshu note from the current CreativeBrief without searching again.
+Make the title more natural and reduce the advertising tone in the body copy.
+Confirm the current visual direction, then generate 3 Xiaohongshu cover images.
+Use the second image, assemble the current copy and image into the final post, and run Quality Gate.
+Create a private scheduled publish confirmation for 8 PM tonight.
+```
+
+The agent reads the active PostProject, so contextual commands such as “make it more natural”, “use the second image”, and “post tonight at 8” apply to the current post project. Real publishing still requires manual confirmation in the publishing check area.
 
 ### Multi-Account Notes
 

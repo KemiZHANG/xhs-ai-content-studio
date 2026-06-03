@@ -17,6 +17,9 @@ describe("post studio acceptance documentation", () => {
     expect(readme).toContain("X-XHS-Action-Token");
     expect(readme).toContain("npm run smoke:local");
     expect(readme).toContain("npm run smoke:research");
+    expect(readme).toContain("Post Studio 常用指令");
+    expect(readme).toContain("Useful Post Studio Prompts");
+    expect(readme).toContain("真实发布仍需要在发布检查区人工确认");
   });
 
   it("keeps the acceptance checklist aligned with the product-level goal", () => {
@@ -46,5 +49,7 @@ describe("post studio acceptance documentation", () => {
     expect(checklist).toContain("fetch failed");
     expect(checklist).toContain("npm run smoke:local");
     expect(checklist).toContain("npm run smoke:research");
+    expect(checklist).toContain("把这些高质量样本保存到爆款库");
+    expect(checklist).toContain("基于当前 CreativeBrief 生成原创文案");
   });
 });
