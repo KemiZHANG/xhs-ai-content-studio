@@ -137,6 +137,16 @@ API Key 会保存在本地 `data/settings.json`，该目录已被 `.gitignore` �
 
 如果你想确认本地功能是否完整跑通，请参考 [Post Studio 验收清单](docs/post-studio-acceptance.md)。它覆盖从新建 PostProject、真实研究、爆款库 RAG、CreativeBrief、文案、图片、最终帖子、Quality Gate 到发布确认的完整检查步骤。真实发布和定时发布需要你明确授权后再测试。
 
+### 真实 MCP 验收与故障判断
+
+真实小红书研究依赖本机 MCP 服务。如果研究接口报错，请先确认：
+
+- `http://localhost:18060/mcp` 正在运行，或者执行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1`。
+- 左侧账号状态或 `/api/health/mcp` 显示 `reachable: true`、`loggedIn: true`。
+- 如果 `/api/health/mcp` 返回 `fetch failed`，说明 MCP 没启动或端口不通，不代表 Post Studio 代码损坏。
+- 如果直接用脚本 POST `/api/chat` 返回 `403`，这是本地操作令牌保护；网页会通过 `/api/settings` 自动刷新并携带 `X-XHS-Action-Token`。
+- 真正的发布和定时发布必须先生成确认单，并由使用者明确授权后再点击。
+
 ### 常用命令
 
 ```powershell
@@ -297,6 +307,16 @@ Policies:
 ### Acceptance Checklist
 
 To verify that the local workspace is working end to end, follow the [Post Studio acceptance checklist](docs/post-studio-acceptance.md). It covers a clean PostProject, real research, Viral Knowledge RAG, CreativeBrief, copy, images, final post assembly, Quality Gate, and publishing confirmation. Real publishing and scheduled publishing should only be tested after explicit user authorization.
+
+### Real MCP Smoke Test And Troubleshooting
+
+Real Xiaohongshu research depends on the local MCP service. If research fails, check:
+
+- `http://localhost:18060/mcp` is running, or run `powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1`.
+- The sidebar account card or `/api/health/mcp` reports `reachable: true` and `loggedIn: true`.
+- If `/api/health/mcp` returns `fetch failed`, the MCP service is not running or the port is unreachable; this does not mean Post Studio is broken.
+- If direct script calls to `/api/chat` return `403`, the local action-token guard is working; the web client refreshes the token through `/api/settings` and sends `X-XHS-Action-Token`.
+- Real publishing and scheduled publishing must be confirmed by the user before any external MCP write is triggered.
 
 ### Useful Commands
 

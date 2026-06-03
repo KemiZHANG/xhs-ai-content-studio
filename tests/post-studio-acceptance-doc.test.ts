@@ -13,6 +13,8 @@ describe("post studio acceptance documentation", () => {
     expect(readme).toContain("[Post Studio acceptance checklist](docs/post-studio-acceptance.md)");
     expect(readme).toContain("真实发布和定时发布需要你明确授权后再测试");
     expect(readme).toContain("explicit user authorization");
+    expect(readme).toContain("/api/health/mcp");
+    expect(readme).toContain("X-XHS-Action-Token");
   });
 
   it("keeps the acceptance checklist aligned with the product-level goal", () => {
@@ -38,5 +40,7 @@ describe("post studio acceptance documentation", () => {
     expect(checklist).toContain("真实发布闸门");
     expect(checklist).toContain("确认前不会调用小红书 MCP");
     expect(checklist).toContain("自动发布默认关闭");
+    expect(checklist).toContain("reachable: true");
+    expect(checklist).toContain("fetch failed");
   });
 });
