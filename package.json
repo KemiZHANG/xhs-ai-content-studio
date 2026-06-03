@@ -18,7 +18,8 @@
     "smoke:chat-stream": "node scripts/chat-stream-smoke.mjs",
     "smoke:research": "node scripts/research-smoke.mjs",
     "smoke:publish-dry-run": "node scripts/publish-dry-run-smoke.mjs",
-    "smoke:acceptance-status": "node scripts/acceptance-status-smoke.mjs"
+    "smoke:acceptance-status": "node scripts/acceptance-status-smoke.mjs",
+    "acceptance:evidence-package": "node scripts/export-acceptance-evidence-package.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.16.0",

@@ -23,6 +23,8 @@ describe("post studio acceptance documentation", () => {
     expect(readme).toContain("evidenceRecordTemplate");
     expect(readme).toContain("只读验收证据模板");
     expect(readme).toContain("read-only validation evidence template");
+    expect(readme).toContain("npm run acceptance:evidence-package");
+    expect(readme).toContain("data/manual-acceptance-evidence-package.json");
     expect(readme).toContain("Post Studio 常用指令");
     expect(readme).toContain("Useful Post Studio Prompts");
     expect(readme).toContain("真实发布仍需要在发布检查区人工确认");
