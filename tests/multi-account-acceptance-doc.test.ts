@@ -41,6 +41,6 @@ describe("multi-account acceptance documentation", () => {
     expect(readme).toContain("[多账号验收指南](docs/multi-account-acceptance.md)");
     expect(readme).toContain("[multi-account acceptance guide](docs/multi-account-acceptance.md)");
     expect(matrix).toContain("docs/multi-account-acceptance.md");
-    expect(matrix).toContain("当前估计完成度：**98%**");
+    expect(matrix).toContain("当前估计完成度：**99%**");
   });
 });

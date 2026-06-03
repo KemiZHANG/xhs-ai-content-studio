@@ -200,7 +200,7 @@ const manualGates: AcceptanceExternalGate[] = [
 
 export function buildAcceptanceStatus(): AcceptanceStatus {
   return {
-    completionPercent: 98,
+    completionPercent: 99,
     summary: "核心 Post Studio Agent、PostProject、CreativeBrief、RAG、图片、发布确认和安全审计已由代码、测试和 smoke 覆盖；剩余为真实外部账号动作验收。",
     canMarkComplete: false,
     verified,

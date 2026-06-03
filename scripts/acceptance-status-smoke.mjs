@@ -55,7 +55,7 @@ try {
   line("Evidence package", `v${evidencePackage.schemaVersion || "missing"}`);
   line("Recommended commands", Array.isArray(status.recommendedCommands) ? status.recommendedCommands.join(", ") : "missing");
 
-  if (status.completionPercent !== 98) fail("completionPercent should stay at 98 until real external validation is done");
+  if (status.completionPercent !== 99) fail("completionPercent should stay at 99 until real external validation is done");
   if (status.canMarkComplete !== false) fail("canMarkComplete must stay false while real publish/schedule/account gates remain manual");
   if (deliverySummary.safeToAutomateCompletion !== false) fail("deliverySummary must not allow automated completion while manual gates remain");
   if (deliverySummary.nextManualGateId !== "real_publish") fail("deliverySummary should keep real publish as the first manual gate");

@@ -8,7 +8,7 @@ describe("acceptance status panel", () => {
     const html = renderToStaticMarkup(createElement(AcceptanceStatusPanel));
 
     expect(html).toContain("项目验收状态");
-    expect(html).toContain("98%");
+    expect(html).toContain("99%");
     expect(html).toContain("仍需人工外部验收");
     expect(html).toContain("已由代码和测试覆盖");
     expect(html).toContain("必须人工确认");
