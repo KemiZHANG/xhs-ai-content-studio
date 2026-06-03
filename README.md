@@ -286,6 +286,14 @@ npm run acceptance:record-evidence
 
 这个命令会把填好的 `evidenceRecordTemplate` 逐条提交到 `/api/acceptance/validation-records`。它只写入本地验收记录，不会调用 MCP、模型、发布或定时。
 
+录入后，如果需要把当前人工验收记录、完成度和完成矩阵一起导出留档：
+
+```powershell
+npm run acceptance:export-records
+```
+
+默认会写入 `data/acceptance-validation-records-export.json`，也可以用 `XHS_ACCEPTANCE_RECORDS_PATH` 指定输出路径。这个命令只读取 validation records，不会调用 MCP、模型、发布或定时。
+
 如需先预览不会写入的导入内容，可以运行：
 
 ```powershell
@@ -309,6 +317,7 @@ npm run smoke:acceptance-status
 npm run acceptance:evidence-package
 npm run acceptance:validate-evidence
 npm run acceptance:record-evidence
+npm run acceptance:export-records
 npm test
 npm run typecheck
 npm run build
@@ -614,6 +623,14 @@ npm run acceptance:record-evidence
 
 This command submits the filled `evidenceRecordTemplate` records to `/api/acceptance/validation-records`. It only writes local acceptance records and does not call MCP, models, publishing, or scheduling.
 
+After recording evidence, export the current validation records, completion status, and completion matrix for handoff or audit:
+
+```powershell
+npm run acceptance:export-records
+```
+
+By default it writes `data/acceptance-validation-records-export.json`. Set `XHS_ACCEPTANCE_RECORDS_PATH` to choose another output path. This command only reads validation records and does not call MCP, models, publishing, or scheduling.
+
 To preview the import without writing local records, run:
 
 ```powershell
@@ -637,6 +654,7 @@ npm run smoke:acceptance-status
 npm run acceptance:evidence-package
 npm run acceptance:validate-evidence
 npm run acceptance:record-evidence
+npm run acceptance:export-records
 npm test
 npm run typecheck
 npm run build

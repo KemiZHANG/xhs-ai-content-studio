@@ -23,7 +23,8 @@
     "acceptance:completion-matrix": "node scripts/export-acceptance-completion-matrix.mjs",
     "acceptance:evidence-package": "node scripts/export-acceptance-evidence-package.mjs",
     "acceptance:validate-evidence": "node scripts/validate-acceptance-evidence-package.mjs",
-    "acceptance:record-evidence": "node scripts/import-acceptance-validation-records.mjs"
+    "acceptance:record-evidence": "node scripts/import-acceptance-validation-records.mjs",
+    "acceptance:export-records": "node scripts/export-acceptance-validation-records.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.16.0",
