@@ -258,6 +258,14 @@ npm run acceptance:validate-evidence
 
 这个命令只校验本地 JSON 是否填完整，不会调用 MCP、模型、发布或定时。它会把校验结果写入 `data/manual-acceptance-validation-report.json`，也可以用 `XHS_ACCEPTANCE_REPORT_PATH` 指定报告路径。
 
+如果校验通过，并且你希望把这些人工验收凭证写回本地系统状态，可以运行：
+
+```powershell
+npm run acceptance:record-evidence
+```
+
+这个命令会把填好的 `evidenceRecordTemplate` 逐条提交到 `/api/acceptance/validation-records`。它只写入本地验收记录，不会调用 MCP、模型、发布或定时。
+
 ### 常用命令
 
 ```powershell
@@ -274,6 +282,7 @@ npm run smoke:publish-dry-run
 npm run smoke:acceptance-status
 npm run acceptance:evidence-package
 npm run acceptance:validate-evidence
+npm run acceptance:record-evidence
 npm test
 npm run typecheck
 npm run build
@@ -551,6 +560,14 @@ npm run acceptance:validate-evidence
 
 This command only validates the local JSON file. It does not call MCP, models, publishing, or scheduling. It writes the validation result to `data/manual-acceptance-validation-report.json`; set `XHS_ACCEPTANCE_REPORT_PATH` to choose another report path.
 
+If validation passes and you want the local app to remember those manual checks, run:
+
+```powershell
+npm run acceptance:record-evidence
+```
+
+This command submits the filled `evidenceRecordTemplate` records to `/api/acceptance/validation-records`. It only writes local acceptance records and does not call MCP, models, publishing, or scheduling.
+
 ### Useful Commands
 
 ```powershell
@@ -567,6 +584,7 @@ npm run smoke:publish-dry-run
 npm run smoke:acceptance-status
 npm run acceptance:evidence-package
 npm run acceptance:validate-evidence
+npm run acceptance:record-evidence
 npm test
 npm run typecheck
 npm run build

@@ -54,6 +54,9 @@ export function AcceptanceStatusPanel() {
           <span>已验证 {status.validatedManualGateIds.length}</span>
           <span>待验证 {status.pendingManualGateIds.length}</span>
         </div>
+        <div className="acceptanceEvidenceCommands">
+          <code>npm run acceptance:record-evidence</code>
+        </div>
       </article>
 
       <details className="acceptanceStatusDetails">
