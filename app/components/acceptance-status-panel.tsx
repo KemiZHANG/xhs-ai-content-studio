@@ -66,6 +66,8 @@ export function AcceptanceStatusPanel() {
         </div>
         <div className="acceptanceEvidenceCommands">
           <code>npm run acceptance:record-evidence</code>
+          <code>npm run acceptance:export-records</code>
+          <code>data/acceptance-validation-records-export.json</code>
         </div>
       </article>
 

@@ -30,6 +30,8 @@ describe("acceptance status panel", () => {
     expect(html).toContain("等待人工验收记录");
     expect(html).toContain("项目才会从 99% 变成可证明的 100%");
     expect(html).toContain("npm run acceptance:record-evidence");
+    expect(html).toContain("npm run acceptance:export-records");
+    expect(html).toContain("data/acceptance-validation-records-export.json");
     expect(html).toContain("npm run acceptance:evidence-package");
     expect(html).toContain("npm run acceptance:validate-evidence");
     expect(html).toContain("不会调用 MCP、模型、发布或定时任务");
