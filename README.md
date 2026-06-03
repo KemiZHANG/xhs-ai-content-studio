@@ -17,7 +17,7 @@ XHS AI Content Studio 是一个本地优先的小红书 AI 内容创作 Agent。
 ### 核心功能
 
 - **Post Studio**：主工作台。围绕一个帖子项目展示 AI 对话、Post Canvas、研究证据、CreativeBrief、图片素材和发布检查。
-- **AI Agent 调度层**：根据用户自然语言判断意图，例如研究、总结、生成文案、改写、生成图片、选图、发布检查、定时发布。
+- **AI Agent 调度层**：根据用户自然语言判断意图，例如研究、总结、生成文案、改写、生成图片、选图、发布检查、定时发布；同时提供兼容旧前端的 `/api/chat` 和可用于流式 UI 的 `/api/chat/stream` SSE 接口。
 - **PostProject 状态**：保存当前主题、证据包、样本、CreativeBrief、文案版本、图片方向、生成图片、最终帖子、发布计划和阶段。
 - **真实证据研究**：通过 Xiaohongshu MCP 搜索和读取真实笔记，再提炼标题、正文、标签、图片、评论和用户痛点。
 - **爆款库 RAG**：把高质量样本沉淀为标题钩子、正文结构、标签组合、图片风格、痛点和情绪触发点；检索时使用多 query 融合、语义匹配和多样性选择，后续创作可同时参考实时证据和历史规律。
@@ -270,7 +270,7 @@ It is not just an auto-posting script. It is designed as an evidence-based conte
 ### Core Features
 
 - **Post Studio**: The main workspace for one active post project, including AI chat, Post Canvas, research evidence, CreativeBrief, assets, and publishing checks.
-- **AI Agent Orchestrator**: Detects user intent such as research, summarize, draft, revise, generate images, select images, prepare publishing, and schedule publishing.
+- **AI Agent Orchestrator**: Detects user intent such as research, summarize, draft, revise, generate images, select images, prepare publishing, and schedule publishing. It exposes both the legacy-compatible `/api/chat` endpoint and an SSE-based `/api/chat/stream` endpoint for streaming UIs.
 - **PostProject State**: Stores topic, evidence pack, selected samples, CreativeBrief, copy versions, visual direction, generated images, final post, publish plan, and current stage.
 - **Evidence-Based Research**: Uses Xiaohongshu MCP to search and read real notes before generating content.
 - **Viral Knowledge RAG**: Saves strong samples as reusable creative patterns, including title hooks, copy structures, tag patterns, image style, pain points, and emotional triggers. Retrieval uses multi-query fusion, semantic matching, and diversity selection.
