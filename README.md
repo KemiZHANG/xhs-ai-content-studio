@@ -147,11 +147,20 @@ API Key 会保存在本地 `data/settings.json`，该目录已被 `.gitignore` �
 - 如果直接用脚本 POST `/api/chat` 返回 `403`，这是本地操作令牌保护；网页会通过 `/api/settings` 自动刷新并携带 `X-XHS-Action-Token`。
 - 真正的发布和定时发布必须先生成确认单，并由使用者明确授权后再点击。
 
+启动网页后，也可以运行只读 smoke 检查：
+
+```powershell
+npm run smoke:local
+```
+
+这个命令只检查网页、MCP 登录、工具数量和当前 PostProject，不会搜索、生成图片或发布。
+
 ### 常用命令
 
 ```powershell
 npm run dev
 npm run acceptance
+npm run smoke:local
 npm test
 npm run typecheck
 npm run build
@@ -318,11 +327,20 @@ Real Xiaohongshu research depends on the local MCP service. If research fails, c
 - If direct script calls to `/api/chat` return `403`, the local action-token guard is working; the web client refreshes the token through `/api/settings` and sends `X-XHS-Action-Token`.
 - Real publishing and scheduled publishing must be confirmed by the user before any external MCP write is triggered.
 
+After the web app is running, you can also run the read-only smoke check:
+
+```powershell
+npm run smoke:local
+```
+
+This command only checks the web app, MCP login, tool count, and active PostProject. It does not search, generate images, or publish.
+
 ### Useful Commands
 
 ```powershell
 npm run dev
 npm run acceptance
+npm run smoke:local
 npm test
 npm run typecheck
 npm run build

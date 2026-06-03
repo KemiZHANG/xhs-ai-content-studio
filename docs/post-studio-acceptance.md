@@ -11,12 +11,14 @@
 5. 在 Settings 中确认文本模型和图片模型已经配置。
 6. 在账号区域确认小红书 MCP 可访问，并能看到当前账号状态。
 7. 如需接口级确认，可访问 `/api/health/mcp`，结果应显示 `reachable: true`、`loggedIn: true`。
+8. 启动网页后可运行 `npm run smoke:local`，确认网页、MCP、登录状态和当前 PostProject 都可读。
 
 通过标准：
 - 页面默认把日常创作引导回 Post Studio。
 - 旧页面仍可进入，但文案明确它们是高级/备用入口。
 - 未登录或模型缺失时，页面能给出可理解的状态提示。
 - 如果健康检查返回 `fetch failed`，先启动 MCP 或重新登录，不要把它判断成 Post Studio 前端损坏。
+- `npm run smoke:local` 是只读检查，不会搜索、生成图片或发布。
 
 ## 2. 新建 PostProject
 

@@ -9,7 +9,8 @@
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "acceptance": "vitest run tests/post-studio-acceptance-doc.test.ts tests/post-project.test.ts tests/agent-orchestrator.test.ts tests/post-canvas-panel.test.ts tests/post-studio-publish-tab.test.ts tests/viral-rag.test.ts tests/viral-knowledge.test.ts"
+    "acceptance": "vitest run tests/post-studio-acceptance-doc.test.ts tests/post-project.test.ts tests/agent-orchestrator.test.ts tests/post-canvas-panel.test.ts tests/post-studio-publish-tab.test.ts tests/viral-rag.test.ts tests/viral-knowledge.test.ts",
+    "smoke:local": "node scripts/local-smoke.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.16.0",
