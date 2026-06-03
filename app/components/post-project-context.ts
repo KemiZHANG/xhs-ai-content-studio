@@ -5,6 +5,7 @@ export type PostProjectContextSummary = {
   title: string;
   projectLine: string;
   boundaryLine: string;
+  boundaryChecklist: string[];
   accountLine: string;
   scopeLine: string;
   publishLine: string;
@@ -65,6 +66,9 @@ export function buildPostProjectContextSummary({
     boundaryLine: project
       ? "所有生成、选图、发布检查都会写入当前 PostProject；历史任务不会自动覆盖当前画布。"
       : "这是一个干净的新帖子入口：旧证据、旧草稿、旧图片和旧发布计划不会自动带入。",
+    boundaryChecklist: project
+      ? ["历史任务只读保留", "当前画布独立保存"]
+      : ["旧证据不带入", "旧草稿不带入", "旧图片不带入", "旧发布计划不带入"],
     accountLine: [
       accountReady ? "账号已确认" : "账号待确认",
       activeAccount?.displayName ?? settings.activeAccountId,

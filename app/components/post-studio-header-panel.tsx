@@ -124,6 +124,11 @@ function ProjectContextCard({ summary }: { summary: PostProjectContextSummary })
         <strong>{summary.title}</strong>
         <p>{summary.projectLine}</p>
         <small>{summary.boundaryLine}</small>
+        <div className="projectContextBoundaryChecklist" aria-label="项目边界清单">
+          {summary.boundaryChecklist.map((item) => (
+            <em key={item}>{item}</em>
+          ))}
+        </div>
       </div>
       <div className="projectContextLines">
         <span>{summary.accountLine}</span>

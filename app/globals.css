@@ -3593,6 +3593,24 @@ textarea {
   overflow-wrap: anywhere;
 }
 
+.projectContextBoundaryChecklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.projectContextBoundaryChecklist em {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  padding: 4px 8px;
+}
+
 .projectContextChips {
   display: flex;
   flex-wrap: wrap;

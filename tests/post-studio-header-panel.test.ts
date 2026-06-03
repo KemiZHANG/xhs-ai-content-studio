@@ -11,6 +11,7 @@ const projectContextSummary: PostProjectContextSummary = {
   title: "广州咖啡馆探店",
   projectLine: "项目 post-123 · Brief 就绪",
   boundaryLine: "所有生成、选图、发布检查都会写入当前 PostProject；历史任务不会自动覆盖当前画布。",
+  boundaryChecklist: ["历史任务只读保留", "当前画布独立保存"],
   accountLine: "账号已确认 · 咖啡探店号 · xiaohongshu-mcp",
   scopeLine: "证据 8 条 / 样本 4 条 / 文案版本 2 个 / 选图 3 张",
   publishLine: "定时确认单待人工确认",
@@ -94,6 +95,8 @@ describe("post studio header panel", () => {
     expect(html).toContain("当前帖子项目");
     expect(html).toContain("广州咖啡馆探店");
     expect(html).toContain("历史任务不会自动覆盖当前画布");
+    expect(html).toContain("历史任务只读保留");
+    expect(html).toContain("当前画布独立保存");
     expect(html).toContain("证据 8 条");
     expect(html).toContain("当前判断");
     expect(html).toContain("下一步已经明确");
