@@ -25,6 +25,13 @@ describe("acceptance status", () => {
     ]);
     expect(status.manualGates.every((gate) => gate.canBeAutomated === false)).toBe(true);
     expect(status.manualGates.every((gate) => gate.proofRequired.length > 20)).toBe(true);
+    expect(status.manualGates.every((gate) => gate.checklist.length >= 5)).toBe(true);
+    expect(status.manualGates.find((gate) => gate.id === "real_publish")?.checklist).toContain(
+      "Create a private visibility publish confirmation in Post Studio."
+    );
+    expect(status.manualGates.find((gate) => gate.id === "multi_account_switching")?.checklist).toContain(
+      "Verify the old publish confirmation is invalidated and a new confirmation is required."
+    );
   });
 
   it("points manual gates to safe acceptance guides and smoke commands", () => {
@@ -65,6 +72,7 @@ describe("acceptance status", () => {
     expect(payload.status.completionPercent).toBe(98);
     expect(payload.status.canMarkComplete).toBe(false);
     expect(payload.status.manualGates.length).toBeGreaterThanOrEqual(3);
+    expect(payload.status.manualGates[0]?.checklist.length).toBeGreaterThanOrEqual(5);
     expect(payload.deliverySummary.completionLine).toBe("当前完成度 98%");
     expect(payload.deliverySummary.nextSafeCommand).toBe("npm run smoke:safe");
     expect(payload.deliverySummary.safeToAutomateCompletion).toBe(false);

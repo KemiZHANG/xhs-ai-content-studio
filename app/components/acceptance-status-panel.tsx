@@ -47,6 +47,11 @@ export function AcceptanceStatusPanel() {
               <small>
                 完成证据：{gate.proofRequired} · {gate.canBeAutomated ? "可自动验收" : "必须人工验收"}
               </small>
+              <ol className="acceptanceChecklist">
+                {gate.checklist.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ol>
             </article>
           ))}
         </div>

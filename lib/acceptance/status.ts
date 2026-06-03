@@ -12,6 +12,7 @@ export type AcceptanceExternalGate = {
   guide: string;
   firstSafeStep: string;
   proofRequired: string;
+  checklist: string[];
   canBeAutomated: boolean;
 };
 
@@ -82,6 +83,13 @@ const manualGates: AcceptanceExternalGate[] = [
     guide: "docs/real-publish-acceptance.md",
     firstSafeStep: "先生成仅自己可见的发布确认单。",
     proofRequired: "Post Studio 人工确认后，小红书账号中出现仅自己可见笔记，Publish History 记录 published 回执和账号/MCP URL。",
+    checklist: [
+      "Run npm run smoke:safe and confirm all local safety checks pass.",
+      "Create a private visibility publish confirmation in Post Studio.",
+      "Manually confirm only after title, copy, tags, selected images, account, visibility, and Quality Gate match the confirmation order.",
+      "Verify the note appears in the active Xiaohongshu account.",
+      "Verify Publish History records a published receipt with account, MCP URL, visibility, image count, and idempotency key."
+    ],
     canBeAutomated: false
   },
   {
@@ -91,6 +99,13 @@ const manualGates: AcceptanceExternalGate[] = [
     guide: "docs/real-publish-acceptance.md",
     firstSafeStep: "先用未来时间生成定时发布确认单。",
     proofRequired: "Post Studio 人工确认后，小红书账号中出现未来定时任务，Publish History 记录 scheduled 回执、时区和账号/MCP URL。",
+    checklist: [
+      "Choose a future schedule time and confirm the timezone shown in Post Studio.",
+      "Create a scheduled publish confirmation with private visibility first.",
+      "Manually confirm only after the schedule time, account, visibility, title, copy, tags, images, and Quality Gate match.",
+      "Verify Xiaohongshu or the MCP response shows a future scheduled task.",
+      "Verify Publish History records a scheduled receipt with schedule time, timezone, account, MCP URL, and idempotency key."
+    ],
     canBeAutomated: false
   },
   {
@@ -100,6 +115,14 @@ const manualGates: AcceptanceExternalGate[] = [
     guide: "docs/multi-account-acceptance.md",
     firstSafeStep: "分别启动 18060、18061 等 MCP 端口并运行 npm run smoke:accounts。",
     proofRequired: "至少两个真实账号分别通过独立 MCP URL 显示登录状态；切换账号后旧确认单失效，审计记录写入对应账号 ID 和 MCP URL。",
+    checklist: [
+      "Start at least two independent MCP sessions, such as 18060 and 18061.",
+      "Log in with a different real Xiaohongshu account in each MCP session.",
+      "Run npm run smoke:accounts and confirm both configured accounts are reachable.",
+      "Switch from account A to account B in Settings or Post Studio.",
+      "Verify the old publish confirmation is invalidated and a new confirmation is required.",
+      "Verify audit or Publish History records the correct account ID when available and MCP URL for each account-specific action."
+    ],
     canBeAutomated: false
   },
   {
@@ -109,6 +132,13 @@ const manualGates: AcceptanceExternalGate[] = [
     guide: "README.md",
     firstSafeStep: "先小批量生成 1-3 张，再提高每日图片调用上限。",
     proofRequired: "在真实图片模型额度下完成一轮小批量生图，确认成本限制、失败重试和生成资产记录符合预期。",
+    checklist: [
+      "Confirm image model API key, model name, and daily image call limit in Settings.",
+      "Generate a small batch of 1-3 images before raising limits.",
+      "Verify generated images are saved as assets and can be selected in Post Studio.",
+      "Verify failed image calls do not retry indefinitely.",
+      "Verify cost and usage expectations before running a larger batch."
+    ],
     canBeAutomated: false
   }
 ];

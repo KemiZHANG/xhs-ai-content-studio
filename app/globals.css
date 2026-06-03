@@ -8801,6 +8801,20 @@ textarea {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
+.acceptanceChecklist {
+  color: var(--muted);
+  display: grid;
+  font-size: 12px;
+  gap: 6px;
+  line-height: 1.45;
+  margin: 10px 0 0;
+  padding-left: 18px;
+}
+
+.acceptanceChecklist li {
+  padding-left: 2px;
+}
+
 .acceptanceCommandList code {
   background: rgba(15, 23, 42, 0.06);
   border: 1px solid rgba(15, 23, 42, 0.08);
