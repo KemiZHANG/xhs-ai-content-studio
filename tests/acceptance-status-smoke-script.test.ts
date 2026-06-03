@@ -30,9 +30,13 @@ describe("acceptance status smoke script", () => {
     expect(script).toContain("schemaVersion");
     expect(script).toContain("manualOnly");
     expect(script).toContain("evidenceRecordTemplate");
-    expect(script).toContain("completionPercent !== 99");
-    expect(script).toContain("canMarkComplete must stay false");
-    expect(script).toContain("safeToAutomateCompletion");
+    expect(script).toContain("expectedCompletionPercent");
+    expect(script).toContain("allManualGatesValidated");
+    expect(script).toContain("completionPercent should be");
+    expect(script).toContain("canMarkComplete must match whether every manual external gate has a valid record");
+    expect(script).toContain("safeToAutomateCompletion must match whether every manual external gate has a valid record");
+    expect(script).toContain("nextManualGateId should point to the first pending manual gate");
+    expect(script).toContain("evidencePackage canMarkComplete must match whether every manual external gate has a valid record");
     expect(script).toContain("canBeAutomated");
     expect(script).toContain("proofRequired");
     expect(script).toContain("checklist");

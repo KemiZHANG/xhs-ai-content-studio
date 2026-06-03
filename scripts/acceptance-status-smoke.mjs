@@ -71,6 +71,9 @@ try {
 
   const manualGateIds = Array.isArray(status.manualGates) ? status.manualGates.map((gate) => gate.id) : [];
   const verifiedIds = Array.isArray(status.verified) ? status.verified.map((item) => item.id) : [];
+  const pendingManualGateIds = Array.isArray(status.pendingManualGateIds) ? status.pendingManualGateIds : [];
+  const allManualGatesValidated = manualGateIds.length > 0 && pendingManualGateIds.length === 0;
+  const expectedCompletionPercent = allManualGatesValidated ? 100 : 99;
 
   line("Completion", `${status.completionPercent}%`);
   line("Can mark complete", String(Boolean(status.canMarkComplete)));
@@ -83,13 +86,26 @@ try {
   line("Validation records", String(validationResult.data.records.length));
   line("Recommended commands", Array.isArray(status.recommendedCommands) ? status.recommendedCommands.join(", ") : "missing");
 
-  if (status.completionPercent !== 99) fail("completionPercent should stay at 99 until real external validation is done");
-  if (status.canMarkComplete !== false) fail("canMarkComplete must stay false while real publish/schedule/account gates remain manual");
-  if (deliverySummary.safeToAutomateCompletion !== false) fail("deliverySummary must not allow automated completion while manual gates remain");
-  if (deliverySummary.nextManualGateId !== "real_publish") fail("deliverySummary should keep real publish as the first manual gate");
+  if (status.completionPercent !== expectedCompletionPercent) {
+    fail(`completionPercent should be ${expectedCompletionPercent} for the current manual validation state`);
+  }
+  if (status.canMarkComplete !== allManualGatesValidated) {
+    fail("canMarkComplete must match whether every manual external gate has a valid record");
+  }
+  if (deliverySummary.safeToAutomateCompletion !== allManualGatesValidated) {
+    fail("deliverySummary safeToAutomateCompletion must match whether every manual external gate has a valid record");
+  }
+  if (!allManualGatesValidated && deliverySummary.nextManualGateId !== pendingManualGateIds[0]) {
+    fail("deliverySummary nextManualGateId should point to the first pending manual gate");
+  }
+  if (allManualGatesValidated && deliverySummary.nextManualGateId !== "real_publish") {
+    fail("deliverySummary nextManualGateId should keep a stable fallback after all manual gates are validated");
+  }
   if (deliverySummary.nextSafeCommand !== "npm run smoke:safe") fail("deliverySummary should point to npm run smoke:safe as the next safe command");
   if (evidencePackage.schemaVersion !== 1) fail("evidencePackage should use schemaVersion 1");
-  if (evidencePackage.canMarkComplete !== false) fail("evidencePackage must not mark completion while manual gates remain");
+  if (evidencePackage.canMarkComplete !== allManualGatesValidated) {
+    fail("evidencePackage canMarkComplete must match whether every manual external gate has a valid record");
+  }
   if (evidencePackage.validationRecordEndpoint !== "/api/acceptance/validation-records") {
     fail("evidencePackage should expose the validation record endpoint");
   }
