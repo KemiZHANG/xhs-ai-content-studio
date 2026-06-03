@@ -170,7 +170,7 @@ Agent 会读取当前 PostProject，所以“再生活化一点”“用第二�
 npm run smoke:safe
 ```
 
-这个命令会连续运行本地健康检查和发布 dry-run 预览检查，不会搜索小红书、不会生成图片、不会确认发布、不会触发真实小红书写入。
+这个命令会连续运行本地健康检查、账号配置检查和发布 dry-run 预览检查，不会搜索小红书、不会生成图片、不会确认发布、不会触发真实小红书写入。
 
 也可以只运行本地健康检查：
 
@@ -179,6 +179,14 @@ npm run smoke:local
 ```
 
 这个命令只检查网页、MCP 登录、工具数量和当前 PostProject，不会搜索、生成图片或发布。
+
+也可以单独检查当前账号档案和 MCP 绑定：
+
+```powershell
+npm run smoke:accounts
+```
+
+这个命令只读取模型设置和 MCP 健康状态，确认当前激活账号、MCP 地址、登录状态和可运行工具是否清楚；不会切换账号、不会搜索、不会生成图片、不会发布或定时。
 
 如果要确认真实研究链路，可以运行：
 
@@ -395,7 +403,7 @@ After the web app is running, you can also run the read-only smoke check:
 npm run smoke:safe
 ```
 
-This command runs local health checks and publish dry-run preview checks. It does not search Xiaohongshu, generate images, confirm publishing, or trigger real Xiaohongshu writes.
+This command runs local health checks, account configuration checks, and publish dry-run preview checks. It does not search Xiaohongshu, generate images, confirm publishing, or trigger real Xiaohongshu writes.
 
 You can also run only the local health check:
 
@@ -404,6 +412,14 @@ npm run smoke:local
 ```
 
 This command only checks the web app, MCP login, tool count, and active PostProject. It does not search, generate images, or publish.
+
+You can also check the active account profile and MCP binding only:
+
+```powershell
+npm run smoke:accounts
+```
+
+This command only reads model settings and MCP health status to verify the active account, MCP URL, login status, and runnable tools. It does not switch accounts, search, generate images, publish, or schedule.
 
 To verify the real research chain, run:
 
@@ -429,6 +445,7 @@ npm run verify
 npm run acceptance
 npm run smoke:safe
 npm run smoke:local
+npm run smoke:accounts
 npm run smoke:research
 npm run smoke:publish-dry-run
 npm test

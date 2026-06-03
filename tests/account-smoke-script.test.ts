@@ -5,18 +5,21 @@ import { describe, expect, it } from "vitest";
 const root = process.cwd();
 const readText = (path: string) => readFileSync(join(root, path), "utf8");
 
-describe("local smoke script", () => {
-  it("is exposed as a read-only npm script", () => {
+describe("account smoke script", () => {
+  it("is exposed as a read-only account configuration check", () => {
     const pkg = JSON.parse(readText("package.json")) as { scripts?: Record<string, string> };
-    const script = readText("scripts/local-smoke.mjs");
+    const script = readText("scripts/account-smoke.mjs");
 
-    expect(pkg.scripts?.["smoke:local"]).toBe("node scripts/local-smoke.mjs");
+    expect(pkg.scripts?.["smoke:accounts"]).toBe("node scripts/account-smoke.mjs");
     expect(pkg.scripts?.["smoke:safe"]).toBe(
       "npm run smoke:local && npm run smoke:accounts && npm run smoke:publish-dry-run"
     );
+    expect(script).toContain("/api/settings");
     expect(script).toContain("/api/health/mcp");
-    expect(script).toContain("/api/post-project");
-    expect(script).toContain("No external publishing action was triggered");
+    expect(script).toContain("activeAccountId");
+    expect(script).toContain("Configured accounts");
+    expect(script).toContain("No search, image generation, publish, or schedule action was triggered");
+    expect(script).not.toContain("/api/chat");
     expect(script).not.toContain("/api/publish");
     expect(script).not.toContain("/api/workflows/one-click");
   });

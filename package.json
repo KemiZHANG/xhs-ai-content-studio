@@ -11,8 +11,9 @@
     "test": "vitest run",
     "acceptance": "vitest run tests",
     "verify": "npm run acceptance && npm run typecheck && npm run build",
-    "smoke:safe": "npm run smoke:local && npm run smoke:publish-dry-run",
+    "smoke:safe": "npm run smoke:local && npm run smoke:accounts && npm run smoke:publish-dry-run",
     "smoke:local": "node scripts/local-smoke.mjs",
+    "smoke:accounts": "node scripts/account-smoke.mjs",
     "smoke:research": "node scripts/research-smoke.mjs",
     "smoke:publish-dry-run": "node scripts/publish-dry-run-smoke.mjs"
   },

@@ -23,6 +23,7 @@
 | 真实 MCP 健康检查 | 已完成 | `/api/health/mcp`、`scripts/local-smoke.mjs`、`npm run smoke:local` |
 | 真实研究链路 smoke | 已完成 | `scripts/research-smoke.mjs`、`npm run smoke:research` |
 | 发布 dry-run 安全 smoke | 已完成 | `scripts/publish-dry-run-smoke.mjs`、`npm run smoke:publish-dry-run` |
+| 账号配置安全 smoke | 已完成 | `scripts/account-smoke.mjs`、`npm run smoke:accounts` |
 | 一键安全 smoke | 已完成 | `npm run smoke:safe` |
 | 完整本地回归 | 已完成 | `npm run verify` |
 
