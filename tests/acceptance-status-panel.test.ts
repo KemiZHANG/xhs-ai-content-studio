@@ -18,6 +18,11 @@ describe("acceptance status panel", () => {
     expect(html).toContain("必须人工验收");
     expect(html).toContain("验收证据包");
     expect(html).toContain("/api/acceptance/evidence-package · v1");
+    expect(html).toContain("完成矩阵");
+    expect(html).toContain("/api/acceptance/completion-matrix");
+    expect(html).toContain("npm run acceptance:completion-matrix");
+    expect(html).toContain("data/acceptance-completion-matrix.json");
+    expect(html).toContain("机器可读的交付矩阵");
     expect(html).toContain("人工验收记录");
     expect(html).toContain("/api/acceptance/validation-records");
     expect(html).toContain("已验证 0");

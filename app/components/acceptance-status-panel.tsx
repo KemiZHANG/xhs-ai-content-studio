@@ -44,6 +44,16 @@ export function AcceptanceStatusPanel() {
         </div>
       </article>
 
+      <article className="acceptanceEvidencePackageCard">
+        <span>完成矩阵</span>
+        <strong>/api/acceptance/completion-matrix</strong>
+        <p>机器可读的交付矩阵，用于交接、审计和最终验收留档；它列出已验证覆盖、剩余人工闸门、证据字段和安全命令，不会调用 MCP、模型、发布或定时任务。</p>
+        <div className="acceptanceEvidenceCommands">
+          <code>npm run acceptance:completion-matrix</code>
+          <code>data/acceptance-completion-matrix.json</code>
+        </div>
+      </article>
+
       <article className="acceptanceValidationRecordCard">
         <span>人工验收记录</span>
         <strong>/api/acceptance/validation-records</strong>
