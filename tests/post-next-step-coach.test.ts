@@ -1,8 +1,19 @@
 import { describe, expect, it } from "vitest";
+import { labelForPostAction } from "@/app/components/post-action-labels";
 import { buildPostNextStepCoach } from "@/app/components/post-next-step-coach";
 import { getOrderedPostNextActions, getPostStageGuidance } from "@/lib/post-project/guidance";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { createBlankPostProject } from "@/lib/post-project/store";
+
+describe("post action labels", () => {
+  it("keeps primary Post Studio actions readable", () => {
+    expect(labelForPostAction("search_research")).toBe("搜索笔记");
+    expect(labelForPostAction("retrieve_viral_knowledge")).toBe("刷新爆款库 RAG");
+    expect(labelForPostAction("run_quality_gate")).toBe("发布检查");
+    expect(labelForPostAction("request_publish_confirmation")).toBe("生成发布确认单");
+    expect(labelForPostAction("unknown_action")).toBe("unknown_action");
+  });
+});
 
 describe("post next step coach", () => {
   it("promotes the readiness next action and explains the first blocker", () => {
@@ -26,7 +37,7 @@ describe("post next step coach", () => {
     expect(coach.whyLine).toContain("真实小红书样本");
     expect(coach.outcomeLine).toContain("证据");
     expect(coach.progressLine).toContain("准备度");
-    expect(`${coach.detail} ${coach.whyLine} ${coach.outcomeLine}`).not.toMatch(/[�]|鐖|鍥剧|鏂囨|鍙戝|璇佹|鎼滅/);
+    expect(`${coach.detail} ${coach.whyLine} ${coach.outcomeLine}`).not.toMatch(/[�]|鐖|鍥剧|鏂囨|鍙戝|璇佹|鎼滅|锟|閻|閺|閸|鐠|閹/);
   });
 
   it("keeps fallback actions concise", () => {
