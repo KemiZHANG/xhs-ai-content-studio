@@ -51,6 +51,12 @@ describe("post studio acceptance documentation", () => {
     expect(guide).toContain("点击确认后才会调用小红书 MCP 的发布能力");
     expect(guide).toContain("不要绕过 Post Studio 直接调用发布接口");
     expect(guide).toContain("Only the final manual confirmation triggers the Xiaohongshu MCP publishing action");
+    expect(guide).toContain("Completion Evidence / 完成证据");
+    expect(guide).toContain("Post Studio shows that the user manually confirmed the publish action");
+    expect(guide).toContain("Publish History records a `published` receipt");
+    expect(guide).toContain("Publish History records a `scheduled` receipt");
+    expect(guide).toContain("account name, account ID when available, MCP URL");
+    expect(guide).toContain("cannot be marked as automated completion");
   });
 
   it("keeps the acceptance checklist aligned with the product-level goal", () => {

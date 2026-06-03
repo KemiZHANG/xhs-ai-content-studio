@@ -17,6 +17,11 @@ describe("multi-account acceptance documentation", () => {
     expect(guide).toContain("检测当前账号");
     expect(guide).toContain("Publish History");
     expect(guide).toContain("仅自己可见");
+    expect(guide).toContain("Completion Evidence / 完成证据");
+    expect(guide).toContain("At least two real Xiaohongshu accounts are logged in through independent MCP URLs");
+    expect(guide).toContain("Switching from account A to account B invalidates the old publish confirmation");
+    expect(guide).toContain("audit record stores the correct account ID when available");
+    expect(guide).toContain("cannot be marked as automated completion");
   });
 
   it("keeps account and publish smoke checks explicit", () => {

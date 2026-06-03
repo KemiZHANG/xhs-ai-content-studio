@@ -152,3 +152,21 @@ Only the final manual confirmation triggers the Xiaohongshu MCP publishing actio
 - Do not bypass Post Studio and call publishing APIs directly.
 - Do not publish copied competitor copy or images.
 - Do not publish false certifications, fake sales claims, exaggerated efficacy, or misleading before/after claims.
+
+## Completion Evidence / 完成证据
+
+Real publishing is complete only when all evidence below is present:
+
+- Post Studio shows that the user manually confirmed the publish action.
+- The active Xiaohongshu account shows the private note after publishing.
+- Publish History records a `published` receipt with account name, account ID when available, MCP URL, visibility, image count, and idempotency key.
+- The audit record proves that the final title, copy hash, tag list, selected images, account, and visibility match the confirmed publish order.
+
+Scheduled publishing is complete only when all evidence below is present:
+
+- Post Studio shows that the user manually confirmed the scheduled publish action.
+- The Xiaohongshu account or MCP response shows the future scheduled task.
+- Publish History records a `scheduled` receipt with schedule time, timezone, account name, account ID when available, MCP URL, visibility, image count, and idempotency key.
+- The scheduled time is in the future and matches the confirmation order shown to the user.
+
+These gates cannot be marked as automated completion. They require manual external validation because the final proof lives in the real Xiaohongshu account and MCP session, not only in local tests.

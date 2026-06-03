@@ -116,3 +116,15 @@ npm run smoke:publish-dry-run
 ```
 
 These checks do not publish. Real publishing must be manually confirmed in Post Studio, preferably with private visibility for the first test. After switching accounts, regenerate the publishing confirmation before any real external action.
+
+## Completion Evidence / 完成证据
+
+Multi-account switching is complete only when all evidence below is present:
+
+- At least two real Xiaohongshu accounts are logged in through independent MCP URLs, for example `http://localhost:18060/mcp` and `http://localhost:18061/mcp`.
+- Post Studio clearly shows the active account name and MCP URL before publish confirmation.
+- Switching from account A to account B invalidates the old publish confirmation and requires a regenerated confirmation order.
+- Publish History or the audit record stores the correct account ID when available, account display name, MCP URL, visibility, publish mode, and timestamp for each account-specific action.
+- A real private publishing test, if performed, appears only under the selected account and never under the previous account.
+
+This gate cannot be marked as automated completion. Local smoke tests can prove that the account registry, dry-run flow, and audit fields exist, but only manual validation with multiple real logged-in MCP sessions can prove end-to-end multi-account behavior.
