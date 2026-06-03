@@ -4825,6 +4825,42 @@ textarea {
   border-color: rgba(18, 118, 97, 0.24);
 }
 
+.agentMiniCard.clarify_next_steps {
+  background: linear-gradient(145deg, rgba(190, 122, 20, 0.12), rgba(255, 255, 255, 0.78));
+  border-color: rgba(190, 122, 20, 0.24);
+}
+
+.agentClarifyMini {
+  border-top: 1px solid rgba(24, 28, 24, 0.08);
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 8px;
+}
+
+.agentClarifyMini div {
+  display: grid;
+  gap: 5px;
+}
+
+.agentClarifyMini blockquote {
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(190, 122, 20, 0.14);
+  border-radius: 10px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.45;
+  margin: 0;
+  padding: 7px 9px;
+}
+
+.agentClarifyActions {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 6px !important;
+}
+
 .agentDirectorMini {
   border-top: 1px solid rgba(24, 28, 24, 0.08);
   display: grid;

@@ -330,9 +330,35 @@ function AgentCardInlineDetails({
   card: AgentResponseCard;
   onQuickAction: (action: string) => void;
 }) {
+  const clarify = extractClarifyNextStepsDisplay(card);
   const directorSummary = extractAgentDirectorSummaryDisplay(card);
   const stageGuidance = extractStageGuidanceDisplay(card);
   const provenance = extractAgentCreationProvenanceDisplay(card);
+  if (clarify) {
+    return (
+      <div className="agentClarifyMini">
+        <div>
+          <span>需要补充</span>
+          {clarify.questions.slice(0, 3).map((question) => (
+            <p key={question}>{question}</p>
+          ))}
+        </div>
+        {clarify.replyTemplate ? (
+          <blockquote>{clarify.replyTemplate}</blockquote>
+        ) : null}
+        {clarify.quickActions.length ? (
+          <div className="agentClarifyActions">
+            {clarify.quickActions.slice(0, 3).map((action) => (
+              <button className="miniActionButton" key={action.action} type="button" onClick={() => onQuickAction(action.action)}>
+                {action.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {clarify.safetyNote ? <small>{clarify.safetyNote}</small> : null}
+      </div>
+    );
+  }
   if (directorSummary) {
     return (
       <div className="agentDirectorMini">
@@ -419,6 +445,31 @@ function AgentCardInlineDetails({
   );
 }
 
+function extractClarifyNextStepsDisplay(card: AgentResponseCard): {
+  questions: string[];
+  replyTemplate: string;
+  safetyNote: string;
+  quickActions: Array<{ label: string; action: string }>;
+} | null {
+  if (card.type !== "clarify_next_steps" || !isRecordValue(card.data)) {
+    return null;
+  }
+  const quickActions = Array.isArray(card.data.quickActions)
+    ? card.data.quickActions.flatMap((item) => {
+        if (!isRecordValue(item) || typeof item.label !== "string" || typeof item.action !== "string") {
+          return [];
+        }
+        return [{ label: item.label, action: item.action }];
+      })
+    : [];
+  return {
+    questions: stringListFromRecordValue(card.data.questions),
+    replyTemplate: typeof card.data.replyTemplate === "string" ? card.data.replyTemplate : "",
+    safetyNote: typeof card.data.safetyNote === "string" ? card.data.safetyNote : "",
+    quickActions
+  };
+}
+
 function AgentIntentBadge({
   intent,
   confidence,
@@ -494,6 +545,7 @@ function labelForStage(stage: PostProject["currentStage"]): string {
 function labelForAgentCard(type: string): string {
   const labels: Record<string, string> = {
     director_summary: "导演摘要",
+    clarify_next_steps: "补充信息",
     agent_plan: "Agent 计划",
     stage_guidance: "下一步",
     evidence_summary: "证据摘要",

@@ -119,4 +119,57 @@ describe("post studio agent pane", () => {
     expect(html).toContain("基于当前证据生成 CreativeBrief");
     expect(html).not.toMatch(/[�]|鐖|鍥剧|鏂囨|鍙戝|缁х|璇佹|鎼滅/);
   });
+
+  it("renders clarify next-step cards with questions, reply template and safe quick actions", () => {
+    const clarifyMessage = {
+      role: "assistant",
+      content: "我先不急着执行工具，当前信息还不够明确。",
+      intent: "ask",
+      intentConfidence: 0.58,
+      needsUserInput: true,
+      stage: "empty",
+      questions: ["这次要研究或创作的具体主题是什么？"],
+      cards: [{
+        id: "card-clarify-next-steps",
+        type: "clarify_next_steps",
+        title: "补充信息后再执行",
+        summary: "这次要研究或创作的具体主题是什么？",
+        data: {
+          stage: "empty",
+          intent: "ask",
+          intentConfidence: 0.58,
+          questions: ["这次要研究或创作的具体主题是什么？"],
+          replyTemplate: "你可以直接回复：主题：广州咖啡馆；目标人群：周末探店用户。",
+          quickActions: [
+            { id: "qa-search", label: "先做研究", action: "search_research" },
+            { id: "qa-brief", label: "补充需求", action: "start_project" }
+          ],
+          safetyNote: "意图不清晰时不会调用搜索、生图、发布或定时工具。"
+        }
+      }],
+      quickActions: [{ id: "qa-search", label: "先做研究", action: "search_research" }]
+    } as unknown as ChatMessage;
+
+    const html = renderToStaticMarkup(createElement(PostStudioAgentPane, {
+      evidenceCount: 0,
+      researchForm,
+      messages: [clarifyMessage],
+      runningJob: null,
+      chatInput: "",
+      busy: false,
+      onRunResearch: () => undefined,
+      onResearchFormChange: () => undefined,
+      onChatInput: () => undefined,
+      onChatSubmit: () => undefined,
+      onQuickAction: () => undefined
+    }));
+
+    expect(html).toContain("补充信息");
+    expect(html).toContain("补充信息后再执行");
+    expect(html).toContain("这次要研究或创作的具体主题是什么？");
+    expect(html).toContain("你可以直接回复：主题：广州咖啡馆");
+    expect(html).toContain("意图不清晰时不会调用搜索、生图、发布或定时工具。");
+    expect(html).toContain("先做研究");
+    expect(html).not.toMatch(/[�]|鐖|鍥剧|鏂囨|鍙戝|缁х|璇佹|鎼滅/);
+  });
 });
