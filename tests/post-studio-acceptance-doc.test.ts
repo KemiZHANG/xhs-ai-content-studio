@@ -24,6 +24,22 @@ describe("post studio acceptance documentation", () => {
     expect(readme).toContain("真实发布仍需要在发布检查区人工确认");
     expect(readme).toContain("[真实发布验收指南](docs/real-publish-acceptance.md)");
     expect(readme).toContain("[real publishing acceptance guide](docs/real-publish-acceptance.md)");
+    expect(readme).toContain("[目标完成矩阵](docs/goal-completion-matrix.md)");
+    expect(readme).toContain("[goal completion matrix](docs/goal-completion-matrix.md)");
+  });
+
+  it("keeps the goal completion matrix honest about remaining external validation", () => {
+    const matrix = readText("docs/goal-completion-matrix.md");
+
+    expect(matrix).toContain("统一 PostProject");
+    expect(matrix).toContain("Post Studio 三栏创作台");
+    expect(matrix).toContain("Viral Knowledge Base / 爆款库");
+    expect(matrix).toContain("发布 dry-run 安全 smoke");
+    expect(matrix).toContain("当前估计完成度：**96%-97%**");
+    expect(matrix).toContain("真实发布到小红书");
+    expect(matrix).toContain("真实定时发布到小红书");
+    expect(matrix).toContain("多账号真实切换");
+    expect(matrix).toContain("不能标记为 100%");
   });
 
   it("documents real publishing as a manual confirmation flow", () => {
