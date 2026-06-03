@@ -266,6 +266,12 @@ npm run acceptance:record-evidence
 
 这个命令会把填好的 `evidenceRecordTemplate` 逐条提交到 `/api/acceptance/validation-records`。它只写入本地验收记录，不会调用 MCP、模型、发布或定时。
 
+如需先预览不会写入的导入内容，可以运行：
+
+```powershell
+node scripts/import-acceptance-validation-records.mjs --dry-run
+```
+
 ### 常用命令
 
 ```powershell
@@ -567,6 +573,12 @@ npm run acceptance:record-evidence
 ```
 
 This command submits the filled `evidenceRecordTemplate` records to `/api/acceptance/validation-records`. It only writes local acceptance records and does not call MCP, models, publishing, or scheduling.
+
+To preview the import without writing local records, run:
+
+```powershell
+node scripts/import-acceptance-validation-records.mjs --dry-run
+```
 
 ### Useful Commands
 

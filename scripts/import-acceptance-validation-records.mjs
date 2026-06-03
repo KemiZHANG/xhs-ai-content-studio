@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 const baseUrl = (process.env.XHS_STUDIO_URL || "http://localhost:3000").replace(/\/+$/, "");
 const inputPath = resolve(process.env.XHS_ACCEPTANCE_EVIDENCE_PATH || "data/manual-acceptance-evidence-package.json");
+const dryRun = process.env.XHS_ACCEPTANCE_RECORD_DRY_RUN === "1" || process.argv.includes("--dry-run");
 
 function fail(message) {
   console.error(`Acceptance validation record import failed: ${message}`);
@@ -35,6 +36,7 @@ if (evidencePackage?.schemaVersion !== 1 || !Array.isArray(evidencePackage.gates
 }
 
 const importedGateIds = [];
+const previewRecords = [];
 for (const gate of evidencePackage.gates) {
   const template = gate?.evidenceRecordTemplate;
   if (!gate?.id || !template || typeof template !== "object") {
@@ -54,6 +56,10 @@ for (const gate of evidencePackage.gates) {
       ])
     )
   };
+  if (dryRun) {
+    previewRecords.push(record);
+    continue;
+  }
   const result = await postJson("/api/acceptance/validation-records", record);
   if (!result.response.ok || result.data?.ok !== true) {
     const details = Array.isArray(result.data?.errors) ? `: ${result.data.errors.join("; ")}` : "";
@@ -62,5 +68,10 @@ for (const gate of evidencePackage.gates) {
   importedGateIds.push(gate.id);
 }
 
-console.log(`Imported ${importedGateIds.length} manual acceptance validation record(s): ${importedGateIds.join(", ")}`);
-console.log("Local record import complete. No MCP, model, publish, or schedule action was triggered.");
+if (dryRun) {
+  console.log(`Dry-run checked ${previewRecords.length} manual acceptance validation record(s): ${previewRecords.map((record) => record.gateId).join(", ")}`);
+  console.log("Dry-run complete. No local record was written and no MCP, model, publish, or schedule action was triggered.");
+} else {
+  console.log(`Imported ${importedGateIds.length} manual acceptance validation record(s): ${importedGateIds.join(", ")}`);
+  console.log("Local record import complete. No MCP, model, publish, or schedule action was triggered.");
+}

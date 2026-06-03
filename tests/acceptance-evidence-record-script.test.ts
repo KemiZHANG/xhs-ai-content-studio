@@ -13,6 +13,9 @@ describe("acceptance evidence record script", () => {
 
     expect(pkg.scripts?.["acceptance:record-evidence"]).toBe("node scripts/import-acceptance-validation-records.mjs");
     expect(script).toContain("/api/acceptance/validation-records");
+    expect(script).toContain("XHS_ACCEPTANCE_RECORD_DRY_RUN");
+    expect(script).toContain("--dry-run");
+    expect(script).toContain("No local record was written");
     expect(script).toContain("evidenceRecordTemplate");
     expect(script).toContain("No MCP, model, publish, or schedule action was triggered.");
     expect(script).not.toContain("/api/publish");
