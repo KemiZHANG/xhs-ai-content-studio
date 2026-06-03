@@ -44,6 +44,25 @@ export type AcceptanceDeliverySummary = {
   safeToAutomateCompletion: boolean;
 };
 
+export type AcceptanceEvidencePackage = {
+  schemaVersion: 1;
+  generatedAt: string;
+  purpose: string;
+  completionPercent: number;
+  canMarkComplete: boolean;
+  commands: string[];
+  gates: Array<{
+    id: AcceptanceExternalGate["id"];
+    label: string;
+    guide: string;
+    proofRequired: string;
+    checklist: string[];
+    evidenceFields: AcceptanceEvidenceField[];
+    evidenceRecordTemplate: Record<string, string | boolean>;
+    manualOnly: true;
+  }>;
+};
+
 const verified: AcceptanceCoverageItem[] = [
   {
     id: "post_project",
@@ -214,5 +233,35 @@ export function buildAcceptanceDeliverySummary(status: AcceptanceStatus = buildA
     nextManualGateId: nextGate?.id ?? null,
     nextSafeCommand: safeCommand,
     safeToAutomateCompletion: status.canMarkComplete && status.manualGates.length === 0
+  };
+}
+
+export function buildAcceptanceEvidencePackage(
+  status: AcceptanceStatus = buildAcceptanceStatus(),
+  generatedAt = "manual-validation-template"
+): AcceptanceEvidencePackage {
+  return {
+    schemaVersion: 1,
+    generatedAt,
+    purpose: "Manual external validation template for the remaining Xiaohongshu publish, schedule, multi-account, and image generation gates.",
+    completionPercent: status.completionPercent,
+    canMarkComplete: status.canMarkComplete,
+    commands: status.recommendedCommands,
+    gates: status.manualGates.map((gate) => ({
+      id: gate.id,
+      label: gate.label,
+      guide: gate.guide,
+      proofRequired: gate.proofRequired,
+      checklist: gate.checklist,
+      evidenceFields: gate.evidenceFields,
+      evidenceRecordTemplate: Object.fromEntries([
+        ["validated", false],
+        ["validatedAt", ""],
+        ["operator", ""],
+        ["notes", ""],
+        ...gate.evidenceFields.map((field) => [field.key, field.example] as const)
+      ]) as Record<string, string | boolean>,
+      manualOnly: true
+    }))
   };
 }

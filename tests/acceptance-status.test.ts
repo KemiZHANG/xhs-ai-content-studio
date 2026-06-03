@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { GET } from "@/app/api/acceptance/status/route";
-import { buildAcceptanceDeliverySummary, buildAcceptanceStatus } from "@/lib/acceptance/status";
+import {
+  buildAcceptanceDeliverySummary,
+  buildAcceptanceEvidencePackage,
+  buildAcceptanceStatus
+} from "@/lib/acceptance/status";
 
 describe("acceptance status", () => {
   it("keeps completion honest while external gates remain manual", () => {
@@ -64,12 +68,35 @@ describe("acceptance status", () => {
     expect(summary.safeToAutomateCompletion).toBe(false);
   });
 
+  it("builds a manual evidence package for the remaining external gates", () => {
+    const evidencePackage = buildAcceptanceEvidencePackage(buildAcceptanceStatus(), "2026-06-03T00:00:00.000Z");
+
+    expect(evidencePackage.schemaVersion).toBe(1);
+    expect(evidencePackage.generatedAt).toBe("2026-06-03T00:00:00.000Z");
+    expect(evidencePackage.canMarkComplete).toBe(false);
+    expect(evidencePackage.purpose).toContain("Manual external validation template");
+    expect(evidencePackage.gates.map((gate) => gate.id)).toEqual([
+      "real_publish",
+      "scheduled_publish",
+      "multi_account_switching",
+      "large_scale_image_generation"
+    ]);
+    expect(evidencePackage.gates.every((gate) => gate.manualOnly)).toBe(true);
+    expect(evidencePackage.gates.find((gate) => gate.id === "real_publish")?.evidenceRecordTemplate).toMatchObject({
+      validated: false,
+      validatedAt: "",
+      operator: "",
+      publishReceipt: "published receipt id or MCP response summary"
+    });
+  });
+
   it("exposes a read-only API contract for frontend status panels", async () => {
     const response = await GET();
     const payload = await response.json() as {
       ok: boolean;
       status: ReturnType<typeof buildAcceptanceStatus>;
       deliverySummary: ReturnType<typeof buildAcceptanceDeliverySummary>;
+      evidencePackage: ReturnType<typeof buildAcceptanceEvidencePackage>;
     };
 
     expect(payload.ok).toBe(true);
@@ -81,5 +108,8 @@ describe("acceptance status", () => {
     expect(payload.deliverySummary.completionLine).toBe("当前完成度 98%");
     expect(payload.deliverySummary.nextSafeCommand).toBe("npm run smoke:safe");
     expect(payload.deliverySummary.safeToAutomateCompletion).toBe(false);
+    expect(payload.evidencePackage.schemaVersion).toBe(1);
+    expect(payload.evidencePackage.gates[0]?.evidenceRecordTemplate).toHaveProperty("validated", false);
+    expect(payload.evidencePackage.gates[0]?.manualOnly).toBe(true);
   });
 });

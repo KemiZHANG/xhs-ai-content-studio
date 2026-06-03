@@ -14,6 +14,10 @@ describe("acceptance status smoke script", () => {
     expect(pkg.scripts?.["smoke:safe"]).toContain("npm run smoke:acceptance-status");
     expect(script).toContain("/api/acceptance/status");
     expect(script).toContain("deliverySummary");
+    expect(script).toContain("evidencePackage");
+    expect(script).toContain("schemaVersion");
+    expect(script).toContain("manualOnly");
+    expect(script).toContain("evidenceRecordTemplate");
     expect(script).toContain("completionPercent !== 98");
     expect(script).toContain("canMarkComplete must stay false");
     expect(script).toContain("safeToAutomateCompletion");

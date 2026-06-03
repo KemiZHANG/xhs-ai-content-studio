@@ -29,12 +29,17 @@ try {
 
   const status = result.data?.status;
   const deliverySummary = result.data?.deliverySummary;
+  const evidencePackage = result.data?.evidencePackage;
   if (!result.data?.ok || !status || typeof status !== "object") {
     fail("/api/acceptance/status did not return an ok status payload");
     process.exit();
   }
   if (!deliverySummary || typeof deliverySummary !== "object") {
     fail("/api/acceptance/status did not return deliverySummary");
+    process.exit();
+  }
+  if (!evidencePackage || typeof evidencePackage !== "object") {
+    fail("/api/acceptance/status did not return evidencePackage");
     process.exit();
   }
 
@@ -47,6 +52,7 @@ try {
   line("Manual gates", manualGateIds.join(", ") || "missing");
   line("Delivery state", deliverySummary.stateLabel || "missing");
   line("Next safe command", deliverySummary.nextSafeCommand || "missing");
+  line("Evidence package", `v${evidencePackage.schemaVersion || "missing"}`);
   line("Recommended commands", Array.isArray(status.recommendedCommands) ? status.recommendedCommands.join(", ") : "missing");
 
   if (status.completionPercent !== 98) fail("completionPercent should stay at 98 until real external validation is done");
@@ -54,6 +60,9 @@ try {
   if (deliverySummary.safeToAutomateCompletion !== false) fail("deliverySummary must not allow automated completion while manual gates remain");
   if (deliverySummary.nextManualGateId !== "real_publish") fail("deliverySummary should keep real publish as the first manual gate");
   if (deliverySummary.nextSafeCommand !== "npm run smoke:safe") fail("deliverySummary should point to npm run smoke:safe as the next safe command");
+  if (evidencePackage.schemaVersion !== 1) fail("evidencePackage should use schemaVersion 1");
+  if (evidencePackage.canMarkComplete !== false) fail("evidencePackage must not mark completion while manual gates remain");
+  if (!Array.isArray(evidencePackage.gates) || evidencePackage.gates.length < 4) fail("evidencePackage is missing manual gate templates");
 
   for (const id of ["post_project", "post_studio", "agent_director", "creative_brief", "viral_rag", "publish_safety"]) {
     if (!verifiedIds.includes(id)) fail(`verified coverage is missing ${id}`);
@@ -68,6 +77,12 @@ try {
     if (!Array.isArray(gate.evidenceFields) || gate.evidenceFields.length < 5) fail(`manual gate ${gate.id || "unknown"} is missing evidence field templates`);
     if (gate.evidenceFields.some((field) => !field?.key || !field?.label || !field?.example || field.required !== true)) {
       fail(`manual gate ${gate.id || "unknown"} has incomplete evidence field templates`);
+    }
+  }
+  for (const gate of Array.isArray(evidencePackage.gates) ? evidencePackage.gates : []) {
+    if (gate.manualOnly !== true) fail(`evidence package gate ${gate.id || "unknown"} must be manualOnly`);
+    if (!gate.evidenceRecordTemplate || gate.evidenceRecordTemplate.validated !== false) {
+      fail(`evidence package gate ${gate.id || "unknown"} is missing a validation record template`);
     }
   }
   for (const command of ["npm run verify", "npm run smoke:safe", "npm run smoke:accounts"]) {
