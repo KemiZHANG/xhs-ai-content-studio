@@ -93,7 +93,12 @@ for (const gate of evidencePackage.gates) {
 }
 
 if (dryRun) {
+  const packageGateIds = evidencePackage.gates.map((gate) => gate.id).filter(Boolean);
+  const previewGateIds = previewRecords.map((record) => record.gateId);
+  const missingGateIds = packageGateIds.filter((gateId) => !previewGateIds.includes(gateId));
   console.log(`Dry-run checked ${previewRecords.length} manual acceptance validation record(s): ${previewRecords.map((record) => record.gateId).join(", ")}`);
+  console.log(`Dry-run would cover manual gate(s): ${previewGateIds.join(", ") || "none"}`);
+  console.log(`Dry-run missing manual gate(s): ${missingGateIds.join(", ") || "none"}`);
   console.log("Dry-run complete. No local record was written and no MCP, model, publish, or schedule action was triggered.");
 } else {
   console.log(`Imported ${importedGateIds.length} manual acceptance validation record(s): ${importedGateIds.join(", ")}`);

@@ -19,6 +19,8 @@ describe("acceptance evidence record script", () => {
     expect(script).toContain("has incomplete manual evidence");
     expect(script).toContain("validated must be true");
     expect(script).toContain("No local record was written");
+    expect(script).toContain("Dry-run would cover manual gate(s)");
+    expect(script).toContain("Dry-run missing manual gate(s)");
     expect(script).toContain("evidenceRecordTemplate");
     expect(script).toContain("latestCompletionMatrix");
     expect(script).toContain("Completion after import");
