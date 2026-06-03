@@ -44,11 +44,26 @@ export function AcceptanceStatusPanel() {
         </div>
       </article>
 
+      <article className="acceptanceValidationRecordCard">
+        <span>人工验收记录</span>
+        <strong>/api/acceptance/validation-records</strong>
+        <p>
+          真实发布、定时发布、多账号切换和真实生图完成后，把凭证写入这个本地记录接口；只有所有闸门都有合格记录，项目才会从 99% 变成可证明的 100%。
+        </p>
+        <div className="acceptanceValidationProgress" aria-label="人工验收记录进度">
+          <span>已验证 {status.validatedManualGateIds.length}</span>
+          <span>待验证 {status.pendingManualGateIds.length}</span>
+        </div>
+      </article>
+
       <details className="acceptanceStatusDetails">
         <summary>查看外部验收闸门和安全命令</summary>
         <div className="acceptanceGateList">
           {status.manualGates.map((gate) => (
             <article key={gate.id}>
+              <em className={status.validatedManualGateIds.includes(gate.id) ? "acceptanceGateState done" : "acceptanceGateState pending"}>
+                {status.validatedManualGateIds.includes(gate.id) ? "已记录验收" : "等待人工验收记录"}
+              </em>
               <strong>{gate.label}</strong>
               <p>{gate.reason}</p>
               <small>

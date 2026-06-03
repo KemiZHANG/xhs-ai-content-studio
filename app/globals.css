@@ -8933,6 +8933,68 @@ textarea {
   padding: 6px 10px;
 }
 
+.acceptanceValidationRecordCard {
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(20, 184, 166, 0.18);
+  border-radius: 14px;
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 14px;
+}
+
+.acceptanceValidationRecordCard span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.acceptanceValidationRecordCard strong {
+  color: var(--ink);
+  display: block;
+}
+
+.acceptanceValidationRecordCard p {
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.acceptanceValidationProgress {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.acceptanceValidationProgress span {
+  background: rgba(20, 184, 166, 0.08);
+  border: 1px solid rgba(20, 184, 166, 0.16);
+  border-radius: 999px;
+  color: var(--ink);
+  padding: 7px 10px;
+  text-align: center;
+}
+
+.acceptanceGateState {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  margin-bottom: 6px;
+  padding: 5px 8px;
+}
+
+.acceptanceGateState.pending {
+  background: rgba(245, 158, 11, 0.12);
+  color: #92400e;
+}
+
+.acceptanceGateState.done {
+  background: rgba(20, 184, 166, 0.14);
+  color: #0f766e;
+}
+
 .acceptanceStatusDetails {
   border-top: 1px solid rgba(15, 23, 42, 0.08);
   padding-top: 4px;

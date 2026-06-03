@@ -18,6 +18,12 @@ describe("acceptance status panel", () => {
     expect(html).toContain("必须人工验收");
     expect(html).toContain("验收证据包");
     expect(html).toContain("/api/acceptance/evidence-package · v1");
+    expect(html).toContain("人工验收记录");
+    expect(html).toContain("/api/acceptance/validation-records");
+    expect(html).toContain("已验证 0");
+    expect(html).toContain("待验证 4");
+    expect(html).toContain("等待人工验收记录");
+    expect(html).toContain("项目才会从 99% 变成可证明的 100%");
     expect(html).toContain("npm run acceptance:evidence-package");
     expect(html).toContain("npm run acceptance:validate-evidence");
     expect(html).toContain("不会调用 MCP、模型、发布或定时任务");
