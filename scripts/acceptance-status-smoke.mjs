@@ -37,10 +37,21 @@ try {
     process.exit();
   }
 
+  const completionMatrixResult = await getJson("/api/acceptance/completion-matrix");
+  if (!completionMatrixResult.response.ok) {
+    fail(`/api/acceptance/completion-matrix returned HTTP ${completionMatrixResult.response.status}`);
+    process.exit();
+  }
+  if (!completionMatrixResult.data?.ok || !completionMatrixResult.data.completionMatrix) {
+    fail("/api/acceptance/completion-matrix did not return an ok completionMatrix payload");
+    process.exit();
+  }
+
   const status = result.data?.status;
   const deliverySummary = result.data?.deliverySummary;
   const evidencePackage = result.data?.evidencePackage;
   const completionMatrix = result.data?.completionMatrix;
+  const dedicatedCompletionMatrix = completionMatrixResult.data.completionMatrix;
   if (!result.data?.ok || !status || typeof status !== "object") {
     fail("/api/acceptance/status did not return an ok status payload");
     process.exit();
@@ -99,6 +110,18 @@ try {
   }
   if (completionMatrix.manualExternalGates.some((gate) => gate.canBeAutomated !== false)) {
     fail("completionMatrix manual gates must remain non-automatable");
+  }
+  if (dedicatedCompletionMatrix.completionPercent !== completionMatrix.completionPercent) {
+    fail("dedicated completion matrix endpoint and status endpoint disagree on completionPercent");
+  }
+  if (dedicatedCompletionMatrix.canMarkComplete !== completionMatrix.canMarkComplete) {
+    fail("dedicated completion matrix endpoint and status endpoint disagree on canMarkComplete");
+  }
+  if (!Array.isArray(dedicatedCompletionMatrix.remainingWork) || dedicatedCompletionMatrix.remainingWork.length !== completionMatrix.remainingWork.length) {
+    fail("dedicated completion matrix endpoint and status endpoint disagree on remainingWork");
+  }
+  if (!Array.isArray(dedicatedCompletionMatrix.manualExternalGates) || dedicatedCompletionMatrix.manualExternalGates.length !== completionMatrix.manualExternalGates.length) {
+    fail("dedicated completion matrix endpoint and status endpoint disagree on manualExternalGates");
   }
   if (!validationResult.data.status || typeof validationResult.data.status !== "object") fail("validation records endpoint is missing status");
   if (!validationResult.data.deliverySummary || typeof validationResult.data.deliverySummary !== "object") {
