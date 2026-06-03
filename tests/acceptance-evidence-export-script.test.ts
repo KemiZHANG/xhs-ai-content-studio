@@ -12,7 +12,8 @@ describe("acceptance evidence package export script", () => {
     const readme = readText("README.md");
 
     expect(pkg.scripts?.["acceptance:evidence-package"]).toBe("node scripts/export-acceptance-evidence-package.mjs");
-    expect(script).toContain("/api/acceptance/status");
+    expect(script).toContain("/api/acceptance/evidence-package");
+    expect(script).not.toContain("/api/acceptance/status");
     expect(script).toContain("evidencePackage");
     expect(script).toContain("manual-acceptance-evidence-package.json");
     expect(script).toContain("XHS_ACCEPTANCE_EVIDENCE_PATH");

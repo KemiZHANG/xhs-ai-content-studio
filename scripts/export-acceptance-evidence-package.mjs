@@ -18,14 +18,14 @@ function fail(message) {
   process.exit(1);
 }
 
-const result = await getJson("/api/acceptance/status");
+const result = await getJson("/api/acceptance/evidence-package");
 if (!result.response.ok) {
-  fail(`/api/acceptance/status returned HTTP ${result.response.status}`);
+  fail(`/api/acceptance/evidence-package returned HTTP ${result.response.status}`);
 }
 
 const evidencePackage = result.data?.evidencePackage;
 if (!evidencePackage || evidencePackage.schemaVersion !== 1 || !Array.isArray(evidencePackage.gates)) {
-  fail("/api/acceptance/status did not return evidencePackage v1");
+  fail("/api/acceptance/evidence-package did not return evidencePackage v1");
 }
 if (evidencePackage.canMarkComplete !== false) {
   fail("evidencePackage must not mark completion while manual gates remain");
