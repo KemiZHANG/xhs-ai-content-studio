@@ -10,6 +10,7 @@ import {
   modelProviderPresets,
   type ModelProviderPreset
 } from "@/lib/models/presets";
+import { AcceptanceStatusPanel } from "@/app/components/acceptance-status-panel";
 import type { RedactedSettings, SettingsDraft, XhsAccountProfile } from "@/app/types";
 
 const fallbackAccounts: XhsAccountProfile[] = [
@@ -313,6 +314,8 @@ export function SettingsPanel({
             <small className="fieldHint">AI 工作台和主题研究台都会遵守这个上限。</small>
           </label>
         </section>
+
+        <AcceptanceStatusPanel />
 
         <button className="primaryButton" disabled={busy} type="submit">
           <Save size={16} />

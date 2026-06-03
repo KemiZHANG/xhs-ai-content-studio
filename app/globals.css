@@ -8686,10 +8686,128 @@ textarea {
     grid-column: auto;
   }
 
-  .promptGrid button:first-child {
+.promptGrid button:first-child {
     grid-row: auto;
     min-height: 92px;
   }
+}
+
+.acceptanceStatusPanel {
+  border-color: rgba(20, 184, 166, 0.22);
+  background:
+    linear-gradient(135deg, rgba(20, 184, 166, 0.08), rgba(255, 255, 255, 0.72)),
+    var(--surface);
+}
+
+.acceptanceStatusHeader {
+  align-items: flex-start;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+}
+
+.acceptanceStatusHeader h3 {
+  margin: 0 0 6px;
+}
+
+.acceptanceStatusHeader p {
+  color: var(--muted);
+  line-height: 1.65;
+  margin: 0;
+}
+
+.acceptancePercent {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(20, 184, 166, 0.24);
+  border-radius: 14px;
+  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.08);
+  color: var(--accent);
+  display: grid;
+  flex: 0 0 150px;
+  gap: 4px;
+  justify-items: center;
+  padding: 14px;
+  text-align: center;
+}
+
+.acceptancePercent strong {
+  color: var(--text);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.acceptancePercent span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.acceptanceStatusGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.acceptanceStatusGrid article,
+.acceptanceGateList article {
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.acceptanceStatusGrid article.warn {
+  border-color: rgba(245, 158, 11, 0.32);
+}
+
+.acceptanceStatusGrid span,
+.acceptanceGateList small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.acceptanceStatusGrid strong,
+.acceptanceGateList strong {
+  display: block;
+  margin-top: 4px;
+}
+
+.acceptanceStatusGrid p,
+.acceptanceGateList p {
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 6px 0 0;
+}
+
+.acceptanceStatusDetails {
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  padding-top: 4px;
+}
+
+.acceptanceStatusDetails summary {
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.acceptanceGateList,
+.acceptanceCommandList {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.acceptanceCommandList {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.acceptanceCommandList code {
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 12px;
+  padding: 9px 10px;
 }
 
 @media (max-width: 640px) {
@@ -8723,6 +8841,18 @@ textarea {
 
   .publishConfirmGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .acceptanceStatusHeader {
+    flex-direction: column;
+  }
+
+  .acceptancePercent {
+    width: 100%;
+  }
+
+  .acceptanceStatusGrid {
+    grid-template-columns: 1fr;
   }
 
 }
