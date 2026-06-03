@@ -11,6 +11,8 @@ export type AcceptanceExternalGate = {
   reason: string;
   guide: string;
   firstSafeStep: string;
+  proofRequired: string;
+  canBeAutomated: boolean;
 };
 
 export type AcceptanceStatus = {
@@ -78,28 +80,36 @@ const manualGates: AcceptanceExternalGate[] = [
     label: "真实发布到小红书",
     reason: "会对真实外部账号产生写入动作，不能由自动测试代替人工授权。",
     guide: "docs/real-publish-acceptance.md",
-    firstSafeStep: "先生成仅自己可见的发布确认单。"
+    firstSafeStep: "先生成仅自己可见的发布确认单。",
+    proofRequired: "Post Studio 人工确认后，小红书账号中出现仅自己可见笔记，Publish History 记录 published 回执和账号/MCP URL。",
+    canBeAutomated: false
   },
   {
     id: "scheduled_publish",
     label: "真实定时发布到小红书",
     reason: "会创建真实定时发布任务，必须确认时区、时间和账号。",
     guide: "docs/real-publish-acceptance.md",
-    firstSafeStep: "先用未来时间生成定时发布确认单。"
+    firstSafeStep: "先用未来时间生成定时发布确认单。",
+    proofRequired: "Post Studio 人工确认后，小红书账号中出现未来定时任务，Publish History 记录 scheduled 回执、时区和账号/MCP URL。",
+    canBeAutomated: false
   },
   {
     id: "multi_account_switching",
     label: "多个真实账号切换验收",
     reason: "需要多个独立 MCP 实例和多个真实登录会话。",
     guide: "docs/multi-account-acceptance.md",
-    firstSafeStep: "分别启动 18060、18061 等 MCP 端口并运行 npm run smoke:accounts。"
+    firstSafeStep: "分别启动 18060、18061 等 MCP 端口并运行 npm run smoke:accounts。",
+    proofRequired: "至少两个真实账号分别通过独立 MCP URL 显示登录状态；切换账号后旧确认单失效，审计记录写入对应账号 ID 和 MCP URL。",
+    canBeAutomated: false
   },
   {
     id: "large_scale_image_generation",
     label: "大量真实模型生图",
     reason: "可能产生模型费用，需要由使用者决定调用规模。",
     guide: "README.md",
-    firstSafeStep: "先小批量生成 1-3 张，再提高每日图片调用上限。"
+    firstSafeStep: "先小批量生成 1-3 张，再提高每日图片调用上限。",
+    proofRequired: "在真实图片模型额度下完成一轮小批量生图，确认成本限制、失败重试和生成资产记录符合预期。",
+    canBeAutomated: false
   }
 ];
 

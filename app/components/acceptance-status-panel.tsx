@@ -44,6 +44,9 @@ export function AcceptanceStatusPanel() {
               <small>
                 指南：{gate.guide} · 第一步：{gate.firstSafeStep}
               </small>
+              <small>
+                完成证据：{gate.proofRequired} · {gate.canBeAutomated ? "可自动验收" : "必须人工验收"}
+              </small>
             </article>
           ))}
         </div>

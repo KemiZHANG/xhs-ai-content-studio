@@ -17,6 +17,8 @@ describe("acceptance status smoke script", () => {
     expect(script).toContain("completionPercent !== 98");
     expect(script).toContain("canMarkComplete must stay false");
     expect(script).toContain("safeToAutomateCompletion");
+    expect(script).toContain("canBeAutomated");
+    expect(script).toContain("proofRequired");
     expect(script).toContain("nextManualGateId");
     expect(script).toContain("nextSafeCommand");
     expect(script).toContain("real_publish");

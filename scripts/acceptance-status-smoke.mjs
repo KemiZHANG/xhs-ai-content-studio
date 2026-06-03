@@ -61,6 +61,10 @@ try {
   for (const id of ["real_publish", "scheduled_publish", "multi_account_switching"]) {
     if (!manualGateIds.includes(id)) fail(`manual gates are missing ${id}`);
   }
+  for (const gate of Array.isArray(status.manualGates) ? status.manualGates : []) {
+    if (gate.canBeAutomated !== false) fail(`manual gate ${gate.id || "unknown"} must not be marked automatable`);
+    if (!gate.proofRequired || typeof gate.proofRequired !== "string") fail(`manual gate ${gate.id || "unknown"} is missing proofRequired`);
+  }
   for (const command of ["npm run verify", "npm run smoke:safe", "npm run smoke:accounts"]) {
     if (!status.recommendedCommands?.includes(command)) fail(`recommended commands are missing ${command}`);
   }

@@ -23,6 +23,8 @@ describe("acceptance status", () => {
       "multi_account_switching",
       "large_scale_image_generation"
     ]);
+    expect(status.manualGates.every((gate) => gate.canBeAutomated === false)).toBe(true);
+    expect(status.manualGates.every((gate) => gate.proofRequired.length > 20)).toBe(true);
   });
 
   it("points manual gates to safe acceptance guides and smoke commands", () => {
@@ -34,6 +36,8 @@ describe("acceptance status", () => {
     expect(status.manualGates.find((gate) => gate.id === "real_publish")?.guide).toBe("docs/real-publish-acceptance.md");
     expect(status.manualGates.find((gate) => gate.id === "multi_account_switching")?.guide).toBe("docs/multi-account-acceptance.md");
     expect(status.manualGates.find((gate) => gate.id === "real_publish")?.firstSafeStep).toContain("仅自己可见");
+    expect(status.manualGates.find((gate) => gate.id === "real_publish")?.proofRequired).toContain("Publish History");
+    expect(status.manualGates.find((gate) => gate.id === "multi_account_switching")?.proofRequired).toContain("旧确认单失效");
   });
 
   it("builds a delivery summary that cannot hide remaining manual gates", () => {
