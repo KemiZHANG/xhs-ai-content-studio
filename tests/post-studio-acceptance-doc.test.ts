@@ -20,6 +20,19 @@ describe("post studio acceptance documentation", () => {
     expect(readme).toContain("Post Studio 常用指令");
     expect(readme).toContain("Useful Post Studio Prompts");
     expect(readme).toContain("真实发布仍需要在发布检查区人工确认");
+    expect(readme).toContain("[真实发布验收指南](docs/real-publish-acceptance.md)");
+    expect(readme).toContain("[real publishing acceptance guide](docs/real-publish-acceptance.md)");
+  });
+
+  it("documents real publishing as a manual confirmation flow", () => {
+    const guide = readText("docs/real-publish-acceptance.md");
+
+    expect(guide).toContain("默认情况下，XHS AI Content Studio 只会生成发布确认单");
+    expect(guide).toContain("仅自己可见");
+    expect(guide).toContain("确认前不会调用小红书发布");
+    expect(guide).toContain("点击确认后才会调用小红书 MCP 的发布能力");
+    expect(guide).toContain("不要绕过 Post Studio 直接调用发布接口");
+    expect(guide).toContain("Only the final manual confirmation triggers the Xiaohongshu MCP publishing action");
   });
 
   it("keeps the acceptance checklist aligned with the product-level goal", () => {
