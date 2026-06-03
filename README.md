@@ -222,6 +222,14 @@ npm run smoke:publish-dry-run
 
 这个命令只调用发布接口的 `dryRun` 预览模式，要求返回确认信息和风险提示，不会确认发布、不会定时、不会调用真实小红书发布。
 
+也可以读取当前完成度和外部人工验收闸门：
+
+```text
+http://localhost:3000/api/acceptance/status
+```
+
+这个接口只返回代码覆盖项、推荐 smoke 命令和仍需人工确认的真实外部动作，不会调用 MCP、模型、发布或定时。
+
 ### 常用命令
 
 ```powershell
@@ -472,6 +480,14 @@ npm run smoke:publish-dry-run
 ```
 
 This command only calls `/api/publish` in `dryRun` preview mode. It expects confirmation metadata and risk information, and it does not confirm, schedule, or trigger real Xiaohongshu publishing.
+
+You can also read the current completion and external manual gates:
+
+```text
+http://localhost:3000/api/acceptance/status
+```
+
+This endpoint only returns covered areas, recommended smoke commands, and remaining manual external checks. It does not call MCP, models, publishing, or scheduling.
 
 ### Useful Commands
 

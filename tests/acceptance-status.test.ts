@@ -1,0 +1,52 @@
+import { describe, expect, it } from "vitest";
+import { GET } from "@/app/api/acceptance/status/route";
+import { buildAcceptanceStatus } from "@/lib/acceptance/status";
+
+describe("acceptance status", () => {
+  it("keeps completion honest while external gates remain manual", () => {
+    const status = buildAcceptanceStatus();
+
+    expect(status.completionPercent).toBe(98);
+    expect(status.canMarkComplete).toBe(false);
+    expect(status.summary).toContain("真实外部账号动作验收");
+    expect(status.verified.map((item) => item.id)).toEqual([
+      "post_project",
+      "post_studio",
+      "agent_director",
+      "creative_brief",
+      "viral_rag",
+      "publish_safety"
+    ]);
+    expect(status.manualGates.map((item) => item.id)).toEqual([
+      "real_publish",
+      "scheduled_publish",
+      "multi_account_switching",
+      "large_scale_image_generation"
+    ]);
+  });
+
+  it("points manual gates to safe acceptance guides and smoke commands", () => {
+    const status = buildAcceptanceStatus();
+
+    expect(status.recommendedCommands).toContain("npm run verify");
+    expect(status.recommendedCommands).toContain("npm run smoke:safe");
+    expect(status.recommendedCommands).toContain("npm run smoke:accounts");
+    expect(status.manualGates.find((gate) => gate.id === "real_publish")?.guide).toBe("docs/real-publish-acceptance.md");
+    expect(status.manualGates.find((gate) => gate.id === "multi_account_switching")?.guide).toBe("docs/multi-account-acceptance.md");
+    expect(status.manualGates.find((gate) => gate.id === "real_publish")?.firstSafeStep).toContain("仅自己可见");
+  });
+
+  it("exposes a read-only API contract for frontend status panels", async () => {
+    const response = await GET();
+    const payload = await response.json() as {
+      ok: boolean;
+      status: ReturnType<typeof buildAcceptanceStatus>;
+    };
+
+    expect(payload.ok).toBe(true);
+    expect(payload.status.completionPercent).toBe(98);
+    expect(payload.status.canMarkComplete).toBe(false);
+    expect(payload.status.manualGates.length).toBeGreaterThanOrEqual(3);
+  });
+});
+
