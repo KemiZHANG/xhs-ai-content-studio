@@ -167,6 +167,14 @@ Agent 会读取当前 PostProject，所以“再生活化一点”“用第二�
 启动网页后，也可以运行只读 smoke 检查：
 
 ```powershell
+npm run smoke:safe
+```
+
+这个命令会连续运行本地健康检查和发布 dry-run 预览检查，不会搜索小红书、不会生成图片、不会确认发布、不会触发真实小红书写入。
+
+也可以只运行本地健康检查：
+
+```powershell
 npm run smoke:local
 ```
 
@@ -194,6 +202,7 @@ npm run smoke:publish-dry-run
 npm run dev
 npm run verify
 npm run acceptance
+npm run smoke:safe
 npm run smoke:local
 npm run smoke:research
 npm run smoke:publish-dry-run
@@ -383,6 +392,14 @@ Real Xiaohongshu research depends on the local MCP service. If research fails, c
 After the web app is running, you can also run the read-only smoke check:
 
 ```powershell
+npm run smoke:safe
+```
+
+This command runs local health checks and publish dry-run preview checks. It does not search Xiaohongshu, generate images, confirm publishing, or trigger real Xiaohongshu writes.
+
+You can also run only the local health check:
+
+```powershell
 npm run smoke:local
 ```
 
@@ -410,6 +427,7 @@ This command only calls `/api/publish` in `dryRun` preview mode. It expects conf
 npm run dev
 npm run verify
 npm run acceptance
+npm run smoke:safe
 npm run smoke:local
 npm run smoke:research
 npm run smoke:publish-dry-run

@@ -11,6 +11,7 @@ describe("local smoke script", () => {
     const script = readText("scripts/local-smoke.mjs");
 
     expect(pkg.scripts?.["smoke:local"]).toBe("node scripts/local-smoke.mjs");
+    expect(pkg.scripts?.["smoke:safe"]).toBe("npm run smoke:local && npm run smoke:publish-dry-run");
     expect(script).toContain("/api/health/mcp");
     expect(script).toContain("/api/post-project");
     expect(script).toContain("No external publishing action was triggered");

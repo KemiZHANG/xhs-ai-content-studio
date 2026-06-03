@@ -15,6 +15,7 @@ describe("post studio acceptance documentation", () => {
     expect(readme).toContain("explicit user authorization");
     expect(readme).toContain("/api/health/mcp");
     expect(readme).toContain("X-XHS-Action-Token");
+    expect(readme).toContain("npm run smoke:safe");
     expect(readme).toContain("npm run smoke:local");
     expect(readme).toContain("npm run smoke:research");
     expect(readme).toContain("npm run smoke:publish-dry-run");
@@ -61,6 +62,7 @@ describe("post studio acceptance documentation", () => {
     expect(checklist).toContain("自动发布默认关闭");
     expect(checklist).toContain("reachable: true");
     expect(checklist).toContain("fetch failed");
+    expect(checklist).toContain("npm run smoke:safe");
     expect(checklist).toContain("npm run smoke:local");
     expect(checklist).toContain("npm run smoke:research");
     expect(checklist).toContain("npm run smoke:publish-dry-run");
