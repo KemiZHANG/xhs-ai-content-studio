@@ -19,7 +19,9 @@ describe("acceptance status smoke script", () => {
     expect(script).toContain("Validation records");
     expect(script).toContain("ok completionMatrix payload");
     expect(script).toContain("records payload");
+    expect(script).toContain("validation records endpoint is missing completionMatrix");
     expect(script).toContain("disagree on canMarkComplete");
+    expect(script).toContain("validation records endpoint and status endpoint disagree on completionMatrix completionPercent");
     expect(script).toContain("deliverySummary");
     expect(script).toContain("evidencePackage");
     expect(script).toContain("completionMatrix");

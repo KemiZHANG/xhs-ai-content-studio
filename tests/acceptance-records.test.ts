@@ -8,7 +8,7 @@ import {
   upsertAcceptanceValidationRecord,
   validateAcceptanceValidationRecord
 } from "@/lib/acceptance/records";
-import { buildAcceptanceDeliverySummary, buildAcceptanceStatus } from "@/lib/acceptance/status";
+import { buildAcceptanceCompletionMatrix, buildAcceptanceDeliverySummary, buildAcceptanceStatus } from "@/lib/acceptance/status";
 
 const originalCwd = process.cwd();
 let tempDir = "";
@@ -126,6 +126,7 @@ describe("acceptance validation records", () => {
       ok: boolean;
       records: Array<{ gateId: string }>;
       status: ReturnType<typeof buildAcceptanceStatus>;
+      completionMatrix: ReturnType<typeof buildAcceptanceCompletionMatrix>;
     };
 
     expect(validResponse.status).toBe(200);
@@ -134,15 +135,20 @@ describe("acceptance validation records", () => {
     expect(validPayload.status.validatedManualGateIds).toContain("real_publish");
     expect(validPayload.status.pendingManualGateIds).not.toContain("real_publish");
     expect(validPayload.status.canMarkComplete).toBe(false);
+    expect(validPayload.completionMatrix.completionPercent).toBe(99);
+    expect(validPayload.completionMatrix.manualExternalGates.find((item) => item.id === "real_publish")?.status).toBe("validated");
+    expect(validPayload.completionMatrix.remainingWork.map((item) => item.id)).not.toContain("real_publish");
 
     const getResponse = await GET();
     const getPayload = await getResponse.json() as {
       ok: boolean;
       records: Array<{ gateId: string }>;
       status: ReturnType<typeof buildAcceptanceStatus>;
+      completionMatrix: ReturnType<typeof buildAcceptanceCompletionMatrix>;
     };
     expect(getPayload.ok).toBe(true);
     expect(getPayload.records).toHaveLength(1);
     expect(getPayload.status.validatedManualGateIds).toContain("real_publish");
+    expect(getPayload.completionMatrix.manualExternalGates.find((item) => item.id === "real_publish")?.status).toBe("validated");
   });
 });

@@ -143,8 +143,14 @@ try {
   if (!validationResult.data.deliverySummary || typeof validationResult.data.deliverySummary !== "object") {
     fail("validation records endpoint is missing deliverySummary");
   }
+  if (!validationResult.data.completionMatrix || typeof validationResult.data.completionMatrix !== "object") {
+    fail("validation records endpoint is missing completionMatrix");
+  }
   if (validationResult.data.status.canMarkComplete !== status.canMarkComplete) {
     fail("validation records endpoint and status endpoint disagree on canMarkComplete");
+  }
+  if (validationResult.data.completionMatrix.completionPercent !== status.completionPercent) {
+    fail("validation records endpoint and status endpoint disagree on completionMatrix completionPercent");
   }
 
   for (const id of ["post_project", "post_studio", "agent_director", "creative_brief", "viral_rag", "publish_safety"]) {

@@ -5,7 +5,7 @@ import {
   validateAcceptanceValidationRecord,
   type AcceptanceValidationRecord
 } from "@/lib/acceptance/records";
-import { buildAcceptanceDeliverySummary, buildAcceptanceStatus } from "@/lib/acceptance/status";
+import { buildAcceptanceCompletionMatrix, buildAcceptanceDeliverySummary, buildAcceptanceStatus } from "@/lib/acceptance/status";
 
 export const runtime = "nodejs";
 
@@ -16,7 +16,8 @@ export async function GET() {
     ok: true,
     records,
     status,
-    deliverySummary: buildAcceptanceDeliverySummary(status)
+    deliverySummary: buildAcceptanceDeliverySummary(status),
+    completionMatrix: buildAcceptanceCompletionMatrix(status, new Date().toISOString())
   });
 }
 
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
     record,
     records,
     status: nextStatus,
-    deliverySummary: buildAcceptanceDeliverySummary(nextStatus)
+    deliverySummary: buildAcceptanceDeliverySummary(nextStatus),
+    completionMatrix: buildAcceptanceCompletionMatrix(nextStatus, new Date().toISOString())
   });
 }
