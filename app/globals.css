@@ -8804,6 +8804,22 @@ textarea {
   margin: 6px 0 0;
 }
 
+.acceptanceEvidenceCommands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.acceptanceEvidenceCommands code {
+  border: 1px solid rgba(20, 184, 166, 0.24);
+  border-radius: 999px;
+  background: rgba(20, 184, 166, 0.08);
+  color: var(--text);
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
 .acceptanceStatusDetails {
   border-top: 1px solid rgba(15, 23, 42, 0.08);
   padding-top: 4px;

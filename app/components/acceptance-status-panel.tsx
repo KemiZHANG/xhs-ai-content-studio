@@ -36,8 +36,12 @@ export function AcceptanceStatusPanel() {
 
       <article className="acceptanceEvidencePackageCard">
         <span>验收证据包</span>
-        <strong>/api/acceptance/status · evidencePackage v1</strong>
-        <p>只读导出真实发布、定时发布、多账号和生图验收模板；读取它不会调用 MCP、模型、发布或定时任务。</p>
+        <strong>/api/acceptance/evidence-package · v1</strong>
+        <p>专用只读接口导出真实发布、定时发布、多账号和生图验收模板；读取它不会调用 MCP、模型、发布或定时任务。</p>
+        <div className="acceptanceEvidenceCommands">
+          <code>npm run acceptance:evidence-package</code>
+          <code>npm run acceptance:validate-evidence</code>
+        </div>
       </article>
 
       <details className="acceptanceStatusDetails">

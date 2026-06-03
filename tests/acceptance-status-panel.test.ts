@@ -17,7 +17,9 @@ describe("acceptance status panel", () => {
     expect(html).toContain("完成证据");
     expect(html).toContain("必须人工验收");
     expect(html).toContain("验收证据包");
-    expect(html).toContain("/api/acceptance/status · evidencePackage v1");
+    expect(html).toContain("/api/acceptance/evidence-package · v1");
+    expect(html).toContain("npm run acceptance:evidence-package");
+    expect(html).toContain("npm run acceptance:validate-evidence");
     expect(html).toContain("不会调用 MCP、模型、发布或定时任务");
     expect(html).toContain("真实发布到小红书");
     expect(html).toContain("多个真实账号切换验收");
