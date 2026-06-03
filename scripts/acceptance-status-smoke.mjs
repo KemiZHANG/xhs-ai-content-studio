@@ -73,6 +73,12 @@ try {
   if (deliverySummary.nextSafeCommand !== "npm run smoke:safe") fail("deliverySummary should point to npm run smoke:safe as the next safe command");
   if (evidencePackage.schemaVersion !== 1) fail("evidencePackage should use schemaVersion 1");
   if (evidencePackage.canMarkComplete !== false) fail("evidencePackage must not mark completion while manual gates remain");
+  if (evidencePackage.validationRecordEndpoint !== "/api/acceptance/validation-records") {
+    fail("evidencePackage should expose the validation record endpoint");
+  }
+  if (evidencePackage.dryRunCommand !== "node scripts/import-acceptance-validation-records.mjs --dry-run") {
+    fail("evidencePackage should expose the validation record dry-run command");
+  }
   if (!Array.isArray(evidencePackage.gates) || evidencePackage.gates.length < 4) fail("evidencePackage is missing manual gate templates");
   if (!validationResult.data.status || typeof validationResult.data.status !== "object") fail("validation records endpoint is missing status");
   if (!validationResult.data.deliverySummary || typeof validationResult.data.deliverySummary !== "object") {

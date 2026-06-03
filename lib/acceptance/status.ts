@@ -61,6 +61,8 @@ export type AcceptanceEvidencePackage = {
   completionPercent: number;
   canMarkComplete: boolean;
   commands: string[];
+  validationRecordEndpoint: "/api/acceptance/validation-records";
+  dryRunCommand: "node scripts/import-acceptance-validation-records.mjs --dry-run";
   gates: Array<{
     id: AcceptanceExternalGate["id"];
     label: string;
@@ -315,6 +317,8 @@ export function buildAcceptanceEvidencePackage(
     completionPercent: status.completionPercent,
     canMarkComplete: status.canMarkComplete,
     commands: status.recommendedCommands,
+    validationRecordEndpoint: "/api/acceptance/validation-records",
+    dryRunCommand: "node scripts/import-acceptance-validation-records.mjs --dry-run",
     gates: status.manualGates.map((gate) => ({
       id: gate.id,
       label: gate.label,

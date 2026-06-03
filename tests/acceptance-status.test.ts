@@ -78,6 +78,8 @@ describe("acceptance status", () => {
     expect(evidencePackage.generatedAt).toBe("2026-06-03T00:00:00.000Z");
     expect(evidencePackage.canMarkComplete).toBe(false);
     expect(evidencePackage.purpose).toContain("Manual external validation template");
+    expect(evidencePackage.validationRecordEndpoint).toBe("/api/acceptance/validation-records");
+    expect(evidencePackage.dryRunCommand).toBe("node scripts/import-acceptance-validation-records.mjs --dry-run");
     expect(evidencePackage.commands).toEqual(expect.arrayContaining([
       "npm run acceptance:evidence-package",
       "npm run acceptance:validate-evidence",
@@ -117,6 +119,8 @@ describe("acceptance status", () => {
     expect(payload.deliverySummary.nextSafeCommand).toBe("npm run smoke:safe");
     expect(payload.deliverySummary.safeToAutomateCompletion).toBe(false);
     expect(payload.evidencePackage.schemaVersion).toBe(1);
+    expect(payload.evidencePackage.validationRecordEndpoint).toBe("/api/acceptance/validation-records");
+    expect(payload.evidencePackage.dryRunCommand).toBe("node scripts/import-acceptance-validation-records.mjs --dry-run");
     expect(payload.evidencePackage.gates[0]?.evidenceRecordTemplate).toHaveProperty("validated", false);
     expect(payload.evidencePackage.gates[0]?.manualOnly).toBe(true);
   });

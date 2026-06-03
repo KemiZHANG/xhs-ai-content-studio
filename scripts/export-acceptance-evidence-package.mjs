@@ -30,6 +30,12 @@ if (!evidencePackage || evidencePackage.schemaVersion !== 1 || !Array.isArray(ev
 if (evidencePackage.canMarkComplete !== false) {
   fail("evidencePackage must not mark completion while manual gates remain");
 }
+if (evidencePackage.validationRecordEndpoint !== "/api/acceptance/validation-records") {
+  fail("evidencePackage must tell operators where validation records are submitted");
+}
+if (evidencePackage.dryRunCommand !== "node scripts/import-acceptance-validation-records.mjs --dry-run") {
+  fail("evidencePackage must include the dry-run validation import command");
+}
 if (evidencePackage.gates.some((gate) => gate.manualOnly !== true || !gate.evidenceRecordTemplate)) {
   fail("evidencePackage gates must remain manualOnly and include evidenceRecordTemplate");
 }
