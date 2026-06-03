@@ -55,6 +55,7 @@ if (evidencePackage?.schemaVersion !== 1 || !Array.isArray(evidencePackage.gates
 
 const importedGateIds = [];
 const previewRecords = [];
+let latestCompletionMatrix = null;
 for (const gate of evidencePackage.gates) {
   const template = gate?.evidenceRecordTemplate;
   if (!gate?.id || !template || typeof template !== "object") {
@@ -87,6 +88,7 @@ for (const gate of evidencePackage.gates) {
     const details = Array.isArray(result.data?.errors) ? `: ${result.data.errors.join("; ")}` : "";
     fail(`${gate.id} import returned HTTP ${result.response.status}${details}`);
   }
+  latestCompletionMatrix = result.data?.completionMatrix ?? latestCompletionMatrix;
   importedGateIds.push(gate.id);
 }
 
@@ -95,5 +97,13 @@ if (dryRun) {
   console.log("Dry-run complete. No local record was written and no MCP, model, publish, or schedule action was triggered.");
 } else {
   console.log(`Imported ${importedGateIds.length} manual acceptance validation record(s): ${importedGateIds.join(", ")}`);
+  if (latestCompletionMatrix) {
+    const remaining = Array.isArray(latestCompletionMatrix.remainingWork)
+      ? latestCompletionMatrix.remainingWork.map((item) => item.id).join(", ")
+      : "unknown";
+    console.log(`Completion after import: ${latestCompletionMatrix.completionPercent}%`);
+    console.log(`Can mark complete: ${String(Boolean(latestCompletionMatrix.canMarkComplete))}`);
+    console.log(`Remaining manual gate(s): ${remaining || "none"}`);
+  }
   console.log("Local record import complete. No MCP, model, publish, or schedule action was triggered.");
 }

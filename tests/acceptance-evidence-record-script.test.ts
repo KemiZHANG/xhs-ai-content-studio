@@ -20,6 +20,10 @@ describe("acceptance evidence record script", () => {
     expect(script).toContain("validated must be true");
     expect(script).toContain("No local record was written");
     expect(script).toContain("evidenceRecordTemplate");
+    expect(script).toContain("latestCompletionMatrix");
+    expect(script).toContain("Completion after import");
+    expect(script).toContain("Can mark complete");
+    expect(script).toContain("Remaining manual gate(s)");
     expect(script).toContain("No MCP, model, publish, or schedule action was triggered.");
     expect(script).not.toContain("/api/publish");
     expect(script).not.toContain("/api/assets/generate");
