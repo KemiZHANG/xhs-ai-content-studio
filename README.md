@@ -172,7 +172,7 @@ Agent 会读取当前 PostProject，所以“再生活化一点”“用第二�
 npm run smoke:safe
 ```
 
-这个命令会连续运行本地健康检查、账号配置检查、Post Studio 状态检查、聊天 SSE 通道检查和发布 dry-run 预览检查，不会搜索小红书、不会生成图片、不会确认发布、不会触发真实小红书写入。
+这个命令会连续运行本地健康检查、账号配置检查、Post Studio 状态检查、聊天 SSE 通道检查、发布 dry-run 预览检查和验收状态检查，不会搜索小红书、不会生成图片、不会确认发布、不会触发真实小红书写入。
 
 也可以只运行本地健康检查：
 
@@ -224,6 +224,12 @@ npm run smoke:publish-dry-run
 
 也可以读取当前完成度和外部人工验收闸门：
 
+```powershell
+npm run smoke:acceptance-status
+```
+
+或直接访问：
+
 ```text
 http://localhost:3000/api/acceptance/status
 ```
@@ -238,8 +244,12 @@ npm run verify
 npm run acceptance
 npm run smoke:safe
 npm run smoke:local
+npm run smoke:accounts
+npm run smoke:studio-state
+npm run smoke:chat-stream
 npm run smoke:research
 npm run smoke:publish-dry-run
+npm run smoke:acceptance-status
 npm test
 npm run typecheck
 npm run build
@@ -431,7 +441,7 @@ After the web app is running, you can also run the read-only smoke check:
 npm run smoke:safe
 ```
 
-This command runs local health checks, account configuration checks, Post Studio state checks, chat SSE transport checks, and publish dry-run preview checks. It does not search Xiaohongshu, generate images, confirm publishing, or trigger real Xiaohongshu writes.
+This command runs local health checks, account configuration checks, Post Studio state checks, chat SSE transport checks, publish dry-run preview checks, and acceptance status checks. It does not search Xiaohongshu, generate images, confirm publishing, or trigger real Xiaohongshu writes.
 
 You can also run only the local health check:
 
@@ -483,6 +493,12 @@ This command only calls `/api/publish` in `dryRun` preview mode. It expects conf
 
 You can also read the current completion and external manual gates:
 
+```powershell
+npm run smoke:acceptance-status
+```
+
+Or open:
+
 ```text
 http://localhost:3000/api/acceptance/status
 ```
@@ -502,6 +518,7 @@ npm run smoke:studio-state
 npm run smoke:chat-stream
 npm run smoke:research
 npm run smoke:publish-dry-run
+npm run smoke:acceptance-status
 npm test
 npm run typecheck
 npm run build
