@@ -227,7 +227,10 @@ export function buildAcceptanceStatus(records: AcceptanceValidationRecordInput[]
       "npm run smoke:safe",
       "npm run smoke:research",
       "npm run smoke:publish-dry-run",
-      "npm run smoke:accounts"
+      "npm run smoke:accounts",
+      "npm run acceptance:evidence-package",
+      "npm run acceptance:validate-evidence",
+      "npm run acceptance:record-evidence"
     ]
   };
 }

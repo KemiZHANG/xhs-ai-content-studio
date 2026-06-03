@@ -48,6 +48,9 @@ describe("acceptance status", () => {
     expect(status.recommendedCommands).toContain("npm run verify");
     expect(status.recommendedCommands).toContain("npm run smoke:safe");
     expect(status.recommendedCommands).toContain("npm run smoke:accounts");
+    expect(status.recommendedCommands).toContain("npm run acceptance:evidence-package");
+    expect(status.recommendedCommands).toContain("npm run acceptance:validate-evidence");
+    expect(status.recommendedCommands).toContain("npm run acceptance:record-evidence");
     expect(status.manualGates.find((gate) => gate.id === "real_publish")?.guide).toBe("docs/real-publish-acceptance.md");
     expect(status.manualGates.find((gate) => gate.id === "multi_account_switching")?.guide).toBe("docs/multi-account-acceptance.md");
     expect(status.manualGates.find((gate) => gate.id === "real_publish")?.firstSafeStep).toContain("仅自己可见");
@@ -75,6 +78,11 @@ describe("acceptance status", () => {
     expect(evidencePackage.generatedAt).toBe("2026-06-03T00:00:00.000Z");
     expect(evidencePackage.canMarkComplete).toBe(false);
     expect(evidencePackage.purpose).toContain("Manual external validation template");
+    expect(evidencePackage.commands).toEqual(expect.arrayContaining([
+      "npm run acceptance:evidence-package",
+      "npm run acceptance:validate-evidence",
+      "npm run acceptance:record-evidence"
+    ]));
     expect(evidencePackage.gates.map((gate) => gate.id)).toEqual([
       "real_publish",
       "scheduled_publish",

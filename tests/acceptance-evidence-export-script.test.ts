@@ -23,6 +23,7 @@ describe("acceptance evidence package export script", () => {
     expect(script).not.toContain("/api/workflows/one-click");
     expect(readme).toContain("npm run acceptance:evidence-package");
     expect(readme).toContain("npm run acceptance:validate-evidence");
+    expect(readme).toContain("npm run acceptance:record-evidence");
     expect(readme).toContain("data/manual-acceptance-evidence-package.json");
     expect(readme).toContain("XHS_ACCEPTANCE_EVIDENCE_PATH");
   });
