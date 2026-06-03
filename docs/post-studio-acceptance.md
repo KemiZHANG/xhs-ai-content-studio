@@ -126,7 +126,7 @@ npm run build
 ```
 
 通过标准：
-- 验收测试能覆盖 Post Studio 文档锚点、PostProject、Agent、RAG、Canvas 和发布检查。
+- `npm run acceptance` 会运行 `tests` 目录下的完整产品测试套件，覆盖 Post Studio 文档锚点、PostProject、Agent、RAG、Canvas、发布检查、MCP、素材、任务、模型设置和旧流程回归。
 - 全量测试通过。
 - TypeScript 无错误。
 - Next.js 生产构建通过。
