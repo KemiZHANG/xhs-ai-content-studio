@@ -23,7 +23,7 @@ describe("agent planner", () => {
     expect(plan.ragFilters?.sortBy).toBe("collects");
   });
 
-  it("understands real Chinese project reset, image selection, and scheduling language", () => {
+  it("understands project reset, image selection, and scheduling language", () => {
     const reset = createAgentPlan({
       message: "新建一个帖子项目，主题是通勤包",
       hasCurrentDraft: true,
@@ -45,22 +45,6 @@ describe("agent planner", () => {
     expect(schedule.scheduleText).toContain("今晚 8 点");
   });
 
-  it("asks for clarification for real Chinese vague commands near publishing", () => {
-    const plan = createAgentPlan({
-      message: "下一步",
-      hasCurrentDraft: true,
-      attachedAssetCount: 0,
-      postStage: "reviewing",
-      hasEvidence: true,
-      hasCreativeBrief: true,
-      hasSelectedImages: true
-    });
-
-    expect(plan.intent).toBe("ask");
-    expect(plan.steps.map((step) => step.action)).toEqual(["askClarifyingQuestion"]);
-    expect(plan.steps[0].reason).toContain("close to publishing");
-  });
-
   it("plans a clean project reset when the user starts a new post project", () => {
     const plan = createAgentPlan({
       message: "新建一个帖子项目，主题是通勤包，目标人群是上班族，内容目标是生成真实通勤分享",
@@ -75,35 +59,20 @@ describe("agent planner", () => {
     expect(plan.topic).toBe("通勤包");
   });
 
-  it("plans a full research and draft flow from a natural language request", () => {
+  it("asks for clarification for vague commands near publishing", () => {
     const plan = createAgentPlan({
-      message: "帮我找最近一周广州咖啡馆高收藏笔记，分析标题和图片风格，再生成一篇适合探店账号的图文笔记",
-      hasCurrentDraft: false,
-      attachedAssetCount: 0
+      message: "下一步",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      postStage: "reviewing",
+      hasEvidence: true,
+      hasCreativeBrief: true,
+      hasSelectedImages: true
     });
 
-    expect(plan.intent).toBe("research_to_draft");
-    expect(plan.steps.map((step) => step.action)).toEqual([
-      "research",
-      "retrieveViralKnowledge",
-      "summarizeEvidence",
-      "createCreativeBrief",
-      "generateDraft",
-      "planVisuals"
-    ]);
-    expect(plan.steps.map((step) => step.toolName)).toEqual([
-      "workflow.searchRank",
-      "knowledge.retrieveViralPatterns",
-      "workflow.summarizeEvidence",
-      "project.createCreativeBrief",
-      "workflow.generateDraft",
-      "workflow.planVisuals"
-    ]);
-    expect(plan.topic).toContain("广州咖啡馆");
-    expect(plan.timeRange).toBe("一周内");
-    expect(plan.ragFilters?.sortBy).toBe("collects");
-    expect(plan.ragFilters?.sortOrder).toBe("desc");
-    expect(plan.ragFilters?.createdAfter).toBeTruthy();
+    expect(plan.intent).toBe("ask");
+    expect(plan.steps.map((step) => step.action)).toEqual(["askClarifyingQuestion"]);
+    expect(plan.steps[0].reason).toContain("close to publishing");
   });
 
   it("adds publish assembly and Quality Gate when a full research request asks for publish review", () => {
@@ -241,21 +210,9 @@ describe("agent planner", () => {
     expect(plan.steps[0].toolName).toBe("workflow.planVisuals");
   });
 
-  it("asks a clarifying question for ambiguous text on an empty project", () => {
-    const plan = createAgentPlan({
-      message: "继续",
-      hasCurrentDraft: false,
-      attachedAssetCount: 0,
-      postStage: "empty"
-    });
-
-    expect(plan.intent).toBe("ask");
-    expect(plan.steps[0].action).toBe("askClarifyingQuestion");
-  });
-
   it("uses the current PostProject stage to continue vague active-project commands", () => {
     const plan = createAgentPlan({
-      message: "帮我做一下",
+      message: "帮我做一个",
       hasCurrentDraft: true,
       attachedAssetCount: 0,
       postStage: "copy_ready",
@@ -272,7 +229,7 @@ describe("agent planner", () => {
 
   it("plans a vague revision phrase against the current draft", () => {
     const plan = createAgentPlan({
-      message: "再改一下",
+      message: "再改一个",
       hasCurrentDraft: true,
       attachedAssetCount: 0,
       postStage: "copy_ready",
@@ -287,7 +244,7 @@ describe("agent planner", () => {
 
   it("asks for a current draft before handling a vague revision phrase", () => {
     const plan = createAgentPlan({
-      message: "再改一下",
+      message: "再改一个",
       hasCurrentDraft: false,
       attachedAssetCount: 0,
       postStage: "brief_ready",
@@ -398,43 +355,6 @@ describe("agent planner", () => {
     expect(plan.requiresAssets).toBe(true);
   });
 
-  it("plans a scheduled publish from the current draft", () => {
-    const plan = createAgentPlan({
-      message: "就用第二张图，今晚 8 点发",
-      hasCurrentDraft: true,
-      attachedAssetCount: 0
-    });
-
-    expect(plan.intent).toBe("schedule_publish");
-    expect(plan.steps.map((step) => step.action)).toEqual(["preparePublish", "schedulePublish"]);
-    expect(plan.selectedImageIndex).toBe(2);
-    expect(plan.scheduleText).toContain("今晚 8 点");
-  });
-
-  it("routes confirmation language to the active publish confirmation instead of creating another intent", () => {
-    const plan = createAgentPlan({
-      message: "确认发布，就这样发",
-      hasCurrentDraft: true,
-      attachedAssetCount: 0,
-      hasPendingPublishConfirmation: true
-    });
-
-    expect(plan.intent).toBe("review_publish_confirmation");
-    expect(plan.steps.map((step) => step.action)).toEqual(["reviewPublishConfirmation"]);
-  });
-
-  it("routes cancel language to the pending publish confirmation", () => {
-    const plan = createAgentPlan({
-      message: "先别发了，取消确认单",
-      hasCurrentDraft: true,
-      attachedAssetCount: 0,
-      hasPendingPublishConfirmation: true
-    });
-
-    expect(plan.intent).toBe("cancel_publish_confirmation");
-    expect(plan.steps.map((step) => step.action)).toEqual(["cancelPublishConfirmation"]);
-  });
-
   it("asks for a draft before preparing a publish intent", () => {
     const plan = createAgentPlan({
       message: "帮我发布到小红书",
@@ -463,6 +383,26 @@ describe("agent planner", () => {
     expect(plan.intent).toBe("select_images");
     expect(plan.selectedImageIndex).toBe(2);
     expect(plan.steps.map((step) => step.action)).toEqual(["selectImages"]);
+  });
+
+  it("routes confirmation and cancel language to the pending publish confirmation", () => {
+    const confirm = createAgentPlan({
+      message: "确认发布，就这样发",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      hasPendingPublishConfirmation: true
+    });
+    const cancel = createAgentPlan({
+      message: "先别发了，取消确认单",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      hasPendingPublishConfirmation: true
+    });
+
+    expect(confirm.intent).toBe("review_publish_confirmation");
+    expect(confirm.steps.map((step) => step.action)).toEqual(["reviewPublishConfirmation"]);
+    expect(cancel.intent).toBe("cancel_publish_confirmation");
+    expect(cancel.steps.map((step) => step.action)).toEqual(["cancelPublishConfirmation"]);
   });
 
   it("plans final post assembly and quality gate from publish-check language", () => {

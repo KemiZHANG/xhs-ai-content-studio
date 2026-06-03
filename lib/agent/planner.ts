@@ -429,7 +429,9 @@ function isDraftOutputRequest(message: string): boolean {
 }
 
 function isVisualPlanningRequest(message: string, lower: string): boolean {
-  return /图片风格|图片方向|视觉|封面|配图|图文|提示词|场景图|产品图/.test(message) || lower.includes("visual") || lower.includes("image prompt");
+  return /图片风格|图片方向|视觉|封面|配图|图文|提示词|场景图|产品图/.test(message) ||
+    lower.includes("visual") ||
+    lower.includes("image prompt");
 }
 
 function isVisualDirectionConfirmationRequest(message: string, lower: string): boolean {
@@ -439,14 +441,15 @@ function isVisualDirectionConfirmationRequest(message: string, lower: string): b
 }
 
 function isCreativeBriefRequest(message: string, lower: string): boolean {
-  return /CreativeBrief|创作简报|创作 Brief|内容方向|生成\/刷新.*Brief|刷新.*Brief|整理.*Brief|生成.*Brief/i.test(message) || lower.includes("creative brief");
+  return /CreativeBrief|创作简报|创作 Brief|内容方向|生成\/刷新.*Brief|刷新.*Brief|整理.*Brief|生成.*Brief/i.test(message) ||
+    lower.includes("creative brief");
 }
 
 function isAmbiguousLowSignalRequest(message: string, lower: string): boolean {
   const compact = message.replace(/\s+/g, "");
   if (compact.length > 16) return false;
   if (lower === "ok" || lower === "thanks" || lower === "thank you") return false;
-  return /^(继续|下一步|帮我弄一下|帮我做一下|帮我处理|处理一下|搞一下|优化一下|改一下|再改一下|再来一下|你看着办|随便弄|安排一下|继续吧|继续做)$/.test(compact);
+  return /^(继续|下一步|帮我弄一个|帮我做一个|帮我处理|处理一个|搞一个|优化一个|改一个|再改一个|再来一个|你看着办|随便弄|安排一个|继续吧|继续做)$/.test(compact);
 }
 
 function buildPlan(input: Omit<AgentPlan, "id">): AgentPlan {
@@ -471,11 +474,11 @@ function isNewProjectRequest(message: string, lower: string): boolean {
 }
 
 function inferNewProjectTopic(message: string): string | undefined {
-  const slot = message.match(/(?:主题|选题|笔记主题|帖子主题)\s*(?:是|为|:|：)?\s*([^，。！？；;\n]+)/);
+  const slot = message.match(/(?:主题|选题|笔记主题|帖子主题)\s*(?:是|为|:|：)?\s*([^，。！；;\n]+)/);
   if (slot?.[1]?.trim()) {
     return cleanupTopic(slot[1]);
   }
-  const loose = message.match(/(?:新建|开始|做一个|做一篇|我要写|我想写|另写一篇|下一篇)\s*(?:一个|一篇)?\s*([^，。！？；;\n]{2,32})(?:项目|笔记|帖子|图文|内容)?/);
+  const loose = message.match(/(?:新建|开始|做一个|做一篇|我要写|我想写|另写一篇|下一篇)\s*(?:一个|一篇)?\s*([^，。！；;\n]{2,32})(?:项目|笔记|帖子|图文|内容)?/);
   if (!loose?.[1]) return undefined;
   return cleanupTopic(loose[1].replace(/^(关于|小红书)/, "").replace(/(?:项目|笔记|帖子|图文|内容)$/, ""));
 }
@@ -489,15 +492,19 @@ function hasExplicitResearchSignal(message: string, lower: string): boolean {
 }
 
 function isViralKnowledgeRequest(message: string, lower: string): boolean {
-  return /爆款库|RAG|历史爆款|爆款规律|可复用规律|刷新爆款|检索爆款库/.test(message) || lower.includes("viral knowledge") || lower.includes("rag");
+  return /爆款库|RAG|历史爆款|爆款规律|可复用规律|刷新爆款|检索爆款库/.test(message) ||
+    lower.includes("viral knowledge") ||
+    lower.includes("rag");
 }
 
 function isViralKnowledgeSaveRequest(message: string, lower: string): boolean {
-  return /保存.*爆款库|存.*爆款库|加入.*爆款库|入库|沉淀.*爆款|把.*样本.*爆款库|save.*viral/i.test(message) || lower.includes("save viral");
+  return /保存.*爆款库|存.*爆款库|加入.*爆款库|入库|沉淀.*爆款|把.*样本.*爆款库|save.*viral/i.test(message) ||
+    lower.includes("save viral");
 }
 
 function isImageGenerationRequest(message: string, lower: string): boolean {
-  return /(?:生成|做|出).*?(?:图片|配图|场景图|产品图|商品图)|图片生成|配图|产品图|商品图|参考图|换.*背景|场景图/.test(message) || lower.includes("image");
+  return /(?:生成|做|出).*?(?:图片|配图|场景图|产品图|商品图)|图片生成|配图|产品图|商品图|参考图|换.*背景|场景图/.test(message) ||
+    lower.includes("image");
 }
 
 function isCardGenerationRequest(message: string, lower: string): boolean {
@@ -505,15 +512,18 @@ function isCardGenerationRequest(message: string, lower: string): boolean {
 }
 
 function isImageSelectionRequest(message: string, lower: string): boolean {
-  return /(?:用|选|选择|设为|就用|使用).{0,8}(?:第?\s*\d+\s*张|第?\s*[一二三四五六七八九十两]\s*张|这张|当前图|封面图|配图)/.test(message) || lower.includes("select image");
+  return /(?:用|选|选择|设为|就用|使用).{0,8}(?:第?\s*\d+\s*张|第?\s*[一二三四五六七八九十两]\s*张|这张|当前图|封面图|配图)/.test(message) ||
+    lower.includes("select image");
 }
 
 function isQualityCheckRequest(message: string, lower: string): boolean {
-  return /发布检查|质量检查|检查发布|进入发布检查|组合(?:成)?(?:最终)?帖子|组装(?:成)?(?:最终)?帖子|生成确认单|发布前检查/.test(message) || lower.includes("quality gate");
+  return /发布检查|质量检查|检查发布|进入发布检查|组合(?:成)?(?:最终)?帖子|组装(?:成)?(?:最终)?帖子|生成确认单|发布前检查/.test(message) ||
+    lower.includes("quality gate");
 }
 
 function isAssemblePostRequest(message: string, lower: string): boolean {
-  const wantsAssembly = /组合(?:成)?(?:最终)?帖子|组装(?:成)?(?:最终)?帖子|生成(?:最终)?发布预览|发布预览|最终稿/.test(message) || lower.includes("assemble post");
+  const wantsAssembly = /组合(?:成)?(?:最终)?帖子|组装(?:成)?(?:最终)?帖子|生成(?:最终)?发布预览|发布预览|最终稿/.test(message) ||
+    lower.includes("assemble post");
   const wantsQuality = /发布检查|质量检查|检查发布|进入发布检查|生成确认单|发布前检查|quality gate/i.test(message);
   return wantsAssembly && !wantsQuality;
 }
@@ -527,7 +537,8 @@ function isDraftCreationFromProjectRequest(message: string, lower: string): bool
 }
 
 function isScheduledPublishRequest(message: string, lower: string): boolean {
-  return (/发布|发|定时/.test(message) && /今晚|今天|明天|后天|\d+\s*点|[一二三四五六七八九十两]\s*点/.test(message)) || lower.includes("schedule");
+  return (/发布|发|定时/.test(message) && /今晚|今天|明天|后天|\d+\s*点|[一二三四五六七八九十两]\s*点/.test(message)) ||
+    lower.includes("schedule");
 }
 
 function isPublishRequest(message: string, lower: string): boolean {
@@ -535,11 +546,13 @@ function isPublishRequest(message: string, lower: string): boolean {
 }
 
 function isPublishConfirmationReviewRequest(message: string, lower: string): boolean {
-  return /查看.*确认单|确认单|确认发布|确认立即发布|确认定时发布|可以发了|就这样发|确认提交/.test(message) || lower.includes("confirm publish");
+  return /查看.*确认单|确认单|确认发布|确认立即发布|确认定时发布|可以发了|就这样发|确认提交/.test(message) ||
+    lower.includes("confirm publish");
 }
 
 function isCancelPublishConfirmationRequest(message: string, lower: string): boolean {
-  return /取消.*确认|取消.*发布|撤销.*发布|不要发|先别发|别发了|取消确认单/.test(message) || lower.includes("cancel publish");
+  return /取消.*确认|取消.*发布|撤销.*发布|不要发|先别发|别发了|取消确认单/.test(message) ||
+    lower.includes("cancel publish");
 }
 
 function inferTimeRange(message: string): string | undefined {
@@ -601,7 +614,7 @@ function inferMetricThreshold(message: string, labels: string[]): number | undef
 
 function inferTags(message: string): string[] {
   const tagMatches = [...message.matchAll(/#([\p{L}\p{N}\u4e00-\u9fa5_-]{2,20})/gu)].map((match) => match[1]);
-  const explicit = message.match(/(?:标签|tag|tags)\s*(?:是|为|:|：)?\s*([^，。！？；;\n]+)/i);
+  const explicit = message.match(/(?:标签|tag|tags)\s*(?:是|为|:|：)?\s*([^，。！；;\n]+)/i);
   const explicitTags = explicit?.[1]
     ? explicit[1].split(/[、,\s]+/).map((item) => item.replace(/^#/, "").trim()).filter(Boolean)
     : [];
@@ -614,12 +627,12 @@ function inferTopic(message: string): string | undefined {
     return cleanupTopic(quoted[1]);
   }
 
-  const direct = message.match(/(?:帮我|请)?(?:找|搜索|查找|分析)(?:最近一周|一周内|两周内|两周|今天|一天内|半年内|半年)?\s*([^，。！？!?、\n]+?)(?:高收藏|高赞|爆款|相关|的?笔记|，|。|、|$)/);
+  const direct = message.match(/(?:帮我|请)?(?:找|搜索|查找|分析)(?:最近一周|一周内|两周内|两周|今天|一天内|半年内|半年)?\s*([^，。！？、\n]+?)(?:高收藏|高赞|爆款|相关|的?笔记|，|。|！|、|$)/);
   if (direct?.[1]?.trim()) {
     return cleanupTopic(direct[1]);
   }
 
-  const write = message.match(/(?:写|生成|做)(?:一篇|一个)?\s*([^，。！？!?、\n]+?)(?:笔记|文案|帖子|图文|内容|，|。|$)/);
+  const write = message.match(/(?:写|生成|做)(?:一篇|一个)?\s*([^，。！？、\n]+?)(?:笔记|文案|帖子|图文|内容|，|。|$)/);
   if (write?.[1]?.trim()) {
     return cleanupTopic(write[1]);
   }
