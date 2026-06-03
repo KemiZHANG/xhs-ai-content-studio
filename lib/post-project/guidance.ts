@@ -19,7 +19,7 @@ const stageGuidance: Record<PostStage, PostStageGuidance> = {
   },
   researching: {
     title: "等待研究完成",
-    description: "当前正在抓取和分析样本，完成后会把正文、标题、标签和图片规律压缩成证据。",
+    description: "正在抓取和分析样本。完成后会把标题、正文、标签和图片规律压缩成证据。",
     primaryAction: "summarize_evidence"
   },
   evidence_ready: {
@@ -34,12 +34,12 @@ const stageGuidance: Record<PostStage, PostStageGuidance> = {
   },
   copy_drafting: {
     title: "完善当前草稿",
-    description: "先把标题、正文和标签调整到满意，再进入图片方向或发布组装。",
+    description: "先把标题、正文和标签调整到满意，再进入图片方向或发布装配。",
     primaryAction: "revise_copy"
   },
   copy_ready: {
     title: "规划图片方向",
-    description: "文案已经可用，下一步让图片方向和文案共享同一份 CreativeBrief。",
+    description: "文案已经可用。下一步让图片方向和文案共享同一个 CreativeBrief。",
     primaryAction: "plan_visuals"
   },
   visual_planning: {
@@ -54,12 +54,12 @@ const stageGuidance: Record<PostStage, PostStageGuidance> = {
   },
   image_generating: {
     title: "选择发布图片",
-    description: "图片生成完成后，选择最终要进入发布稿的图片版本。",
+    description: "图片生成完成后，选择最终进入发布稿的图片版本。",
     primaryAction: "select_images"
   },
   image_ready: {
     title: "组装最终帖子",
-    description: "文案和图片都已就绪，下一步组合成最终发布预览并进入 Quality Gate。",
+    description: "文案和图片都已就绪。下一步组合成最终发布预览并进入 Quality Gate。",
     primaryAction: "assemble_post"
   },
   assembling: {
@@ -74,7 +74,7 @@ const stageGuidance: Record<PostStage, PostStageGuidance> = {
   },
   scheduled: {
     title: "已创建定时发布",
-    description: "当前帖子已进入定时状态；如要修改内容，需要重新生成发布确认单。",
+    description: "当前帖子已进入定时状态。如要修改内容，需要重新生成发布确认单。",
     primaryAction: "recover"
   },
   published: {
