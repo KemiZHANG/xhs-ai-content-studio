@@ -41,6 +41,11 @@ export function PostStudioInsightsTab({
         <span>实时证据 {realtimeCount}</span>
         <span>爆款库 {viralCount}</span>
       </div>
+      <EvidenceSourceBreakdown
+        realtimeCount={realtimeCount}
+        viralCount={viralCount}
+        userInputCount={Number(citationReport?.sourceCounts.user_input ?? 0)}
+      />
       <ViralEvidenceDigest summary={viralEvidenceSummary} compact onOpenViral={onOpenViral} />
       {keyLearningInsights.length ? (
         <>
@@ -291,6 +296,30 @@ function CitationSummaryBox({ citationReport }: { citationReport: EvidenceCitati
       {citationReport.warnings.length ? (
         <small>{citationReport.warnings.slice(0, 2).join("；")}</small>
       ) : null}
+    </div>
+  );
+}
+
+function EvidenceSourceBreakdown({
+  realtimeCount,
+  viralCount,
+  userInputCount
+}: {
+  realtimeCount: number;
+  viralCount: number;
+  userInputCount: number;
+}) {
+  const total = realtimeCount + viralCount + userInputCount;
+
+  return (
+    <div className="evidenceSourceBreakdown" aria-label="当前证据来源构成">
+      <strong>证据来源构成</strong>
+      <div>
+        <span className={realtimeCount ? "ready" : ""}>实时搜索 {realtimeCount}</span>
+        <span className={viralCount ? "ready" : ""}>爆款库 {viralCount}</span>
+        <span className={userInputCount ? "ready" : ""}>用户输入 {userInputCount}</span>
+      </div>
+      <small>{total ? "生成内容会优先引用这些结构化结论，不直接复制原文。" : "完成研究后会显示证据来源。"}</small>
     </div>
   );
 }
