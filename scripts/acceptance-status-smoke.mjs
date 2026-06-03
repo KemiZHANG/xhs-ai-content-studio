@@ -27,6 +27,16 @@ try {
     process.exit();
   }
 
+  const validationResult = await getJson("/api/acceptance/validation-records");
+  if (!validationResult.response.ok) {
+    fail(`/api/acceptance/validation-records returned HTTP ${validationResult.response.status}`);
+    process.exit();
+  }
+  if (!validationResult.data?.ok || !Array.isArray(validationResult.data.records)) {
+    fail("/api/acceptance/validation-records did not return an ok records payload");
+    process.exit();
+  }
+
   const status = result.data?.status;
   const deliverySummary = result.data?.deliverySummary;
   const evidencePackage = result.data?.evidencePackage;
@@ -53,6 +63,7 @@ try {
   line("Delivery state", deliverySummary.stateLabel || "missing");
   line("Next safe command", deliverySummary.nextSafeCommand || "missing");
   line("Evidence package", `v${evidencePackage.schemaVersion || "missing"}`);
+  line("Validation records", String(validationResult.data.records.length));
   line("Recommended commands", Array.isArray(status.recommendedCommands) ? status.recommendedCommands.join(", ") : "missing");
 
   if (status.completionPercent !== 99) fail("completionPercent should stay at 99 until real external validation is done");
@@ -63,6 +74,13 @@ try {
   if (evidencePackage.schemaVersion !== 1) fail("evidencePackage should use schemaVersion 1");
   if (evidencePackage.canMarkComplete !== false) fail("evidencePackage must not mark completion while manual gates remain");
   if (!Array.isArray(evidencePackage.gates) || evidencePackage.gates.length < 4) fail("evidencePackage is missing manual gate templates");
+  if (!validationResult.data.status || typeof validationResult.data.status !== "object") fail("validation records endpoint is missing status");
+  if (!validationResult.data.deliverySummary || typeof validationResult.data.deliverySummary !== "object") {
+    fail("validation records endpoint is missing deliverySummary");
+  }
+  if (validationResult.data.status.canMarkComplete !== status.canMarkComplete) {
+    fail("validation records endpoint and status endpoint disagree on canMarkComplete");
+  }
 
   for (const id of ["post_project", "post_studio", "agent_director", "creative_brief", "viral_rag", "publish_safety"]) {
     if (!verifiedIds.includes(id)) fail(`verified coverage is missing ${id}`);

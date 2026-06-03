@@ -13,6 +13,10 @@ describe("acceptance status smoke script", () => {
     expect(pkg.scripts?.["smoke:acceptance-status"]).toBe("node scripts/acceptance-status-smoke.mjs");
     expect(pkg.scripts?.["smoke:safe"]).toContain("npm run smoke:acceptance-status");
     expect(script).toContain("/api/acceptance/status");
+    expect(script).toContain("/api/acceptance/validation-records");
+    expect(script).toContain("Validation records");
+    expect(script).toContain("records payload");
+    expect(script).toContain("disagree on canMarkComplete");
     expect(script).toContain("deliverySummary");
     expect(script).toContain("evidencePackage");
     expect(script).toContain("schemaVersion");
