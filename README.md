@@ -250,6 +250,12 @@ npm run acceptance:completion-matrix
 
 默认会写入 `data/acceptance-completion-matrix.json`，也可以用 `XHS_ACCEPTANCE_MATRIX_PATH` 指定输出路径。
 
+也可以直接访问专用只读接口：
+
+```text
+http://localhost:3000/api/acceptance/completion-matrix
+```
+
 如果只需要证据包，也可以直接访问专用只读接口：
 
 ```text
@@ -571,6 +577,12 @@ npm run acceptance:completion-matrix
 ```
 
 By default it writes `data/acceptance-completion-matrix.json`. Set `XHS_ACCEPTANCE_MATRIX_PATH` to choose another output path.
+
+You can also open the dedicated read-only endpoint:
+
+```text
+http://localhost:3000/api/acceptance/completion-matrix
+```
 
 If you only need the evidence package, open the dedicated read-only endpoint:
 

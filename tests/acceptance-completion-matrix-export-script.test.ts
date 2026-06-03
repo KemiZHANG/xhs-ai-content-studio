@@ -12,7 +12,7 @@ describe("acceptance completion matrix export script", () => {
     const readme = readText("README.md");
 
     expect(pkg.scripts?.["acceptance:completion-matrix"]).toBe("node scripts/export-acceptance-completion-matrix.mjs");
-    expect(script).toContain("/api/acceptance/status");
+    expect(script).toContain("/api/acceptance/completion-matrix");
     expect(script).toContain("completionMatrix");
     expect(script).toContain("acceptance-completion-matrix.json");
     expect(script).toContain("XHS_ACCEPTANCE_MATRIX_PATH");
@@ -23,6 +23,7 @@ describe("acceptance completion matrix export script", () => {
     expect(script).not.toContain("/api/workflows/one-click");
     expect(script).not.toContain("/api/assets/generate");
     expect(readme).toContain("npm run acceptance:completion-matrix");
+    expect(readme).toContain("http://localhost:3000/api/acceptance/completion-matrix");
     expect(readme).toContain("data/acceptance-completion-matrix.json");
     expect(readme).toContain("XHS_ACCEPTANCE_MATRIX_PATH");
     expect(readme).toContain("machine-readable JSON");

@@ -18,24 +18,14 @@ function fail(message) {
   process.exit(1);
 }
 
-const result = await getJson("/api/acceptance/status");
+const result = await getJson("/api/acceptance/completion-matrix");
 if (!result.response.ok) {
-  fail(`/api/acceptance/status returned HTTP ${result.response.status}`);
+  fail(`/api/acceptance/completion-matrix returned HTTP ${result.response.status}`);
 }
 
 const matrix = result.data?.completionMatrix;
-const status = result.data?.status;
 if (!matrix || typeof matrix !== "object") {
-  fail("/api/acceptance/status did not return completionMatrix");
-}
-if (!status || typeof status !== "object") {
-  fail("/api/acceptance/status did not return status");
-}
-if (matrix.completionPercent !== status.completionPercent) {
-  fail("completionMatrix and status disagree on completionPercent");
-}
-if (matrix.canMarkComplete !== status.canMarkComplete) {
-  fail("completionMatrix and status disagree on canMarkComplete");
+  fail("/api/acceptance/completion-matrix did not return completionMatrix");
 }
 if (!Array.isArray(matrix.automatedCoverage) || matrix.automatedCoverage.length < 6) {
   fail("completionMatrix is missing automated coverage");
