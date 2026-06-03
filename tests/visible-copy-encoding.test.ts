@@ -27,26 +27,33 @@ const guardedFiles = [
   "lib/rag/viral.ts",
   "lib/viral-knowledge/store.ts",
   "lib/post-project/guidance.ts",
-  "lib/post-project/readiness.ts"
+  "lib/post-project/readiness.ts",
+  "docs/real-publish-acceptance.md"
 ];
 
 const mojibakeSignals = [
-  "鐖",
-  "鍥剧",
-  "鏂囨",
-  "鍙戝",
-  "绗旇",
-  "寰呯",
-  "宸茬",
-  "璇佹",
-  "椤圭",
-  "鍑嗗",
-  "鏈",
-  "鉁",
-  "缁撴",
-  "鏍囬",
-  "涓嶈",
-  "澶嶇敤"
+  "�",
+  "锟",
+  "閻",
+  "閸",
+  "閺",
+  "閹",
+  "缁楁棁",
+  "瀵板懐",
+  "瀹歌尙",
+  "鐠囦焦",
+  "妞ゅ湱",
+  "閸戝棗",
+  "閺堫亙",
+  "缂佹挻",
+  "閺嶅洭",
+  "娑撳秷",
+  "鐪熷疄",
+  "鍙戝竷",
+  "楠屾敹",
+  "灏忕孩涔",
+  "纭",
+  "浠呰嚜宸"
 ];
 
 describe("visible Post Studio copy encoding", () => {
