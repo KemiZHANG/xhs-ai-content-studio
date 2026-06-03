@@ -26,6 +26,7 @@
 | 真实研究链路 smoke | 已完成 | `scripts/research-smoke.mjs`、`npm run smoke:research` |
 | 发布 dry-run 安全 smoke | 已完成 | `scripts/publish-dry-run-smoke.mjs`、`npm run smoke:publish-dry-run` |
 | 账号配置安全 smoke | 已完成 | `scripts/account-smoke.mjs`、`npm run smoke:accounts` |
+| 多账号验收指南 | 已完成 | `docs/multi-account-acceptance.md`、`tests/multi-account-acceptance-doc.test.ts` |
 | Post Studio 状态 smoke | 已完成 | `scripts/studio-state-smoke.mjs`、`npm run smoke:studio-state` |
 | 一键安全 smoke | 已完成 | `npm run smoke:safe` |
 | 完整本地回归 | 已完成 | `npm run verify` |
@@ -36,14 +37,14 @@
 | --- | --- | --- |
 | 真实发布到小红书 | 会对真实外部账号产生写入动作 | 按 `docs/real-publish-acceptance.md`，第一次使用“仅自己可见” |
 | 真实定时发布到小红书 | 会创建真实定时发布任务 | 按 `docs/real-publish-acceptance.md`，确认时区和发布时间 |
-| 多账号真实切换 | 需要多个独立 MCP 实例和多个真实登录会话 | 为每个账号启动独立 MCP 端口，例如 `18060`、`18061`、`18062` |
+| 多账号真实切换 | 需要多个独立 MCP 实例和多个真实登录会话 | 按 `docs/multi-account-acceptance.md`，为每个账号启动独立 MCP 端口，例如 `18060`、`18061`、`18062` |
 | 大量真实模型生图 | 可能产生费用 | 先小批量测试，再提高每日图片调用上限 |
 
 ## 当前完成度判断
 
 从代码、测试、文档和 smoke 证据看，项目主体已经完成到可以公开使用的本地 Agent 工作台形态。剩余缺口主要是外部真实动作验收，而不是核心功能缺失。
 
-当前估计完成度：**96%-97%**。
+当前估计完成度：**98%**。
 
 不能标记为 100% 的原因：
 

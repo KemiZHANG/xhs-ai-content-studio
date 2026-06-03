@@ -35,7 +35,7 @@ describe("post studio acceptance documentation", () => {
     expect(matrix).toContain("Post Studio 三栏创作台");
     expect(matrix).toContain("Viral Knowledge Base / 爆款库");
     expect(matrix).toContain("发布 dry-run 安全 smoke");
-    expect(matrix).toContain("当前估计完成度：**96%-97%**");
+    expect(matrix).toContain("当前估计完成度：**98%**");
     expect(matrix).toContain("真实发布到小红书");
     expect(matrix).toContain("真实定时发布到小红书");
     expect(matrix).toContain("多账号真实切换");

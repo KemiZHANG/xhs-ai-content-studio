@@ -135,6 +135,8 @@ Agent 会读取当前 PostProject，所以“再生活化一点”“用第二�
 - 在模型设置里分别添加这些 MCP 地址。
 - 当前搜索、发布、记忆和审计都会使用当前激活账号。
 
+完整配置和验收步骤见 [多账号验收指南](docs/multi-account-acceptance.md)。切换账号后必须重新生成发布确认单，第一次真实发布建议使用“仅自己可见”。
+
 ### 安全策略
 
 默认发布策略是 `review_required`：
@@ -152,7 +154,7 @@ Agent 会读取当前 PostProject，所以“再生活化一点”“用第二�
 
 ### 验收清单
 
-如果你想确认本地功能是否完整跑通，请参考 [Post Studio 验收清单](docs/post-studio-acceptance.md)。它覆盖从新建 PostProject、真实研究、爆款库 RAG、CreativeBrief、文案、图片、最终帖子、Quality Gate 到发布确认的完整检查步骤。当前完成度和剩余人工验收项见 [目标完成矩阵](docs/goal-completion-matrix.md)。真实发布和定时发布需要你明确授权后再测试；授权后请按 [真实发布验收指南](docs/real-publish-acceptance.md) 操作。
+如果你想确认本地功能是否完整跑通，请参考 [Post Studio 验收清单](docs/post-studio-acceptance.md)。它覆盖从新建 PostProject、真实研究、爆款库 RAG、CreativeBrief、文案、图片、最终帖子、Quality Gate 到发布确认的完整检查步骤。当前完成度和剩余人工验收项见 [目标完成矩阵](docs/goal-completion-matrix.md)。真实发布和定时发布需要你明确授权后再测试；授权后请按 [真实发布验收指南](docs/real-publish-acceptance.md) 操作。多账号真实切换请按 [多账号验收指南](docs/multi-account-acceptance.md) 操作。
 
 ### 真实 MCP 验收与故障判断
 
@@ -384,6 +386,8 @@ The app can store multiple Xiaohongshu account profiles. Each profile points to 
 - Add each MCP endpoint as an account profile in the web app.
 - Search, publishing, creator memory, and audit logs use the currently active account.
 
+For the full setup and validation flow, follow the [multi-account acceptance guide](docs/multi-account-acceptance.md). After switching accounts, regenerate the publishing confirmation before any real external action.
+
 ### Publishing Safety
 
 The default policy is `review_required`:
@@ -401,7 +405,7 @@ Policies:
 
 ### Acceptance Checklist
 
-To verify that the local workspace is working end to end, follow the [Post Studio acceptance checklist](docs/post-studio-acceptance.md). It covers a clean PostProject, real research, Viral Knowledge RAG, CreativeBrief, copy, images, final post assembly, Quality Gate, and publishing confirmation. Current completion status and remaining manual checks are listed in the [goal completion matrix](docs/goal-completion-matrix.md). Real publishing and scheduled publishing should only be tested after explicit user authorization with the [real publishing acceptance guide](docs/real-publish-acceptance.md).
+To verify that the local workspace is working end to end, follow the [Post Studio acceptance checklist](docs/post-studio-acceptance.md). It covers a clean PostProject, real research, Viral Knowledge RAG, CreativeBrief, copy, images, final post assembly, Quality Gate, and publishing confirmation. Current completion status and remaining manual checks are listed in the [goal completion matrix](docs/goal-completion-matrix.md). Real publishing and scheduled publishing should only be tested after explicit user authorization with the [real publishing acceptance guide](docs/real-publish-acceptance.md). Multi-account switching should be validated with the [multi-account acceptance guide](docs/multi-account-acceptance.md).
 
 ### Real MCP Smoke Test And Troubleshooting
 
