@@ -24,6 +24,7 @@
 | 真实研究链路 smoke | 已完成 | `scripts/research-smoke.mjs`、`npm run smoke:research` |
 | 发布 dry-run 安全 smoke | 已完成 | `scripts/publish-dry-run-smoke.mjs`、`npm run smoke:publish-dry-run` |
 | 账号配置安全 smoke | 已完成 | `scripts/account-smoke.mjs`、`npm run smoke:accounts` |
+| Post Studio 状态 smoke | 已完成 | `scripts/studio-state-smoke.mjs`、`npm run smoke:studio-state` |
 | 一键安全 smoke | 已完成 | `npm run smoke:safe` |
 | 完整本地回归 | 已完成 | `npm run verify` |
 

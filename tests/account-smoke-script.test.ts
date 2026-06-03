@@ -12,7 +12,7 @@ describe("account smoke script", () => {
 
     expect(pkg.scripts?.["smoke:accounts"]).toBe("node scripts/account-smoke.mjs");
     expect(pkg.scripts?.["smoke:safe"]).toBe(
-      "npm run smoke:local && npm run smoke:accounts && npm run smoke:publish-dry-run"
+      "npm run smoke:local && npm run smoke:accounts && npm run smoke:studio-state && npm run smoke:publish-dry-run"
     );
     expect(script).toContain("/api/settings");
     expect(script).toContain("/api/health/mcp");
