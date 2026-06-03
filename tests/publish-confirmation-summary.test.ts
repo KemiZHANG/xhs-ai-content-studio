@@ -147,6 +147,15 @@ describe("publish confirmation summary", () => {
     expect(summary.blockers).toEqual([]);
     expect(summary.accountLine).toContain("xhs-user");
     expect(summary.evidenceLine).toContain("引用 1 条证据");
+    expect(summary.manualReviewChecklist).toEqual(
+      expect.arrayContaining([
+        "账号：主账号（xhs-user）",
+        "可见范围：仅自己可见",
+        "发布时间：立即发布",
+        "Quality Gate：已通过且新鲜",
+        "确认单生成后逐项人工确认"
+      ])
+    );
   });
 
   it("summarizes a pending scheduled confirmation with account and checklist state", () => {
@@ -196,6 +205,7 @@ describe("publish confirmation summary", () => {
       { label: "确认账号", confirmed: true, required: true },
       { label: "确认图片", confirmed: false, required: true }
     ]);
+    expect(summary.manualReviewChecklist).toContain("确认单 1/2 项已确认");
     expect(summary.accountSafetyLine).toContain("http://localhost:18060/mcp");
     expect(summary.versionLine).toContain("版本快照已锁定");
     expect(summary.timingLine).toContain("时区 +08:00");

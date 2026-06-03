@@ -40,6 +40,11 @@ function PublishFinalSummary({ publishSummary }: { publishSummary: PublishConfir
         <p>{publishSummary.nextStepLine}</p>
         <small>{publishSummary.detailCompressionLine}</small>
       </div>
+      <div className="publishManualReviewChecklist" aria-label="发布前人工复核清单">
+        {publishSummary.manualReviewChecklist.slice(0, 8).map((item) => (
+          <span key={item}>{item}</span>
+        ))}
+      </div>
       {publishSummary.confirmationItems.length ? (
         <div className="publishConfirmationChips" aria-label="人工确认清单摘要">
           {publishSummary.confirmationItems.slice(0, 6).map((item) => (

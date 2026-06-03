@@ -6853,6 +6853,23 @@ textarea {
   line-height: 1.45;
 }
 
+.publishManualReviewChecklist {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.publishManualReviewChecklist span {
+  background: rgba(18, 118, 97, 0.08);
+  border: 1px solid rgba(18, 118, 97, 0.14);
+  border-radius: 12px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.45;
+  padding: 7px 9px;
+}
+
 .publishConfirmationChips {
   display: flex;
   flex-wrap: wrap;

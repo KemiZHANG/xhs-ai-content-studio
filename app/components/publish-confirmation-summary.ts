@@ -73,6 +73,7 @@ export type PublishConfirmationSummary = {
     required: boolean;
     detail?: string;
   }>;
+  manualReviewChecklist: string[];
   visibleBlockers: string[];
   riskLevel: "ok" | "warn" | "blocked";
   blockers: string[];
@@ -200,10 +201,65 @@ export function buildPublishConfirmationSummary({
     }),
     detailCompressionLine: "默认只显示发布结论、主要阻塞项和下一步；账号、版本、证据、质量分与确认清单已收进详细发布快照。",
     confirmationItems,
+    manualReviewChecklist: buildManualReviewChecklist({
+      accountLine,
+      visibility: planVisibility,
+      scheduleAt: planScheduleAt,
+      selectedImageCount: Math.max(selectedImageCount, planImages.length),
+      tagCount: planTags.length,
+      hasPendingConfirmation,
+      qualityGateFresh: snapshot?.qualityGateFresh ?? qualityGateFresh,
+      qualityCanPublish: snapshot?.qualityCanPublish ?? (quality?.canPublish === true),
+      finalPostMatchesCanvas: snapshot?.finalPostMatchesCanvas ?? true,
+      requiredChecklistCount: requiredChecklist.length,
+      confirmedChecklist
+    }),
     visibleBlockers,
     riskLevel,
     blockers
   };
+}
+
+function buildManualReviewChecklist({
+  accountLine,
+  visibility,
+  scheduleAt,
+  selectedImageCount,
+  tagCount,
+  hasPendingConfirmation,
+  qualityGateFresh,
+  qualityCanPublish,
+  finalPostMatchesCanvas,
+  requiredChecklistCount,
+  confirmedChecklist
+}: {
+  accountLine: string;
+  visibility: string;
+  scheduleAt?: string;
+  selectedImageCount: number;
+  tagCount: number;
+  hasPendingConfirmation: boolean;
+  qualityGateFresh: boolean;
+  qualityCanPublish: boolean;
+  finalPostMatchesCanvas: boolean;
+  requiredChecklistCount: number;
+  confirmedChecklist: number;
+}): string[] {
+  const timing = scheduleAt ? `定时 ${scheduleAt}` : "立即发布";
+  const checklistState = hasPendingConfirmation && requiredChecklistCount
+    ? `确认单 ${confirmedChecklist}/${requiredChecklistCount} 项已确认`
+    : "确认单生成后逐项人工确认";
+
+  return [
+    `账号：${accountLine}`,
+    `可见范围：${visibility || "未选择"}`,
+    `发布时间：${timing}`,
+    `文案与标签：标题、正文、${tagCount} 个标签`,
+    `图片版本：${selectedImageCount} 张选中图片`,
+    `Quality Gate：${qualityCanPublish && qualityGateFresh ? "已通过且新鲜" : "需通过或刷新"}`,
+    `版本快照：${finalPostMatchesCanvas ? "最终稿与画布一致" : "需重新生成确认单"}`,
+    checklistState
+  ];
 }
 
 function formatPublishDecisionLine({

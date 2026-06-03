@@ -29,6 +29,12 @@ const publishSummary: PublishConfirmationSummary = {
     { label: "图片确认", confirmed: false, required: true, detail: "仍需核对第二张图" },
     { label: "定时时间", confirmed: false, required: false }
   ],
+  manualReviewChecklist: [
+    "账号：咖啡探店号",
+    "可见范围：仅自己可见",
+    "发布时间：定时 2026-06-02T20:00:00+08:00",
+    "图片版本：3 张选中图片"
+  ],
   visibleBlockers: ["图片版本仍需确认"],
   riskLevel: "warn",
   blockers: ["图片版本仍需确认", "人工确认未完成"]
@@ -73,6 +79,8 @@ describe("post studio publish safety panel", () => {
     expect(html).toContain("发布确认单已生成");
     expect(html).toContain("定时发布");
     expect(html).toContain("人工确认清单摘要");
+    expect(html).toContain("发布前人工复核清单");
+    expect(html).toContain("图片版本：3 张选中图片");
     expect(html).toContain("详细发布快照");
     expect(html).toContain("图片版本仍需确认");
     expect(html).toContain("账号安全锁");

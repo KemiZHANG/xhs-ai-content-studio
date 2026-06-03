@@ -67,6 +67,7 @@ describe("post studio publish tab", () => {
         nextStepLine: "下一步生成确认单。",
         detailCompressionLine: "详细项默认折叠。",
         confirmationItems: [{ label: "确认账号", detail: "测试账号", required: true, confirmed: false }],
+        manualReviewChecklist: ["账号：测试账号", "可见范围：仅自己可见", "Quality Gate：已通过且新鲜"],
         visibleBlockers: [],
         blockers: [],
         accountLine: "测试账号",
@@ -145,6 +146,8 @@ describe("post studio publish tab", () => {
     expect(html).toContain("确认单、Quality Gate、账号安全和审计记录");
     expect(html).toContain("标题已填写");
     expect(html).toContain("发布前安全摘要");
+    expect(html).toContain("发布前人工复核清单");
+    expect(html).toContain("Quality Gate：已通过且新鲜");
     expect(html).toContain("发布安全边界已满足");
     expect(html).toContain("生成发布确认单");
   });
