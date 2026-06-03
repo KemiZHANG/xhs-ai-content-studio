@@ -170,7 +170,7 @@ Agent 会读取当前 PostProject，所以“再生活化一点”“用第二�
 npm run smoke:safe
 ```
 
-这个命令会连续运行本地健康检查、账号配置检查、Post Studio 状态检查和发布 dry-run 预览检查，不会搜索小红书、不会生成图片、不会确认发布、不会触发真实小红书写入。
+这个命令会连续运行本地健康检查、账号配置检查、Post Studio 状态检查、聊天 SSE 通道检查和发布 dry-run 预览检查，不会搜索小红书、不会生成图片、不会确认发布、不会触发真实小红书写入。
 
 也可以只运行本地健康检查：
 
@@ -195,6 +195,14 @@ npm run smoke:studio-state
 ```
 
 这个命令只读取当前 PostProject，确认 stage、allowedActions、evidencePack、版本、图片和 readiness 等主工作台状态骨架是否完整；不会调用 MCP 搜索、生图、发布或定时。
+
+也可以单独检查流式聊天通道：
+
+```powershell
+npm run smoke:chat-stream
+```
+
+这个命令只验证 `/api/chat/stream` 的 SSE 传输和错误事件，不会调用模型、MCP 搜索、生图、发布或定时。
 
 如果要确认真实研究链路，可以运行：
 
@@ -411,7 +419,7 @@ After the web app is running, you can also run the read-only smoke check:
 npm run smoke:safe
 ```
 
-This command runs local health checks, account configuration checks, Post Studio state checks, and publish dry-run preview checks. It does not search Xiaohongshu, generate images, confirm publishing, or trigger real Xiaohongshu writes.
+This command runs local health checks, account configuration checks, Post Studio state checks, chat SSE transport checks, and publish dry-run preview checks. It does not search Xiaohongshu, generate images, confirm publishing, or trigger real Xiaohongshu writes.
 
 You can also run only the local health check:
 
@@ -436,6 +444,14 @@ npm run smoke:studio-state
 ```
 
 This command only reads the active PostProject and verifies the stage, allowedActions, evidencePack, versions, images, and readiness state backbone. It does not call MCP search, image generation, publishing, or scheduling.
+
+You can also check the streaming chat transport only:
+
+```powershell
+npm run smoke:chat-stream
+```
+
+This command only verifies `/api/chat/stream` SSE transport and error events. It does not call the model, MCP search, image generation, publishing, or scheduling.
 
 To verify the real research chain, run:
 
@@ -463,6 +479,7 @@ npm run smoke:safe
 npm run smoke:local
 npm run smoke:accounts
 npm run smoke:studio-state
+npm run smoke:chat-stream
 npm run smoke:research
 npm run smoke:publish-dry-run
 npm test

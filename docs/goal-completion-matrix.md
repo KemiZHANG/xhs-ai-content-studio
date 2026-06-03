@@ -12,6 +12,7 @@
 | Agent 读取当前项目并按阶段决策 | 已完成 | `lib/agent/orchestrator.ts`、`lib/agent/planner.ts`、`tests/agent-orchestrator.test.ts`、`tests/agent-planner.test.ts` |
 | Agent 响应 cards / quickActions / toolTrace | 已完成 | `lib/agent/types.ts`、`tests/agent-card-generation.test.ts`、`tests/agent-card-visibility.test.ts`、`tests/agent-trace-summary.test.ts` |
 | Agent SSE 流式接口 | 已完成 | `/api/chat/stream`、`tests/chat-stream-route.test.ts` |
+| Agent SSE 安全 smoke | 已完成 | `scripts/chat-stream-smoke.mjs`、`npm run smoke:chat-stream` |
 | CreativeBrief 统一驱动文案和图片 | 已完成 | `lib/post-project/brief.ts`、`tests/post-brief.test.ts`、`tests/creative-briefs.test.ts` |
 | 证据引用和 basedOnEvidenceIds | 已完成 | `lib/post-project/citations.ts`、`tests/evidence-citations.test.ts`、`tests/evidence-citation-display.test.ts` |
 | 信息降噪和右侧摘要面板 | 已完成 | `tests/post-side-digest.test.ts`、`tests/studio-tab-summary.test.ts`、`tests/post-studio-evidence-tabs.test.ts` |
