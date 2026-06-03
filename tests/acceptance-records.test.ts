@@ -2,6 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { GET, POST } from "@/app/api/acceptance/validation-records/route";
 import {
   readAcceptanceValidationRecords,
   upsertAcceptanceValidationRecord,
@@ -86,5 +87,62 @@ describe("acceptance validation records", () => {
     expect(completedStatus.pendingManualGateIds).toEqual([]);
     expect(delivery.safeToAutomateCompletion).toBe(true);
     expect(delivery.manualGateLine).toBe("没有剩余人工闸门");
+  });
+
+  it("rejects invalid API records and accepts valid manual evidence through the route", async () => {
+    const invalidResponse = await POST(new Request("http://localhost/api/acceptance/validation-records", {
+      method: "POST",
+      body: JSON.stringify({
+        gateId: "real_publish",
+        validated: true,
+        validatedAt: "2026-06-03T12:00:00.000Z",
+        operator: "Kemi",
+        evidence: {
+          accountName: "test account"
+        }
+      })
+    }));
+    const invalidPayload = await invalidResponse.json() as { ok: boolean; errors: string[] };
+
+    expect(invalidResponse.status).toBe(400);
+    expect(invalidPayload.ok).toBe(false);
+    expect(invalidPayload.errors).toContain("missing required evidence field: publishReceipt");
+    await expect(readAcceptanceValidationRecords()).resolves.toEqual([]);
+
+    const gate = buildAcceptanceStatus().manualGates.find((item) => item.id === "real_publish");
+    expect(gate).toBeTruthy();
+    const validResponse = await POST(new Request("http://localhost/api/acceptance/validation-records", {
+      method: "POST",
+      body: JSON.stringify({
+        gateId: "real_publish",
+        validated: true,
+        validatedAt: "2026-06-03T12:00:00.000Z",
+        operator: "Kemi",
+        notes: "private publish manually verified",
+        evidence: Object.fromEntries(gate!.evidenceFields.map((field) => [field.key, field.example]))
+      })
+    }));
+    const validPayload = await validResponse.json() as {
+      ok: boolean;
+      records: Array<{ gateId: string }>;
+      status: ReturnType<typeof buildAcceptanceStatus>;
+    };
+
+    expect(validResponse.status).toBe(200);
+    expect(validPayload.ok).toBe(true);
+    expect(validPayload.records).toEqual([expect.objectContaining({ gateId: "real_publish" })]);
+    expect(validPayload.status.validatedManualGateIds).toContain("real_publish");
+    expect(validPayload.status.pendingManualGateIds).not.toContain("real_publish");
+    expect(validPayload.status.canMarkComplete).toBe(false);
+
+    const getResponse = await GET();
+    const getPayload = await getResponse.json() as {
+      ok: boolean;
+      records: Array<{ gateId: string }>;
+      status: ReturnType<typeof buildAcceptanceStatus>;
+    };
+    expect(getPayload.ok).toBe(true);
+    expect(getPayload.records).toHaveLength(1);
+    expect(getPayload.status.validatedManualGateIds).toContain("real_publish");
   });
 });
