@@ -289,7 +289,7 @@ export function WorkspaceCanvas({
       <section className="canvasCard" data-canvas-card="publish">
         <span>发布计划</span>
         <strong>{publishPlan?.status || "未准备"}</strong>
-        <p>{publishPlan?.scheduleAt ? `定时：${publishPlan.scheduleAt}` : "默认先进入确认，不会误发。"}</p>
+        <p>{publishPlan?.scheduleAt ? `定时：${formatPublishSchedule(publishPlan)}` : "默认先进入确认，不会误发。"}</p>
         {publishPlan ? (
           <p>
             可见范围：{publishPlan.visibility}；图片 {publishPlan.images?.length ?? 0} 张；来源：{publishPlan.requestedBy ?? "-"}
@@ -307,6 +307,12 @@ export function WorkspaceCanvas({
       </section>
     </aside>
   );
+}
+
+function formatPublishSchedule(publishPlan: NonNullable<WorkspaceState["publishPlan"]>): string {
+  return publishPlan.scheduleTimezone
+    ? `${publishPlan.scheduleAt}（${publishPlan.scheduleTimezone}）`
+    : publishPlan.scheduleAt ?? "";
 }
 
 function pickCanvasReadinessSteps(items: PostReadinessItem[]): PostReadinessItem[] {
