@@ -8066,6 +8066,47 @@ textarea {
   box-shadow: 0 12px 28px rgba(44, 38, 28, 0.06);
 }
 
+.viralActiveFilters {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.viralActiveFilters strong {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.viralActiveFilters div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.viralActiveFilters span {
+  background: rgba(18, 118, 97, 0.08);
+  border: 1px solid rgba(18, 118, 97, 0.14);
+  border-radius: 999px;
+  color: rgba(0, 0, 0, 0.68);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 8px;
+}
+
+.viralActiveFilters p,
+.viralActiveFilters small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.viralActiveFilters.empty strong {
+  color: var(--muted);
+}
+
 .viralSearchDrawer[open] .viralSearchPanel {
   background: transparent;
   border: 0;

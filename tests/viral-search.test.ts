@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildViralKnowledgeSearchParams } from "@/app/components/viral-search";
+import { buildViralKnowledgeFilterSummary, buildViralKnowledgeSearchParams } from "@/app/components/viral-search";
 
 describe("viral knowledge search params", () => {
   it("passes the full RAG filter surface to the viral knowledge API", () => {
@@ -40,5 +40,29 @@ describe("viral knowledge search params", () => {
     expect(params.has("minLikes")).toBe(false);
     expect(params.has("minCollects")).toBe(false);
     expect(params.get("minShares")).toBe("12");
+  });
+
+  it("builds a readable active-filter summary for the viral library drawer", () => {
+    const summary = buildViralKnowledgeFilterSummary({
+      query: " 广州咖啡馆 ",
+      category: "探店",
+      audience: "上班族",
+      painPoint: "不知道怎么选",
+      createdAfter: "2026-05-01",
+      minLikes: "many",
+      minCollects: "300",
+      sortBy: "collects",
+      sortOrder: "desc"
+    });
+
+    expect(summary).toEqual([
+      "关键词：广州咖啡馆",
+      "类目：探店",
+      "人群：上班族",
+      "痛点：不知道怎么选",
+      "入库 ≥ 2026-05-01",
+      "收藏 ≥ 300",
+      "排序：收藏降序"
+    ]);
   });
 });

@@ -6,6 +6,7 @@ import { RecentViralPanel, type RecentViralSummary, ViralStrategyCard } from "@/
 import type { ViralApplicationModel, ViralApplicationRouteStatus } from "@/app/components/viral-application";
 import type { ViralEvidenceSummaryModel } from "@/app/components/viral-evidence-summary";
 import type { ViralLibraryHealthModel } from "@/app/components/viral-library-health";
+import { buildViralKnowledgeFilterSummary } from "@/app/components/viral-search";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostProject, ViralCase, WorkflowResult } from "@/app/types";
 
@@ -174,6 +175,7 @@ function ViralSearchDrawer({
   onSearchViralLibrary: (filters: ViralLibrarySearchFilters) => void;
   onResetSearch: () => void;
 }) {
+  const activeFilters = buildViralKnowledgeFilterSummary(form);
   return (
     <details className="viralSearchDrawer">
       <summary>
@@ -183,6 +185,17 @@ function ViralSearchDrawer({
         </div>
         <em>{caseCount} 条可检索</em>
       </summary>
+      <div className={activeFilters.length ? "viralActiveFilters" : "viralActiveFilters empty"} aria-label="当前爆款库筛选">
+        <strong>{activeFilters.length ? "当前筛选" : "当前未设置筛选"}</strong>
+        {activeFilters.length ? (
+          <div>
+            {activeFilters.slice(0, 8).map((item) => <span key={item}>{item}</span>)}
+          </div>
+        ) : (
+          <p>可按关键词、类目、人群、痛点、入库时间和互动指标缩小爆款库范围。</p>
+        )}
+        {activeFilters.length > 8 ? <small>另有 {activeFilters.length - 8} 个筛选条件已生效。</small> : null}
+      </div>
       <form
         className="viralSearchPanel"
         onSubmit={(event) => {

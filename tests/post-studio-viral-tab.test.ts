@@ -122,29 +122,34 @@ const viralPack = {
   filterSummary: "按收藏排序"
 } as unknown as NonNullable<WorkflowResult["viralKnowledge"]>;
 
+function renderViralTab(overrides: Partial<Parameters<typeof PostStudioViralTab>[0]> = {}) {
+  return renderToStaticMarkup(createElement(PostStudioViralTab, {
+    viralCases: [viralCase],
+    viralLibraryHealth,
+    viralEvidenceSummary,
+    viralSearchForm: emptyViralSearchForm,
+    viralPack,
+    viralApplication,
+    latestViralSummaries: [{ item: viralCase, learnings: ["清单结构"], rewriteRules: ["换成自己的体验"] }],
+    viralInsights: [insight],
+    keyViralInsights: [insight],
+    focusedEvidenceIds: [insight.id],
+    viralCaseById: new Map([[viralCase.id, viralCase]]),
+    onSearchFormChange: () => undefined,
+    onSearchViralLibrary: () => undefined,
+    onResetSearch: () => undefined,
+    onQuickAction: () => undefined,
+    onFocusEvidenceIds: () => undefined,
+    onOpenViralCase: () => undefined,
+    onRefreshViralEvidence: () => undefined,
+    onReloadViralLibrary: () => undefined,
+    ...overrides
+  }));
+}
+
 describe("post studio viral tab", () => {
   it("renders compressed RAG evidence, search controls, and focus actions", () => {
-    const html = renderToStaticMarkup(createElement(PostStudioViralTab, {
-      viralCases: [viralCase],
-      viralLibraryHealth,
-      viralEvidenceSummary,
-      viralSearchForm: emptyViralSearchForm,
-      viralPack,
-      viralApplication,
-      latestViralSummaries: [{ item: viralCase, learnings: ["清单结构"], rewriteRules: ["换成自己的体验"] }],
-      viralInsights: [insight],
-      keyViralInsights: [insight],
-      focusedEvidenceIds: [insight.id],
-      viralCaseById: new Map([[viralCase.id, viralCase]]),
-      onSearchFormChange: () => undefined,
-      onSearchViralLibrary: () => undefined,
-      onResetSearch: () => undefined,
-      onQuickAction: () => undefined,
-      onFocusEvidenceIds: () => undefined,
-      onOpenViralCase: () => undefined,
-      onRefreshViralEvidence: () => undefined,
-      onReloadViralLibrary: () => undefined
-    }));
+    const html = renderViralTab();
 
     expect(html).toContain("爆款库证据");
     expect(html).toContain("默认只看当前帖子可用的重点规律和应用建议");
@@ -158,5 +163,25 @@ describe("post studio viral tab", () => {
     expect(html).toContain("取消重点");
     expect(html).toContain("刷新当前项目 RAG 证据");
     expect(html).not.toMatch(mojibakePattern);
+  });
+
+  it("renders readable active filters in the viral-library search drawer", () => {
+    const html = renderViralTab({
+      viralSearchForm: {
+        ...emptyViralSearchForm,
+        query: "广州咖啡馆",
+        category: "探店",
+        audience: "上班族",
+        painPoint: "不知道怎么选",
+        minCollects: "300"
+      }
+    });
+
+    expect(html).toContain("当前筛选");
+    expect(html).toContain("关键词：广州咖啡馆");
+    expect(html).toContain("类目：探店");
+    expect(html).toContain("人群：上班族");
+    expect(html).toContain("痛点：不知道怎么选");
+    expect(html).toContain("收藏 ≥ 300");
   });
 });
