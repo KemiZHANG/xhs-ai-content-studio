@@ -25,6 +25,7 @@ type PostProjectActionBody =
       draft: DraftRecord["draft"];
       selectedImageIds?: string[];
       visibility?: DraftRecord["visibility"];
+      dryRun?: boolean;
     }
   | {
       action: "select_copy_version";
@@ -70,28 +71,31 @@ export async function PATCH(request: Request) {
 async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
   project: PostProject;
   currentDraft?: DraftRecord | null;
+  dryRun?: boolean;
 }> {
   if (body.action === "commit_canvas" || body.action === "run_quality_gate") {
     const settings = await readSettings();
     const project = await readPostProject();
     const basedOnEvidenceIds = getCurrentEvidenceIds(project);
-    const currentDraft = await writeCurrentDraft(
-      createDraftRecord({
-        draft: normalizeDraft(body.draft, basedOnEvidenceIds),
-        images: [],
-        visibility: body.visibility ?? settings.defaultVisibility
-      })
-    );
-    await updateWorkspaceState({
-      currentDraftId: currentDraft?.id,
-      currentDraft,
-      selectedImageIds: Array.isArray(body.selectedImageIds) ? body.selectedImageIds : [],
-      publishPlan: null
+    const isDryRun = body.action === "run_quality_gate" && body.dryRun === true;
+    const draftRecord = createDraftRecord({
+      draft: normalizeDraft(body.draft, basedOnEvidenceIds),
+      images: [],
+      visibility: body.visibility ?? settings.defaultVisibility
     });
+    const currentDraft = isDryRun ? draftRecord : await writeCurrentDraft(draftRecord);
+    if (!isDryRun) {
+      await updateWorkspaceState({
+        currentDraftId: currentDraft?.id,
+        currentDraft,
+        selectedImageIds: Array.isArray(body.selectedImageIds) ? body.selectedImageIds : [],
+        publishPlan: null
+      });
+    }
     if (!currentDraft) {
       throw new Error("保存画布草稿失败");
     }
-    const syncedProject = await readPostProject();
+    const syncedProject = isDryRun ? project : await readPostProject();
     const copyVersion = copyVersionFromDraft(currentDraft, basedOnEvidenceIds);
     const selectedImageIds = Array.isArray(body.selectedImageIds) ? body.selectedImageIds.map(String).filter(Boolean) : syncedProject.selectedImages;
     const finalPost = body.action === "run_quality_gate"
@@ -108,9 +112,9 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
           copyDraft: currentDraft,
           selectedImages: selectedImageIds,
           finalPost
-        })
+      })
       : undefined;
-    const nextProject = await updatePostProject({
+    const projectPatch: Partial<PostProject> = {
       copyDraft: currentDraft,
       copyVersions: [
         ...(Array.isArray(syncedProject.copyVersions) ? syncedProject.copyVersions : []).filter((version) => version.id !== copyVersion.id),
@@ -122,7 +126,11 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
       qualityCheck,
       auditStatus: qualityCheck ? (qualityCheck.canPublish ? "passed" : "blocked") : "unchecked",
       currentStage: qualityCheck ? "reviewing" : "copy_ready"
-    });
+    };
+    if (isDryRun) {
+      return { project: { ...syncedProject, ...projectPatch }, currentDraft, dryRun: true };
+    }
+    const nextProject = await updatePostProject(projectPatch);
     return { project: nextProject, currentDraft };
   }
 

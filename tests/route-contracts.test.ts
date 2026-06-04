@@ -2232,6 +2232,108 @@ describe("API route contracts", () => {
     }));
   });
 
+  it("previews canvas Quality Gate without mutating PostProject when dryRun is requested", async () => {
+    const writeCurrentDraft = vi.fn();
+    const updateWorkspaceState = vi.fn();
+    const updatePostProject = vi.fn();
+    const project = {
+      id: "post-1",
+      creativeBrief: { basedOnEvidenceIds: ["insight-1"] },
+      visualDirection: {
+        mood: "自然真实",
+        composition: "桌面近景",
+        colorPalette: "暖色",
+        mustHave: ["咖啡"],
+        mustAvoid: [],
+        basedOnEvidenceIds: ["insight-1"],
+        confirmationStatus: "confirmed"
+      },
+      evidencePack: {
+        sampleIds: ["sample-1"],
+        insights: [{
+          id: "insight-1",
+          type: "copy",
+          insight: "用真实场景和适用人群增强可信度",
+          sourceSampleIds: ["sample-1"],
+          confidence: 0.9,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }]
+      },
+      copyDraft: null,
+      copyVersions: [],
+      selectedImages: [],
+      generatedImages: [{
+        id: "asset-1",
+        assetId: "asset-1",
+        promptVersionId: "prompt-1",
+        basedOnEvidenceIds: ["insight-1"],
+        selected: true
+      }],
+      imagePrompts: [{
+        id: "prompt-1",
+        value: { prompt: "自然光咖啡桌面" },
+        basedOnEvidenceIds: ["insight-1"]
+      }],
+      agentMemory: [],
+      currentStage: "assembling",
+      allowedActions: ["run_quality_gate"],
+      updatedAt: "2026-05-31T00:00:00.000Z"
+    };
+
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings
+    }));
+    vi.doMock("@/lib/agent/state", () => ({
+      updateWorkspaceState
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => project,
+      updatePostProject
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn((input) => ({
+        id: "draft-preview",
+        updatedAt: "now",
+        draft: input.draft,
+        images: input.images,
+        visibility: input.visibility
+      })),
+      writeCurrentDraft
+    }));
+
+    const { PATCH } = await import("@/app/api/post-project/route");
+    const response = await PATCH(jsonRequest({
+      action: "run_quality_gate",
+      dryRun: true,
+      draft: {
+        title: "广州周末安静咖啡馆",
+        content: "这家店适合周末下午想安静坐一会儿的人，光线舒服，座位不拥挤，点单也比较清楚。",
+        tags: ["广州咖啡", "周末去哪"],
+        structure: [],
+        imagePrompt: "自然光咖啡桌面",
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      selectedImageIds: ["asset-1"]
+    }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.dryRun).toBe(true);
+    expect(payload.project.currentStage).toBe("reviewing");
+    expect(payload.project.finalPost).toMatchObject({
+      title: "广州周末安静咖啡馆",
+      imageIds: ["asset-1"],
+      copyVersionId: "copy-draft-preview"
+    });
+    expect(payload.project.qualityCheck).toMatchObject({
+      canPublish: expect.any(Boolean)
+    });
+    expect(payload.readiness.items.map((item: { id: string }) => item.id)).toContain("quality");
+    expect(writeCurrentDraft).not.toHaveBeenCalled();
+    expect(updateWorkspaceState).not.toHaveBeenCalled();
+    expect(updatePostProject).not.toHaveBeenCalled();
+  });
+
   it("syncs selected images from Post Studio into PostProject and workspace", async () => {
     const updateWorkspaceState = vi.fn();
     const updatePostProject = vi.fn(async (patch) => ({ id: "post-1", ...patch }));

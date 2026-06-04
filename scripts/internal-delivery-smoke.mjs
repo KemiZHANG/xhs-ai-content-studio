@@ -77,6 +77,7 @@ try {
     },
     body: JSON.stringify({
       action: "run_quality_gate",
+      dryRun: true,
       selectedImageIds: [assetId],
       visibility: "仅自己可见",
       draft: {
@@ -93,11 +94,12 @@ try {
     fail(`/api/post-project run_quality_gate returned HTTP ${qualityGate.response.status}: ${qualityGate.data?.error || "unknown error"}`);
     process.exit();
   }
+  if (qualityGate.data?.dryRun !== true) fail("run_quality_gate should be a dry-run preview");
   if (qualityGate.data?.project?.currentStage !== "reviewing") fail("run_quality_gate should move PostProject to reviewing");
   if (!qualityGate.data?.project?.finalPost) fail("run_quality_gate should create finalPost");
   if (!qualityGate.data?.project?.qualityCheck) fail("run_quality_gate should create qualityCheck");
   if (!qualityGate.data?.readiness?.items?.some((item) => item.id === "quality")) fail("readiness should include quality gate");
-  line("Quality Gate", qualityGate.data.project.qualityCheck.canPublish ? "passed" : "checked");
+  line("Quality Gate preview", qualityGate.data.project.qualityCheck.canPublish ? "passed" : "checked");
 
   const preview = await requestJson("/api/publish", {
     method: "POST",
@@ -135,7 +137,7 @@ try {
   }
 
   if (!process.exitCode) {
-    console.log("Internal delivery smoke passed. It checked PostProject readiness, canvas Quality Gate, publish preview, and acceptance status; no MCP search, model generation, external publish, or schedule action was triggered.");
+    console.log("Internal delivery smoke passed. It checked PostProject readiness, canvas Quality Gate dry-run, publish preview, and acceptance status; no MCP search, model generation, external publish, schedule action, or current project overwrite was triggered.");
   }
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error));

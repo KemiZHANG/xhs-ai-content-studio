@@ -17,15 +17,15 @@ describe("internal delivery smoke script", () => {
     expect(script).toContain("/api/publish");
     expect(script).toContain("/api/acceptance/status");
     expect(script).toContain('action: "run_quality_gate"');
+    expect(script).toContain("dryRun: true");
     expect(script).toContain("selectedImageIds");
     expect(script).toContain("finalPost");
     expect(script).toContain("qualityCheck");
-    expect(script).toContain("dryRun: true");
     expect(script).toContain("requiresConfirmation");
     expect(script).toContain("roughDeliveryReady");
     expect(script).toContain("内部闭环可交付");
-    expect(script).toContain("canvas Quality Gate");
-    expect(script).toContain("no MCP search, model generation, external publish, or schedule action was triggered");
+    expect(script).toContain("canvas Quality Gate dry-run");
+    expect(script).toContain("no MCP search, model generation, external publish, schedule action, or current project overwrite was triggered");
     expect(script).not.toContain("confirmed: true");
     expect(script).not.toContain("publishIntentId");
   });
