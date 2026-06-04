@@ -61,13 +61,41 @@ describe("viral save candidates", () => {
 
     expect(model.candidates.map((item) => item.sample.id)).toEqual(["strong"]);
     expect(model.rejectedCount).toBe(1);
+    expect(model.rejectedSamples.map((item) => item.sample.id)).toEqual(["weak"]);
+    expect(model.rejectedSamples[0].warnings.length).toBeGreaterThan(0);
     expect(model.actionLabel).toBe("一键沉淀 1 条候选");
+  });
+
+  it("separates hidden qualified candidates from rejected weak samples", () => {
+    const strongSamples = Array.from({ length: 4 }, (_, index) => makeSample(`strong-${index + 1}`, {
+      likes: 600 + index,
+      collects: 400 + index,
+      comments: 20,
+      score: 1600 + index,
+      detailText: "这是一段足够长的正文证据，用来提取结构、痛点、场景、标签、互动和图片风格。".repeat(3),
+      commentSnippets: ["在哪里", "多少钱"],
+      imageUrls: ["https://example.com/a.jpg", "https://example.com/b.jpg"]
+    }));
+    const weak = makeSample("weak", {
+      likes: 1,
+      collects: 0,
+      detailText: "短"
+    });
+
+    const model = buildViralSaveCandidateModel([...strongSamples, weak], 3);
+
+    expect(model.candidates).toHaveLength(3);
+    expect(model.hiddenCandidateCount).toBe(1);
+    expect(model.rejectedCount).toBe(1);
+    expect(model.rejectedSamples.map((item) => item.sample.id)).toEqual(["weak"]);
   });
 
   it("keeps empty state action-oriented instead of pretending every sample is useful", () => {
     const model = buildViralSaveCandidateModel([], 3);
 
     expect(model.candidates).toEqual([]);
+    expect(model.rejectedSamples).toEqual([]);
+    expect(model.hiddenCandidateCount).toBe(0);
     expect(model.headline).toBe("等待研究样本");
     expect(model.actionLabel).toBe("先继续研究");
   });

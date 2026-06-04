@@ -11,7 +11,9 @@ export type ViralSaveCandidate = {
 
 export type ViralSaveCandidateModel = {
   candidates: ViralSaveCandidate[];
+  rejectedSamples: ViralSaveCandidate[];
   rejectedCount: number;
+  hiddenCandidateCount: number;
   totalCount: number;
   headline: string;
   detail: string;
@@ -23,15 +25,22 @@ export function buildViralSaveCandidateModel(
   limit = 3
 ): ViralSaveCandidateModel {
   const reviewed = samples.map(reviewViralCandidateForUi);
-  const candidates = reviewed
+  const approved = reviewed
     .filter((item) => item.shouldSave)
     .sort((left, right) => right.score - left.score)
-    .slice(0, Math.max(0, limit));
-  const rejectedCount = Math.max(0, samples.length - candidates.length);
+  const candidates = approved.slice(0, Math.max(0, limit));
+  const rejectedSamples = reviewed
+    .filter((item) => !item.shouldSave)
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 3);
+  const rejectedCount = reviewed.length - approved.length;
+  const hiddenCandidateCount = Math.max(0, approved.length - candidates.length);
 
   return {
     candidates,
+    rejectedSamples,
     rejectedCount,
+    hiddenCandidateCount,
     totalCount: samples.length,
     headline: candidates.length
       ? `发现 ${candidates.length} 条爆款库候选`

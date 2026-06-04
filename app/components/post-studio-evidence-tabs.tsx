@@ -134,7 +134,8 @@ export function PostStudioEvidenceTab({
 }) {
   const openPrimary = evidencePanel.totalCount ? onOpenEvidenceCatalog : onOpenWorkflow;
   const visibleSaveCandidates = viralSaveCandidates.candidates.slice(0, 3);
-  const hiddenSaveCandidateCount = Math.max(0, viralSaveCandidates.candidates.length - visibleSaveCandidates.length);
+  const hiddenSaveCandidateCount = Math.max(0, viralSaveCandidates.hiddenCandidateCount ?? viralSaveCandidates.candidates.length - visibleSaveCandidates.length);
+  const rejectedSamples = viralSaveCandidates.rejectedSamples?.slice(0, 2) ?? [];
 
   return (
     <>
@@ -152,7 +153,19 @@ export function PostStudioEvidenceTab({
         <div className="viralCandidateIntro">
           <strong>{viralSaveCandidates.headline}</strong>
           <p>{viralSaveCandidates.detail}</p>
+          {hiddenSaveCandidateCount ? <small>另有 {hiddenSaveCandidateCount} 条合格候选已折叠，可打开完整证据目录逐条判断。</small> : null}
           {viralSaveCandidates.rejectedCount ? <small>已过滤 {viralSaveCandidates.rejectedCount} 条证据较薄的样本。</small> : null}
+          {rejectedSamples.length ? (
+            <details className="viralRejectedDetails">
+              <summary>查看被过滤原因</summary>
+              {rejectedSamples.map((candidate) => (
+                <p key={candidate.sample.id}>
+                  <strong>{candidate.sample.title}</strong>
+                  {` · 候选分 ${candidate.score} · ${(candidate.warnings.length ? candidate.warnings : candidate.reasons).slice(0, 2).join(" / ")}`}
+                </p>
+              ))}
+            </details>
+          ) : null}
         </div>
         {saveableSamples.length ? (
           <>

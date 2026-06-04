@@ -6030,6 +6030,32 @@ textarea {
   margin: 0;
 }
 
+.viralRejectedDetails {
+  border-top: 1px solid rgba(18, 118, 97, 0.12);
+  display: grid;
+  gap: 5px;
+  padding-top: 6px;
+}
+
+.viralRejectedDetails summary {
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.viralRejectedDetails p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.viralRejectedDetails p strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
 .viralLibraryHealth {
   background:
     linear-gradient(135deg, rgba(181, 125, 47, 0.08), rgba(18, 118, 97, 0.04));

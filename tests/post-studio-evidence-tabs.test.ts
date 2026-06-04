@@ -169,7 +169,9 @@ const saveCandidates: ViralSaveCandidateModel = {
       shouldSave: true
     }
   ],
+  rejectedSamples: [],
   rejectedCount: 0,
+  hiddenCandidateCount: 0,
   totalCount: 1,
   headline: "发现 1 条爆款库候选",
   detail: "适合提取标题钩子和结构规律。",
@@ -248,7 +250,7 @@ describe("post studio evidence tabs", () => {
     }));
     const html = renderToStaticMarkup(createElement(PostStudioEvidenceTab, {
       evidencePanel: { ...evidencePanel, totalCount: 5 },
-      viralSaveCandidates: { ...saveCandidates, candidates, totalCount: 5 },
+      viralSaveCandidates: { ...saveCandidates, candidates, hiddenCandidateCount: 2, totalCount: 5 },
       saveableSamples: candidates.map((item) => item.sample),
       summarizeEvidenceSample: (item) => item.reasonHighlights[0] ?? item.detailText,
       onOpenEvidenceCatalog: () => undefined,
@@ -262,5 +264,50 @@ describe("post studio evidence tabs", () => {
     expect(html).toContain("候选样本 3");
     expect(html).not.toContain("候选样本 4");
     expect(html).toContain("还有 2 条候选已收起");
+  });
+
+  it("explains rejected viral-library samples without expanding raw evidence", () => {
+    const rejectedSample = {
+      ...sample,
+      id: "sample-weak",
+      title: "证据偏薄样本",
+      likes: 2,
+      collects: 1,
+      comments: 0,
+      detailText: "短"
+    };
+    const html = renderToStaticMarkup(createElement(PostStudioEvidenceTab, {
+      evidencePanel,
+      viralSaveCandidates: {
+        candidates: [],
+        rejectedSamples: [{
+          sample: rejectedSample,
+          score: 18,
+          reasons: [],
+          warnings: ["互动数据偏弱", "正文证据偏少"],
+          shouldSave: false
+        }],
+        rejectedCount: 1,
+        hiddenCandidateCount: 0,
+        totalCount: 1,
+        headline: "暂未发现适合入库的高质量样本",
+        detail: "当前样本证据偏薄，可继续搜索、打开详情人工判断，或补充更高互动/更完整正文和评论的样本。",
+        actionLabel: "先继续研究"
+      },
+      saveableSamples: [],
+      summarizeEvidenceSample: (item) => item.reasonHighlights[0] ?? item.detailText,
+      onOpenEvidenceCatalog: () => undefined,
+      onOpenWorkflow: () => undefined,
+      onSaveManyToViralLibrary: () => undefined,
+      onOpenSample: () => undefined,
+      onSaveToViralLibrary: () => undefined
+    }));
+
+    expect(html).toContain("暂未发现适合入库的高质量样本");
+    expect(html).toContain("已过滤 1 条证据较薄的样本");
+    expect(html).toContain("查看被过滤原因");
+    expect(html).toContain("证据偏薄样本");
+    expect(html).toContain("候选分 18");
+    expect(html).toContain("互动数据偏弱 / 正文证据偏少");
   });
 });
