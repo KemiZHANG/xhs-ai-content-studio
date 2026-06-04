@@ -69,6 +69,36 @@ try {
   }
 
   const assetId = await uploadTinyImage(actionToken);
+  const qualityGate = await requestJson("/api/post-project", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "X-XHS-Action-Token": actionToken
+    },
+    body: JSON.stringify({
+      action: "run_quality_gate",
+      selectedImageIds: [assetId],
+      visibility: "仅自己可见",
+      draft: {
+        title: "内部交付闭环 smoke",
+        content: "验证 Post Studio 可以把画布草稿、选中图片和发布检查写入同一个 PostProject。",
+        tags: ["内部验收", "PostStudio"],
+        structure: ["目标", "证据", "确认"],
+        imagePrompt: "1px placeholder image for internal delivery smoke",
+        basedOnEvidenceIds: ["internal-delivery-smoke"]
+      }
+    })
+  });
+  if (!qualityGate.response.ok) {
+    fail(`/api/post-project run_quality_gate returned HTTP ${qualityGate.response.status}: ${qualityGate.data?.error || "unknown error"}`);
+    process.exit();
+  }
+  if (qualityGate.data?.project?.currentStage !== "reviewing") fail("run_quality_gate should move PostProject to reviewing");
+  if (!qualityGate.data?.project?.finalPost) fail("run_quality_gate should create finalPost");
+  if (!qualityGate.data?.project?.qualityCheck) fail("run_quality_gate should create qualityCheck");
+  if (!qualityGate.data?.readiness?.items?.some((item) => item.id === "quality")) fail("readiness should include quality gate");
+  line("Quality Gate", qualityGate.data.project.qualityCheck.canPublish ? "passed" : "checked");
+
   const preview = await requestJson("/api/publish", {
     method: "POST",
     headers: {
@@ -105,7 +135,7 @@ try {
   }
 
   if (!process.exitCode) {
-    console.log("Internal delivery smoke passed. It checked PostProject readiness, publish preview, and acceptance status; no MCP search, model generation, external publish, or schedule action was triggered.");
+    console.log("Internal delivery smoke passed. It checked PostProject readiness, canvas Quality Gate, publish preview, and acceptance status; no MCP search, model generation, external publish, or schedule action was triggered.");
   }
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error));
