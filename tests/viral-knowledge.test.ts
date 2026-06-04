@@ -510,6 +510,50 @@ describe("viral knowledge base", () => {
     expect(Array.isArray(payload.readiness.blockers)).toBe(true);
   });
 
+  it("previews viral knowledge extraction without writing cases or merging PostProject when dryRun is requested", async () => {
+    const token = await getLocalActionToken();
+    const response = await POST(new Request("http://localhost/api/viral-knowledge", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        [ACTION_TOKEN_HEADER]: token
+      },
+      body: JSON.stringify({
+        sample,
+        topic: "Guangzhou coffee",
+        category: "Cafe review",
+        useModel: false,
+        dryRun: true
+      })
+    }));
+    const payload = await response.json() as {
+      dryRun: boolean;
+      case: { sourceSampleId: string; hookType: string; bodyExcerpt: string };
+      cases: Array<{
+        sourceSampleId: string;
+        extractedInsights: { titleHooks: string[]; copyStructures: string[]; visualPatterns: string[] };
+        creativeSafety?: { doNotCopy: string[] };
+      }>;
+      candidateReviews: Array<{ sampleId: string; shouldSave: boolean }>;
+      skippedSampleIds: string[];
+      project?: unknown;
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.dryRun).toBe(true);
+    expect(payload.case.sourceSampleId).toBe("note-1");
+    expect(payload.case.hookType).toBeTruthy();
+    expect(payload.case.bodyExcerpt).toBeTruthy();
+    expect(payload.cases[0].extractedInsights.titleHooks.length).toBeGreaterThan(0);
+    expect(payload.cases[0].extractedInsights.copyStructures.length).toBeGreaterThan(0);
+    expect(payload.cases[0].extractedInsights.visualPatterns.length).toBeGreaterThan(0);
+    expect(payload.cases[0].creativeSafety?.doNotCopy.length).toBeGreaterThan(0);
+    expect(payload.candidateReviews[0]).toMatchObject({ sampleId: "note-1", shouldSave: true });
+    expect(payload.skippedSampleIds).toEqual([]);
+    expect(payload.project).toBeUndefined();
+    await expect(listViralCases()).resolves.toHaveLength(0);
+  });
+
   it("returns readable API errors when no research sample can be saved", async () => {
     const token = await getLocalActionToken();
     const response = await POST(new Request("http://localhost/api/viral-knowledge", {

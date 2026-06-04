@@ -44,6 +44,25 @@ function futureScheduleAt() {
   return new Date(Date.now() + 90 * 60 * 1000).toISOString();
 }
 
+function viralSmokeSample() {
+  return {
+    id: "internal-viral-smoke-note",
+    title: "周末咖啡馆先收藏这家",
+    author: "smoke",
+    likes: 1800,
+    collects: 1200,
+    comments: 88,
+    shares: 26,
+    score: 3600,
+    url: "https://www.xiaohongshu.com/explore/internal-viral-smoke",
+    imageUrls: ["https://example.com/1.jpg", "https://example.com/2.jpg", "https://example.com/3.jpg"],
+    cachedImageUrls: [],
+    detailText: "这家店适合周末下午想安静坐一会儿的人。先说适合谁，再讲环境、座位、点单和避坑提醒，最后补充交通和人均。适合聊天、短时办公或一个人放空。",
+    commentSnippets: ["想知道周末几点人少", "人均多少", "适合办公吗"],
+    reasonHighlights: ["收藏高", "评论关注人均和时间"]
+  };
+}
+
 try {
   line("XHS Studio", baseUrl);
 
@@ -71,6 +90,38 @@ try {
   if (!Array.isArray(readiness.items) || !readiness.items.some((item) => item.id === "confirmation")) {
     fail("readiness must include confirmation gate");
   }
+
+  const viralPreview = await requestJson("/api/viral-knowledge", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-XHS-Action-Token": actionToken
+    },
+    body: JSON.stringify({
+      dryRun: true,
+      useModel: false,
+      topic: "广州咖啡馆",
+      category: "探店",
+      sample: viralSmokeSample()
+    })
+  });
+  if (!viralPreview.response.ok) {
+    fail(`/api/viral-knowledge dry-run returned HTTP ${viralPreview.response.status}: ${viralPreview.data?.error || "unknown error"}`);
+    process.exit();
+  }
+  const viralCase = viralPreview.data?.case;
+  if (viralPreview.data?.dryRun !== true) fail("viral knowledge extraction must be a dry-run preview");
+  if (viralPreview.data?.project) fail("viral dry-run must not merge knowledge into the current PostProject");
+  if (viralCase?.sourceSampleId !== "internal-viral-smoke-note") fail("viral dry-run must preserve the source sample id");
+  if (viralPreview.data?.candidateReviews?.[0]?.shouldSave !== true) fail("viral dry-run sample must pass the save-quality review");
+  if (!viralCase?.hookType || !viralCase?.imageStyle || !viralCase?.painPoint || !viralCase?.audience) {
+    fail("viral dry-run must return structured creative fields");
+  }
+  if (!viralCase?.extractedInsights?.titleHooks?.length || !viralCase?.extractedInsights?.copyStructures?.length || !viralCase?.extractedInsights?.visualPatterns?.length) {
+    fail("viral dry-run must extract reusable title, copy, and visual patterns");
+  }
+  if (!viralCase?.creativeSafety?.doNotCopy?.length) fail("viral dry-run must include originality boundaries");
+  line("Viral Knowledge dry-run", viralCase.id || "missing");
 
   const assetId = await uploadTinyImage(actionToken);
   const qualityGate = await requestJson("/api/post-project", {
@@ -169,7 +220,7 @@ try {
   }
 
   if (!process.exitCode) {
-    console.log("Internal delivery smoke passed. It checked PostProject readiness, canvas Quality Gate dry-run, publish preview, scheduled publish preview, and acceptance status; no MCP search, model generation, external publish, schedule action, or current project overwrite was triggered.");
+    console.log("Internal delivery smoke passed. It checked PostProject readiness, viral knowledge dry-run, canvas Quality Gate dry-run, publish preview, scheduled publish preview, and acceptance status; no MCP search, model generation, external publish, schedule action, knowledge-base write, or current project overwrite was triggered.");
   }
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error));

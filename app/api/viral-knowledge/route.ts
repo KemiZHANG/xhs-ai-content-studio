@@ -76,6 +76,7 @@ export async function POST(request: Request) {
       useModel?: boolean;
       force?: boolean;
       allowLowQuality?: boolean;
+      dryRun?: boolean;
     };
     const samples = (body.samples?.length ? body.samples : body.sample ? [body.sample] : [])
       .filter((sample): sample is SampleEvidence => Boolean(sample?.id && sample.title));
@@ -110,6 +111,15 @@ export async function POST(request: Request) {
         model
       })
     ));
+    if (body.dryRun) {
+      return NextResponse.json({
+        dryRun: true,
+        case: viralCases[0],
+        cases: viralCases,
+        candidateReviews,
+        skippedSampleIds
+      });
+    }
     const savedCases = await upsertViralCases(viralCases);
     const result = await addViralCasesToPostProjectWithSummary(savedCases);
     return NextResponse.json({
