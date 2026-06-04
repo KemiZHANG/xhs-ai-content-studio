@@ -12,7 +12,7 @@ describe("Post Studio state smoke script", () => {
 
     expect(pkg.scripts?.["smoke:studio-state"]).toBe("node scripts/studio-state-smoke.mjs");
     expect(pkg.scripts?.["smoke:safe"]).toBe(
-      "npm run smoke:local && npm run smoke:accounts && npm run smoke:studio-state && npm run smoke:chat-stream && npm run smoke:publish-dry-run && npm run smoke:acceptance-status"
+      "npm run smoke:local && npm run smoke:accounts && npm run smoke:studio-state && npm run smoke:chat-stream && npm run smoke:publish-dry-run && npm run smoke:internal-delivery && npm run smoke:acceptance-status"
     );
     expect(script).toContain("/api/post-project");
     expect(script).toContain("requiredProjectFields");

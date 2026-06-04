@@ -46,6 +46,7 @@ describe("acceptance status panel", () => {
     expect(html).toContain("Verify the old publish confirmation is invalidated and a new confirmation is required.");
     expect(html).toContain("Confirmation invalidation");
     expect(html).toContain("npm run smoke:safe");
+    expect(html).toContain("npm run smoke:internal-delivery");
     expect(html).toContain("docs/multi-account-acceptance.md");
   });
 });
