@@ -40,6 +40,10 @@ async function uploadTinyImage(actionToken) {
   return upload.data.asset.id;
 }
 
+function futureScheduleAt() {
+  return new Date(Date.now() + 90 * 60 * 1000).toISOString();
+}
+
 try {
   line("XHS Studio", baseUrl);
 
@@ -127,6 +131,34 @@ try {
     fail("internal delivery smoke must not publish or schedule");
   }
 
+  const scheduleAt = futureScheduleAt();
+  const scheduledPreview = await requestJson("/api/publish", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-XHS-Action-Token": actionToken
+    },
+    body: JSON.stringify({
+      dryRun: true,
+      title: "内部交付定时 smoke",
+      content: "验证 Post Studio 可以生成定时发布确认预览，但不会创建真实小红书定时任务。",
+      tags: ["内部验收", "定时发布"],
+      assetIds: [assetId],
+      visibility: "仅自己可见",
+      scheduleAt
+    })
+  });
+  if (!scheduledPreview.response.ok) {
+    fail(`/api/publish scheduled dry-run returned HTTP ${scheduledPreview.response.status}: ${scheduledPreview.data?.error || "unknown error"}`);
+    process.exit();
+  }
+  if (scheduledPreview.data?.status !== "preview" || scheduledPreview.data?.dryRun !== true) fail("scheduled dry-run must return preview");
+  if (scheduledPreview.data?.preview?.requiresConfirmation !== true) fail("scheduled preview must require manual confirmation");
+  if (scheduledPreview.data?.preview?.scheduleAt !== scheduleAt) fail("scheduled preview must echo the requested future time");
+  if (["published", "scheduled"].includes(String(scheduledPreview.data?.publishIntent?.status))) {
+    fail("scheduled dry-run publishIntent must not be published or scheduled");
+  }
+
   const acceptance = await requestJson("/api/acceptance/status");
   const delivery = acceptance.data?.deliverySummary;
   if (!acceptance.response.ok || acceptance.data?.status?.roughDeliveryReady !== true) {
@@ -137,7 +169,7 @@ try {
   }
 
   if (!process.exitCode) {
-    console.log("Internal delivery smoke passed. It checked PostProject readiness, canvas Quality Gate dry-run, publish preview, and acceptance status; no MCP search, model generation, external publish, schedule action, or current project overwrite was triggered.");
+    console.log("Internal delivery smoke passed. It checked PostProject readiness, canvas Quality Gate dry-run, publish preview, scheduled publish preview, and acceptance status; no MCP search, model generation, external publish, schedule action, or current project overwrite was triggered.");
   }
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error));

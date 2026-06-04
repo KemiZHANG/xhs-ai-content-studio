@@ -22,9 +22,13 @@ describe("internal delivery smoke script", () => {
     expect(script).toContain("finalPost");
     expect(script).toContain("qualityCheck");
     expect(script).toContain("requiresConfirmation");
+    expect(script).toContain("futureScheduleAt");
+    expect(script).toContain("scheduled dry-run");
+    expect(script).toContain("scheduleAt");
     expect(script).toContain("roughDeliveryReady");
     expect(script).toContain("内部闭环可交付");
     expect(script).toContain("canvas Quality Gate dry-run");
+    expect(script).toContain("scheduled publish preview");
     expect(script).toContain("no MCP search, model generation, external publish, schedule action, or current project overwrite was triggered");
     expect(script).not.toContain("confirmed: true");
     expect(script).not.toContain("publishIntentId");
