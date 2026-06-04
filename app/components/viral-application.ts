@@ -80,7 +80,10 @@ export function buildViralApplicationModel(project: PostProject | null | undefin
 
   const briefEvidenceIds = viralEvidenceIds(project?.creativeBrief?.basedOnEvidenceIds, viralInsightIds);
   const draftEvidenceIds = viralEvidenceIds(project?.copyDraft?.draft.basedOnEvidenceIds, viralInsightIds);
-  const visualEvidenceIds = viralEvidenceIds(project?.visualDirection?.basedOnEvidenceIds, viralInsightIds);
+  const visualEvidenceIds = viralEvidenceIds([
+    ...(project?.visualDirection?.basedOnEvidenceIds ?? []),
+    ...(project?.imagePrompts ?? []).flatMap((prompt) => prompt.basedOnEvidenceIds ?? [])
+  ], viralInsightIds);
   const briefUsesViral = Boolean(briefEvidenceIds.length);
   const visualUsesViral = Boolean(visualEvidenceIds.length);
   const draftUsesViral = Boolean(draftEvidenceIds.length);

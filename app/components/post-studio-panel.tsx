@@ -215,7 +215,7 @@ export function PostStudioPanel({
   const focusedEvidenceIds = project?.focusedEvidenceIds ?? [];
   const realtimeInsights = insights.filter((insight) => insight.sourceType !== "viral_library");
   const keyLearningInsights = pickKeyLearningInsights(insights);
-  const keyViralInsights = pickKeyViralInsights(viralInsights);
+  const keyViralInsights = pickKeyViralInsights(viralInsights, focusedEvidenceIds);
   const viralCaseById = new Map(viralCases.map((item) => [item.id, item]));
   const latestViralCases = [...viralCases].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt)).slice(0, 3);
   const latestViralSummaries = latestViralCases.map((item) => ({
@@ -763,18 +763,28 @@ function pickKeyLearningInsights(insights: ProjectInsight[]): ProjectInsight[] {
   return selected.length ? selected : insights.slice(0, 5);
 }
 
-function pickKeyViralInsights(insights: ProjectInsight[]): ProjectInsight[] {
+export function pickKeyViralInsights(insights: ProjectInsight[], focusedEvidenceIds: string[] = []): ProjectInsight[] {
   const preferredOrder = ["hook", "structure", "copy", "tag", "visual", "pain_point", "audience", "comment", "title"];
   const selected: ProjectInsight[] = [];
   const usedTypes = new Set<string>();
+  const focusedIdSet = new Set(focusedEvidenceIds);
+  const focusedInsights = insights
+    .filter((insight) => focusedIdSet.has(insight.id) && insight.insight.trim())
+    .sort((left, right) => focusedEvidenceIds.indexOf(left.id) - focusedEvidenceIds.indexOf(right.id));
   const sorted = [...insights]
-    .filter((insight) => insight.insight.trim())
+    .filter((insight) => insight.insight.trim() && !focusedIdSet.has(insight.id))
     .sort((left, right) => {
       const leftRank = preferredOrder.indexOf(left.type);
       const rightRank = preferredOrder.indexOf(right.type);
       const byType = (leftRank === -1 ? 99 : leftRank) - (rightRank === -1 ? 99 : rightRank);
       return byType || right.confidence - left.confidence || left.id.localeCompare(right.id);
     });
+
+  for (const insight of focusedInsights) {
+    if (selected.length >= 5) break;
+    selected.push(insight);
+    usedTypes.add(insight.type);
+  }
 
   for (const insight of sorted) {
     if (selected.length >= 5) break;

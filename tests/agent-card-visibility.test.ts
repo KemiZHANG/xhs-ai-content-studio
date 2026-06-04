@@ -20,7 +20,7 @@ describe("agent card visibility", () => {
       card("publish", "publish_check")
     ]);
 
-    expect(visible.map((item) => item.id)).toEqual(["director", "clarify", "quality"]);
+    expect(visible.map((item) => item.id)).toEqual(["director", "clarify", "viral"]);
   });
 
   it("keeps duplicate card types from flooding the visible strip", () => {
@@ -38,6 +38,7 @@ describe("agent card visibility", () => {
   it("marks only decision-critical cards as high priority", () => {
     expect(isHighPriorityAgentCard("director_summary")).toBe(true);
     expect(isHighPriorityAgentCard("clarify_next_steps")).toBe(true);
+    expect(isHighPriorityAgentCard("viral_knowledge")).toBe(true);
     expect(isHighPriorityAgentCard("quality_check")).toBe(true);
     expect(isHighPriorityAgentCard("creative_brief")).toBe(true);
     expect(isHighPriorityAgentCard("creation_provenance")).toBe(true);

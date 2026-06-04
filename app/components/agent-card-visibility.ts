@@ -3,6 +3,7 @@ import type { AgentResponseCard } from "@/app/types";
 const priority: AgentResponseCard["type"][] = [
   "director_summary",
   "clarify_next_steps",
+  "viral_knowledge",
   "quality_check",
   "publish_check",
   "copy_draft",
@@ -11,7 +12,6 @@ const priority: AgentResponseCard["type"][] = [
   "visual_direction",
   "image_prompt",
   "evidence_citations",
-  "viral_knowledge",
   "evidence_summary",
   "stage_guidance"
 ];
@@ -43,5 +43,5 @@ export function pickVisibleAgentCards(cards: AgentResponseCard[], limit = 3): Ag
 }
 
 export function isHighPriorityAgentCard(type: AgentResponseCard["type"]): boolean {
-  return type === "director_summary" || type === "clarify_next_steps" || type === "quality_check" || type === "publish_check" || type === "copy_draft" || type === "creation_provenance" || type === "creative_brief";
+  return type === "director_summary" || type === "clarify_next_steps" || type === "viral_knowledge" || type === "quality_check" || type === "publish_check" || type === "copy_draft" || type === "creation_provenance" || type === "creative_brief";
 }

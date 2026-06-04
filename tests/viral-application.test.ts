@@ -202,4 +202,42 @@ describe("viral application model", () => {
     expect(model.routes.every((route) => route.evidenceIds.includes("viral-insight-hook"))).toBe(true);
     expect(model.actions[0]).toMatchObject({ action: "retrieve_viral_knowledge" });
   });
+
+  it("counts image prompt citations as visual viral evidence", () => {
+    const project = createBlankPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: { sampleIds: ["viral-case-1"], insights: [viralInsight] },
+      creativeBrief: {
+        audience: "周末探店人群",
+        painPoint: "怕踩雷",
+        contentAngle: "真实避坑探店",
+        emotionalHook: "先给结论",
+        proofPoints: ["排队", "人均", "出片点"],
+        tone: "真实分享",
+        visualMood: "自然光",
+        imageMustHave: ["店内空间"],
+        imageMustAvoid: ["虚假 logo"],
+        platformStyle: "小红书图文",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["viral-insight-hook"]
+      },
+      imagePrompts: [{
+        id: "prompt-viral-1",
+        label: "自然光封面",
+        createdAt: "2026-05-31T00:00:00.000Z",
+        value: { prompt: "自然光咖啡馆封面，突出空间层次" },
+        basedOnEvidenceIds: ["viral-insight-hook"]
+      }]
+    });
+    const model = buildViralApplicationModel(project);
+
+    expectModelFreeFromMojibake(model);
+    expect(model.routes.find((route) => route.id === "visual")).toMatchObject({
+      status: "ready",
+      evidenceIds: ["viral-insight-hook"]
+    });
+    expect(model.citedEvidenceIds).toContain("viral-insight-hook");
+    expect(model.actions.map((action) => action.action)).toEqual(["generate_copy"]);
+  });
 });

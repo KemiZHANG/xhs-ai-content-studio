@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { ViralApplicationModel } from "@/app/components/viral-application";
 import type { ViralEvidenceSummaryModel } from "@/app/components/viral-evidence-summary";
 import type { ViralLibraryHealthModel } from "@/app/components/viral-library-health";
+import { pickKeyViralInsights } from "@/app/components/post-studio-panel";
 import { emptyViralSearchForm, PostStudioViralTab } from "@/app/components/post-studio-viral-tab";
 import type { PostProject, ViralCase, WorkflowResult } from "@/app/types";
 
@@ -183,5 +184,26 @@ describe("post studio viral tab", () => {
     expect(html).toContain("人群：上班族");
     expect(html).toContain("痛点：不知道怎么选");
     expect(html).toContain("收藏 ≥ 300");
+  });
+
+  it("keeps focused viral evidence visible before filling the compressed list", () => {
+    const items: EvidenceInsight[] = [
+      { ...insight, id: "viral-hook", type: "hook", insight: "标题先给收藏价值。", confidence: 0.98 },
+      { ...insight, id: "viral-structure", type: "structure", insight: "正文按路线分段。", confidence: 0.96 },
+      { ...insight, id: "viral-copy", type: "copy", insight: "正文先说适合谁。", confidence: 0.95 },
+      { ...insight, id: "viral-tag", type: "tag", insight: "标签组合城市和场景。", confidence: 0.94 },
+      { ...insight, id: "viral-visual", type: "visual", insight: "封面用自然光门头。", confidence: 0.93 },
+      { ...insight, id: "viral-focused", type: "comment", insight: "评论最关心排队和地址。", confidence: 0.5 }
+    ];
+
+    const selected = pickKeyViralInsights(items, ["viral-focused"]);
+
+    expect(selected.map((item) => item.id)).toEqual([
+      "viral-focused",
+      "viral-hook",
+      "viral-structure",
+      "viral-copy",
+      "viral-tag"
+    ]);
   });
 });
