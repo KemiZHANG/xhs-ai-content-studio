@@ -2531,7 +2531,9 @@ describe("agent orchestrator", () => {
     expect(result.workspace.publishPlan?.title).toBe("广州周末安静咖啡馆");
     expect(result.workspace.publishPlan?.images).toEqual([selectedImagePath]);
     expect(result.workspace.publishPlan?.scheduleAt).toMatch(/T20:00:00\+08:00$/);
+    expect(result.workspace.publishPlan?.scheduleTimezone).toBe("+08:00");
     expect(result.postProject?.publishPlan?.status).toBe("awaiting_approval");
+    expect(result.postProject?.publishPlan?.scheduleTimezone).toBe("+08:00");
     expect(result.postProject?.currentStage).toBe("reviewing");
     const publishCard = result.cards.find((card) => card.id === "card-publish-check");
     expect(publishCard?.title).toBe("发布确认待人工核对");

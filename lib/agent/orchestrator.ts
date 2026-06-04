@@ -3370,7 +3370,9 @@ async function maybeHandlePublishConfirmationTurn(
       "当前已有待人工确认的发布单，我不会在聊天里直接调用小红书发布。",
       `标题：${activePlan.title}`,
       `图片：${activePlan.images.length} 张；标签：${activePlan.tags.length} 个；可见范围：${activePlan.visibility}`,
-      activePlan.scheduleAt ? `定时时间：${activePlan.scheduleAt}` : "发布时间：立即",
+      activePlan.scheduleAt
+        ? `定时时间：${activePlan.scheduleAt}${activePlan.scheduleTimezone ? `（时区 ${activePlan.scheduleTimezone}）` : ""}`
+        : "发布时间：立即",
       `确认项：${confirmedItems.length}/${requiredItems.length}`,
       "请在 Post Studio 右侧发布检查里点击“确认发布/确认定时发布”按钮完成最后一步。"
     ].join("\n"),
