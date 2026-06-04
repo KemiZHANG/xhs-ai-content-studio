@@ -169,6 +169,9 @@ export async function searchViralCasesFusion(input: ViralSearchInput): Promise<V
         continue;
       }
       existing.score = Number(Math.max(existing.score, result.score).toFixed(4));
+      if (!existing.scoreBreakdown || result.score >= existing.score) {
+        existing.scoreBreakdown = result.scoreBreakdown;
+      }
       existing.reasons = uniqueStrings([...existing.reasons, ...result.reasons, `检索 query：${query}`]).slice(0, 8);
       existing.matchedQueries = uniqueStrings([...(existing.matchedQueries ?? []), query]).slice(0, 5);
     }
@@ -782,10 +785,19 @@ function scoreViralCase(item: ViralCase, queryTokens: string[], input: ViralSear
     input.audience && includesLoose(item.audience, input.audience),
     input.painPoint && includesLoose(item.painPoint, input.painPoint)
   ].filter(Boolean).length * 0.08;
-  const score = tokenHits.length * 0.08 + semanticScore * 0.55 + metricScore + qualityScore + filterBonus;
+  const keywordScore = tokenHits.length * 0.08;
+  const weightedSemanticScore = semanticScore * 0.55;
+  const score = keywordScore + weightedSemanticScore + metricScore + qualityScore + filterBonus;
   return {
     case: item,
     score: Number(score.toFixed(4)),
+    scoreBreakdown: {
+      keyword: Number(keywordScore.toFixed(4)),
+      semantic: Number(weightedSemanticScore.toFixed(4)),
+      metrics: Number(metricScore.toFixed(4)),
+      quality: Number(qualityScore.toFixed(4)),
+      filters: Number(filterBonus.toFixed(4))
+    },
     diversityKey: viralDiversityKey(item),
     angleSummary: summarizeViralAngle(item),
     reasons: [

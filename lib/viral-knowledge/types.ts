@@ -93,6 +93,13 @@ export type ViralSearchInput = ViralCaseFilters & {
 export type ViralSearchResult = {
   case: ViralCase;
   score: number;
+  scoreBreakdown?: {
+    keyword: number;
+    semantic: number;
+    metrics: number;
+    quality: number;
+    filters: number;
+  };
   reasons: string[];
   diversityKey?: string;
   angleSummary?: string;

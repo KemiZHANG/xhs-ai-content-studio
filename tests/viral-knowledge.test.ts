@@ -74,6 +74,14 @@ describe("viral knowledge base", () => {
     expect(results[0].case.creativeSafety?.doNotCopy.join(" ")).toContain("不要复制");
     expect(results[0].case.creativeSafety?.transformationGuidance.join(" ")).toContain("自己的");
     expect(results[0].score).toBeGreaterThan(0);
+    expect(results[0].scoreBreakdown).toMatchObject({
+      semantic: expect.any(Number),
+      keyword: expect.any(Number),
+      metrics: expect.any(Number),
+      quality: expect.any(Number),
+      filters: expect.any(Number)
+    });
+    expect(results[0].scoreBreakdown?.semantic).toBeGreaterThan(0);
   });
 
   it("records model extraction provenance when AI extracts reusable viral patterns", async () => {
@@ -266,6 +274,8 @@ describe("viral knowledge base", () => {
     expect(results[0].case.id).toBe(viralCase.id);
     expect(results[0].matchedQueries?.length).toBeGreaterThan(0);
     expect(results[0].reasons.join(" ")).toContain("query");
+    expect(results[0].scoreBreakdown?.semantic).toBeGreaterThan(0);
+    expect(results[0].scoreBreakdown?.metrics).toBeGreaterThan(0);
     expect(results[0].diversityKey).toContain("cafe review");
     expect(results[0].angleSummary).toContain("Cafe review");
   });
