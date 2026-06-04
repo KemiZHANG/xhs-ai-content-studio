@@ -8,6 +8,7 @@ import { buildPublishConfirmationReadiness } from "@/app/components/publish-conf
 import { formatMcpEndpoint } from "@/app/components/xhs-display-utils";
 import { StatusLine, StatusPill } from "@/app/components/status-badges";
 import { buildQualityViralCoverageView } from "@/app/components/quality-viral-coverage";
+import { QualityOriginalityBoundary } from "@/app/components/quality-originality-boundary";
 import { getPostVersionDiffReport, getPostVersionStatus } from "@/lib/post-project/versioning";
 
 export function PublishAssemblyPanel({
@@ -106,7 +107,7 @@ export function PublishAssemblyPanel({
               </div>
             </div>
             {quality?.originalityReview ? (
-              <p className="muted">原创边界：{quality.originalityReview.summary}</p>
+              <QualityOriginalityBoundary review={quality.originalityReview} compact />
             ) : null}
           </section>
           <section className="publishChecklist">
@@ -338,6 +339,9 @@ export function PublishAssemblyPanel({
                   <li key={item.id}>{item.confirmed ? "已确认" : "待确认"}：{item.label} · {item.detail}</li>
                 ))}
               </ul>
+            ) : null}
+            {quality?.originalityReview ? (
+              <QualityOriginalityBoundary review={quality.originalityReview} compact />
             ) : null}
             <div className="actionRow">
               <button className="secondaryButton" disabled={busy} onClick={onCancelPublish} type="button">

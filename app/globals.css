@@ -2696,6 +2696,10 @@ textarea {
   overflow: hidden;
 }
 
+.phonePreview > .qualityOriginalityBoundary {
+  margin: 0 14px 14px;
+}
+
 .phonePreviewMedia {
   align-items: center;
   aspect-ratio: 3 / 4;
@@ -8578,6 +8582,11 @@ textarea {
 .qualityOriginalityBoundary.warn {
   background: rgba(185, 107, 25, 0.1);
   border-color: rgba(185, 107, 25, 0.24);
+}
+
+.qualityOriginalityBoundary.compact {
+  gap: 6px;
+  padding: 9px;
 }
 
 .qualityOriginalityBoundary > span {
