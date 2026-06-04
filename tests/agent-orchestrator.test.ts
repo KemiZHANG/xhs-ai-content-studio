@@ -2105,9 +2105,22 @@ describe("agent orchestrator", () => {
       commentSnippets: ["能不能放电脑", "肩带勒不勒"],
       reasonHighlights: []
     };
+    const viralSampleTwo: SampleEvidence = {
+      ...viralSample,
+      id: "note-viral-bag-2",
+      title: "通勤包封面清单式测评",
+      url: "https://www.xiaohongshu.com/explore/note-viral-bag-2",
+      detailText: "封面先列三类通勤场景，正文按容量、肩带、雨天材质和穿搭适配拆解。",
+      commentSnippets: ["雨天会不会湿", "小个子背会不会压身高"]
+    };
     await upsertViralCases([
       await createViralCaseFromEvidence({
         sample: viralSample,
+        topic: "通勤包",
+        category: "好物"
+      }),
+      await createViralCaseFromEvidence({
+        sample: viralSampleTwo,
         topic: "通勤包",
         category: "好物"
       })
@@ -2116,6 +2129,11 @@ describe("agent orchestrator", () => {
       topic: "通勤包",
       targetAudience: "上班族",
       goal: "生成真实通勤包种草笔记",
+      selectedSamples: [
+        viralSample,
+        viralSampleTwo,
+        { ...viralSample, id: "note-live-bag-3", title: "通勤包真实使用一周反馈" }
+      ],
       currentStage: "brief_ready"
     });
     const runChatAgent = vi.fn(async () => ({ answer: "legacy answer" }));
@@ -2149,6 +2167,14 @@ describe("agent orchestrator", () => {
     const viralCard = result.cards.find((card) => card.id === "card-viral-strategy");
     expect(viralCard?.summary).toContain("可复用策略");
     expect((viralCard?.data as { evidenceIds?: string[] } | undefined)?.evidenceIds?.length).toBeGreaterThan(0);
+    expect(result.quickActions.map((action) => action.action)).toEqual([
+      "generate_copy",
+      "plan_visuals"
+    ]);
+    expect((viralCard?.data as { nextActions?: Array<{ action: string }> } | undefined)?.nextActions?.map((action) => action.action)).toEqual([
+      "generate_copy",
+      "plan_visuals"
+    ]);
     expect(result.toolTrace.some((item) => item.label === "knowledge.retrieveViralPatterns" && item.status === "completed")).toBe(true);
     expect(result.trace.events.some((event) => event.type === "tool_completed" && event.label === "knowledge.retrieveViralPatterns")).toBe(true);
     expect(result.answer).toContain("爆款库");
@@ -2194,6 +2220,16 @@ describe("agent orchestrator", () => {
         viralCount: 0
       })
     });
+    expect(result.quickActions).toEqual([
+      expect.objectContaining({ action: "search_research", label: "补搜真实笔记" }),
+      expect.objectContaining({ action: "save_viral_knowledge", label: "保存优质样本入库", disabled: true }),
+      expect.objectContaining({ action: "retrieve_viral_knowledge", label: "放宽筛选再检索" })
+    ]);
+    expect((viralCard?.data as { nextActions?: Array<{ action: string }> } | undefined)?.nextActions?.map((action) => action.action)).toEqual([
+      "search_research",
+      "save_viral_knowledge",
+      "retrieve_viral_knowledge"
+    ]);
     expect(result.postProject?.evidencePack.summary).toMatchObject({
       viralKnowledge: expect.objectContaining({
         sufficiency: expect.objectContaining({ isEnough: false })

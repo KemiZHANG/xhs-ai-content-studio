@@ -1412,23 +1412,33 @@ function buildCardsFromTurn(
       }
     });
     if (viralKnowledge && hasViralKnowledgePayload(viralKnowledge)) {
+      const ragNextActions = buildViralRagNextActions({ plan, workspace, postProject, viralKnowledge });
       cards.push({
         id: "card-viral-knowledge",
         type: "viral_knowledge",
         title: "爆款库规律",
         summary: formatViralKnowledgeCardSummary(viralKnowledge),
-        data: viralKnowledge
+        data: {
+          ...viralKnowledge,
+          nextActions: ragNextActions
+        }
       });
     }
   }
   const viralStrategy = extractViralStrategyReport(postProject?.evidencePack.summary ?? workspace.evidenceSummary);
   if (viralStrategy) {
+    const viralKnowledge = extractViralKnowledgeSummary(postProject?.evidencePack.summary ?? workspace.evidenceSummary);
     cards.push({
       id: "card-viral-strategy",
       type: "viral_knowledge",
       title: "爆款策略",
       summary: viralStrategy.summary,
-      data: viralStrategy
+      data: {
+        ...viralStrategy,
+        nextActions: viralKnowledge
+          ? buildViralRagNextActions({ plan, workspace, postProject, viralKnowledge })
+          : []
+      }
     });
   }
   if (postProject?.creativeBrief) {
@@ -1969,6 +1979,15 @@ function buildQuickActions(plan: AgentPlan, workspace: WorkspaceState, postProje
           { id: "qa-add-brief-before-revise", label: "补充创作需求", action: "update_brief_inputs" }
         ];
   }
+  const viralRagActions = buildViralRagNextActions({
+    plan,
+    workspace,
+    postProject,
+    viralKnowledge: extractViralKnowledgeSummary(postProject?.evidencePack.summary ?? workspace.evidenceSummary)
+  });
+  if (viralRagActions.length) {
+    return viralRagActions;
+  }
   if (plan.intent !== "ask" && postProjectActions.length) {
     return postProjectActions;
   }
@@ -1989,6 +2008,46 @@ function buildQuickActions(plan: AgentPlan, workspace: WorkspaceState, postProje
     { id: "qa-start-research", label: "先搜索真实笔记", action: "search_research" },
     { id: "qa-add-brief", label: "补充创作需求", action: "update_brief_inputs" }
   ];
+}
+
+function buildViralRagNextActions({
+  plan,
+  workspace,
+  postProject,
+  viralKnowledge
+}: {
+  plan?: AgentPlan;
+  workspace: WorkspaceState;
+  postProject?: PostProject | null;
+  viralKnowledge?: (Partial<ViralKnowledgePack> & Record<string, unknown>) | null;
+}): AgentQuickAction[] {
+  if (plan?.intent !== "retrieve_viral_knowledge" || !viralKnowledge?.sufficiency) {
+    return [];
+  }
+  const sufficiency = viralKnowledge.sufficiency;
+  const hasSavedSamples = Boolean((postProject?.selectedSamples.length ?? 0) || workspace.selectedSamples.length);
+  if (!sufficiency.isEnough) {
+    return [
+      { id: "qa-rag-search-realtime", label: "补搜真实笔记", action: "search_research" },
+      { id: "qa-rag-save-samples", label: "保存优质样本入库", action: "save_viral_knowledge", disabled: !hasSavedSamples },
+      { id: "qa-rag-refresh", label: "放宽筛选再检索", action: "retrieve_viral_knowledge" }
+    ];
+  }
+  const actions: AgentQuickAction[] = [];
+  if (!postProject?.creativeBrief) {
+    actions.push({ id: "qa-rag-create-brief", label: "用 RAG 生成 Brief", action: "create_creative_brief" });
+  }
+  if (!postProject?.copyDraft && !workspace.currentDraft) {
+    actions.push({ id: "qa-rag-generate-copy", label: "生成原创文案", action: "generate_copy" });
+  } else {
+    actions.push({ id: "qa-rag-revise-copy", label: "用规律优化文案", action: "revise_copy" });
+  }
+  if (!postProject?.visualDirection) {
+    actions.push({ id: "qa-rag-plan-visuals", label: "生成图片方向", action: "plan_visuals" });
+  } else {
+    actions.push({ id: "qa-rag-assemble-post", label: "组装发布稿", action: "assemble_post" });
+  }
+  return actions.slice(0, 3);
 }
 
 function buildToolTraceItems(trace: ReturnType<typeof createTrace>, plan?: AgentPlan): AgentToolTraceItem[] {
