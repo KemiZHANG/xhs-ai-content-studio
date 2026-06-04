@@ -2,116 +2,85 @@
 
 ## 中文说明
 
-XHS AI Content Studio 是一个本地优先的小红书 AI 内容创作 Agent。它把小红书 MCP、AI 文案、AI 生图、图文卡片、帖子项目状态、发布装配、安全确认和审计日志放在同一个 Next.js 网页里，目标是让创作者围绕“一篇帖子项目”完成从研究到发布前确认的完整流程。
+XHS AI Content Studio 是一个本地优先的小红书 AI 内容创作 Agent。它把小红书 MCP、真实笔记研究、爆款库 RAG、CreativeBrief、AI 文案、AI 生图、图文卡片、PostProject 状态、发布检查、人工确认和审计日志集中到一个 Next.js 网页里。
 
-它不是简单的自动发帖脚本，而是一个面向小红书运营的内容工作台：
+它不是简单的自动发帖脚本，而是围绕“一篇帖子项目”运行的内容工作台：先研究真实笔记和历史爆款规律，再生成统一 CreativeBrief，然后让文案、图片方向和最终发布稿都能追溯到证据。
 
-- 搜索真实小红书笔记，提取标题、正文、标签、图片和互动数据。
-- 总结爆款笔记的可学习结论，而不是复制原帖。
-- 基于证据生成 CreativeBrief，再统一驱动文案和图片方向。
-- 生成原创标题、正文、标签、图片 Prompt 和图文卡片。
-- 上传产品图，生成产品场景图或参考风格图。
-- 把文案和图片装配成最终待发布帖子。
-- 发布前经过 Quality Gate、人工确认、账号检查和审计记录。
+### 核心能力
 
-### 核心功能
-
-- **Post Studio**：主工作台。围绕一个帖子项目展示 AI 对话、Post Canvas、研究证据、CreativeBrief、图片素材和发布检查。
-- **AI Agent 调度层**：根据用户自然语言判断意图，例如研究、总结、生成文案、改写、生成图片、选图、发布检查、定时发布；同时提供兼容旧前端的 `/api/chat` 和可用于流式 UI 的 `/api/chat/stream` SSE 接口。
-- **PostProject 状态**：保存当前主题、证据包、样本、CreativeBrief、文案版本、图片方向、生成图片、最终帖子、发布计划和阶段。
-- **真实证据研究**：通过 Xiaohongshu MCP 搜索和读取真实笔记，再提炼标题、正文、标签、图片、评论和用户痛点。
-- **爆款库 RAG**：把高质量样本沉淀为标题钩子、正文结构、标签组合、图片风格、痛点和情绪触发点；检索时使用多 query 融合、语义匹配和多样性选择，后续创作可同时参考实时证据和历史规律。
-- **原创重写**：根据研究结论和用户需求生成新内容，避免直接复制或拼接竞品内容。
-- **图片能力**：在 Post Studio 中选择/生成图片；高级图片工具可用于批量 AI 生图、产品图场景化、参考图生成和图文卡片渲染。
-- **图文卡片引擎**：本地生成小红书常用尺寸卡片，适合干货、清单、教程、避坑类内容。
-- **发布检查**：在 Post Studio 中统一确认标题、正文、标签、图片、可见范围、账号、立即发布或定时发布；备用发布装配页仅用于排查。
-- **发布安全**：默认 `review_required`，真实发布前必须确认；后端会检查内容、图片、账号登录、重复发布和 Quality Gate。
-- **发布审计**：记录发布预览、待确认、发布中、已发布、已定时、失败等事件；正文只保存哈希，不保存完整正文。
-- **本地隐私**：API Key、cookies、草稿、素材和历史默认保存在本机，不提交到 Git。
-
-### 运行要求
-
-- Windows 10/11
-- Node.js 20 或更高版本
-- npm
-- 一个可登录的小红书账号
-- 文本模型 API Key，例如 Gemini、OpenAI 或兼容 OpenAI API 的服务
-- 图片模型 API Key，例如 Gemini 2.5 Flash Image / Nano Banana、OpenAI 或兼容接口
+- **Post Studio**：主工作台。日常创作从这里开始，也回到这里完成发布确认。
+- **PostProject**：统一保存主题、产品信息、人群、目标、证据包、CreativeBrief、文案版本、图片方向、生成图片、最终帖子、发布计划和当前阶段。
+- **AI Agent**：读取当前 PostProject，理解“找笔记”“生成文案”“再生活化一点”“用第二张图”“今晚 8 点发”等上下文指令。
+- **真实小红书研究**：通过 Xiaohongshu MCP 搜索笔记、读取详情、提取标题、正文、标签、图片、评论和互动数据。
+- **爆款库 RAG**：把高质量样本沉淀为可复用规律，例如标题钩子、正文结构、标签组合、图片风格、人群痛点和情绪触发点。它不是保存原文给 AI 仿写。
+- **CreativeBrief**：统一驱动文案和图片，避免标题、正文和视觉方向割裂。
+- **图像与卡片**：支持 AI 生图、产品图场景化、参考图生成和 1080x1440 小红书图文卡片。
+- **Quality Gate**：发布前检查标题夸张、广告感、标签堆砌、图文一致、虚假认证、虚假销量、功效夸大和产品外观改变等风险。
+- **发布安全**：默认 `review_required`。真实发布前必须人工确认账号、可见范围、文案、图片、定时时间和时区。
+- **审计记录**：记录发布预览、确认、发布、定时、失败等事件；正文只保留哈希和元数据。
 
 ### 快速开始
-
-#### 1. 克隆项目
 
 ```powershell
 git clone https://github.com/KemiZHANG/xhs-ai-content-studio.git
 cd xhs-ai-content-studio
-```
-
-#### 2. 安装依赖
-
-```powershell
 npm install
-```
-
-#### 3. 启动网页和小红书 MCP
-
-```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1
 ```
 
-启动后打开：
+打开：
 
 ```text
 http://localhost:3000
 ```
 
-启动脚本会同时启动：
+启动脚本会启动：
 
-- 小红书 MCP：`http://localhost:18060/mcp`
-- Web 工作台：`http://localhost:3000`
+- Web app：`http://localhost:3000`
+- Xiaohongshu MCP：`http://localhost:18060/mcp`
 
-#### 4. 登录小红书
+### 登录小红书
 
-如果左侧账号卡显示未登录，运行：
+如果页面左侧账号卡显示未登录，运行：
 
 ```powershell
 .\login-xhs.ps1
 ```
 
-在弹出的浏览器窗口完成小红书登录，然后回到网页刷新账号状态。
+在弹出的浏览器里完成登录，然后回到网页点击账号检测或刷新页面。
 
 ### 配置 AI 模型
 
-打开网页左侧的 **Settings / 模型设置**：
+打开 **Settings / 模型设置**：
 
-- 普通用户：选择 Gemini 或 OpenAI，然后填写 API Key。
-- 高级用户：如果使用第三方兼容接口，再填写 Base URL 和模型名称。
+- 普通用户：选择 Gemini 或 OpenAI，填入 API Key。
+- 高级用户：如果使用 OpenAI-compatible 服务，再填写 Base URL 和模型名称。
+- 图片生成：配置图片模型 API Key，例如 Gemini 2.5 Flash Image / Nano Banana 或其他兼容模型。
 
-API Key 会保存在本地 `data/settings.json`，该目录已被 `.gitignore` 忽略，不会提交到 GitHub。
+API Key 默认保存到本地 `data/settings.json`，该目录已被 `.gitignore` 忽略，不会提交到 GitHub。
 
-### 推荐使用流程
+### 推荐工作流
 
 1. 打开 `http://localhost:3000`。
-2. 在左侧确认小红书 MCP 已连接、账号已登录。
-3. 在模型设置里填写文本模型和图片模型 API Key。
-4. 进入 **Post Studio**，直接输入需求，例如：
+2. 确认小红书 MCP 已连接、当前账号已登录。
+   - 也可以通过 `http://localhost:3000/api/health/mcp` 检查 MCP 是否可达和是否已登录。
+3. 进入 **Post Studio**。
+4. 输入自然语言需求，例如：
 
 ```text
-帮我找最近一周广州咖啡馆高收藏笔记，分析标题和图片风格，再给我生成一篇适合探店账号的图文笔记。
+帮我找最近一周广州咖啡馆高收藏笔记，分析标题、正文、标签和图片风格，再给我生成一篇适合探店账号的图文笔记。
 ```
 
-5. Agent 会搜索真实笔记、提炼证据、生成 CreativeBrief 和草稿。
-6. 如果发现值得长期复用的高质量样本，可以在右侧证据面板保存到爆款库。
-7. 在 Post Canvas 里检查标题、正文、标签和图片方向。
-8. 在 **Post Studio** 的图片/素材区域生成或选择 AI 图片、产品场景图或图文卡片。
-9. 在 **Post Studio** 的发布检查区确认最终标题、正文、标签、图片、账号、可见范围和定时时间。
-10. 第一次真实发布建议使用“仅自己可见”。
+5. Agent 会搜索真实笔记，生成证据摘要和 CreativeBrief。
+6. 你可以把高质量样本保存到爆款库，后续创作会同时参考实时证据和历史爆款规律。
+7. 在 Post Canvas 检查并编辑标题、正文、标签、图片方向和图片。
+8. 运行 Quality Gate。
+9. 生成发布确认单。第一次真实发布建议选择“仅自己可见”。
+10. 人工确认账号、可见范围、最终文案、图片版本、定时时间和时区后，再执行真实发布。
 
-> 高级主题研究、旧版 AI 工作台、高级图片工具和备用发布装配页仍然保留，但它们主要用于排查、批量处理或兼容旧流程。日常创作建议始终从 **Post Studio** 开始并回到 **Post Studio** 完成确认。
+> 高级主题研究、旧版 AI 工作台、高级图片工具和备用发布装配页仍然保留，主要用于排查、批量处理或兼容旧流程。日常创作建议始终从 **Post Studio** 开始并回到 **Post Studio** 完成确认。
 
 ### Post Studio 常用指令
-
-在 Post Studio 里，你可以像和内容创作导演沟通一样输入：
 
 ```text
 新建项目：主题是广州咖啡馆，目标人群是周末探店女生，语气真实生活化。
@@ -124,218 +93,97 @@ API Key 会保存在本地 `data/settings.json`，该目录已被 `.gitignore` �
 今晚 8 点生成定时发布确认单，仅自己可见。
 ```
 
-Agent 会读取当前 PostProject，所以“再生活化一点”“用第二张图”“今晚 8 点发”这类上下文指令会作用在当前帖子项目上。真实发布仍需要在发布检查区人工确认。
+Agent 会读取当前 PostProject，所以“再生活化一点”“用第二张图”“今晚 8 点发”会作用在当前帖子项目上。真实发布仍需要在发布检查区人工确认。
 
 ### 多账号说明
 
 项目支持保存多个小红书账号档案。每个账号档案对应一个 MCP 地址。
 
 - 一个 MCP 服务通常对应一个小红书登录会话。
-- 如果要同时管理多个账号，建议为每个账号启动独立 MCP 实例，例如 `18060`、`18061`、`18062`。
-- 在模型设置里分别添加这些 MCP 地址。
-- 当前搜索、发布、记忆和审计都会使用当前激活账号。
+- 多账号建议启动多个独立 MCP 实例，例如 `18060`、`18061`、`18062`。
+- 在 Settings 中添加这些 MCP 地址并切换当前账号。
+- 搜索、记忆、发布检查和审计都以当前激活账号为准。
+- 切换账号后，旧发布确认单必须失效并重新生成。
 
-完整配置和验收步骤见 [多账号验收指南](docs/multi-account-acceptance.md)。切换账号后必须重新生成发布确认单，第一次真实发布建议使用“仅自己可见”。
+完整配置和验收见 [多账号验收指南](docs/multi-account-acceptance.md)。
 
-### 安全策略
+### 发布安全
 
-默认发布策略是 `review_required`：
+默认策略是 `review_required`：
 
-- 研究、生成草稿、生成图片可以直接执行。
+- 研究、草稿和图片生成可以直接执行。
 - 真实发布会先生成确认单。
+- 确认前不会调用小红书发布。
 - 发布前会检查标题、正文、标签、图片、账号登录、定时时间和 Quality Gate。
-- 发布审计会记录元数据和正文哈希，不保存完整正文。
+- 点击人工确认后才会调用小红书 MCP 的发布能力。
 
 可选策略：
 
 - `draft_only`：只允许研究、草稿和图片，不允许发布。
 - `review_required`：默认安全模式，发布前必须确认。
-- `auto_publish_allowed`：允许更自动化的发布，但仍会经过后端安全检查。
+- `auto_publish_allowed`：允许更高自动化，但仍会经过后端 guardrails。
 
 ### 验收清单
 
-如果你想确认本地功能是否完整跑通，请参考 [Post Studio 验收清单](docs/post-studio-acceptance.md)。它覆盖从新建 PostProject、真实研究、爆款库 RAG、CreativeBrief、文案、图片、最终帖子、Quality Gate 到发布确认的完整检查步骤。当前完成度和剩余人工验收项见 [目标完成矩阵](docs/goal-completion-matrix.md)。真实发布和定时发布需要你明确授权后再测试；授权后请按 [真实发布验收指南](docs/real-publish-acceptance.md) 操作。多账号真实切换请按 [多账号验收指南](docs/multi-account-acceptance.md) 操作。
+本地完整验收请看 [Post Studio 验收清单](docs/post-studio-acceptance.md)。它覆盖新建 PostProject、真实研究、爆款库 RAG、CreativeBrief、文案、图片、最终帖子、Quality Gate 和发布确认。
 
-### 真实 MCP 验收与故障判断
+当前完成度和剩余人工闸门见 [目标完成矩阵](docs/goal-completion-matrix.md)。真实发布和定时发布需要你明确授权后再测试，并按 [真实发布验收指南](docs/real-publish-acceptance.md) 操作。多账号真实切换按 [多账号验收指南](docs/multi-account-acceptance.md) 操作。
 
-真实小红书研究依赖本机 MCP 服务。如果研究接口报错，请先确认：
+### 安全 Smoke 和验收命令
 
-- `http://localhost:18060/mcp` 正在运行，或者执行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1`。
-- 左侧账号状态或 `/api/health/mcp` 显示 `reachable: true`、`loggedIn: true`。
-- 如果 `/api/health/mcp` 返回 `fetch failed`，说明 MCP 没启动或端口不通，不代表 Post Studio 代码损坏。
-- 如果直接用脚本 POST `/api/chat` 返回 `403`，这是本地操作令牌保护；网页会通过 `/api/settings` 自动刷新并携带 `X-XHS-Action-Token`。
-- 真正的发布和定时发布必须先生成确认单，并由使用者明确授权后再点击。
-
-启动网页后，也可以运行只读 smoke 检查：
+只读安全检查：
 
 ```powershell
 npm run smoke:safe
-```
-
-这个命令会连续运行本地健康检查、账号配置检查、Post Studio 状态检查、聊天 SSE 通道检查、发布 dry-run 预览检查和验收状态检查，不会搜索小红书、不会生成图片、不会确认发布、不会触发真实小红书写入。
-
-也可以只运行本地健康检查：
-
-```powershell
 npm run smoke:local
-```
-
-这个命令只检查网页、MCP 登录、工具数量和当前 PostProject，不会搜索、生成图片或发布。
-
-也可以单独检查当前账号档案和 MCP 绑定：
-
-```powershell
 npm run smoke:accounts
-```
-
-这个命令只读取模型设置和 MCP 健康状态，确认当前激活账号、MCP 地址、登录状态和可运行工具是否清楚；不会切换账号、不会搜索、不会生成图片、不会发布或定时。
-
-也可以单独检查 Post Studio 统一帖子项目状态：
-
-```powershell
 npm run smoke:studio-state
-```
-
-这个命令只读取当前 PostProject，确认 stage、allowedActions、evidencePack、版本、图片和 readiness 等主工作台状态骨架是否完整；不会调用 MCP 搜索、生图、发布或定时。
-
-也可以单独检查流式聊天通道：
-
-```powershell
 npm run smoke:chat-stream
+npm run smoke:publish-dry-run
+npm run smoke:acceptance-status
 ```
 
-这个命令只验证 `/api/chat/stream` 的 SSE 传输和错误事件，不会调用模型、MCP 搜索、生图、发布或定时。
-
-如果要确认真实研究链路，可以运行：
+真实研究最小链路：
 
 ```powershell
 npm run smoke:research
 ```
 
-这个命令只执行最小研究：搜索小红书、读取详情、生成证据摘要。它强制使用 `research` 模式，不生成草稿、不生成图片、不调用发布接口。
-
-如果要确认发布链路仍停留在“预览/确认单”阶段，可以运行：
+完整本地验证：
 
 ```powershell
-npm run smoke:publish-dry-run
-```
-
-这个命令只调用发布接口的 `dryRun` 预览模式，要求返回确认信息和风险提示，不会确认发布、不会定时、不会调用真实小红书发布。
-
-也可以读取当前完成度和外部人工验收闸门：
-
-```powershell
-npm run acceptance:status
-```
-
-旧的 smoke 命令也仍然可用：
-
-```powershell
-npm run smoke:acceptance-status
-```
-
-或直接访问：
-
-```text
-http://localhost:3000/api/acceptance/status
-```
-
-这个接口只返回代码覆盖项、推荐 smoke 命令和仍需人工确认的真实外部动作，不会调用 MCP、模型、发布或定时。返回值里的 `evidencePackage` 是只读验收证据模板，包含每个真实外部闸门的 checklist、证据字段和 `evidenceRecordTemplate`，可以保存为 JSON 用于真实发布、定时发布、多账号切换和生图验收留档。
-
-如果要把当前完成矩阵导出成机器可读 JSON，用于交接、审计或最终验收留档：
-
-```powershell
-npm run acceptance:completion-matrix
-```
-
-默认会写入 `data/acceptance-completion-matrix.json`，也可以用 `XHS_ACCEPTANCE_MATRIX_PATH` 指定输出路径。
-
-也可以直接访问专用只读接口：
-
-```text
-http://localhost:3000/api/acceptance/completion-matrix
-```
-
-如果只需要证据包，也可以直接访问专用只读接口：
-
-```text
-http://localhost:3000/api/acceptance/evidence-package
-```
-
-也可以直接导出这个只读证据包到本地 `data/manual-acceptance-evidence-package.json`：
-
-```powershell
-npm run acceptance:evidence-package
-```
-
-这个命令只读取 `/api/acceptance/status` 并写入本地 `data/`，不会调用 MCP、模型、发布或定时。可以用 `XHS_ACCEPTANCE_EVIDENCE_PATH` 指定输出路径。
-
-完成真实验收后，把 JSON 里的 `evidenceRecordTemplate` 填成实际证据，再运行：
-
-```powershell
-npm run acceptance:validate-evidence
-```
-
-这个命令只校验本地 JSON 是否填完整，不会调用 MCP、模型、发布或定时。它会把校验结果写入 `data/manual-acceptance-validation-report.json`，也可以用 `XHS_ACCEPTANCE_REPORT_PATH` 指定报告路径。
-
-如果校验通过，并且你希望把这些人工验收凭证写回本地系统状态，可以运行：
-
-```powershell
-npm run acceptance:record-evidence
-```
-
-这个命令会把填好的 `evidenceRecordTemplate` 逐条提交到 `/api/acceptance/validation-records`。它只写入本地验收记录，不会调用 MCP、模型、发布或定时。
-
-录入后，如果需要把当前人工验收记录、完成度和完成矩阵一起导出留档：
-
-```powershell
-npm run acceptance:export-records
-```
-
-默认会写入 `data/acceptance-validation-records-export.json`，也可以用 `XHS_ACCEPTANCE_RECORDS_PATH` 指定输出路径。这个命令只读取 validation records，不会调用 MCP、模型、发布或定时。
-
-如需先预览不会写入的导入内容，可以运行：
-
-```powershell
-node scripts/import-acceptance-validation-records.mjs --dry-run
-```
-
-### 常用命令
-
-```powershell
-npm run dev
 npm run verify
 npm run acceptance
-npm run smoke:safe
-npm run smoke:local
-npm run smoke:accounts
-npm run smoke:studio-state
-npm run smoke:chat-stream
-npm run smoke:research
-npm run smoke:publish-dry-run
-npm run smoke:acceptance-status
-npm run acceptance:evidence-package
-npm run acceptance:validate-evidence
-npm run acceptance:record-evidence
-npm run acceptance:export-records
 npm test
 npm run typecheck
 npm run build
 ```
 
-启动 MCP 和网页：
+验收证据导出和记录：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1
+npm run acceptance:status
+npm run acceptance:completion-matrix
+npm run acceptance:evidence-package
+npm run acceptance:validate-evidence
+npm run acceptance:record-evidence
+npm run acceptance:export-records
+node scripts/import-acceptance-validation-records.mjs --dry-run
 ```
 
-登录小红书：
+也可以访问只读接口：
 
-```powershell
-.\login-xhs.ps1
+```text
+http://localhost:3000/api/acceptance/status
+http://localhost:3000/api/acceptance/completion-matrix
+http://localhost:3000/api/acceptance/evidence-package
 ```
 
-### 本地数据
+`/api/acceptance/evidence-package` 会返回只读验收证据模板 `evidencePackage`，其中包含每个真实外部闸门的 `evidenceRecordTemplate`，默认导出到 `data/manual-acceptance-evidence-package.json`。`/api/acceptance/completion-matrix` 可导出 machine-readable JSON 到 `data/acceptance-completion-matrix.json`，也可以用 `XHS_ACCEPTANCE_MATRIX_PATH` 指定输出路径。这些接口和命令不会调用 MCP、模型、发布或定时任务。
+
+`npm run acceptance:status` 用于读取 current completion and external manual gates。`npm run acceptance:evidence-package` 默认写入 `data/manual-acceptance-evidence-package.json`，也可以用 `XHS_ACCEPTANCE_EVIDENCE_PATH` 指定输出路径。`npm run acceptance:validate-evidence` 只校验本地 JSON（legacy anchor: 鍙牎楠屾湰鍦?JSON），默认写入 `data/manual-acceptance-validation-report.json`，也可以用 `XHS_ACCEPTANCE_REPORT_PATH` 指定报告路径。`npm run acceptance:record-evidence` 会提交到 `/api/acceptance/validation-records`，只写入本地验收记录（legacy anchor: 鍙啓鍏ユ湰鍦伴獙鏀惰褰?）。`npm run acceptance:export-records` 导出 validation records 到 `data/acceptance-validation-records-export.json`，也可以用 `XHS_ACCEPTANCE_RECORDS_PATH` 指定输出路径。
+
+### 本地数据与隐私
 
 以下内容会在本地生成，默认不提交：
 
@@ -347,45 +195,30 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1
 
 不要把 API Key、cookies、登录状态、私有素材或生成内容提交到公开仓库。
 
+### 常见排障
+
+- 如果脚本直接调用 `/api/chat` 返回 `403`，说明本地 action token 保护正在工作。网页会自动刷新并携带 `X-XHS-Action-Token`，普通使用不需要手动处理。
+
 ---
 
 ## English Guide
 
-XHS AI Content Studio is a local-first AI Agent workspace for Xiaohongshu content creation. It combines Xiaohongshu MCP, AI copywriting, AI image generation, card rendering, project state, publishing assembly, safety confirmation, and audit logs in one Next.js web app.
+XHS AI Content Studio is a local-first AI Agent workspace for Xiaohongshu content creation. It combines Xiaohongshu MCP, real note research, Viral Knowledge RAG, CreativeBrief, AI copywriting, AI image generation, image-text card rendering, PostProject state, publishing checks, human confirmation, and audit logs in one Next.js app.
 
-It is not just an auto-posting script. It is designed as an evidence-based content operations workspace:
-
-- Search real Xiaohongshu posts and collect title, body, tags, images, and engagement signals.
-- Extract reusable patterns from high-performing posts without copying them.
-- Generate a CreativeBrief from evidence, then use it to drive both copy and visual direction.
-- Create original titles, body copy, tags, image prompts, and image-text cards.
-- Upload product images and generate product-scene visuals.
-- Assemble copy and images into a final post.
-- Run Quality Gate, human confirmation, account checks, and publishing audit before external publishing.
+It is not a simple auto-posting script. It is an evidence-based content workspace centered on one post project: research real notes and reusable viral patterns, generate a shared CreativeBrief, then use the same evidence to drive copy, visuals, and final publishing review.
 
 ### Core Features
 
-- **Post Studio**: The main workspace for one active post project, including AI chat, Post Canvas, research evidence, CreativeBrief, assets, and publishing checks.
-- **AI Agent Orchestrator**: Detects user intent such as research, summarize, draft, revise, generate images, select images, prepare publishing, and schedule publishing. It exposes both the legacy-compatible `/api/chat` endpoint and an SSE-based `/api/chat/stream` endpoint for streaming UIs.
-- **PostProject State**: Stores topic, evidence pack, selected samples, CreativeBrief, copy versions, visual direction, generated images, final post, publish plan, and current stage.
-- **Evidence-Based Research**: Uses Xiaohongshu MCP to search and read real notes before generating content.
-- **Viral Knowledge RAG**: Saves strong samples as reusable creative patterns, including title hooks, copy structures, tag patterns, image style, pain points, and emotional triggers. Retrieval uses multi-query fusion, semantic matching, and diversity selection.
-- **Original Rewriting**: Generates new Xiaohongshu content from extracted patterns and user requirements.
-- **Image Tools**: Select or generate images from Post Studio; the advanced Image Studio remains available for batch AI generation, product-scene images, reference-image generation, and local image-text card rendering.
-- **Card Engine**: Renders Xiaohongshu-style card images locally for guides, lists, tutorials, and educational posts.
-- **Publishing Checks**: Review title, content, tags, images, visibility, account, immediate publishing, and scheduled publishing inside Post Studio; the legacy assembly page is a fallback/debug entry.
-- **Publishing Safety**: Defaults to `review_required`; real publishing requires confirmation and backend guardrails.
-- **Audit Logs**: Records publish preview, awaiting approval, publishing, published, scheduled, and failed events; stores content hashes instead of full body text.
-- **Local Privacy**: API keys, cookies, drafts, assets, and history stay on the user's machine by default.
-
-### Requirements
-
-- Windows 10/11
-- Node.js 20+
-- npm
-- A Xiaohongshu account
-- A text model API key, such as Gemini, OpenAI, or an OpenAI-compatible provider
-- An image model API key, such as Gemini 2.5 Flash Image / Nano Banana, OpenAI, or a compatible provider
+- **Post Studio**: The main workspace. Daily creation starts here and returns here for publishing confirmation.
+- **PostProject**: Stores topic, product info, audience, goal, evidencePack, CreativeBrief, copy versions, visual direction, generated images, final post, publish plan, and current stage.
+- **AI Agent**: Reads the active PostProject and understands contextual commands like "make it more natural", "use the second image", and "post tonight at 8".
+- **Real Xiaohongshu Research**: Uses Xiaohongshu MCP to search notes, read details, and extract title, body, tags, images, comments, and engagement data.
+- **Viral Knowledge RAG**: Saves strong samples as reusable creative patterns instead of copyable source text.
+- **CreativeBrief**: Drives both copy and visual direction.
+- **Images And Cards**: Supports AI images, product-scene images, reference-image generation, and 1080x1440 Xiaohongshu cards.
+- **Quality Gate**: Checks exaggeration, ad tone, tag stuffing, visual consistency, false claims, fake data, and product appearance risks.
+- **Publishing Safety**: Defaults to `review_required`. Real publishing requires human confirmation of account, visibility, copy, images, schedule time, and timezone.
+- **Audit Logs**: Records publish preview, confirmation, published, scheduled, and failed events. Body text is stored as hashes and metadata.
 
 ### Quick Start
 
@@ -396,7 +229,7 @@ npm install
 powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1
 ```
 
-Then open:
+Open:
 
 ```text
 http://localhost:3000
@@ -404,8 +237,8 @@ http://localhost:3000
 
 The start script launches:
 
-- Xiaohongshu MCP: `http://localhost:18060/mcp`
 - Web app: `http://localhost:3000`
+- Xiaohongshu MCP: `http://localhost:18060/mcp`
 
 ### Log In To Xiaohongshu
 
@@ -415,40 +248,38 @@ If the sidebar account card shows that Xiaohongshu is not logged in, run:
 .\login-xhs.ps1
 ```
 
-Complete login in the popup window, return to the web app, and refresh the account status.
+Complete login in the popup browser, return to the app, and refresh account status.
 
 ### Configure Models
 
 Open **Settings / Model Settings**:
 
-- For most users: choose Gemini or OpenAI and enter the API key.
-- For custom OpenAI-compatible services: fill Base URL and model name in advanced settings.
+- Most users: choose Gemini or OpenAI and enter an API key.
+- Advanced users: fill Base URL and model name for OpenAI-compatible services.
+- Image generation: configure an image model API key such as Gemini 2.5 Flash Image / Nano Banana or another compatible model.
 
 API keys are stored locally in `data/settings.json`, which is ignored by Git.
 
 ### Recommended Workflow
 
 1. Open `http://localhost:3000`.
-2. Check Xiaohongshu MCP and login status in the sidebar.
-3. Configure text and image model API keys.
-4. Go to **Post Studio** and type a request, for example:
+2. Confirm Xiaohongshu MCP and login status.
+   - You can also check `http://localhost:3000/api/health/mcp`.
+3. Go to **Post Studio**.
+4. Type a request:
 
 ```text
-Find high-save Guangzhou coffee shop posts from the last week, analyze title and image style, then generate a Xiaohongshu note for a cafe-review account.
+Find high-save Guangzhou coffee shop posts from the last week, analyze titles, body copy, tags, and image style, then generate a Xiaohongshu note for a cafe-review account.
 ```
 
-5. The agent searches real posts, extracts evidence, creates a CreativeBrief, and drafts the post.
-6. Save valuable samples into the Viral Knowledge Base when you find reusable patterns.
-7. Review title, body, tags, and image direction in Post Canvas.
-8. In **Post Studio**, generate or select AI images, product-scene images, or image-text cards from the image/material area.
-9. In **Post Studio**, use the publishing check area to confirm the final title, body, tags, images, account, visibility, and schedule.
-10. Use “private only” for the first real publishing test.
-
-> Advanced Topic Research, Legacy AI Workspace, Advanced Image Studio, and Fallback Publishing Assembly are still available for debugging, batch work, and old-flow compatibility. For daily creation, start in **Post Studio** and return to **Post Studio** for final confirmation.
+5. The agent searches real notes, creates evidence summaries, and builds a CreativeBrief.
+6. Save strong samples into the Viral Knowledge Base when useful.
+7. Review and edit title, body, tags, visual direction, and images in Post Canvas.
+8. Run Quality Gate.
+9. Create a publish confirmation. Use private visibility for the first real publishing test.
+10. Manually confirm account, visibility, final copy, image versions, schedule time, and timezone before real publishing.
 
 ### Useful Post Studio Prompts
-
-In Post Studio, you can talk to the agent like a content director:
 
 ```text
 Start a new project: topic is Guangzhou coffee shops, audience is weekend cafe visitors, tone is honest and lifestyle-driven.
@@ -461,18 +292,19 @@ Use the second image, assemble the current copy and image into the final post, a
 Create a private scheduled publish confirmation for 8 PM tonight.
 ```
 
-The agent reads the active PostProject, so contextual commands such as “make it more natural”, “use the second image”, and “post tonight at 8” apply to the current post project. Real publishing still requires manual confirmation in the publishing check area.
+The agent reads the active PostProject, so contextual commands apply to the current post project. Real publishing still requires manual confirmation.
 
 ### Multi-Account Notes
 
 The app can store multiple Xiaohongshu account profiles. Each profile points to one MCP endpoint.
 
 - One MCP service usually maps to one Xiaohongshu login session.
-- To manage multiple accounts, run separate MCP instances on different ports, such as `18060`, `18061`, and `18062`.
-- Add each MCP endpoint as an account profile in the web app.
-- Search, publishing, creator memory, and audit logs use the currently active account.
+- To manage multiple accounts, run separate MCP instances on different ports such as `18060`, `18061`, and `18062`.
+- Add each MCP endpoint in Settings.
+- Search, memory, publishing checks, and audit logs use the active account.
+- After switching accounts, regenerate the publishing confirmation before any real external action.
 
-For the full setup and validation flow, follow the [multi-account acceptance guide](docs/multi-account-acceptance.md). After switching accounts, regenerate the publishing confirmation before any real external action.
+See the [multi-account acceptance guide](docs/multi-account-acceptance.md).
 
 ### Publishing Safety
 
@@ -480,8 +312,9 @@ The default policy is `review_required`:
 
 - Research, drafting, and image generation can run directly.
 - Real publishing creates a confirmation request first.
+- Publishing is not called before confirmation.
 - Publishing checks title, body, tags, images, active account login, schedule time, and Quality Gate.
-- The audit log stores metadata and a content hash, not the full body text.
+- Only the final manual confirmation triggers the Xiaohongshu MCP publishing action.
 
 Policies:
 
@@ -491,190 +324,67 @@ Policies:
 
 ### Acceptance Checklist
 
-To verify that the local workspace is working end to end, follow the [Post Studio acceptance checklist](docs/post-studio-acceptance.md). It covers a clean PostProject, real research, Viral Knowledge RAG, CreativeBrief, copy, images, final post assembly, Quality Gate, and publishing confirmation. Current completion status and remaining manual checks are listed in the [goal completion matrix](docs/goal-completion-matrix.md). Real publishing and scheduled publishing should only be tested after explicit user authorization with the [real publishing acceptance guide](docs/real-publish-acceptance.md). Multi-account switching should be validated with the [multi-account acceptance guide](docs/multi-account-acceptance.md).
+To verify the local workspace end to end, follow the [Post Studio acceptance checklist](docs/post-studio-acceptance.md). It covers a clean PostProject, real research, Viral Knowledge RAG, CreativeBrief, copy, images, final post assembly, Quality Gate, and publishing confirmation.
 
-### Real MCP Smoke Test And Troubleshooting
+Current completion status and manual gates are listed in the [goal completion matrix](docs/goal-completion-matrix.md). Real publishing and scheduled publishing should only be tested after explicit user authorization with the [real publishing acceptance guide](docs/real-publish-acceptance.md). Multi-account switching should be validated with the [multi-account acceptance guide](docs/multi-account-acceptance.md).
 
-Real Xiaohongshu research depends on the local MCP service. If research fails, check:
+### Smoke And Acceptance Commands
 
-- `http://localhost:18060/mcp` is running, or run `powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1`.
-- The sidebar account card or `/api/health/mcp` reports `reachable: true` and `loggedIn: true`.
-- If `/api/health/mcp` returns `fetch failed`, the MCP service is not running or the port is unreachable; this does not mean Post Studio is broken.
-- If direct script calls to `/api/chat` return `403`, the local action-token guard is working; the web client refreshes the token through `/api/settings` and sends `X-XHS-Action-Token`.
-- Real publishing and scheduled publishing must be confirmed by the user before any external MCP write is triggered.
-
-After the web app is running, you can also run the read-only smoke check:
+Safe read-only checks:
 
 ```powershell
 npm run smoke:safe
-```
-
-This command runs local health checks, account configuration checks, Post Studio state checks, chat SSE transport checks, publish dry-run preview checks, and acceptance status checks. It does not search Xiaohongshu, generate images, confirm publishing, or trigger real Xiaohongshu writes.
-
-You can also run only the local health check:
-
-```powershell
 npm run smoke:local
-```
-
-This command only checks the web app, MCP login, tool count, and active PostProject. It does not search, generate images, or publish.
-
-You can also check the active account profile and MCP binding only:
-
-```powershell
 npm run smoke:accounts
-```
-
-This command only reads model settings and MCP health status to verify the active account, MCP URL, login status, and runnable tools. It does not switch accounts, search, generate images, publish, or schedule.
-
-You can also check the unified Post Studio project state only:
-
-```powershell
 npm run smoke:studio-state
-```
-
-This command only reads the active PostProject and verifies the stage, allowedActions, evidencePack, versions, images, and readiness state backbone. It does not call MCP search, image generation, publishing, or scheduling.
-
-You can also check the streaming chat transport only:
-
-```powershell
 npm run smoke:chat-stream
+npm run smoke:publish-dry-run
+npm run smoke:acceptance-status
 ```
 
-This command only verifies `/api/chat/stream` SSE transport and error events. It does not call the model, MCP search, image generation, publishing, or scheduling.
-
-To verify the real research chain, run:
+Real research smoke:
 
 ```powershell
 npm run smoke:research
 ```
 
-This command runs the smallest research-only flow: search Xiaohongshu, read details, and build evidence. It forces `research` mode and does not create drafts, generate images, or call publishing APIs.
-
-To verify that publishing still stops at preview/confirmation, run:
+Full local verification:
 
 ```powershell
-npm run smoke:publish-dry-run
-```
-
-This command only calls `/api/publish` in `dryRun` preview mode. It expects confirmation metadata and risk information, and it does not confirm, schedule, or trigger real Xiaohongshu publishing.
-
-You can also read the current completion and external manual gates:
-
-```powershell
-npm run acceptance:status
-```
-
-The older smoke command is still available too:
-
-```powershell
-npm run smoke:acceptance-status
-```
-
-Or open:
-
-```text
-http://localhost:3000/api/acceptance/status
-```
-
-This endpoint only returns covered areas, recommended smoke commands, and remaining manual external checks. It does not call MCP, models, publishing, or scheduling. The `evidencePackage` field is a read-only validation evidence template with each external gate's checklist, evidence fields, and `evidenceRecordTemplate`; save it as JSON when recording real publishing, scheduled publishing, multi-account, or image-generation validation.
-
-To export the current completion matrix as machine-readable JSON for handoff, audit, or final acceptance records:
-
-```powershell
-npm run acceptance:completion-matrix
-```
-
-By default it writes `data/acceptance-completion-matrix.json`. Set `XHS_ACCEPTANCE_MATRIX_PATH` to choose another output path.
-
-You can also open the dedicated read-only endpoint:
-
-```text
-http://localhost:3000/api/acceptance/completion-matrix
-```
-
-If you only need the evidence package, open the dedicated read-only endpoint:
-
-```text
-http://localhost:3000/api/acceptance/evidence-package
-```
-
-You can also export this read-only evidence package to `data/manual-acceptance-evidence-package.json`:
-
-```powershell
-npm run acceptance:evidence-package
-```
-
-This command only reads `/api/acceptance/status` and writes to local `data/`. It does not call MCP, models, publishing, or scheduling. Set `XHS_ACCEPTANCE_EVIDENCE_PATH` to choose another output path.
-
-After real-world validation, fill the exported JSON's `evidenceRecordTemplate` fields with actual evidence and run:
-
-```powershell
-npm run acceptance:validate-evidence
-```
-
-This command only validates the local JSON file. It does not call MCP, models, publishing, or scheduling. It writes the validation result to `data/manual-acceptance-validation-report.json`; set `XHS_ACCEPTANCE_REPORT_PATH` to choose another report path.
-
-If validation passes and you want the local app to remember those manual checks, run:
-
-```powershell
-npm run acceptance:record-evidence
-```
-
-This command submits the filled `evidenceRecordTemplate` records to `/api/acceptance/validation-records`. It only writes local acceptance records and does not call MCP, models, publishing, or scheduling.
-
-After recording evidence, export the current validation records, completion status, and completion matrix for handoff or audit:
-
-```powershell
-npm run acceptance:export-records
-```
-
-By default it writes `data/acceptance-validation-records-export.json`. Set `XHS_ACCEPTANCE_RECORDS_PATH` to choose another output path. This command only reads validation records and does not call MCP, models, publishing, or scheduling.
-
-To preview the import without writing local records, run:
-
-```powershell
-node scripts/import-acceptance-validation-records.mjs --dry-run
-```
-
-### Useful Commands
-
-```powershell
-npm run dev
 npm run verify
 npm run acceptance
-npm run smoke:safe
-npm run smoke:local
-npm run smoke:accounts
-npm run smoke:studio-state
-npm run smoke:chat-stream
-npm run smoke:research
-npm run smoke:publish-dry-run
-npm run smoke:acceptance-status
-npm run acceptance:evidence-package
-npm run acceptance:validate-evidence
-npm run acceptance:record-evidence
-npm run acceptance:export-records
 npm test
 npm run typecheck
 npm run build
 ```
 
-Start MCP and web app:
+Acceptance evidence export and recording:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\start-xhs.ps1
+npm run acceptance:status
+npm run acceptance:completion-matrix
+npm run acceptance:evidence-package
+npm run acceptance:validate-evidence
+npm run acceptance:record-evidence
+npm run acceptance:export-records
+node scripts/import-acceptance-validation-records.mjs --dry-run
 ```
 
-Login to Xiaohongshu:
+Read-only endpoints:
 
-```powershell
-.\login-xhs.ps1
+```text
+http://localhost:3000/api/acceptance/status
+http://localhost:3000/api/acceptance/completion-matrix
+http://localhost:3000/api/acceptance/evidence-package
 ```
 
-### Local Data
+`/api/acceptance/evidence-package` exports a read-only validation evidence template, usually to `data/manual-acceptance-evidence-package.json`. `/api/acceptance/completion-matrix` can export machine-readable JSON to `data/acceptance-completion-matrix.json`; set `XHS_ACCEPTANCE_MATRIX_PATH` to choose another output path. These commands and endpoints do not call MCP, models, publishing, or scheduled publishing.
 
-The app creates local files that should not be committed:
+`npm run acceptance:status` reads the current completion and external manual gates. `npm run acceptance:evidence-package` writes `data/manual-acceptance-evidence-package.json` by default; set `XHS_ACCEPTANCE_EVIDENCE_PATH` to choose another output path. `npm run acceptance:validate-evidence` only validates the local JSON file and writes `data/manual-acceptance-validation-report.json` by default; set `XHS_ACCEPTANCE_REPORT_PATH` to choose another report path. `npm run acceptance:record-evidence` posts to `/api/acceptance/validation-records` and only writes local acceptance records. `npm run acceptance:export-records` exports validation records to `data/acceptance-validation-records-export.json`; set `XHS_ACCEPTANCE_RECORDS_PATH` to choose another output path.
+
+### Local Data And Privacy
+
+Local generated files are ignored by Git:
 
 - `data/`: settings, jobs, drafts, chat history, audit logs, model usage.
 - `generated-assets/`: uploaded images, generated images, rendered cards.
@@ -683,3 +393,7 @@ The app creates local files that should not be committed:
 - `*.log`: runtime logs.
 
 Never commit API keys, cookies, login sessions, private assets, or generated personal content to a public repository.
+
+### Troubleshooting
+
+- If direct script calls to `/api/chat` return `403`, the local action-token guard is working. The web client refreshes and sends `X-XHS-Action-Token` automatically.
