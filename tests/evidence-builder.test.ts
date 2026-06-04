@@ -198,4 +198,32 @@ describe("agent evidence builder", () => {
       }
     });
   });
+
+  it("does not ask the Agent to refresh CreativeBrief when viral RAG adds no new insights", () => {
+    const existingViralInsight = insight({
+      id: "viral-insight-hook",
+      sourceType: "viral_library",
+      type: "hook",
+      insight: "Use an avoid-disappointment scene hook",
+      sourceSampleIds: ["viral-case-1"]
+    });
+    const result = buildEvidencePackWithViralKnowledge(project({
+      evidencePack: {
+        sampleIds: ["note-live", "viral-case-1"],
+        insights: [insight(), existingViralInsight],
+        summary: { report: "live evidence" },
+        updatedAt: now
+      },
+      creativeBrief: {
+        ...project().creativeBrief!,
+        basedOnEvidenceIds: ["insight-live-title", "viral-insight-hook"]
+      }
+    }), pack({
+      insights: [existingViralInsight]
+    }));
+
+    expect(result.addedInsightIds).toEqual([]);
+    expect(result.evidencePack.insights.map((item) => item.id)).toEqual(["insight-live-title", "viral-insight-hook"]);
+    expect(result.shouldRefreshCreativeBrief).toBe(false);
+  });
 });

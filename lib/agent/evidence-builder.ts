@@ -17,8 +17,9 @@ export function buildEvidencePackWithViralKnowledge(
   const addedInsights = normalizedViralInsights.filter((insight) => !existingInsightIds.has(insight.id));
   const insights = [...normalizeEvidenceInsights(project.evidencePack.insights, "realtime", { preserveExistingSourceType: true }), ...addedInsights];
   const sourceCounts = countEvidenceSources(insights);
-  const shouldRefreshCreativeBrief = !project.creativeBrief?.basedOnEvidenceIds.some((id) =>
-    addedInsights.some((insight) => insight.id === id)
+  const citedEvidenceIds = new Set(project.creativeBrief?.basedOnEvidenceIds ?? []);
+  const shouldRefreshCreativeBrief = addedInsights.length > 0 && (
+    !project.creativeBrief || addedInsights.some((insight) => !citedEvidenceIds.has(insight.id))
   );
 
   return {
