@@ -61,6 +61,15 @@ describe("post studio viral panels", () => {
         evidenceIds: ["viral-insight-1"]
       },
       insights: [],
+      evidenceTrace: [{
+        caseId: "viral-1",
+        sourceSampleId: "note-1",
+        sourceUrl: "https://example.com/note",
+        score: 0.9,
+        matchedQueries: ["广州咖啡馆 标题钩子"],
+        reasons: ["RAG-Fusion query: 广州咖啡馆 标题钩子", "语义相似"],
+        evidenceInsightIds: ["viral-insight-1", "viral-insight-visual"]
+      }],
       results: [{ case: viralCase, score: 0.9, reasons: ["语义相似"], angleSummary: "适合谁前置 · 探店", matchedQueries: ["广州咖啡馆"] }]
     };
 
@@ -70,6 +79,11 @@ describe("post studio viral panels", () => {
     expect(html).toContain("综合实时研究和爆款库规律");
     expect(html).toContain("适合谁前置");
     expect(html).toContain("原创边界");
+    expect(html).toContain("来源追踪");
+    expect(html).toContain("viral-1");
+    expect(html).toContain("0.90");
+    expect(html).toContain("广州咖啡馆 标题钩子");
+    expect(html).toContain("进入 evidencePack：viral-insight-1 / viral-insight-visual");
   });
 
   it("renders recent viral summaries with a drawer handoff action", () => {

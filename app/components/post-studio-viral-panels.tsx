@@ -26,6 +26,7 @@ export function ViralStrategyCard({ viralPack }: { viralPack: ViralKnowledgePack
           ))}
         </div>
       ) : null}
+      <ViralSourceTraceList viralPack={viralPack} />
       <div className="viralStrategyGrid">
         <KnowledgeList title="标题打法" items={viralPack.strategyReport.titleMoves} />
         <KnowledgeList title="正文结构" items={viralPack.strategyReport.structureMoves} />
@@ -34,6 +35,60 @@ export function ViralStrategyCard({ viralPack }: { viralPack: ViralKnowledgePack
       </div>
     </div>
   );
+}
+
+function ViralSourceTraceList({ viralPack }: { viralPack: ViralKnowledgePack }) {
+  const traces = buildViralSourceTraceItems(viralPack).slice(0, 3);
+  if (!traces.length) return null;
+  return (
+    <div className="viralSourceTraceList" aria-label="爆款库来源追踪">
+      <strong>来源追踪</strong>
+      {traces.map((trace) => (
+        <article key={trace.caseId}>
+          <span>
+            {trace.caseId}
+            {trace.score ? ` · ${trace.score}` : ""}
+          </span>
+          <p>{trace.matchedQueries.length ? trace.matchedQueries.slice(0, 2).join(" / ") : "来自本次 RAG 命中样本"}</p>
+          {trace.reasons.length ? <small>命中原因：{trace.reasons.slice(0, 2).join(" / ")}</small> : null}
+          {trace.evidenceInsightIds.length ? <small>进入 evidencePack：{trace.evidenceInsightIds.slice(0, 4).join(" / ")}</small> : null}
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function buildViralSourceTraceItems(viralPack: ViralKnowledgePack): Array<{
+  caseId: string;
+  score: string;
+  matchedQueries: string[];
+  reasons: string[];
+  evidenceInsightIds: string[];
+}> {
+  const traces = viralPack.evidenceTrace?.map((trace) => ({
+    caseId: trace.caseId,
+    score: Number.isFinite(trace.score) ? trace.score.toFixed(2) : "",
+    matchedQueries: trace.matchedQueries ?? [],
+    reasons: trace.reasons ?? [],
+    evidenceInsightIds: trace.evidenceInsightIds ?? []
+  })) ?? [];
+  const fallback = viralPack.results?.map((result) => ({
+    caseId: result.case.id,
+    score: Number.isFinite(result.score) ? result.score.toFixed(2) : "",
+    matchedQueries: result.matchedQueries ?? [],
+    reasons: result.reasons ?? [],
+    evidenceInsightIds: []
+  })) ?? [];
+  return uniqueTraceItems([...traces, ...fallback]);
+}
+
+function uniqueTraceItems<T extends { caseId: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (!item.caseId || seen.has(item.caseId)) return false;
+    seen.add(item.caseId);
+    return true;
+  });
 }
 
 export function RecentViralPanel({

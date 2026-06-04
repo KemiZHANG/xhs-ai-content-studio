@@ -8104,6 +8104,38 @@ textarea {
   width: fit-content;
 }
 
+.viralSourceTraceList {
+  display: grid;
+  gap: 8px;
+}
+
+.viralSourceTraceList > strong {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.viralSourceTraceList article {
+  border-left: 2px solid rgba(65, 86, 61, 0.22);
+  display: grid;
+  gap: 4px;
+  padding-left: 10px;
+}
+
+.viralSourceTraceList span {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.viralSourceTraceList p,
+.viralSourceTraceList small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 0;
+}
+
 .viralStrategyGrid {
   display: grid;
   gap: 8px;
