@@ -195,6 +195,13 @@ describe("post studio agent pane", () => {
             reasons: ["RAG-Fusion query: coffee title hook", "语义相似"],
             evidenceInsightIds: ["viral-insight-hook", "viral-insight-visual"]
           }],
+          results: [{
+            case: { id: "viral-case-1" },
+            score: 0.82,
+            matchedQueries: ["coffee title hook"],
+            reasons: ["语义相似"],
+            scoreBreakdown: { keyword: 0.14, semantic: 0.28, metrics: 0.11, quality: 0.07, filters: 0.04 }
+          }],
           strategyReport: {
             originalityRules: ["只学习标题钩子和结构，不复制原文。", "图片只学习信息层级，不复刻构图。"],
             evidenceIds: ["viral-case-1", "viral-insight-hook"]
@@ -226,6 +233,7 @@ describe("post studio agent pane", () => {
     expect(html).toContain("0.82");
     expect(html).toContain("coffee title hook");
     expect(html).toContain("RAG-Fusion query: coffee title hook");
+    expect(html).toContain("评分拆解 语义 0.28 / 关键词 0.14 / 互动 0.11 / 质量 0.07 / 筛选 0.04");
     expect(html).toContain("证据 viral-insight-hook / viral-insight-visual");
     expect(html).toContain("原创边界");
     expect(html).toContain("只学习标题钩子和结构，不复制原文。");

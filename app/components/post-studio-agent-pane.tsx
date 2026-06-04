@@ -428,6 +428,7 @@ function AgentCardInlineDetails({
                 {source.score ? ` · ${source.score}` : ""}
                 {source.matchedQueries.length ? ` · ${source.matchedQueries.slice(0, 2).join(" / ")}` : ""}
                 {source.reasons.length ? ` · ${source.reasons.slice(0, 2).join(" / ")}` : ""}
+                {source.scoreBreakdown ? ` · 评分拆解 ${source.scoreBreakdown}` : ""}
                 {source.evidenceInsightIds.length ? ` · 证据 ${source.evidenceInsightIds.slice(0, 3).join(" / ")}` : ""}
               </p>
             ))}
@@ -495,12 +496,20 @@ function extractViralKnowledgeDisplay(card: AgentResponseCard): {
     matchedQueries: string[];
     reasons: string[];
     evidenceInsightIds: string[];
+    scoreBreakdown: string;
   }>;
   originalityRules: string[];
   nextActions: Array<{ label: string; action: string; disabled?: boolean }>;
 } | null {
   if (card.type !== "viral_knowledge" || !isRecordValue(card.data)) {
     return null;
+  }
+  const resultRecords = Array.isArray(card.data.results) ? card.data.results.filter(isRecordValue) : [];
+  const resultBreakdownsByCaseId = new Map<string, string>();
+  for (const result of resultRecords) {
+    if (!isRecordValue(result.case) || typeof result.case.id !== "string") continue;
+    const breakdown = formatViralScoreBreakdown(result.scoreBreakdown);
+    if (breakdown) resultBreakdownsByCaseId.set(result.case.id, breakdown);
   }
   const traceSources = Array.isArray(card.data.evidenceTrace)
     ? card.data.evidenceTrace.flatMap((item) => {
@@ -512,22 +521,23 @@ function extractViralKnowledgeDisplay(card: AgentResponseCard): {
           score: typeof item.score === "number" ? item.score.toFixed(2) : "",
           matchedQueries: stringListFromRecordValue(item.matchedQueries),
           reasons: stringListFromRecordValue(item.reasons),
-          evidenceInsightIds: stringListFromRecordValue(item.evidenceInsightIds)
+          evidenceInsightIds: stringListFromRecordValue(item.evidenceInsightIds),
+          scoreBreakdown: resultBreakdownsByCaseId.get(caseId) ?? ""
         }];
       })
     : [];
-  const resultSources = Array.isArray(card.data.results)
-    ? card.data.results.flatMap((item) => {
+  const resultSources = resultRecords
+    .flatMap((item) => {
         if (!isRecordValue(item) || !isRecordValue(item.case) || typeof item.case.id !== "string") return [];
         return [{
           caseId: item.case.id,
           score: typeof item.score === "number" ? item.score.toFixed(2) : "",
           matchedQueries: stringListFromRecordValue(item.matchedQueries),
           reasons: stringListFromRecordValue(item.reasons),
-          evidenceInsightIds: []
+          evidenceInsightIds: [],
+          scoreBreakdown: formatViralScoreBreakdown(item.scoreBreakdown)
         }];
-      })
-    : [];
+      });
   const sources = uniqueViralSources([...traceSources, ...resultSources]).slice(0, 2);
   const strategyReport = isRecordValue(card.data.strategyReport) ? card.data.strategyReport : null;
   const originalityRules = strategyReport ? stringListFromRecordValue(strategyReport.originalityRules).slice(0, 3) : [];
@@ -548,12 +558,14 @@ function uniqueViralSources(sources: Array<{
   matchedQueries: string[];
   reasons: string[];
   evidenceInsightIds: string[];
+  scoreBreakdown: string;
 }>): Array<{
   caseId: string;
   score: string;
   matchedQueries: string[];
   reasons: string[];
   evidenceInsightIds: string[];
+  scoreBreakdown: string;
 }> {
   const seen = new Set<string>();
   const result: Array<{
@@ -562,6 +574,7 @@ function uniqueViralSources(sources: Array<{
     matchedQueries: string[];
     reasons: string[];
     evidenceInsightIds: string[];
+    scoreBreakdown: string;
   }> = [];
   for (const source of sources) {
     if (seen.has(source.caseId)) continue;
@@ -569,6 +582,20 @@ function uniqueViralSources(sources: Array<{
     result.push(source);
   }
   return result;
+}
+
+function formatViralScoreBreakdown(value: unknown): string {
+  if (!isRecordValue(value)) return "";
+  return [
+    ["语义", value.semantic],
+    ["关键词", value.keyword],
+    ["互动", value.metrics],
+    ["质量", value.quality],
+    ["筛选", value.filters]
+  ]
+    .filter(([, score]) => typeof score === "number" && Number.isFinite(score) && score > 0)
+    .map(([label, score]) => `${label} ${Number(score).toFixed(2)}`)
+    .join(" / ");
 }
 
 function extractClarifyNextStepsDisplay(card: AgentResponseCard): {
