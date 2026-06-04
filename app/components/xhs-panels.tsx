@@ -286,7 +286,7 @@ export function PublishAuditPanel({
                   <strong>{audit.title || "未命名发布"}</strong>
                   <p>
                     {audit.requestedBy} · {audit.visibility} · {audit.imageCount} 张图 · {audit.tags.length} 个标签
-                    {audit.scheduleAt ? ` · 定时 ${audit.scheduleAt}` : ""}
+                    {audit.scheduleAt ? ` · 定时 ${formatAuditSchedule(audit)}` : ""}
                   </p>
                   <p className="muted">内容哈希：{audit.contentHash}；确认单：{audit.publishIntentId ?? "-"}</p>
                   {audit.evidenceCitationSummary ? (
@@ -322,6 +322,10 @@ export function PublishAuditPanel({
       </section>
     </div>
   );
+}
+
+function formatAuditSchedule(audit: PublishAuditRecord): string {
+  return audit.scheduleTimezone ? `${audit.scheduleAt}（${audit.scheduleTimezone}）` : audit.scheduleAt ?? "";
 }
 
 export function JobsPanel({
