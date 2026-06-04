@@ -152,6 +152,13 @@ export type WorkflowResult = {
     results: Array<{
       score: number;
       reasons: string[];
+      scoreBreakdown?: {
+        keyword: number;
+        semantic: number;
+        metrics: number;
+        quality: number;
+        filters: number;
+      };
       diversityKey?: string;
       angleSummary?: string;
       matchedQueries?: string[];

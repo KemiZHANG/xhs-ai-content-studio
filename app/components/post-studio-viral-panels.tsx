@@ -3,6 +3,7 @@
 import type { ViralCase, WorkflowResult } from "@/app/types";
 
 type ViralKnowledgePack = NonNullable<WorkflowResult["viralKnowledge"]>;
+type ViralScoreBreakdown = NonNullable<ViralKnowledgePack["results"][number]["scoreBreakdown"]>;
 
 export type RecentViralSummary = {
   item: ViralCase;
@@ -51,6 +52,7 @@ function ViralSourceTraceList({ viralPack }: { viralPack: ViralKnowledgePack }) 
           </span>
           <p>{trace.matchedQueries.length ? trace.matchedQueries.slice(0, 2).join(" / ") : "来自本次 RAG 命中样本"}</p>
           {trace.reasons.length ? <small>命中原因：{trace.reasons.slice(0, 2).join(" / ")}</small> : null}
+          {trace.scoreBreakdown ? <small>评分拆解：{trace.scoreBreakdown}</small> : null}
           {trace.evidenceInsightIds.length ? <small>进入 evidencePack：{trace.evidenceInsightIds.slice(0, 4).join(" / ")}</small> : null}
         </article>
       ))}
@@ -64,22 +66,40 @@ function buildViralSourceTraceItems(viralPack: ViralKnowledgePack): Array<{
   matchedQueries: string[];
   reasons: string[];
   evidenceInsightIds: string[];
+  scoreBreakdown: string;
 }> {
+  const resultsByCaseId = new Map((viralPack.results ?? []).map((result) => [result.case.id, result]));
   const traces = viralPack.evidenceTrace?.map((trace) => ({
     caseId: trace.caseId,
     score: Number.isFinite(trace.score) ? trace.score.toFixed(2) : "",
     matchedQueries: trace.matchedQueries ?? [],
     reasons: trace.reasons ?? [],
-    evidenceInsightIds: trace.evidenceInsightIds ?? []
+    evidenceInsightIds: trace.evidenceInsightIds ?? [],
+    scoreBreakdown: formatScoreBreakdown(resultsByCaseId.get(trace.caseId)?.scoreBreakdown)
   })) ?? [];
   const fallback = viralPack.results?.map((result) => ({
     caseId: result.case.id,
     score: Number.isFinite(result.score) ? result.score.toFixed(2) : "",
     matchedQueries: result.matchedQueries ?? [],
     reasons: result.reasons ?? [],
-    evidenceInsightIds: []
+    evidenceInsightIds: [],
+    scoreBreakdown: formatScoreBreakdown(result.scoreBreakdown)
   })) ?? [];
   return uniqueTraceItems([...traces, ...fallback]);
+}
+
+function formatScoreBreakdown(scoreBreakdown?: ViralScoreBreakdown): string {
+  if (!scoreBreakdown) return "";
+  return [
+    ["语义", scoreBreakdown.semantic],
+    ["关键词", scoreBreakdown.keyword],
+    ["互动", scoreBreakdown.metrics],
+    ["质量", scoreBreakdown.quality],
+    ["筛选", scoreBreakdown.filters]
+  ]
+    .filter(([, value]) => Number.isFinite(value) && Number(value) > 0)
+    .map(([label, value]) => `${label} ${Number(value).toFixed(2)}`)
+    .join(" / ");
 }
 
 function uniqueTraceItems<T extends { caseId: string }>(items: T[]): T[] {

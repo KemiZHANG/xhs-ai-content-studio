@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { RecentViralPanel, ViralStrategyCard, type RecentViralSummary } from "@/app/components/post-studio-viral-panels";
@@ -70,10 +71,17 @@ describe("post studio viral panels", () => {
         reasons: ["RAG-Fusion query: 广州咖啡馆 标题钩子", "语义相似"],
         evidenceInsightIds: ["viral-insight-1", "viral-insight-visual"]
       }],
-      results: [{ case: viralCase, score: 0.9, reasons: ["语义相似"], angleSummary: "适合谁前置 · 探店", matchedQueries: ["广州咖啡馆"] }]
+      results: [{
+        case: viralCase,
+        score: 0.9,
+        reasons: ["语义相似"],
+        scoreBreakdown: { keyword: 0.16, semantic: 0.31, metrics: 0.12, quality: 0.06, filters: 0.08 },
+        angleSummary: "适合谁前置 · 探店",
+        matchedQueries: ["广州咖啡馆"]
+      }]
     };
 
-    const html = renderToStaticMarkup(<ViralStrategyCard viralPack={viralPack} />);
+    const html = renderToStaticMarkup(createElement(ViralStrategyCard, { viralPack }));
 
     expect(html).toContain("爆款策略摘要");
     expect(html).toContain("综合实时研究和爆款库规律");
@@ -83,6 +91,7 @@ describe("post studio viral panels", () => {
     expect(html).toContain("viral-1");
     expect(html).toContain("0.90");
     expect(html).toContain("广州咖啡馆 标题钩子");
+    expect(html).toContain("评分拆解：语义 0.31 / 关键词 0.16 / 互动 0.12 / 质量 0.06 / 筛选 0.08");
     expect(html).toContain("进入 evidencePack：viral-insight-1 / viral-insight-visual");
   });
 
@@ -93,7 +102,7 @@ describe("post studio viral panels", () => {
       rewriteRules: ["换成自己的产品场景"]
     }];
 
-    const html = renderToStaticMarkup(<RecentViralPanel summaries={summaries} onOpenCase={() => undefined} />);
+    const html = renderToStaticMarkup(createElement(RecentViralPanel, { summaries, onOpenCase: () => undefined }));
 
     expect(html).toContain("最近入库提炼");
     expect(html).toContain("AI 提炼");
