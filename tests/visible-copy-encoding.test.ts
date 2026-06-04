@@ -18,7 +18,11 @@ const guardedFiles = [
   "app/components/post-studio-side-pane.tsx",
   "app/components/post-studio-viral-tab.tsx",
   "app/components/studio-tab-groups.ts",
+  "app/components/viral-application.ts",
   "app/components/viral-evidence-summary.ts",
+  "app/components/viral-library-health.ts",
+  "app/components/viral-save-candidates.ts",
+  "app/state/viral-save.ts",
   "app/state/project-reset.ts",
   "app/api/viral-knowledge/route.ts",
   "lib/agent/orchestrator.ts",
@@ -55,6 +59,20 @@ const mojibakeSignals = [
   "纭",
   "浠呰嚜宸"
 ];
+
+mojibakeSignals.push(
+  "鐖",
+  "鍥剧",
+  "鏂囨",
+  "璇佹",
+  "鎼滅",
+  "寰呯",
+  "缁х",
+  "鈮",
+  "骞",
+  "鎺",
+  "涓"
+);
 
 describe("visible Post Studio copy encoding", () => {
   it("keeps core user-facing Chinese copy free from mojibake", () => {

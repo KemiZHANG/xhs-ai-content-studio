@@ -8,6 +8,7 @@ import type { SampleEvidence } from "@/lib/workflows/one-click";
 
 let originalCwd: string;
 let tempDir: string;
+const mojibakePattern = /[�]|鈮|骞|鎺|涓|鐖|鍥剧|鏂囨|璇佹|鎼滅|寰呯|缁х/u;
 
 function makeSample(overrides: Partial<SampleEvidence>): SampleEvidence {
   return {
@@ -102,8 +103,10 @@ describe("viral RAG retrieval", () => {
     expect(pack.sufficiency.realtimeCount).toBe(4);
     expect(pack.sufficiency.viralCount).toBe(pack.results.length);
     expect(pack.strategyReport.summary).toContain("可复用策略");
+    expect(pack.strategyReport.summary).not.toMatch(mojibakePattern);
     expect(pack.strategyReport.evidenceIds).toContain(focusedCafe.id);
     expect(pack.strategyReport.titleMoves.length).toBeGreaterThan(0);
     expect(pack.strategyReport.originalityRules.join(" ")).toContain("不要复制");
+    expect(pack.strategyReport.originalityRules.join(" ")).not.toMatch(mojibakePattern);
   });
 });

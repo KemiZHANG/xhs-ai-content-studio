@@ -8,6 +8,7 @@ import { emptyViralSearchForm, PostStudioViralTab } from "@/app/components/post-
 import type { PostProject, ViralCase, WorkflowResult } from "@/app/types";
 
 type EvidenceInsight = PostProject["evidencePack"]["insights"][number];
+const mojibakePattern = /[�]|鈮|骞|鎺|涓|鐖|鍥剧|鏂囨|璇佹|鎼滅|寰呯|缁х/u;
 
 const viralCase = {
   id: "viral-1",
@@ -156,5 +157,6 @@ describe("post studio viral tab", () => {
     expect(html).toContain("应用到 CreativeBrief");
     expect(html).toContain("取消重点");
     expect(html).toContain("刷新当前项目 RAG 证据");
+    expect(html).not.toMatch(mojibakePattern);
   });
 });

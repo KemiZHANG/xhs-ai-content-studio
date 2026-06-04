@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { buildViralApplicationModel } from "@/app/components/viral-application";
 import { createBlankPostProject } from "@/lib/post-project/store";
 
+const mojibakePattern = /[�]|鈮|骞|鎺|涓|鐖|鍥剧|鏂囨|璇佹|鎼滅|寰呯|缁х/u;
+
 const viralInsight = {
   id: "viral-insight-hook",
   sourceType: "viral_library" as const,
@@ -12,10 +14,15 @@ const viralInsight = {
   createdAt: "2026-05-31T00:00:00.000Z"
 };
 
+function expectModelFreeFromMojibake(model: unknown): void {
+  expect(JSON.stringify(model)).not.toMatch(mojibakePattern);
+}
+
 describe("viral application model", () => {
   it("asks users to refresh RAG before applying viral knowledge", () => {
     const model = buildViralApplicationModel(createBlankPostProject({ topic: "广州咖啡馆" }));
 
+    expectModelFreeFromMojibake(model);
     expect(model.evidenceCount).toBe(0);
     expect(model.focusedCount).toBe(0);
     expect(model.routes.map((route) => route.status)).toEqual(["empty", "empty", "empty"]);
@@ -31,6 +38,7 @@ describe("viral application model", () => {
     });
     const model = buildViralApplicationModel(project);
 
+    expectModelFreeFromMojibake(model);
     expect(model.evidenceCount).toBe(1);
     expect(model.headline).toContain("evidencePack");
     expect(model.routes[0]).toMatchObject({
@@ -65,6 +73,7 @@ describe("viral application model", () => {
     });
     const model = buildViralApplicationModel(project);
 
+    expectModelFreeFromMojibake(model);
     expect(model.ragStatus).toBe("insufficient");
     expect(model.headline).toContain("需要补强");
     expect(model.ragLine).toContain("实时 1 条");
@@ -95,6 +104,7 @@ describe("viral application model", () => {
     });
     const model = buildViralApplicationModel(project);
 
+    expectModelFreeFromMojibake(model);
     expect(model.ragStatus).toBe("enough");
     expect(model.ragLine).toContain("实时 4 条");
     expect(model.missingEvidence).toEqual([]);
@@ -108,6 +118,7 @@ describe("viral application model", () => {
     });
     const model = buildViralApplicationModel(project);
 
+    expectModelFreeFromMojibake(model);
     expect(model.focusedCount).toBe(1);
     expect(model.headline).toContain("重点");
     expect(model.routes[0].evidenceIds).toEqual(["viral-insight-hook"]);
@@ -135,6 +146,7 @@ describe("viral application model", () => {
     });
     const model = buildViralApplicationModel(project);
 
+    expectModelFreeFromMojibake(model);
     expect(model.headline).toContain("已接入创作链路");
     expect(model.routes.map((route) => route.status)).toEqual(["ready", "pending", "pending"]);
     expect(model.citedEvidenceIds).toEqual(["viral-insight-hook"]);
@@ -185,6 +197,7 @@ describe("viral application model", () => {
     });
     const model = buildViralApplicationModel(project);
 
+    expectModelFreeFromMojibake(model);
     expect(model.routes.map((route) => route.status)).toEqual(["ready", "ready", "ready"]);
     expect(model.routes.every((route) => route.evidenceIds.includes("viral-insight-hook"))).toBe(true);
     expect(model.actions[0]).toMatchObject({ action: "retrieve_viral_knowledge" });
