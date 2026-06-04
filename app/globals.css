@@ -8563,6 +8563,70 @@ textarea {
   color: var(--accent-strong);
 }
 
+.qualityOriginalityBoundary {
+  border: 1px solid rgba(18, 118, 97, 0.18);
+  border-radius: 12px;
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+}
+
+.qualityOriginalityBoundary.ok {
+  background: rgba(18, 118, 97, 0.08);
+}
+
+.qualityOriginalityBoundary.warn {
+  background: rgba(185, 107, 25, 0.1);
+  border-color: rgba(185, 107, 25, 0.24);
+}
+
+.qualityOriginalityBoundary > span {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.qualityOriginalityBoundary.warn > span {
+  color: #9a4d12;
+}
+
+.qualityOriginalityBoundary > strong {
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.qualityOriginalityBoundary p,
+.qualityOriginalityBoundary small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.qualityOriginalityRows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.qualityOriginalityRows em {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(18, 118, 97, 0.16);
+  border-radius: 999px;
+  color: rgba(0, 0, 0, 0.68);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.35;
+  padding: 5px 8px;
+}
+
+.qualityOriginalityRows.risk em {
+  border-color: rgba(185, 107, 25, 0.24);
+  color: #8a4a14;
+}
+
 .qualityViralCoverage {
   background: rgba(255, 255, 255, 0.62);
   border: 1px solid rgba(18, 118, 97, 0.16);

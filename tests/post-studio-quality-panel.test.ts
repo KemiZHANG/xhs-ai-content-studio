@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { buildQualityViralCoverageView } from "@/app/components/quality-viral-coverage";
@@ -29,8 +30,8 @@ const quality: NonNullable<PostProject["qualityCheck"]> = {
     summary: "文案和图片引用了不同证据"
   },
   originalityReview: {
-    rules: ["只学习结构"],
-    sourceSampleIds: ["viral-1"],
+    rules: ["只学习结构", "不要复制原文表达"],
+    sourceSampleIds: ["viral-1", "viral-2"],
     riskSamples: [],
     isSafe: true,
     summary: "原创边界清晰"
@@ -76,34 +77,58 @@ const citationReport: EvidenceCitationReport = {
 
 describe("post studio quality panel", () => {
   it("renders Quality Gate scores, citation trace, originality and viral coverage", () => {
-    const html = renderToStaticMarkup(
-      <PostStudioQualityPanel
-        quality={quality}
-        qualityViralCoverage={buildQualityViralCoverageView(quality.viralCoverage)}
-        citationReport={citationReport}
-        citationTraceReady
-      />
-    );
+    const html = renderToStaticMarkup(createElement(PostStudioQualityPanel, {
+      quality,
+      qualityViralCoverage: buildQualityViralCoverageView(quality.viralCoverage),
+      citationReport,
+      citationTraceReady: true
+    }));
 
-    expect(html).toContain("质量检查需处理");
+    expect(html).toContain("质量检查需要处理");
     expect(html).toContain("标题 82");
     expect(html).toContain("阻塞项");
     expect(html).toContain("证据覆盖");
     expect(html).toContain("爆款库覆盖");
     expect(html).toContain("字段级证据追踪");
     expect(html).toContain("原创边界");
+    expect(html).toContain("只学规律：只学习结构");
+    expect(html).toContain("viral-1 / viral-2");
     expect(html).toContain("文案和图片引用了不同证据");
   });
 
+  it("surfaces unsafe originality risks before publish", () => {
+    const unsafeQuality: NonNullable<PostProject["qualityCheck"]> = {
+      ...quality,
+      originalityReview: {
+        rules: ["不要复刻爆款库原文段落"],
+        sourceSampleIds: ["viral-risk"],
+        riskSamples: ["Quiet Guangzhou cafe guide for laptop work"],
+        isSafe: false,
+        summary: "发现近似复刻风险"
+      }
+    };
+
+    const html = renderToStaticMarkup(createElement(PostStudioQualityPanel, {
+      quality: unsafeQuality,
+      qualityViralCoverage: buildQualityViralCoverageView(unsafeQuality.viralCoverage),
+      citationReport,
+      citationTraceReady: true
+    }));
+
+    expect(html).toContain("原创边界风险");
+    expect(html).toContain("发现近似复刻风险");
+    expect(html).toContain("只学规律：不要复刻爆款库原文段落");
+    expect(html).toContain("参考样本：viral-risk");
+    expect(html).toContain("风险样本：Quiet Guangzhou cafe guide for laptop work");
+  });
+
   it("stays hidden before Quality Gate runs", () => {
-    const html = renderToStaticMarkup(
-      <PostStudioQualityPanel
-        quality={undefined}
-        qualityViralCoverage={buildQualityViralCoverageView(undefined)}
-        citationReport={null}
-        citationTraceReady={false}
-      />
-    );
+    const html = renderToStaticMarkup(createElement(PostStudioQualityPanel, {
+      quality: undefined,
+      qualityViralCoverage: buildQualityViralCoverageView(undefined),
+      citationReport: null,
+      citationTraceReady: false
+    }));
 
     expect(html).toBe("");
   });
