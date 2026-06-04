@@ -261,16 +261,10 @@ export function ViralEvidenceDigest({
       {summary.sourceCases.length && !compact ? (
         <div className="viralEvidenceSources">
           {summary.sourceCases.slice(0, 5).map((item) => (
-            <span
-              key={item.id}
-              title={[
-                item.safetySummary,
-                item.reusablePatterns.length ? `可学：${item.reusablePatterns.join(" / ")}` : "",
-                item.doNotCopy.length ? `不要复制：${item.doNotCopy.join(" / ")}` : ""
-              ].filter(Boolean).join("\n")}
-            >
+            <span key={item.id} title={buildViralSourceTitle(item)}>
               {item.hookType || item.title} · {item.category} · 分 {Math.round(item.score)}
               {item.doNotCopy.length ? ` · 边界：${item.doNotCopy[0]}` : ""}
+              {buildViralSourceMatchLine(item) ? ` · 命中：${buildViralSourceMatchLine(item)}` : ""}
             </span>
           ))}
         </div>
@@ -490,6 +484,25 @@ function ChipList({ title, items }: { title: string; items: string[] }) {
       </div>
     </div>
   );
+}
+
+type ViralSourceCase = ViralEvidenceSummaryModel["sourceCases"][number];
+
+function buildViralSourceMatchLine(item: ViralSourceCase): string {
+  return [
+    item.matchedQueries?.length ? `query ${item.matchedQueries.slice(0, 2).join(" / ")}` : "",
+    item.reasons?.length ? `原因 ${item.reasons.slice(0, 2).join(" / ")}` : "",
+    item.scoreBreakdownLine ? `评分 ${item.scoreBreakdownLine}` : ""
+  ].filter(Boolean).join("；");
+}
+
+function buildViralSourceTitle(item: ViralSourceCase): string {
+  return [
+    item.safetySummary,
+    item.reusablePatterns.length ? `可学：${item.reusablePatterns.join(" / ")}` : "",
+    item.doNotCopy.length ? `不要复制：${item.doNotCopy.join(" / ")}` : "",
+    buildViralSourceMatchLine(item) ? `本次 RAG：${buildViralSourceMatchLine(item)}` : ""
+  ].filter(Boolean).join("\n");
 }
 
 function labelForCitationField(field: string): string {

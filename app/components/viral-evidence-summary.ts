@@ -1,6 +1,7 @@
 import type { PostProject, ViralCase, WorkflowResult } from "@/app/types";
 
 type ProjectInsight = PostProject["evidencePack"]["insights"][number];
+type ViralSearchResult = NonNullable<WorkflowResult["viralKnowledge"]>["results"][number];
 
 export type ViralEvidenceSummaryModel = {
   hasEvidence: boolean;
@@ -32,6 +33,9 @@ export type ViralEvidenceSummaryModel = {
     safetySummary: string;
     reusablePatterns: string[];
     doNotCopy: string[];
+    matchedQueries?: string[];
+    reasons?: string[];
+    scoreBreakdownLine?: string;
   }>;
   traceLine: string;
   missingLine?: string;
@@ -55,6 +59,7 @@ export function buildViralEvidenceSummary({
     ...(project?.finalPost?.basedOnEvidenceIds ?? [])
   ]);
   const sourceCaseById = new Map(viralCases.map((item) => [item.id, item]));
+  const ragTraceByCaseId = buildViralRagTraceByCaseId(viralKnowledge);
   const keyInsights = pickKeyViralInsights(viralInsights, focusedIds, citedIds).map((insight) => ({
     id: insight.id,
     type: insight.type,
@@ -68,16 +73,22 @@ export function buildViralEvidenceSummary({
     .map((id) => sourceCaseById.get(id))
     .filter((item): item is ViralCase => Boolean(item))
     .slice(0, 3)
-    .map((item) => ({
-      id: item.id,
-      title: item.title,
-      hookType: item.hookType,
-      category: item.category,
-      score: item.metrics.score,
-      safetySummary: item.creativeSafety?.summary ?? "只复用结构、风格和决策逻辑，不复制原文原图。",
-      reusablePatterns: (item.creativeSafety?.reusablePatterns ?? item.extractedInsights.reusableRules).slice(0, 2),
-      doNotCopy: (item.creativeSafety?.doNotCopy ?? item.extractedInsights.avoidCopying).slice(0, 2)
-    }));
+    .map((item) => {
+      const trace = ragTraceByCaseId.get(item.id);
+      return {
+        id: item.id,
+        title: item.title,
+        hookType: item.hookType,
+        category: item.category,
+        score: item.metrics.score,
+        safetySummary: item.creativeSafety?.summary ?? "只复用结构、风格和决策逻辑，不复制原文原图。",
+        reusablePatterns: (item.creativeSafety?.reusablePatterns ?? item.extractedInsights.reusableRules).slice(0, 2),
+        doNotCopy: (item.creativeSafety?.doNotCopy ?? item.extractedInsights.avoidCopying).slice(0, 2),
+        matchedQueries: trace?.matchedQueries,
+        reasons: trace?.reasons,
+        scoreBreakdownLine: trace?.scoreBreakdownLine
+      };
+    });
   const citedCount = viralInsights.filter((insight) => citedIds.has(insight.id)).length;
   const focusedCount = viralInsights.filter((insight) => focusedIds.has(insight.id)).length;
   const coverage = buildViralCoverage({ viralInsights, citedIds });
@@ -193,6 +204,57 @@ function buildTraceLine({
   if (citedCount) return `已被 Brief / 文案 / 图片方向引用 ${citedCount}/${viralInsightCount} 条，可追溯到 evidencePack。`;
   if (focusedCount) return `已选择 ${focusedCount} 条重点规律，下一步生成 CreativeBrief 或文案时会优先引用。`;
   return "已进入 evidencePack，但还未被 Brief、文案或图片方向引用。";
+}
+
+type ViralRagTrace = {
+  matchedQueries: string[];
+  reasons: string[];
+  scoreBreakdownLine: string;
+};
+
+function buildViralRagTraceByCaseId(viralKnowledge: WorkflowResult["viralKnowledge"] | null | undefined): Map<string, ViralRagTrace> {
+  const traces = new Map<string, ViralRagTrace>();
+  for (const result of viralKnowledge?.results ?? []) {
+    const caseId = result.case.id;
+    mergeViralRagTrace(traces, caseId, {
+      matchedQueries: result.matchedQueries ?? [],
+      reasons: result.reasons ?? [],
+      scoreBreakdownLine: formatScoreBreakdown(result.scoreBreakdown)
+    });
+  }
+  for (const trace of viralKnowledge?.evidenceTrace ?? []) {
+    mergeViralRagTrace(traces, trace.caseId, {
+      matchedQueries: trace.matchedQueries ?? [],
+      reasons: trace.reasons ?? [],
+      scoreBreakdownLine: traces.get(trace.caseId)?.scoreBreakdownLine ?? ""
+    });
+  }
+  return traces;
+}
+
+function mergeViralRagTrace(traces: Map<string, ViralRagTrace>, caseId: string, next: ViralRagTrace): void {
+  if (!caseId) return;
+  const current = traces.get(caseId);
+  traces.set(caseId, {
+    matchedQueries: uniqueStrings([...(current?.matchedQueries ?? []), ...next.matchedQueries]).slice(0, 3),
+    reasons: uniqueStrings([...(current?.reasons ?? []), ...next.reasons]).slice(0, 3),
+    scoreBreakdownLine: current?.scoreBreakdownLine || next.scoreBreakdownLine
+  });
+}
+
+function formatScoreBreakdown(scoreBreakdown?: ViralSearchResult["scoreBreakdown"]): string {
+  if (!scoreBreakdown || typeof scoreBreakdown !== "object") return "";
+  const value = scoreBreakdown as Record<string, unknown>;
+  return [
+    ["语义", value.semantic],
+    ["关键词", value.keyword],
+    ["互动", value.metrics],
+    ["质量", value.quality],
+    ["筛选", value.filters]
+  ]
+    .filter(([, score]) => typeof score === "number" && Number.isFinite(score) && score > 0)
+    .map(([label, score]) => `${label} ${Number(score).toFixed(2)}`)
+    .join(" / ");
 }
 
 function uniqueStrings(values: string[]): string[] {

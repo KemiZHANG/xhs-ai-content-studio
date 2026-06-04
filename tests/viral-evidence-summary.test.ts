@@ -114,7 +114,44 @@ describe("viral evidence summary", () => {
     const summary = buildViralEvidenceSummary({
       project: projectWithViralEvidence(),
       viralCases: [baseViralCase],
-      viralKnowledge: null
+      viralKnowledge: {
+        query: "广州咖啡馆",
+        rewrittenQueries: ["广州咖啡馆 标题钩子"],
+        sufficiency: {
+          isEnough: true,
+          realtimeCount: 4,
+          viralCount: 1,
+          missing: [],
+          recommendation: "证据足够进入 CreativeBrief"
+        },
+        strategyReport: {
+          summary: "复用结构，不复制表达",
+          titleMoves: ["场景收藏钩子"],
+          structureMoves: ["场景-理由-建议"],
+          visualMoves: ["自然光桌面近景"],
+          audiencePainPoints: ["周末不知道去哪坐"],
+          originalityRules: ["不要复制原文句式"],
+          recommendedAngles: ["慢下来"],
+          evidenceIds: ["viral-insight-hook"]
+        },
+        insights: [],
+        evidenceTrace: [{
+          caseId: "viral-case-1",
+          sourceSampleId: "note-1",
+          sourceUrl: "https://www.xiaohongshu.com/explore/note-1",
+          score: 0.88,
+          matchedQueries: ["广州咖啡馆 标题钩子"],
+          reasons: ["RAG-Fusion query: 广州咖啡馆 标题钩子"],
+          evidenceInsightIds: ["viral-insight-hook"]
+        }],
+        results: [{
+          case: baseViralCase,
+          score: 0.88,
+          reasons: ["语义相似"],
+          matchedQueries: ["广州咖啡馆"],
+          scoreBreakdown: { keyword: 0.15, semantic: 0.29, metrics: 0.12, quality: 0.07, filters: 0.05 }
+        }]
+      }
     });
 
     expect(summary.hasEvidence).toBe(true);
@@ -154,6 +191,9 @@ describe("viral evidence summary", () => {
       reusablePatterns: ["场景钩子 + 收藏理由"],
       doNotCopy: ["不要复制原文表达"]
     });
+    expect(summary.sourceCases[0].matchedQueries).toEqual(["广州咖啡馆", "广州咖啡馆 标题钩子"]);
+    expect(summary.sourceCases[0].reasons).toEqual(["语义相似", "RAG-Fusion query: 广州咖啡馆 标题钩子"]);
+    expect(summary.sourceCases[0].scoreBreakdownLine).toBe("语义 0.29 / 关键词 0.15 / 互动 0.12 / 质量 0.07 / 筛选 0.05");
     expect(summary.traceLine).toContain("已被 Brief");
   });
 
