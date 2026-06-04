@@ -5000,6 +5000,22 @@ textarea {
   font-size: 11px;
 }
 
+.agentViralKnowledgeMini .agentViralActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.agentViralKnowledgeMini .agentViralActions span {
+  flex-basis: 100%;
+}
+
+.agentViralKnowledgeMini .agentViralActions .miniActionButton {
+  font-size: 11px;
+  padding: 6px 9px;
+}
+
 .agentProvenanceMini {
   border-top: 1px solid rgba(24, 28, 24, 0.08);
   display: grid;

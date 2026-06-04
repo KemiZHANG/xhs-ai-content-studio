@@ -439,6 +439,22 @@ function AgentCardInlineDetails({
             {viralKnowledge.originalityRules.slice(0, 2).map((rule) => <p key={rule}>{rule}</p>)}
           </div>
         ) : null}
+        {viralKnowledge.nextActions.length ? (
+          <div className="agentViralActions" aria-label="爆款库下一步">
+            <span>建议下一步</span>
+            {viralKnowledge.nextActions.slice(0, 3).map((action) => (
+              <button
+                className="miniActionButton"
+                disabled={action.disabled}
+                key={action.action}
+                onClick={() => onQuickAction(action.action)}
+                type="button"
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -481,6 +497,7 @@ function extractViralKnowledgeDisplay(card: AgentResponseCard): {
     evidenceInsightIds: string[];
   }>;
   originalityRules: string[];
+  nextActions: Array<{ label: string; action: string; disabled?: boolean }>;
 } | null {
   if (card.type !== "viral_knowledge" || !isRecordValue(card.data)) {
     return null;
@@ -514,7 +531,15 @@ function extractViralKnowledgeDisplay(card: AgentResponseCard): {
   const sources = uniqueViralSources([...traceSources, ...resultSources]).slice(0, 2);
   const strategyReport = isRecordValue(card.data.strategyReport) ? card.data.strategyReport : null;
   const originalityRules = strategyReport ? stringListFromRecordValue(strategyReport.originalityRules).slice(0, 3) : [];
-  return sources.length || originalityRules.length ? { sources, originalityRules } : null;
+  const nextActions = Array.isArray(card.data.nextActions)
+    ? card.data.nextActions.flatMap((item) => {
+        if (!isRecordValue(item) || typeof item.label !== "string" || typeof item.action !== "string") {
+          return [];
+        }
+        return [{ label: item.label, action: item.action, disabled: item.disabled === true }];
+      })
+    : [];
+  return sources.length || originalityRules.length || nextActions.length ? { sources, originalityRules, nextActions } : null;
 }
 
 function uniqueViralSources(sources: Array<{

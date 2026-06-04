@@ -198,7 +198,11 @@ describe("post studio agent pane", () => {
           strategyReport: {
             originalityRules: ["只学习标题钩子和结构，不复制原文。", "图片只学习信息层级，不复刻构图。"],
             evidenceIds: ["viral-case-1", "viral-insight-hook"]
-          }
+          },
+          nextActions: [
+            { id: "qa-rag-search-realtime", label: "补搜真实笔记", action: "search_research" },
+            { id: "qa-rag-refresh", label: "放宽筛选再检索", action: "retrieve_viral_knowledge" }
+          ]
         }
       }]
     } as unknown as ChatMessage;
@@ -225,5 +229,8 @@ describe("post studio agent pane", () => {
     expect(html).toContain("证据 viral-insight-hook / viral-insight-visual");
     expect(html).toContain("原创边界");
     expect(html).toContain("只学习标题钩子和结构，不复制原文。");
+    expect(html).toContain("建议下一步");
+    expect(html).toContain("补搜真实笔记");
+    expect(html).toContain("放宽筛选再检索");
   });
 });
