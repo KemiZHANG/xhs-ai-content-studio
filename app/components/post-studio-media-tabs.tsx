@@ -91,6 +91,14 @@ export function PostStudioGeneratedTab({
   onSelectPostImages: (assetIds: string[]) => void;
   onOpenImageStudio: () => void;
 }) {
+  const visualDirectionConfirmed = Boolean(project?.visualDirection?.confirmedAt || project?.visualDirection?.confirmationStatus === "confirmed");
+  const hasVisualDirection = Boolean(project?.visualDirection);
+  const imageGenerationLabel = visualDirectionConfirmed
+    ? "Agent 生成配图"
+    : hasVisualDirection
+      ? "先确认图片方向"
+      : "先规划图片方向";
+
   return (
     <MediaSideSection title="已生成素材">
       <StudioTaskSummary summary={summary} onQuickAction={onQuickAction} />
@@ -112,7 +120,15 @@ export function PostStudioGeneratedTab({
         <p className="muted">可以让 Agent 在当前项目里生成配图；需要更多参数时再打开高级图片工具。</p>
       )}
       <div className="inlineActionGrid">
-        <button className="secondaryButton fullWidth" onClick={() => onQuickAction("generate_images")} type="button">Agent 生成配图</button>
+        <button
+          className="secondaryButton fullWidth"
+          disabled={!visualDirectionConfirmed}
+          onClick={() => onQuickAction("generate_images")}
+          title={!visualDirectionConfirmed ? "图片方向必须人工确认后才能生成配图。" : undefined}
+          type="button"
+        >
+          {imageGenerationLabel}
+        </button>
         <button className="secondaryButton fullWidth" onClick={() => onQuickAction("generate_cards")} type="button">生成图文卡片</button>
       </div>
       <details className="mediaUtilityDrawer">

@@ -156,9 +156,9 @@ export function buildPostReadinessReport(project: ReadinessProject): PostReadine
       detail: hasImages ? `已选择 ${selectedImages.length} 张图片` : "生成图片、卡片或从素材中选图",
       action: actionSet.has("select_images")
         ? "select_images"
-        : actionSet.has("generate_images")
+        : hasConfirmedVisualDirection && actionSet.has("generate_images")
           ? "generate_images"
-          : actionSet.has("generate_cards")
+          : hasConfirmedVisualDirection && actionSet.has("generate_cards")
             ? "generate_cards"
             : undefined
     },

@@ -410,6 +410,62 @@ describe("post readiness report", () => {
     expect(report.canRequestPublish).toBe(false);
   });
 
+  it("does not suggest image generation before visual direction confirmation", () => {
+    const report = buildPostReadinessReport(project({
+      evidencePack: {
+        sampleIds: ["sample-1"],
+        insights: [{
+          id: "insight-visual",
+          type: "visual",
+          insight: "图片需要自然光和真实桌面细节",
+          sourceSampleIds: ["sample-1"],
+          confidence: 0.8,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }]
+      },
+      creativeBrief: {
+        audience: "探店人群",
+        painPoint: "选择困难",
+        contentAngle: "真实咖啡馆清单",
+        emotionalHook: "周末慢下来",
+        proofPoints: ["真实体验"],
+        tone: "真实分享",
+        visualMood: "自然光",
+        imageMustHave: [],
+        imageMustAvoid: [],
+        platformStyle: "小红书",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-visual"]
+      },
+      visualDirection: {
+        mood: "自然光",
+        composition: "桌面近景",
+        colorPalette: "暖白",
+        mustHave: ["咖啡杯"],
+        mustAvoid: ["虚假 logo"],
+        basedOnEvidenceIds: ["insight-visual"],
+        confirmationStatus: "pending"
+      },
+      imagePrompts: [{
+        id: "prompt-1",
+        label: "主图",
+        createdAt: "2026-05-31T00:00:00.000Z",
+        basedOnEvidenceIds: ["insight-visual"],
+        value: { prompt: "自然光咖啡馆桌面近景" }
+      }],
+      currentStage: "image_prompt_ready",
+      allowedActions: ["confirm_visual_direction", "generate_images", "generate_cards"]
+    }));
+
+    expect(report.nextAction).toBe("confirm_visual_direction");
+    expect(report.items.find((item) => item.id === "visual")).toMatchObject({
+      ready: false,
+      action: "confirm_visual_direction"
+    });
+    expect(report.items.find((item) => item.id === "images")?.action).toBeUndefined();
+  });
+
   it("does not suggest quality gate before the final post is assembled", () => {
     const report = buildPostReadinessReport(project({
       evidencePack: {

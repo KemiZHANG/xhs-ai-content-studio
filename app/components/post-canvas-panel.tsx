@@ -130,6 +130,7 @@ export function PostCanvasPanel({
 
       <CanvasActionRow
         canvasDirty={canvasDirty}
+        project={project}
         publishDraft={publishDraft}
         onCommitCanvas={onCommitCanvas}
         onQuickAction={onQuickAction}
@@ -512,14 +513,25 @@ function FinalPostAndVersionStatus({
 function CanvasActionRow({
   publishDraft,
   canvasDirty,
+  project,
   onCommitCanvas,
   onQuickAction
 }: {
   publishDraft: PublishDraftState;
   canvasDirty: boolean;
+  project: PostProject | null;
   onCommitCanvas: () => void;
   onQuickAction: (action: string) => void;
 }) {
+  const visualDirectionConfirmed = Boolean(project?.visualDirection?.confirmedAt || project?.visualDirection?.confirmationStatus === "confirmed");
+  const hasVisualDirection = Boolean(project?.visualDirection);
+  const imageGenerationBlocked = !visualDirectionConfirmed;
+  const imageGenerationLabel = visualDirectionConfirmed
+    ? "Agent 生图"
+    : hasVisualDirection
+      ? "先确认图片方向"
+      : "先规划图片方向";
+
   return (
     <div className="canvasActionRow">
       <button className={canvasDirty ? "primaryButton" : "secondaryButton"} disabled={!publishDraft.title && !publishDraft.content} onClick={onCommitCanvas} type="button">
@@ -530,9 +542,15 @@ function CanvasActionRow({
         <Sparkles size={16} />
         规划图片方向
       </button>
-      <button className="secondaryButton" onClick={() => onQuickAction("generate_images")} type="button">
+      <button
+        className="secondaryButton"
+        disabled={imageGenerationBlocked}
+        onClick={() => onQuickAction("generate_images")}
+        title={imageGenerationBlocked ? "图片方向必须人工确认后才能生成配图。" : undefined}
+        type="button"
+      >
         <ImagePlus size={16} />
-        Agent 生图
+        {imageGenerationLabel}
       </button>
       <button className="secondaryButton" onClick={() => onQuickAction("generate_cards")} disabled={!publishDraft.title || !publishDraft.content} type="button">
         <ImagePlus size={16} />

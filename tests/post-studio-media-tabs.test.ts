@@ -51,6 +51,16 @@ const generatedSummary: AssetPanelSummary = {
 };
 
 const project = {
+  visualDirection: {
+    mood: "自然光",
+    composition: "桌面近景",
+    colorPalette: "暖白",
+    mustHave: ["咖啡杯"],
+    mustAvoid: ["虚假 logo"],
+    basedOnEvidenceIds: ["evidence-1"],
+    confirmationStatus: "confirmed",
+    confirmedAt: "2026-06-02T09:00:00.000Z"
+  },
   finalPost: {
     title: "广州咖啡馆",
     content: "正文",
@@ -108,5 +118,29 @@ describe("post studio media tabs", () => {
     expect(html).toContain("更多生成参数");
     expect(html).toContain("Prompt prompt-v1");
     expect(html).toContain("证据 1");
+  });
+
+  it("requires visual direction confirmation before generated-image actions", () => {
+    const unconfirmedProject = {
+      ...project,
+      visualDirection: {
+        ...project.visualDirection,
+        confirmationStatus: "pending",
+        confirmedAt: undefined
+      }
+    } as unknown as PostProject;
+    const html = renderToStaticMarkup(createElement(PostStudioGeneratedTab, {
+      summary,
+      assetSummary: generatedSummary,
+      publishAssetIds: ["asset-2"],
+      project: unconfirmedProject,
+      onQuickAction: () => undefined,
+      onSelectPostImages: () => undefined,
+      onOpenImageStudio: () => undefined
+    }));
+
+    expect(html).toContain("先确认图片方向");
+    expect(html).toContain("图片方向必须人工确认后才能生成配图。");
+    expect(html).toContain("disabled=");
   });
 });

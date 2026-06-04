@@ -300,4 +300,45 @@ describe("post canvas panel", () => {
     expect(html).toContain("证据引用");
     expect(html).toContain("发布检查");
   });
+
+  it("blocks image generation from the canvas until visual direction is confirmed", () => {
+    const unconfirmedProject: PostProject = {
+      ...project,
+      visualDirection: {
+        ...project.visualDirection!,
+        confirmationStatus: "pending",
+        confirmedAt: undefined
+      }
+    };
+    const html = renderToStaticMarkup(createElement(PostCanvasPanel, {
+      canGenerateCopy: true,
+      generatedCopyPrompt: "生成探店文案",
+      creationProvenance,
+      canvasVersionDisplay,
+      canvasDirty: false,
+      selectedAssets,
+      copyVersions: unconfirmedProject.copyVersions,
+      copyVersionGuidance: { state: "ok", label: "可回滚", detail: "最近版本可切换" },
+      publishDraft,
+      latestImagePrompt: publishDraft.imagePrompt,
+      project: unconfirmedProject,
+      imagePromptVersions: unconfirmedProject.imagePrompts,
+      promptVersionGuidance: { state: "ok", label: "可使用", detail: "Prompt 可切换" },
+      versionStatus,
+      versionDiff,
+      citationReport,
+      onGenerateCopy: () => undefined,
+      onOpenEvidence: () => undefined,
+      onDraftChange: () => undefined,
+      onSelectCopyVersion: () => undefined,
+      onSelectImagePromptVersion: () => undefined,
+      onQuickAction: () => undefined,
+      onCommitCanvas: () => undefined
+    }));
+
+    expect(html).toContain("图片方向待确认");
+    expect(html).toContain("先确认图片方向");
+    expect(html).toContain("图片方向必须人工确认后才能生成配图。");
+    expect(html).toContain("disabled=");
+  });
 });
