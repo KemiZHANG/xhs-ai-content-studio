@@ -78,7 +78,7 @@ describe("post next step coach", () => {
     expect(publishCoach.outcomeLine).toContain("不会直接发到小红书");
   });
 
-  it("promotes viral RAG refresh when Quality Gate finds uncovered viral fields", () => {
+  it("does not block publish confirmation on viral coverage gaps once the publish path is available", () => {
     const guidance = getPostStageGuidance("reviewing", ["request_publish_confirmation", "run_quality_gate"]);
     const coach = buildPostNextStepCoach({
       guidance,
@@ -97,9 +97,32 @@ describe("post next step coach", () => {
       }
     });
 
+    expect(coach.primaryAction).toBe("request_publish_confirmation");
+    expect(coach.primaryLabel).toBe("生成发布确认单");
+    expect(coach.outcomeLine).toContain("确认");
+    expect(coach.safetyLine).toContain("人工确认");
+  });
+
+  it("promotes viral RAG refresh when coverage is missing before the publish path", () => {
+    const guidance = getPostStageGuidance("reviewing", ["run_quality_gate", "retrieve_viral_knowledge"]);
+    const coach = buildPostNextStepCoach({
+      guidance,
+      readiness: null,
+      nextActions: ["run_quality_gate", "retrieve_viral_knowledge"],
+      qualityViralCoverage: {
+        hasCoverage: true,
+        headline: "爆款库覆盖 2/4",
+        detail: "缺少：正文、标签",
+        items: [
+          { field: "title", label: "标题", status: "covered", viralCount: 1, realtimeCount: 1, line: "爆款库 1 条 · 实时 1 条" },
+          { field: "content", label: "正文", status: "missing", viralCount: 0, realtimeCount: 1, line: "缺爆款库 · 实时 1 条" },
+          { field: "tags", label: "标签", status: "missing", viralCount: 0, realtimeCount: 0, line: "缺爆款库 · 实时 0 条" },
+          { field: "imagePrompt", label: "图片方向", status: "covered", viralCount: 1, realtimeCount: 0, line: "爆款库 1 条 · 实时 0 条" }
+        ]
+      }
+    });
+
     expect(coach.primaryAction).toBe("retrieve_viral_knowledge");
-    expect(coach.primaryLabel).toBe("刷新爆款库 RAG");
     expect(coach.detail).toContain("正文、标签");
-    expect(coach.whyLine).toContain("爆款库");
   });
 });

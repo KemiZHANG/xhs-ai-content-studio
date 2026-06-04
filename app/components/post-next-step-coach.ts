@@ -34,7 +34,11 @@ export function buildPostNextStepCoach({
   const viralMissingFields = qualityViralCoverage?.items
     .filter((item) => item.status === "missing")
     .map((item) => item.label) ?? [];
-  const shouldRefreshViralCoverage = Boolean(qualityViralCoverage?.hasCoverage && viralMissingFields.length);
+  const hasPublishPath = Boolean(
+    readiness?.canRequestPublish ||
+      nextActions.some((action) => action === "request_publish_confirmation" || action === "schedule_publish" || action === "publish_now")
+  );
+  const shouldRefreshViralCoverage = Boolean(qualityViralCoverage?.hasCoverage && viralMissingFields.length && !hasPublishPath);
   const primaryAction = shouldRefreshViralCoverage
     ? "retrieve_viral_knowledge"
     : readiness?.nextAction ?? guidance.primaryAction ?? nextActions[0];
