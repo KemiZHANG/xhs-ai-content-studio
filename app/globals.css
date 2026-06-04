@@ -4963,6 +4963,39 @@ textarea {
   padding-top: 8px;
 }
 
+.agentViralKnowledgeMini {
+  border-top: 1px solid rgba(24, 28, 24, 0.08);
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 8px;
+}
+
+.agentViralKnowledgeMini div {
+  border-left: 2px solid rgba(65, 86, 61, 0.22);
+  display: grid;
+  gap: 5px;
+  padding-left: 10px;
+}
+
+.agentViralKnowledgeMini span {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.agentViralKnowledgeMini p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.agentViralKnowledgeMini strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
 .agentProvenanceMini {
   border-top: 1px solid rgba(24, 28, 24, 0.08);
   display: grid;

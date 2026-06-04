@@ -172,4 +172,58 @@ describe("post studio agent pane", () => {
     expect(html).toContain("先做研究");
     expect(html).not.toMatch(/[�]|鐖|鍥剧|鏂囨|鍙戝|缁х|璇佹|鎼滅/);
   });
+  it("renders viral RAG source trace and originality boundaries inside agent cards", () => {
+    const viralMessage = {
+      role: "assistant",
+      content: "已刷新爆款库 RAG，这些只作为规律参考，不复制原文。",
+      intent: "retrieve_viral_knowledge",
+      intentConfidence: 0.9,
+      needsUserInput: false,
+      stage: "evidence_ready",
+      cards: [{
+        id: "card-viral",
+        type: "viral_knowledge",
+        title: "爆款库 RAG",
+        summary: "命中 1 个历史样本，并生成可追溯规律。",
+        data: {
+          evidenceTrace: [{
+            caseId: "viral-case-1",
+            sourceSampleId: "sample-1",
+            sourceUrl: "https://example.com/note",
+            score: 0.82,
+            matchedQueries: ["coffee title hook", "coffee visual style"],
+            reasons: ["RAG-Fusion query: coffee title hook", "语义相似"],
+            evidenceInsightIds: ["viral-insight-hook", "viral-insight-visual"]
+          }],
+          strategyReport: {
+            originalityRules: ["只学习标题钩子和结构，不复制原文。", "图片只学习信息层级，不复刻构图。"],
+            evidenceIds: ["viral-case-1", "viral-insight-hook"]
+          }
+        }
+      }]
+    } as unknown as ChatMessage;
+
+    const html = renderToStaticMarkup(createElement(PostStudioAgentPane, {
+      evidenceCount: 2,
+      researchForm,
+      messages: [viralMessage],
+      runningJob: null,
+      chatInput: "",
+      busy: false,
+      onRunResearch: () => undefined,
+      onResearchFormChange: () => undefined,
+      onChatInput: () => undefined,
+      onChatSubmit: () => undefined,
+      onQuickAction: () => undefined
+    }));
+
+    expect(html).toContain("命中来源");
+    expect(html).toContain("viral-case-1");
+    expect(html).toContain("0.82");
+    expect(html).toContain("coffee title hook");
+    expect(html).toContain("RAG-Fusion query: coffee title hook");
+    expect(html).toContain("证据 viral-insight-hook / viral-insight-visual");
+    expect(html).toContain("原创边界");
+    expect(html).toContain("只学习标题钩子和结构，不复制原文。");
+  });
 });

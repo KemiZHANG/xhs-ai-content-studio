@@ -334,6 +334,7 @@ function AgentCardInlineDetails({
   const directorSummary = extractAgentDirectorSummaryDisplay(card);
   const stageGuidance = extractStageGuidanceDisplay(card);
   const provenance = extractAgentCreationProvenanceDisplay(card);
+  const viralKnowledge = extractViralKnowledgeDisplay(card);
   if (clarify) {
     return (
       <div className="agentClarifyMini">
@@ -415,6 +416,32 @@ function AgentCardInlineDetails({
       </div>
     );
   }
+  if (viralKnowledge) {
+    return (
+      <div className="agentViralKnowledgeMini">
+        {viralKnowledge.sources.length ? (
+          <div>
+            <span>命中来源</span>
+            {viralKnowledge.sources.map((source) => (
+              <p key={source.caseId}>
+                <strong>{source.caseId}</strong>
+                {source.score ? ` · ${source.score}` : ""}
+                {source.matchedQueries.length ? ` · ${source.matchedQueries.slice(0, 2).join(" / ")}` : ""}
+                {source.reasons.length ? ` · ${source.reasons.slice(0, 2).join(" / ")}` : ""}
+                {source.evidenceInsightIds.length ? ` · 证据 ${source.evidenceInsightIds.slice(0, 3).join(" / ")}` : ""}
+              </p>
+            ))}
+          </div>
+        ) : null}
+        {viralKnowledge.originalityRules.length ? (
+          <div>
+            <span>原创边界</span>
+            {viralKnowledge.originalityRules.slice(0, 2).map((rule) => <p key={rule}>{rule}</p>)}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
   if (!stageGuidance) return null;
   return (
     <div className="agentStageMiniFlow">
@@ -443,6 +470,80 @@ function AgentCardInlineDetails({
       ) : null}
     </div>
   );
+}
+
+function extractViralKnowledgeDisplay(card: AgentResponseCard): {
+  sources: Array<{
+    caseId: string;
+    score: string;
+    matchedQueries: string[];
+    reasons: string[];
+    evidenceInsightIds: string[];
+  }>;
+  originalityRules: string[];
+} | null {
+  if (card.type !== "viral_knowledge" || !isRecordValue(card.data)) {
+    return null;
+  }
+  const traceSources = Array.isArray(card.data.evidenceTrace)
+    ? card.data.evidenceTrace.flatMap((item) => {
+        if (!isRecordValue(item)) return [];
+        const caseId = typeof item.caseId === "string" ? item.caseId : "";
+        if (!caseId) return [];
+        return [{
+          caseId,
+          score: typeof item.score === "number" ? item.score.toFixed(2) : "",
+          matchedQueries: stringListFromRecordValue(item.matchedQueries),
+          reasons: stringListFromRecordValue(item.reasons),
+          evidenceInsightIds: stringListFromRecordValue(item.evidenceInsightIds)
+        }];
+      })
+    : [];
+  const resultSources = Array.isArray(card.data.results)
+    ? card.data.results.flatMap((item) => {
+        if (!isRecordValue(item) || !isRecordValue(item.case) || typeof item.case.id !== "string") return [];
+        return [{
+          caseId: item.case.id,
+          score: typeof item.score === "number" ? item.score.toFixed(2) : "",
+          matchedQueries: stringListFromRecordValue(item.matchedQueries),
+          reasons: stringListFromRecordValue(item.reasons),
+          evidenceInsightIds: []
+        }];
+      })
+    : [];
+  const sources = uniqueViralSources([...traceSources, ...resultSources]).slice(0, 2);
+  const strategyReport = isRecordValue(card.data.strategyReport) ? card.data.strategyReport : null;
+  const originalityRules = strategyReport ? stringListFromRecordValue(strategyReport.originalityRules).slice(0, 3) : [];
+  return sources.length || originalityRules.length ? { sources, originalityRules } : null;
+}
+
+function uniqueViralSources(sources: Array<{
+  caseId: string;
+  score: string;
+  matchedQueries: string[];
+  reasons: string[];
+  evidenceInsightIds: string[];
+}>): Array<{
+  caseId: string;
+  score: string;
+  matchedQueries: string[];
+  reasons: string[];
+  evidenceInsightIds: string[];
+}> {
+  const seen = new Set<string>();
+  const result: Array<{
+    caseId: string;
+    score: string;
+    matchedQueries: string[];
+    reasons: string[];
+    evidenceInsightIds: string[];
+  }> = [];
+  for (const source of sources) {
+    if (seen.has(source.caseId)) continue;
+    seen.add(source.caseId);
+    result.push(source);
+  }
+  return result;
 }
 
 function extractClarifyNextStepsDisplay(card: AgentResponseCard): {
