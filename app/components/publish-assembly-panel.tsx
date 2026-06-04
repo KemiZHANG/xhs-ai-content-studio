@@ -319,7 +319,7 @@ export function PublishAssemblyPanel({
               </span>
               <span>
                 <small>发布时间</small>
-                <strong>{pendingPublish.payload.scheduleAt || "立即"}</strong>
+                <strong>{formatPendingSchedule(pendingPublish)}</strong>
               </span>
               <span>
                 <small>发布账号</small>
@@ -406,4 +406,11 @@ function labelForPublishStatus(status: string): string {
     cancelled: "已取消"
   };
   return labels[status] ?? status;
+}
+
+function formatPendingSchedule(pendingPublish: PendingPublishConfirmation): string {
+  if (!pendingPublish.payload.scheduleAt) return "立即";
+  return pendingPublish.payload.scheduleTimezone
+    ? `${pendingPublish.payload.scheduleAt}（${pendingPublish.payload.scheduleTimezone}）`
+    : pendingPublish.payload.scheduleAt;
 }

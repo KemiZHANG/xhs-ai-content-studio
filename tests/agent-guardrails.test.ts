@@ -229,6 +229,8 @@ describe("agent publish guardrails", () => {
 
     expect((manual.confirmationChecklist ?? []).find((item) => item.id === "schedule")?.required).toBe(false);
     expect((scheduled.confirmationChecklist ?? []).find((item) => item.id === "schedule")?.required).toBe(true);
+    expect(scheduled.scheduleTimezone).toBe("+08:00");
+    expect((scheduled.confirmationChecklist ?? []).find((item) => item.id === "schedule")?.detail).toContain("时区 +08:00");
   });
 
   it("rejects scheduled publishing without a future schedule time", () => {

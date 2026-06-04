@@ -378,6 +378,7 @@ async function auditPublishIntent(
     imageCount: intent.images.length,
     visibility: intent.visibility,
     scheduleAt: intent.scheduleAt,
+    scheduleTimezone: intent.scheduleTimezone,
     accountId: intent.accountId ?? auditContext?.accountId,
     mcpUrl: intent.mcpUrl ?? auditContext?.mcpUrl,
     publishIntentId: intent.id,

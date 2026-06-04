@@ -14,6 +14,7 @@ const activePublishPlan: WorkspacePublishPlan = {
   tags: ["广州咖啡", "周末探店"],
   visibility: "仅自己可见",
   scheduleAt: "2026-06-02T20:00:00+08:00",
+  scheduleTimezone: "+08:00",
   confirmationChecklist: [
     { id: "account", label: "确认发布账号", required: true, confirmed: true, detail: "当前账号一致" },
     { id: "image", label: "确认图片版本", required: true, confirmed: false, detail: "需要人工确认" },
@@ -47,6 +48,7 @@ const pendingPublish: PendingPublishConfirmation = {
     assetIds: ["asset-1", "asset-2"],
     visibility: "仅自己可见",
     scheduleAt: "2026-06-02T20:00:00+08:00",
+    scheduleTimezone: "+08:00",
     imagePrompt: "自然光探店图片"
   }
 };
@@ -72,6 +74,8 @@ describe("post studio publish intent panel", () => {
     expect(html).toContain("待确认");
     expect(html).toContain("咖啡探店号");
     expect(html).toContain("2 张");
+    expect(html).toContain("定时：2026-06-02T20:00:00+08:00");
+    expect(html).toContain("+08:00");
     expect(html).toContain("版本快照已锁定");
     expect(html).toContain("文案：copy-v1");
     expect(html).toContain("人工确认：1/3 项");

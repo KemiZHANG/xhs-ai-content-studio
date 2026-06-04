@@ -34,6 +34,7 @@ describe("internal delivery smoke script", () => {
     expect(script).toContain("futureScheduleAt");
     expect(script).toContain("scheduled dry-run");
     expect(script).toContain("scheduleAt");
+    expect(script).toContain("scheduleTimezone");
     expect(script).toContain("roughDeliveryReady");
     expect(script).toContain("内部闭环可交付");
     expect(script).toContain("canvas Quality Gate dry-run");

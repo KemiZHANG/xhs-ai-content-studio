@@ -206,6 +206,8 @@ try {
   if (scheduledPreview.data?.status !== "preview" || scheduledPreview.data?.dryRun !== true) fail("scheduled dry-run must return preview");
   if (scheduledPreview.data?.preview?.requiresConfirmation !== true) fail("scheduled preview must require manual confirmation");
   if (scheduledPreview.data?.preview?.scheduleAt !== scheduleAt) fail("scheduled preview must echo the requested future time");
+  if (scheduledPreview.data?.preview?.scheduleTimezone !== "UTC") fail("scheduled preview must expose the requested timezone");
+  if (scheduledPreview.data?.publishIntent?.scheduleTimezone !== "UTC") fail("scheduled publish intent must capture the requested timezone");
   if (["published", "scheduled"].includes(String(scheduledPreview.data?.publishIntent?.status))) {
     fail("scheduled dry-run publishIntent must not be published or scheduled");
   }

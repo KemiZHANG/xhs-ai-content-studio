@@ -22,6 +22,7 @@ export type CreatePublishIntentInput = {
 export function createPublishIntent(input: CreatePublishIntentInput): PublishIntent {
   const requestedAt = new Date().toISOString();
   const mode = input.mode ?? (input.scheduleAt ? "scheduled" : "manual");
+  const scheduleTimezone = input.scheduleAt ? extractScheduleTimezone(input.scheduleAt) : undefined;
   const idempotencySource = JSON.stringify({
     title: input.title,
     content: input.content,
@@ -43,6 +44,7 @@ export function createPublishIntent(input: CreatePublishIntentInput): PublishInt
     mcpUrl: input.mcpUrl,
     mode,
     scheduleAt: input.scheduleAt,
+    scheduleTimezone,
     confirmed: false,
     evidenceCitationSummary: input.evidenceCitationSummary,
     versionSnapshot: input.versionSnapshot
@@ -70,6 +72,7 @@ export function createPublishIntent(input: CreatePublishIntentInput): PublishInt
     requestedBy: input.requestedBy,
     requestedAt,
     scheduleAt: input.scheduleAt,
+    scheduleTimezone,
     idempotencyKey: createHash("sha256").update(idempotencySource).digest("hex"),
     confirmationChecklist,
     guardrailResults: [],
@@ -88,6 +91,7 @@ export function buildPublishConfirmationChecklist({
   mcpUrl,
   mode,
   scheduleAt,
+  scheduleTimezone,
   confirmed,
   evidenceCitationSummary,
   versionSnapshot
@@ -101,6 +105,7 @@ export function buildPublishConfirmationChecklist({
   mcpUrl?: string;
   mode: PublishIntent["mode"];
   scheduleAt?: string;
+  scheduleTimezone?: string;
   confirmed: boolean;
   evidenceCitationSummary?: PublishEvidenceCitationSummary;
   versionSnapshot?: PublishVersionSnapshot;
@@ -152,7 +157,7 @@ export function buildPublishConfirmationChecklist({
       label: "发布时间与时区",
       required: mode === "scheduled",
       confirmed: mode === "scheduled" ? confirmed : true,
-      detail: scheduleAt || "立即发布"
+      detail: formatScheduleConfirmationDetail(scheduleAt, scheduleTimezone)
     },
     {
       id: "quality",
@@ -202,6 +207,9 @@ export function validatePublishIntent(
       }
       if (!/[zZ]$|[+-]\d{2}:\d{2}$/.test(intent.scheduleAt)) {
         errors.push("schedule time must include a timezone");
+      }
+      if (!intent.scheduleTimezone) {
+        errors.push("schedule timezone must be captured on the publish intent");
       }
     }
   }
@@ -266,6 +274,19 @@ export function confirmPublishIntentChecklist(intent: PublishIntent): PublishInt
       confirmed: true
     })
   };
+}
+
+function extractScheduleTimezone(scheduleAt: string): string | undefined {
+  const trimmed = scheduleAt.trim();
+  if (!trimmed) return undefined;
+  if (/[zZ]$/.test(trimmed)) return "UTC";
+  return trimmed.match(/([+-]\d{2}:\d{2})$/)?.[1];
+}
+
+function formatScheduleConfirmationDetail(scheduleAt?: string, scheduleTimezone?: string): string {
+  if (!scheduleAt) return "立即发布";
+  const timezone = scheduleTimezone ?? extractScheduleTimezone(scheduleAt);
+  return timezone ? `${scheduleAt}（时区 ${timezone}）` : `${scheduleAt}（缺少明确时区）`;
 }
 
 export function authorizePublishIntent(intent: PublishIntent, policy: PublishPolicy): PublishDecision {

@@ -106,6 +106,7 @@ function pendingPublish(): PendingPublishConfirmation {
       assetIds: ["asset-1"],
       visibility: "仅自己可见",
       scheduleAt: "2099-05-31T20:00:00+08:00",
+      scheduleTimezone: "+08:00",
       imagePrompt: readyDraft.imagePrompt
     },
     publishIntentId: "intent-1",
@@ -233,6 +234,39 @@ describe("publish confirmation summary", () => {
     expect(summary.riskLevel).toBe("blocked");
     expect(summary.timingLine).toContain("缺少明确时区");
     expect(summary.blockers).toContain("定时时间必须包含明确时区");
+  });
+
+  it("uses explicit confirmation timezone metadata when the stored schedule string is local", () => {
+    const summary = buildPublishConfirmationSummary({
+      draft: readyDraft,
+      selectedImageCount: 1,
+      activePlan: {
+        status: "awaiting_approval",
+        visibility: "仅自己可见",
+        scheduleAt: "2099-05-31T20:00:00",
+        scheduleTimezone: "+08:00",
+        images: ["asset-1"],
+        tags: ["广州咖啡", "探店"],
+        accountName: "主账号",
+        loginName: "xhs-user"
+      },
+      pendingPublish: null,
+      project: project(),
+      activeAccountName: "主账号",
+      activeLoginName: "xhs-user",
+      visibility: "仅自己可见",
+      scheduleAt: "",
+      publishReady: true,
+      citationTraceReady: true,
+      canvasDirty: false,
+      accountReady: true,
+      hasVisualDirection: true,
+      qualityGateFresh: true
+    });
+
+    expect(summary.riskLevel).toBe("ok");
+    expect(summary.timingLine).toContain("时区 +08:00");
+    expect(summary.blockers).not.toContain("定时时间必须包含明确时区");
   });
 
   it("surfaces publish evidence citation and checklist details in the first-screen summary", () => {

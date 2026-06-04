@@ -1235,16 +1235,20 @@ export default function Home() {
         publishResult?: unknown;
         currentDraft?: DraftRecord;
         requiresConfirmation?: boolean;
-        publishIntent?: { id?: string };
+        publishIntent?: { id?: string; scheduleTimezone?: string };
       };
       if (data.requiresConfirmation && data.publishIntent?.id) {
+        const confirmedPayload = {
+          ...publishPayload,
+          scheduleTimezone: data.publishIntent.scheduleTimezone
+        };
         const activeAccount =
           settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
         setDismissedPublishIntentId(null);
         setPendingPublish({
-          payload: publishPayload,
+          payload: confirmedPayload,
           publishIntentId: data.publishIntent.id,
-          mode: publishPayload.scheduleAt ? "schedule" : "now",
+          mode: confirmedPayload.scheduleAt ? "schedule" : "now",
           createdAt: new Date().toISOString(),
           accountId: settings.activeAccountId,
           accountDisplayName: activeAccount?.displayName ?? "当前小红书账号",

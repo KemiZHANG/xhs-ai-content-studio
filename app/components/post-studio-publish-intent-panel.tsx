@@ -42,7 +42,7 @@ export function PostStudioPublishIntentPanel({
             <span>图片：{activePublishPlan.images?.length ?? 0} 张</span>
             <span>标签：{activePublishPlan.tags?.length ?? 0} 个</span>
             <span>可见：{activePublishPlan.visibility ?? publishVisibility}</span>
-            <span>{activePublishPlan.scheduleAt ? `定时：${activePublishPlan.scheduleAt}` : "立即发布"}</span>
+            <span>{formatPublishSchedule(activePublishPlan)}</span>
           </div>
           {activePublishPlan.accountId ? <p>账号 ID：{activePublishPlan.accountId}</p> : null}
           {activePublishPlan.mcpUrl ? <p>MCP：{activePublishPlan.mcpUrl}</p> : null}
@@ -126,4 +126,11 @@ export function labelForPublishStatus(status?: string): string {
     cancelled: "已取消"
   };
   return status ? labels[status] ?? status : "待检查";
+}
+
+function formatPublishSchedule(plan: WorkspacePublishPlan): string {
+  if (!plan.scheduleAt) return "立即发布";
+  return plan.scheduleTimezone
+    ? `定时：${plan.scheduleAt}（${plan.scheduleTimezone}）`
+    : `定时：${plan.scheduleAt}`;
 }

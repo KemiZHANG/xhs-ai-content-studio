@@ -1296,6 +1296,7 @@ describe("API route contracts", () => {
         content: "content",
         tags: ["tag"],
         assetIds: ["asset-1"],
+        scheduleAt: "2099-05-31T20:00",
         dryRun: true
       })
     );
@@ -1309,6 +1310,8 @@ describe("API route contracts", () => {
         publishIntent: expect.objectContaining({
           status: expect.stringMatching(/draft|blocked/),
           accountId: defaultSettings.activeAccountId,
+          scheduleAt: "2099-05-31T20:00:00+08:00",
+          scheduleTimezone: "+08:00",
           evidenceCitationSummary: expect.objectContaining({
             fieldCounts: expect.objectContaining({
               title: expect.any(Number),
@@ -1326,7 +1329,9 @@ describe("API route contracts", () => {
           risk: "external_write",
           requiresConfirmation: true,
           accountId: defaultSettings.activeAccountId,
-          mcpUrl: defaultSettings.mcpUrl
+          mcpUrl: defaultSettings.mcpUrl,
+          scheduleAt: "2099-05-31T20:00:00+08:00",
+          scheduleTimezone: "+08:00"
         })
       })
     );

@@ -149,6 +149,7 @@ export type PublishIntent = {
   requestedBy: "chat" | "workflow" | "manual" | "job";
   requestedAt: string;
   scheduleAt?: string;
+  scheduleTimezone?: string;
   idempotencyKey: string;
   confirmationChecklist?: PublishConfirmationItem[];
   guardrailResults: string[];

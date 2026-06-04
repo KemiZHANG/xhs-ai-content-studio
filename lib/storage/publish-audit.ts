@@ -15,6 +15,7 @@ export type PublishAuditRecord = {
   imageCount: number;
   visibility: string;
   scheduleAt?: string;
+  scheduleTimezone?: string;
   accountId?: string;
   mcpUrl?: string;
   publishIntentId?: string;

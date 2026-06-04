@@ -4,6 +4,7 @@ export type PublishConfirmationSummaryPlan = {
   status?: string;
   visibility?: string;
   scheduleAt?: string;
+  scheduleTimezone?: string;
   images?: string[];
   tags?: string[];
   accountName?: string;
@@ -97,6 +98,7 @@ export function buildPublishConfirmationSummary({
   qualityGateFresh
 }: PublishConfirmationSummaryInput): PublishConfirmationSummary {
   const planScheduleAt = pendingPublish?.payload.scheduleAt ?? activePlan?.scheduleAt ?? scheduleAt;
+  const planScheduleTimezone = pendingPublish?.payload.scheduleTimezone ?? activePlan?.scheduleTimezone ?? extractScheduleTimezone(planScheduleAt ?? "") ?? undefined;
   const planVisibility = pendingPublish?.payload.visibility ?? activePlan?.visibility ?? visibility;
   const planImages = pendingPublish?.payload.assetIds ?? activePlan?.images ?? [];
   const planTags = pendingPublish?.payload.tags ?? activePlan?.tags ?? parseTags(draft.tagsText);
@@ -140,7 +142,8 @@ export function buildPublishConfirmationSummary({
     qualityCanPublish: snapshot?.qualityCanPublish ?? (quality?.canPublish === true),
     qualityGateFresh: snapshot?.qualityGateFresh ?? qualityGateFresh,
     finalPostMatchesCanvas: snapshot?.finalPostMatchesCanvas ?? true,
-    scheduleAt: planScheduleAt
+    scheduleAt: planScheduleAt,
+    scheduleTimezone: planScheduleTimezone
   });
   const hasPendingConfirmation = Boolean(pendingPublish || activePlan?.status === "awaiting_approval");
   const riskLevel: PublishConfirmationSummary["riskLevel"] = blockers.length
@@ -167,7 +170,7 @@ export function buildPublishConfirmationSummary({
       accountLine,
       mcpUrl: pendingPublish?.mcpUrl ?? activePlan?.mcpUrl
     }),
-    timingLine: formatTimingLine(planScheduleAt),
+    timingLine: formatTimingLine(planScheduleAt, planScheduleTimezone),
     visibilityLine: planVisibility || "未选择",
     contentLine: `标题 ${draft.title.trim().length} 字 / 正文 ${draft.content.trim().length} 字 / 标签 ${planTags.length} 个`,
     imageLine: `${Math.max(selectedImageCount, planImages.length)} 张图片${hasVisualDirection ? "，图片方向已确认" : "，缺图片方向"}`,
@@ -205,6 +208,7 @@ export function buildPublishConfirmationSummary({
       accountLine,
       visibility: planVisibility,
       scheduleAt: planScheduleAt,
+      scheduleTimezone: planScheduleTimezone,
       selectedImageCount: Math.max(selectedImageCount, planImages.length),
       tagCount: planTags.length,
       hasPendingConfirmation,
@@ -224,6 +228,7 @@ function buildManualReviewChecklist({
   accountLine,
   visibility,
   scheduleAt,
+  scheduleTimezone,
   selectedImageCount,
   tagCount,
   hasPendingConfirmation,
@@ -236,6 +241,7 @@ function buildManualReviewChecklist({
   accountLine: string;
   visibility: string;
   scheduleAt?: string;
+  scheduleTimezone?: string;
   selectedImageCount: number;
   tagCount: number;
   hasPendingConfirmation: boolean;
@@ -245,7 +251,7 @@ function buildManualReviewChecklist({
   requiredChecklistCount: number;
   confirmedChecklist: number;
 }): string[] {
-  const timing = scheduleAt ? `定时 ${scheduleAt}` : "立即发布";
+  const timing = scheduleAt ? `定时 ${formatTimingLine(scheduleAt, scheduleTimezone)}` : "立即发布";
   const checklistState = hasPendingConfirmation && requiredChecklistCount
     ? `确认单 ${confirmedChecklist}/${requiredChecklistCount} 项已确认`
     : "确认单生成后逐项人工确认";
@@ -314,7 +320,8 @@ function buildBlockers({
   qualityCanPublish,
   qualityGateFresh,
   finalPostMatchesCanvas,
-  scheduleAt
+  scheduleAt,
+  scheduleTimezone
 }: {
   draft: PublishDraftState;
   selectedImageCount: number;
@@ -328,6 +335,7 @@ function buildBlockers({
   qualityGateFresh: boolean;
   finalPostMatchesCanvas: boolean;
   scheduleAt?: string;
+  scheduleTimezone?: string;
 }): string[] {
   const blockers: string[] = [];
   if (!draft.title.trim()) blockers.push("缺少标题");
@@ -342,18 +350,18 @@ function buildBlockers({
   if (!qualityGateFresh) blockers.push("最终版本与 Quality Gate 需要重新同步");
   if (!finalPostMatchesCanvas) blockers.push("发布确认单版本快照已失效");
   if (scheduleAt && Number.isNaN(Date.parse(scheduleAt))) blockers.push("定时时间格式无效");
-  if (scheduleAt && !hasExplicitTimezone(scheduleAt)) blockers.push("定时时间必须包含明确时区");
+  if (scheduleAt && !hasExplicitTimezone(scheduleAt) && !scheduleTimezone) blockers.push("定时时间必须包含明确时区");
   if (scheduleAt && !Number.isNaN(Date.parse(scheduleAt)) && Date.parse(scheduleAt) <= Date.now()) {
     blockers.push("定时时间必须晚于当前时间");
   }
   return blockers;
 }
 
-function formatTimingLine(scheduleAt?: string): string {
+function formatTimingLine(scheduleAt?: string, scheduleTimezone?: string): string {
   if (!scheduleAt) {
     return "确认后立即发布";
   }
-  const timezone = extractScheduleTimezone(scheduleAt);
+  const timezone = scheduleTimezone ?? extractScheduleTimezone(scheduleAt);
   return timezone
     ? `${scheduleAt}（时区 ${timezone}）`
     : `${scheduleAt}（缺少明确时区；请使用 2026-06-02T20:00:00+08:00 这类格式）`;

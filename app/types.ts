@@ -416,6 +416,7 @@ export type WorkspacePublishPlan = {
   accountId?: string;
   accountLabel?: string;
   mcpUrl?: string;
+  scheduleTimezone?: string;
   confirmationChecklist?: Array<{
     id: string;
     label: string;
@@ -647,6 +648,7 @@ export type PublishPayload = {
   assetIds: string[];
   visibility: RedactedSettings["defaultVisibility"];
   scheduleAt?: string;
+  scheduleTimezone?: string;
   imagePrompt: string;
 };
 
@@ -673,6 +675,7 @@ export type PublishAuditRecord = {
   imageCount: number;
   visibility: string;
   scheduleAt?: string;
+  scheduleTimezone?: string;
   accountId?: string;
   mcpUrl?: string;
   publishIntentId?: string;
