@@ -103,6 +103,8 @@ export function PostStudioBriefTab({
           <ChipList title="证明点" items={brief.proofPoints} />
           <ChipList title="图片必须有" items={brief.imageMustHave} />
           <ChipList title="图片避免" items={brief.imageMustAvoid} />
+          <ChipList title="禁忌词" items={brief.tabooWords} />
+          <ChipList title="合规 / 原创边界" items={brief.complianceNotes} />
         </div>
       ) : (
         <p className="muted">完成研究后，系统会把标题、正文、标签和图片规律压缩成统一 Brief，文案和图片都从这里出发。</p>

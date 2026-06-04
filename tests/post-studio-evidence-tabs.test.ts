@@ -120,7 +120,7 @@ const brief: CreativeBrief = {
   imageMustAvoid: ["虚假门店", "过度滤镜"],
   platformStyle: "小红书探店",
   tabooWords: ["全网第一"],
-  complianceNotes: ["不虚构价格"],
+  complianceNotes: ["不虚构价格", "只学习爆款结构，不复制原文表达"],
   basedOnEvidenceIds: ["insight-1"]
 };
 
@@ -217,6 +217,10 @@ describe("post studio evidence tabs", () => {
     expect(html).toContain("Brief 参考证据");
     expect(html).toContain("图片方向参考证据");
     expect(html).toContain("门头");
+    expect(html).toContain("禁忌词");
+    expect(html).toContain("全网第一");
+    expect(html).toContain("合规 / 原创边界");
+    expect(html).toContain("只学习爆款结构，不复制原文表达");
   });
 
   it("renders compressed evidence with viral-library save actions", () => {
