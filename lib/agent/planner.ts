@@ -587,6 +587,12 @@ function inferRagFilters(message: string): AgentPlan["ragFilters"] {
   if (filters.sortBy) filters.sortOrder = "desc";
   const tags = inferTags(message);
   if (tags.length) filters.tags = tags;
+  const category = inferTextFilter(message, ["类目", "分类", "内容类型", "品类"]);
+  const audience = inferTextFilter(message, ["目标人群", "人群", "受众", "面向", "适合"]);
+  const painPoint = inferTextFilter(message, ["痛点", "问题", "困扰", "需求"]);
+  if (category) filters.category = category;
+  if (audience) filters.audience = audience;
+  if (painPoint) filters.painPoint = painPoint;
   return Object.keys(filters).length ? filters : undefined;
 }
 
@@ -619,6 +625,25 @@ function inferTags(message: string): string[] {
     ? explicit[1].split(/[、,\s]+/).map((item) => item.replace(/^#/, "").trim()).filter(Boolean)
     : [];
   return [...new Set([...tagMatches, ...explicitTags])].slice(0, 8);
+}
+
+function inferTextFilter(message: string, labels: string[]): string | undefined {
+  const boundary = "(?=\\s*(?:目标人群|人群|受众|面向|适合|痛点|问题|困扰|需求|类目|分类|内容类型|品类|标签|tag|tags|#|收藏|点赞|评论|分享|转发|综合分|评分|高收藏|高赞|最近|一周|两周|半年|$|[，。！；;]))";
+  for (const label of labels) {
+    const pattern = new RegExp(`${label}\\s*(?:是|为|:|：)?\\s*([^，。！；;#\\n]{2,40}?)${boundary}`, "i");
+    const match = message.match(pattern);
+    const value = cleanupRagFilterValue(match?.[1] ?? "");
+    if (value) return value;
+  }
+  return undefined;
+}
+
+function cleanupRagFilterValue(value: string): string {
+  return value
+    .replace(/^(给|为|是|：|:)\s*/, "")
+    .replace(/(?:的)?(?:案例|样本|笔记|帖子|内容|爆款规律|爆款库规律)$/g, "")
+    .replace(/\s+/g, "")
+    .trim();
 }
 
 function inferTopic(message: string): string | undefined {

@@ -68,6 +68,8 @@ describe("viral RAG retrieval", () => {
       query: "广州咖啡馆 高收藏 探店",
       topic: "广州咖啡馆",
       category: "探店",
+      audience: "周末约会人群",
+      painPoint: "怕踩雷",
       minCollects: 1000,
       minShares: 20,
       sortBy: "collects",
@@ -79,7 +81,10 @@ describe("viral RAG retrieval", () => {
     expect(pack.rewrittenQueries.length).toBeGreaterThan(1);
     expect(pack.results[0].case.id).toBe(viralCase.id);
     expect(pack.results[0].case.quality?.score).toBeGreaterThan(0.5);
-    expect(pack.filters).toMatchObject({ minCollects: 1000, minShares: 20, sortBy: "collects" });
+    expect(pack.filters).toMatchObject({ category: "探店", audience: "周末约会人群", painPoint: "怕踩雷", minCollects: 1000, minShares: 20, sortBy: "collects" });
+    expect(pack.filterSummary).toContain("类目 探店");
+    expect(pack.filterSummary).toContain("人群 周末约会人群");
+    expect(pack.filterSummary).toContain("痛点 怕踩雷");
     expect(pack.filterSummary).toContain("收藏 ≥ 1000");
     expect(pack.filterSummary).toContain("分享 ≥ 20");
     expect(pack.filterSummary).toContain("按收藏降序排序");

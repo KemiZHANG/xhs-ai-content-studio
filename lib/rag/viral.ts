@@ -24,6 +24,9 @@ export type ViralRetrievalInput = {
 
 export type ViralRetrievalFilters = Partial<Pick<
   ViralRetrievalInput,
+  | "category"
+  | "audience"
+  | "painPoint"
   | "createdAfter"
   | "createdBefore"
   | "minLikes"
@@ -187,6 +190,9 @@ export function buildViralStrategyReport({
 
 export function extractViralRetrievalFilters(input: ViralRetrievalInput): ViralRetrievalFilters | undefined {
   const filters: ViralRetrievalFilters = {
+    category: input.category,
+    audience: input.audience,
+    painPoint: input.painPoint,
     createdAfter: input.createdAfter,
     createdBefore: input.createdBefore,
     minLikes: input.minLikes,
@@ -205,6 +211,9 @@ export function extractViralRetrievalFilters(input: ViralRetrievalInput): ViralR
 export function summarizeViralRetrievalFilters(filters?: ViralRetrievalFilters): string {
   if (!filters) return "";
   const items = [
+    filters.category ? `类目 ${filters.category}` : "",
+    filters.audience ? `人群 ${filters.audience}` : "",
+    filters.painPoint ? `痛点 ${filters.painPoint}` : "",
     filters.createdAfter ? `入库时间 ≥ ${filters.createdAfter.slice(0, 10)}` : "",
     filters.createdBefore ? `入库时间 ≤ ${filters.createdBefore.slice(0, 10)}` : "",
     filters.minLikes !== undefined ? `点赞 ≥ ${filters.minLikes}` : "",

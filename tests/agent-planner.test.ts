@@ -121,7 +121,7 @@ describe("agent planner", () => {
 
   it("extracts viral RAG metric and tag filters from natural language", () => {
     const plan = createAgentPlan({
-      message: "检索爆款库里广州咖啡馆 #探店 #拍照 收藏超过1000 点赞大于2千 分享20以上 综合分3000以上的高收藏案例",
+      message: "检索爆款库里广州咖啡馆 #探店 #拍照 类目是探店 目标人群是上班族 痛点是不知道怎么选 收藏超过1000 点赞大于2千 分享20以上 综合分3000以上的高收藏案例",
       hasCurrentDraft: false,
       attachedAssetCount: 0,
       postStage: "brief_ready",
@@ -136,7 +136,10 @@ describe("agent planner", () => {
       minScore: 3000,
       sortBy: "collects",
       sortOrder: "desc",
-      tags: ["探店", "拍照"]
+      tags: ["探店", "拍照"],
+      category: "探店",
+      audience: "上班族",
+      painPoint: "不知道怎么选"
     });
   });
 
