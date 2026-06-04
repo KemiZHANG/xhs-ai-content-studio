@@ -185,7 +185,7 @@ export function PostStudioPublishTab({
         <CheckItem ok={qualityGateFresh} label="最终版本与 Quality Gate 一致" />
         <CheckItem ok={accountReady} label={`账号: ${activeAccountLabel} · ${accountReadyHint}`} />
         <CheckItem ok={publishVisibility === "仅自己可见"} label={`可见范围: ${publishVisibility}`} />
-        <CheckItem ok={!publishScheduleAt || Date.parse(publishScheduleAt) > Date.now()} label={publishScheduleAt ? `定时: ${publishScheduleAt} (本地时区)` : "发布时间: 立即"} />
+        <CheckItem ok={!publishScheduleAt || Date.parse(publishScheduleAt) > Date.now()} label={publishScheduleAt ? `定时: ${publishScheduleAt}（确认单将写入 +08:00）` : "发布时间: 立即"} />
         <CheckItem ok={defaultAutoPublish === false} label="自动发布默认关闭" />
       </details>
       <PostStudioPublishReadinessPanel
@@ -270,7 +270,7 @@ function PublishTargetSummary({
   publishVisibility: RedactedSettings["defaultVisibility"];
   selectedImageCount: number;
 }) {
-  const timingLabel = publishScheduleAt ? `${publishScheduleAt} 本地时区` : "立即发布";
+  const timingLabel = publishScheduleAt ? `${publishScheduleAt}（确认单 +08:00）` : "立即发布";
   return (
     <section className="publishTargetSummary" aria-label="发布目标确认摘要">
       <div>
@@ -333,7 +333,7 @@ function PublishManualGate({
       <div className="manualGateChecks">
         <em className={defaultAutoPublish ? "warn" : "ok"}>自动发布：{defaultAutoPublish ? "已开启但仍需确认单" : "关闭"}</em>
         <em className={pendingPublish ? "warn" : "ok"}>确认单：{pendingPublish ? "待人工确认" : "未生成"}</em>
-        <em className={publishScheduleAt ? "warn" : "ok"}>时间：{publishScheduleAt ? "定时需确认时区" : "立即发布也需确认"}</em>
+        <em className={publishScheduleAt ? "warn" : "ok"}>时间：{publishScheduleAt ? "定时确认 +08:00" : "立即发布也需确认"}</em>
       </div>
     </section>
   );

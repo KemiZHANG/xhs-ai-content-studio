@@ -151,4 +151,98 @@ describe("post studio publish tab", () => {
     expect(html).toContain("发布安全边界已满足");
     expect(html).toContain("生成发布确认单");
   });
+
+  it("states that scheduled confirmations will be locked to +08:00", () => {
+    const html = renderToStaticMarkup(createElement(PostStudioPublishTab, {
+      summary: {
+        headline: "可以生成定时确认单",
+        detail: "时间会写入确认单。",
+        state: "ready",
+        primaryActionLabel: "生成定时确认单",
+        primaryAction: "schedule_publish"
+      },
+      publishDraft,
+      selectedImageCount: 1,
+      hasVisualDirection: true,
+      citationTraceReady: true,
+      qualityGateFresh: true,
+      accountReady: true,
+      activeAccountLabel: "测试账号",
+      accountReadyHint: "已登录",
+      publishVisibility: "仅自己可见",
+      publishScheduleAt: "2099-05-31T20:00",
+      defaultAutoPublish: false,
+      publishReady: true,
+      quality: undefined,
+      qualityViralCoverage: { hasCoverage: false, headline: "", detail: "", items: [] },
+      citationReport: null,
+      publishSummary: {
+        riskLevel: "ok",
+        headline: "定时发布确认",
+        detail: "等待人工确认。",
+        modeLabel: "定时发布",
+        decisionLine: "可以进入人工确认",
+        nextStepLine: "下一步生成定时确认单。",
+        detailCompressionLine: "详细项默认折叠。",
+        confirmationItems: [],
+        manualReviewChecklist: [],
+        visibleBlockers: [],
+        blockers: [],
+        accountLine: "测试账号",
+        accountSafetyLine: "已登录",
+        timingLine: "2099-05-31T20:00（时区 +08:00）",
+        visibilityLine: "仅自己可见",
+        contentLine: "标题/正文/标签已填写",
+        imageLine: "1 张图片",
+        evidenceLine: "证据可追溯",
+        evidenceSourceLine: "实时 + 爆款库",
+        versionLine: "版本已锁定",
+        qualityLine: "已通过",
+        checklistLine: "待人工确认"
+      } as unknown as PublishConfirmationSummary,
+      publishAccountSafety: {
+        status: "ready",
+        headline: "账号可用",
+        detail: "当前账号和确认单一致。",
+        activeAccountLine: "测试账号",
+        lockedAccountLine: "测试账号",
+        canConfirmExisting: true,
+        checks: []
+      } as unknown as PublishAccountSafety,
+      auditSummary: {
+        state: "empty",
+        headline: "暂无发布审计",
+        detail: "发布后会记录。",
+        eventLabel: "无",
+        accountLine: "测试账号"
+      } as unknown as PublishAuditSafetySummary,
+      publishSafetyBoundary: {
+        state: "ready",
+        headline: "发布安全边界已满足",
+        detail: "自动发布默认关闭。",
+        checkpoints: []
+      } as unknown as PublishSafetyBoundaryModel,
+      activePublishPlan: null,
+      requiredConfirmations: [],
+      confirmedRequiredCount: 0,
+      pendingPublish: null,
+      activeLoginName: "xhs-user",
+      hasExistingVisualDirection: true,
+      busy: false,
+      staleAccountPublishPlan: null,
+      staleCanvasPublishPlan: false,
+      onNavigate: () => undefined,
+      onVisibilityChange: () => undefined,
+      onScheduleAtChange: () => undefined,
+      onQuickAction: () => undefined,
+      onCancelPublish: () => undefined,
+      onConfirmPublish: () => undefined,
+      onPreparePublish: () => undefined,
+      onOpenPublish: () => undefined
+    }));
+
+    expect(html).toContain("确认单将写入 +08:00");
+    expect(html).toContain("2099-05-31T20:00（确认单 +08:00）");
+    expect(html).toContain("定时确认 +08:00");
+  });
 });
