@@ -53,6 +53,7 @@ import { EvidenceCatalogDrawer, EvidenceDrawer, ViralCaseDrawer } from "@/app/co
 import { PostStudioHeaderPanel } from "@/app/components/post-studio-header-panel";
 import { PostStudioAgentPane, type PostStudioResearchFormState } from "@/app/components/post-studio-agent-pane";
 import { PostStudioSidePane, type StudioTab } from "@/app/components/post-studio-side-pane";
+import { isPublishScheduleReady } from "@/app/components/post-studio-publish-readiness-panel";
 import { emptyViralSearchForm } from "@/app/components/post-studio-viral-tab";
 import { labelForPublishStatus } from "@/app/components/post-studio-publish-intent-panel";
 import { buildVersionSwitchGuidance } from "@/app/components/version-switch-guidance";
@@ -341,6 +342,7 @@ export function PostStudioPanel({
   const creationProvenance = buildCreationProvenance(project);
   const accountReady = isHealthForActiveAccount(health, settings);
   const accountReadyHint = activeAccountReadinessHint(health, settings);
+  const publishScheduleReady = isPublishScheduleReady(publishScheduleAt);
   const publishReady = Boolean(
     publishDraft.title.trim() &&
       publishDraft.content.trim() &&
@@ -349,6 +351,7 @@ export function PostStudioPanel({
       hasVisualDirection &&
       citationTraceReady &&
       accountReady &&
+      publishScheduleReady &&
       !canvasDirty &&
       quality?.canPublish === true &&
       versionStatus?.qualityGateFresh === true

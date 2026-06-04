@@ -1,7 +1,12 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { PostStudioPublishReadinessPanel } from "@/app/components/post-studio-publish-readiness-panel";
+import {
+  getPublishScheduleBlocker,
+  normalizePublishScheduleInput,
+  PostStudioPublishReadinessPanel,
+  toDatetimeLocalInputValue
+} from "@/app/components/post-studio-publish-readiness-panel";
 import type { PublishSafetyBoundaryModel } from "@/app/components/publish-safety-boundary";
 import type { PendingPublishConfirmation, PublishDraftState } from "@/app/types";
 
@@ -81,7 +86,7 @@ describe("post studio publish readiness panel", () => {
   it("renders confirmation state after publish requirements are ready", () => {
     const html = renderToStaticMarkup(createElement(PostStudioPublishReadinessPanel, {
       publishVisibility: "仅自己可见",
-      publishScheduleAt: "2026-06-02T20:00",
+      publishScheduleAt: "2099-06-02T20:00:00+08:00",
       publishReady: true,
       publishDraft: draft,
       selectedImageCount: 3,
@@ -115,5 +120,51 @@ describe("post studio publish readiness panel", () => {
     expect(html).toContain("xiaohongshu-mcp");
     expect(html).toContain("确认单已生成");
     expect(html).not.toContain("规划图片方向");
+  });
+
+  it("normalizes datetime-local values with an explicit timezone", () => {
+    const normalized = normalizePublishScheduleInput("2099-06-02T20:00");
+
+    expect(normalized).toMatch(/^2099-06-02T20:00:00[+-]\d{2}:\d{2}$/);
+    expect(getPublishScheduleBlocker(normalized)).toBeNull();
+    expect(toDatetimeLocalInputValue(normalized)).toBe("2099-06-02T20:00");
+  });
+
+  it("blocks timezone-less schedule values before publish confirmation", () => {
+    const html = renderToStaticMarkup(createElement(PostStudioPublishReadinessPanel, {
+      publishVisibility: "仅自己可见",
+      publishScheduleAt: "2099-06-02T20:00",
+      publishReady: false,
+      publishDraft: draft,
+      selectedImageCount: 3,
+      hasVisualDirection: true,
+      citationTraceReady: true,
+      accountReady: true,
+      quality: {
+        titleScore: 90,
+        copyScore: 88,
+        visualConsistencyScore: 86,
+        platformFitScore: 92,
+        complianceScore: 95,
+        canPublish: true,
+        issues: [],
+        suggestions: [],
+        checkedAt: "2026-06-02T10:00:00.000Z"
+      },
+      qualityGateFresh: true,
+      pendingPublish: null,
+      activeLoginName: "xiaohongshu-mcp",
+      publishSafetyBoundary,
+      hasExistingVisualDirection: true,
+      busy: false,
+      onVisibilityChange: () => undefined,
+      onScheduleAtChange: () => undefined,
+      onQuickAction: () => undefined
+    }));
+
+    expect(getPublishScheduleBlocker("2099-06-02T20:00")).toBe("定时时间必须包含明确时区");
+    expect(html).toContain("修正定时时间");
+    expect(html).toContain("定时时间必须包含明确时区");
+    expect(html).not.toContain("可以生成发布确认单");
   });
 });

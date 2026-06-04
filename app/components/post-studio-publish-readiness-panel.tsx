@@ -54,6 +54,7 @@ export function PostStudioPublishReadinessPanel({
     publishScheduleAt,
     hasExistingVisualDirection
   });
+  const scheduleInputValue = toDatetimeLocalInputValue(publishScheduleAt);
 
   return (
     <>
@@ -68,7 +69,11 @@ export function PostStudioPublishReadinessPanel({
         </label>
         <label>
           <span>定时时间</span>
-          <input type="datetime-local" value={publishScheduleAt} onChange={(event) => onScheduleAtChange(event.target.value)} />
+          <input
+            type="datetime-local"
+            value={scheduleInputValue}
+            onChange={(event) => onScheduleAtChange(normalizePublishScheduleInput(event.target.value))}
+          />
         </label>
       </div>
       <div className={publishReady ? "publishConfirmMini ready" : "publishConfirmMini warn"}>
@@ -85,7 +90,8 @@ export function PostStudioPublishReadinessPanel({
                 citationTraceReady,
                 accountReady,
                 quality,
-                qualityGateFresh
+                qualityGateFresh,
+                publishScheduleAt
               })}
         </p>
         {!publishReady && fixChecklist.length ? (
@@ -214,10 +220,11 @@ function buildPublishFixChecklist({
       detail: "用上方账号卡检测当前 MCP 登录状态"
     });
   }
-  if (publishScheduleAt && Number.isNaN(Date.parse(publishScheduleAt))) {
+  const scheduleBlocker = getPublishScheduleBlocker(publishScheduleAt);
+  if (scheduleBlocker) {
     items.push({
       label: "修正定时时间",
-      detail: "时间格式无效",
+      detail: scheduleBlocker,
       action: "schedule_publish",
       actionLabel: "改时间"
     });
@@ -234,7 +241,8 @@ function buildPublishReadinessHint({
   citationTraceReady,
   accountReady,
   quality,
-  qualityGateFresh
+  qualityGateFresh,
+  publishScheduleAt
 }: {
   title: string;
   content: string;
@@ -245,6 +253,7 @@ function buildPublishReadinessHint({
   accountReady: boolean;
   quality?: PostProject["qualityCheck"];
   qualityGateFresh: boolean;
+  publishScheduleAt: string;
 }): string {
   const missing: string[] = [];
   if (!title.trim()) missing.push("标题");
@@ -264,5 +273,64 @@ function buildPublishReadinessHint({
   if (quality?.canPublish === true && !qualityGateFresh) {
     missing.push("版本状态: 画布改动后需要重新运行 Quality Gate");
   }
+  const scheduleBlocker = getPublishScheduleBlocker(publishScheduleAt);
+  if (scheduleBlocker) missing.push(`定时时间: ${scheduleBlocker}`);
   return missing.length ? `还缺: ${missing.join("、")}。` : "请先刷新质量检查，再进入人工发布确认。";
+}
+
+export function isPublishScheduleReady(scheduleAt: string): boolean {
+  return !getPublishScheduleBlocker(scheduleAt);
+}
+
+export function getPublishScheduleBlocker(scheduleAt: string): string | null {
+  const trimmed = scheduleAt.trim();
+  if (!trimmed) return null;
+  const parsed = Date.parse(trimmed);
+  if (Number.isNaN(parsed)) return "时间格式无效";
+  if (!hasExplicitScheduleTimezone(trimmed)) return "定时时间必须包含明确时区";
+  if (parsed <= Date.now()) return "定时时间必须晚于当前时间";
+  return null;
+}
+
+export function normalizePublishScheduleInput(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed || hasExplicitScheduleTimezone(trimmed)) return trimmed;
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return trimmed;
+  return `${formatLocalDateTime(parsed)}${formatLocalTimezoneOffset(parsed)}`;
+}
+
+export function toDatetimeLocalInputValue(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed || !hasExplicitScheduleTimezone(trimmed)) return trimmed;
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return trimmed;
+  return formatLocalDateTime(parsed).slice(0, 16);
+}
+
+function hasExplicitScheduleTimezone(value: string): boolean {
+  return /(?:[zZ]|[+-]\d{2}:\d{2})$/.test(value.trim());
+}
+
+function formatLocalDateTime(date: Date): string {
+  const year = date.getFullYear();
+  const month = padDatePart(date.getMonth() + 1);
+  const day = padDatePart(date.getDate());
+  const hour = padDatePart(date.getHours());
+  const minute = padDatePart(date.getMinutes());
+  const second = padDatePart(date.getSeconds());
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+}
+
+function formatLocalTimezoneOffset(date: Date): string {
+  const offsetMinutes = -date.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? "+" : "-";
+  const absolute = Math.abs(offsetMinutes);
+  const hours = padDatePart(Math.floor(absolute / 60));
+  const minutes = padDatePart(absolute % 60);
+  return `${sign}${hours}:${minutes}`;
+}
+
+function padDatePart(value: number): string {
+  return String(value).padStart(2, "0");
 }
