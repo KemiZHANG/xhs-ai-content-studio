@@ -35,6 +35,7 @@ export type AcceptanceExternalGate = {
 export type AcceptanceStatus = {
   completionPercent: number;
   summary: string;
+  roughDeliveryReady: boolean;
   canMarkComplete: boolean;
   verified: AcceptanceCoverageItem[];
   manualGates: AcceptanceExternalGate[];
@@ -243,12 +244,14 @@ const manualGates: AcceptanceExternalGate[] = [
 export function buildAcceptanceStatus(records: AcceptanceValidationRecordInput[] = []): AcceptanceStatus {
   const progress = summarizeAcceptanceValidationProgress(manualGates, records);
   const canMarkComplete = progress.allValidated;
+  const roughDeliveryReady = verified.length >= 6;
 
   return {
     completionPercent: canMarkComplete ? 100 : 99,
     summary: canMarkComplete
       ? "核心 Post Studio Agent、PostProject、CreativeBrief、RAG、图片、发布确认、安全审计和真实外部账号动作均已有验收记录。"
-      : "核心 Post Studio Agent、PostProject、CreativeBrief、RAG、图片、发布确认和安全审计已由代码、测试和 smoke 覆盖；剩余为真实外部账号动作验收。",
+      : "内部 Post Studio Agent 闭环已由代码、测试和 smoke 覆盖，可先粗略交付使用；真实发布、定时、多账号和大批量生图保留为外部验收闸门。",
+    roughDeliveryReady,
     canMarkComplete,
     verified,
     manualGates,
@@ -325,12 +328,16 @@ export function buildAcceptanceDeliverySummary(status: AcceptanceStatus = buildA
     "npm run verify";
 
   return {
-    headline: status.canMarkComplete ? "项目已完成全部验收" : "项目主体已就绪，仍保留真实外部动作闸门",
-    stateLabel: status.canMarkComplete ? "可标记完成" : "仍需人工外部验收",
+    headline: status.canMarkComplete
+      ? "项目已完成全部验收"
+      : status.roughDeliveryReady
+        ? "内部创作闭环可交付，外部动作保留闸门"
+        : "项目主体已就绪，仍保留真实外部动作闸门",
+    stateLabel: status.canMarkComplete ? "可标记完成" : status.roughDeliveryReady ? "内部闭环可交付" : "仍需人工外部验收",
     completionLine: `当前完成度 ${status.completionPercent}%`,
     verifiedLine: `已自动覆盖 ${status.verified.length} 项核心能力`,
     manualGateLine: status.pendingManualGateIds.length
-      ? `仍有 ${status.pendingManualGateIds.length} 项必须人工确认：${status.manualGates.filter((gate) => status.pendingManualGateIds.includes(gate.id)).map((gate) => gate.label).join("、")}`
+      ? `外部验收另行记录：${status.pendingManualGateIds.length} 项真实动作未自动执行，包括 ${status.manualGates.filter((gate) => status.pendingManualGateIds.includes(gate.id)).map((gate) => gate.label).join("、")}`
       : "没有剩余人工闸门",
     nextManualGateId: status.pendingManualGateIds[0] ?? nextGate?.id ?? null,
     nextSafeCommand: safeCommand,

@@ -9,10 +9,12 @@ describe("acceptance status panel", () => {
 
     expect(html).toContain("项目验收状态");
     expect(html).toContain("99%");
-    expect(html).toContain("仍需人工外部验收");
+    expect(html).toContain("内部闭环可交付");
     expect(html).toContain("已由代码和测试覆盖");
     expect(html).toContain("必须人工确认");
-    expect(html).toContain("项目主体已就绪，仍保留真实外部动作闸门");
+    expect(html).toContain("内部创作闭环可交付，外部动作保留闸门");
+    expect(html).toContain("可先粗略交付使用");
+    expect(html).toContain("外部验收另行记录");
     expect(html).toContain("下一步安全命令");
     expect(html).toContain("完成证据");
     expect(html).toContain("必须人工验收");

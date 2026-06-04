@@ -16,7 +16,8 @@ describe("dashboard acceptance status", () => {
 
     expect(html).toContain("交付状态");
     expect(html).toContain("当前完成度 99%");
-    expect(html).toContain("仍需人工外部验收");
+    expect(html).toContain("内部闭环可交付");
+    expect(html).toContain("外部验收另行记录");
     expect(html).toContain("真实发布到小红书");
     expect(html).toContain("npm run smoke:safe");
   });

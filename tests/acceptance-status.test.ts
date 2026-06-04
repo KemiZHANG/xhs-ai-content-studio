@@ -13,7 +13,9 @@ describe("acceptance status", () => {
 
     expect(status.completionPercent).toBe(99);
     expect(status.canMarkComplete).toBe(false);
-    expect(status.summary).toContain("真实外部账号动作验收");
+    expect(status.roughDeliveryReady).toBe(true);
+    expect(status.summary).toContain("可先粗略交付使用");
+    expect(status.summary).toContain("外部验收闸门");
     expect(status.verified.map((item) => item.id)).toEqual([
       "post_project",
       "post_studio",
@@ -64,10 +66,11 @@ describe("acceptance status", () => {
   it("builds a delivery summary that cannot hide remaining manual gates", () => {
     const summary = buildAcceptanceDeliverySummary();
 
-    expect(summary.headline).toContain("真实外部动作闸门");
-    expect(summary.stateLabel).toBe("仍需人工外部验收");
+    expect(summary.headline).toContain("内部创作闭环可交付");
+    expect(summary.stateLabel).toBe("内部闭环可交付");
     expect(summary.completionLine).toBe("当前完成度 99%");
     expect(summary.verifiedLine).toContain("6 项核心能力");
+    expect(summary.manualGateLine).toContain("外部验收另行记录");
     expect(summary.manualGateLine).toContain("真实发布到小红书");
     expect(summary.nextManualGateId).toBe("real_publish");
     expect(summary.nextSafeCommand).toBe("npm run smoke:safe");
@@ -151,10 +154,12 @@ describe("acceptance status", () => {
     expect(payload.ok).toBe(true);
     expect(payload.status.completionPercent).toBe(99);
     expect(payload.status.canMarkComplete).toBe(false);
+    expect(payload.status.roughDeliveryReady).toBe(true);
     expect(payload.status.manualGates.length).toBeGreaterThanOrEqual(3);
     expect(payload.status.manualGates[0]?.checklist.length).toBeGreaterThanOrEqual(5);
     expect(payload.status.manualGates[0]?.evidenceFields.length).toBeGreaterThanOrEqual(5);
     expect(payload.deliverySummary.completionLine).toBe("当前完成度 99%");
+    expect(payload.deliverySummary.stateLabel).toBe("内部闭环可交付");
     expect(payload.deliverySummary.nextSafeCommand).toBe("npm run smoke:safe");
     expect(payload.deliverySummary.safeToAutomateCompletion).toBe(false);
     expect(payload.evidencePackage.schemaVersion).toBe(1);
