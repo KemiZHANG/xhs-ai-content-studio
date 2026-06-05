@@ -2450,6 +2450,191 @@ describe("agent orchestrator", () => {
     });
   });
 
+  it("blocks direct copy generation when viral RAG evidence is weak", async () => {
+    const generateStructuredText = vi.fn(async () => {
+      throw new Error("should not generate copy when viral RAG is weak");
+    });
+    await resetPostProject({
+      topic: "冷门香薰品牌",
+      targetAudience: "小户型租房人群",
+      goal: "生成真实种草笔记",
+      creativeBrief: {
+        audience: "小户型租房人群",
+        painPoint: "想让房间好闻但怕踩雷",
+        contentAngle: "真实香薰使用体验",
+        emotionalHook: "回家开门那一刻的放松感",
+        proofPoints: ["留香", "扩香", "不刺鼻"],
+        tone: "生活化",
+        visualMood: "暖光居家",
+        imageMustHave: ["香薰瓶", "小户型桌面"],
+        imageMustAvoid: ["夸张功效", "虚假品牌背书"],
+        platformStyle: "小红书真实好物分享",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-live-1"]
+      },
+      evidencePack: {
+        sampleIds: ["sample-live-1"],
+        insights: [{
+          id: "insight-live-1",
+          sourceType: "realtime",
+          type: "copy",
+          insight: "正文需要先讲真实使用场景，再讲气味和避坑。",
+          sourceSampleIds: ["sample-live-1"],
+          confidence: 0.78,
+          createdAt: "2026-06-05T00:00:00.000Z"
+        }],
+        summary: {
+          viralKnowledge: {
+            sufficiency: {
+              isEnough: false,
+              realtimeCount: 1,
+              viralCount: 0,
+              missing: ["爆款库视觉规律", "可复用标题钩子"],
+              recommendation: "先补充爆款库样本。"
+            },
+            results: []
+          }
+        }
+      },
+      currentStage: "brief_ready"
+    });
+
+    const result = await runAgentTurn({
+      message: "直接基于当前 Brief 生成文案",
+      conversationId: "chat-weak-rag-copy-block",
+      settings: { ...defaultSettings, textApiKey: "text-key" },
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: vi.fn(async () => []),
+        getFeedDetail: vi.fn(async () => null),
+        publishContent: vi.fn(async () => ({ ok: true }))
+      },
+      model: {
+        generateStructuredText,
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      },
+      runChatAgentImpl: vi.fn(async () => ({ answer: "legacy answer" }))
+    });
+
+    expect(generateStructuredText).not.toHaveBeenCalled();
+    expect(result.answer).toContain("我先不直接生成文案");
+    expect(result.answer).toContain("RAG 证据还不足");
+    expect(result.workspace.lastUserIntent).toBe("retrieve_viral_knowledge");
+    expect(result.quickActions.map((action) => action.action)).toContain("retrieve_viral_knowledge");
+    expect(result.quickActions.map((action) => action.action)).not.toContain("generate_copy");
+    expect(result.cards.find((card) => card.id === "card-stage-guidance")?.data).toMatchObject({
+      primaryAction: "retrieve_viral_knowledge"
+    });
+    expect(result.toolTrace.some((item) => item.label === "knowledge.requireViralRag" && item.status === "completed")).toBe(true);
+  });
+
+  it("blocks direct image generation when viral RAG evidence is weak", async () => {
+    const generateImage = vi.fn(async () => {
+      throw new Error("should not generate image when viral RAG is weak");
+    });
+    await resetPostProject({
+      topic: "冷门香薰品牌",
+      creativeBrief: {
+        audience: "小户型租房人群",
+        painPoint: "想让房间好闻但怕踩雷",
+        contentAngle: "真实香薰使用体验",
+        emotionalHook: "回家开门那一刻的放松感",
+        proofPoints: ["留香", "扩香", "不刺鼻"],
+        tone: "生活化",
+        visualMood: "暖光居家",
+        imageMustHave: ["香薰瓶", "小户型桌面"],
+        imageMustAvoid: ["夸张功效", "虚假品牌背书"],
+        platformStyle: "小红书真实好物分享",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-live-1"]
+      },
+      visualDirection: {
+        mood: "暖光居家",
+        composition: "封面突出香薰瓶和小户型桌面",
+        colorPalette: "暖白和浅木色",
+        mustHave: ["香薰瓶", "桌面环境"],
+        mustAvoid: ["夸张功效字幕"],
+        basedOnEvidenceIds: ["insight-live-1"],
+        confirmationStatus: "confirmed",
+        confirmedAt: "2026-06-05T00:00:00.000Z",
+        confirmedBy: "user"
+      },
+      evidencePack: {
+        sampleIds: ["sample-live-1"],
+        insights: [{
+          id: "insight-live-1",
+          sourceType: "realtime",
+          type: "visual",
+          insight: "图片要展示真实居家桌面，不做夸张功效对比。",
+          sourceSampleIds: ["sample-live-1"],
+          confidence: 0.78,
+          createdAt: "2026-06-05T00:00:00.000Z"
+        }],
+        summary: {
+          viralKnowledge: {
+            sufficiency: {
+              isEnough: false,
+              realtimeCount: 1,
+              viralCount: 0,
+              missing: ["爆款库视觉规律"],
+              recommendation: "先补充爆款库视觉样本。"
+            },
+            results: []
+          }
+        }
+      },
+      currentStage: "image_prompt_ready"
+    });
+
+    const result = await runAgentTurn({
+      message: "开始生图，生成配图",
+      conversationId: "chat-weak-rag-image-block",
+      settings: { ...defaultSettings, imageApiKey: "image-key" },
+      history: [],
+      currentDraft: {
+        id: "draft-weak-rag",
+        updatedAt: "2026-06-05T00:00:00.000Z",
+        draft: {
+          title: "小户型香薰真实体验",
+          content: "真实分享香薰使用感受。",
+          tags: ["香薰", "小户型"],
+          structure: ["场景", "体验", "避坑"],
+          imagePrompt: "暖光居家桌面香薰",
+          basedOnEvidenceIds: ["insight-live-1"]
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      },
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: vi.fn(async () => []),
+        getFeedDetail: vi.fn(async () => null),
+        publishContent: vi.fn(async () => ({ ok: true }))
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage,
+        generateImageFromReference: async () => null
+      },
+      runChatAgentImpl: vi.fn(async () => ({ answer: "legacy answer" }))
+    });
+
+    expect(generateImage).not.toHaveBeenCalled();
+    expect(result.answer).toContain("我先不直接生成图片");
+    expect(result.answer).toContain("RAG 证据还不足");
+    expect(result.workspace.lastUserIntent).toBe("retrieve_viral_knowledge");
+    expect(result.quickActions.map((action) => action.action)).toContain("retrieve_viral_knowledge");
+    expect(result.quickActions.map((action) => action.action)).not.toContain("generate_images");
+    expect(result.toolTrace.some((item) => item.label === "knowledge.requireViralRag" && item.status === "completed")).toBe(true);
+  });
+
   it("explains explicit viral-library retrieval filters in the agent answer", async () => {
     const viralSample: SampleEvidence = {
       id: "note-viral-filtered-bag",

@@ -292,6 +292,40 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
       });
     }
 
+    const weakViralRagCreativeTurn = await maybeHandleWeakViralRagCreativeTurn(plan, initialPostProject);
+    if (weakViralRagCreativeTurn) {
+      trace = addTraceEvent(trace, {
+        type: "tool_completed",
+        label: "knowledge.requireViralRag",
+        detail: "Stopped direct creative execution because viral-library RAG evidence is still insufficient.",
+        metadata: {
+          stage: weakViralRagCreativeTurn.postProject.currentStage,
+          requestedSteps: plan.steps.map((step) => step.action)
+        }
+      });
+      trace = addTraceEvent(trace, {
+        type: "workspace_updated",
+        label: "Workspace updated",
+        detail: "Routed the user back to viral-library evidence refresh before copy, visual, or image generation."
+      });
+      agentRun = completeRun(agentRun);
+      trace = addTraceEvent(trace, {
+        type: "run_completed",
+        label: "Agent run completed",
+        detail: "Agent turn completed after blocking weak-RAG creative execution."
+      });
+      await persistAgentTrace(trace);
+      return buildAgentTurnResult({
+        answer: weakViralRagCreativeTurn.answer,
+        plan,
+        workspace: weakViralRagCreativeTurn.workspace,
+        currentDraft: input.currentDraft ?? weakViralRagCreativeTurn.postProject.copyDraft ?? undefined,
+        agentRun,
+        trace,
+        postProject: weakViralRagCreativeTurn.postProject
+      });
+    }
+
     const creativeBriefTurn = await maybeHandleCreativeBriefTurn(input, plan, initialPostProject);
     if (creativeBriefTurn) {
       trace = addTraceEvent(trace, {
@@ -932,6 +966,51 @@ async function maybeHandleClarifyingTurn(
     questions,
     workspace
   };
+}
+
+async function maybeHandleWeakViralRagCreativeTurn(
+  plan: ReturnType<typeof createAgentPlan>,
+  postProject: PostProject
+): Promise<{ answer: string; workspace: WorkspaceState; postProject: PostProject } | null> {
+  if (!isWeakViralRagForCreativeOutput(postProject) || !isDirectCreativeExecutionPlan(plan)) {
+    return null;
+  }
+
+  const viralKnowledge = extractViralKnowledgeSummary(postProject.evidencePack.summary);
+  const workspace = await updateWorkspaceState({ lastUserIntent: "retrieve_viral_knowledge" });
+  const requested = summarizeBlockedCreativeRequest(plan);
+  const sufficiencyLine = formatRagSufficiencyForAnswer(viralKnowledge);
+
+  return {
+    answer: [
+      `我先不直接${requested}：当前爆款库 RAG 证据还不足。`,
+      sufficiencyLine || "证据状态：爆款库规律不足以支撑最终标题、正文、图片方向或生图。",
+      "下一步先刷新爆款库 RAG，或把实时研究里的高质量样本保存进爆款库；证据补齐后我再继续生成。"
+    ].filter(Boolean).join("\n"),
+    workspace,
+    postProject
+  };
+}
+
+function isDirectCreativeExecutionPlan(plan: AgentPlan): boolean {
+  const creativeSteps = new Set(["generateDraft", "planVisuals", "generateImages", "generateCards"]);
+  const evidenceRefreshSteps = new Set(["research", "retrieveViralKnowledge", "summarizeEvidence", "createCreativeBrief"]);
+  const hasCreativeStep = plan.intent === "generate_images" || plan.steps.some((step) => creativeSteps.has(step.action));
+  if (!hasCreativeStep) return false;
+  return !plan.steps.some((step) => evidenceRefreshSteps.has(step.action));
+}
+
+function summarizeBlockedCreativeRequest(plan: AgentPlan): string {
+  if (plan.intent === "generate_images" || plan.steps.some((step) => step.action === "generateImages")) {
+    return "生成图片";
+  }
+  if (plan.steps.some((step) => step.action === "planVisuals")) {
+    return "规划图片方向";
+  }
+  if (plan.steps.some((step) => step.action === "generateCards")) {
+    return "生成图文卡片";
+  }
+  return "生成文案";
 }
 
 function buildClarifyingReplyTemplate(questions: string[]): string {
@@ -1880,7 +1959,7 @@ function isWeakViralRagForCreativeOutput(postProject: PostProject): boolean {
 }
 
 function prioritizeRagRefreshActions(actions: PostAction[]): PostAction[] {
-  const blockedCreativeActions = new Set<PostAction>(["generate_copy", "plan_visuals"]);
+  const blockedCreativeActions = new Set<PostAction>(["generate_copy", "plan_visuals", "generate_images", "generate_cards"]);
   const safeActions = actions.filter((action) => !blockedCreativeActions.has(action));
   return safeActions.includes("retrieve_viral_knowledge")
     ? safeActions
@@ -2038,6 +2117,19 @@ function buildQuickActions(plan: AgentPlan, workspace: WorkspaceState, postProje
     return [
       { id: "qa-view-publish-status", label: "查看发布记录", action: "view_publish_history" },
       { id: "qa-start-next-project", label: "开始下一篇", action: "start_project" }
+    ];
+  }
+  if (
+    postProject &&
+    workspace.lastUserIntent === "retrieve_viral_knowledge" &&
+    isWeakViralRagForCreativeOutput(postProject) &&
+    isDirectCreativeExecutionPlan(plan)
+  ) {
+    const hasSavedSamples = Boolean(postProject.selectedSamples.length || workspace.selectedSamples.length);
+    return [
+      { id: "qa-rag-refresh-before-creative", label: "刷新爆款库 RAG", action: "retrieve_viral_knowledge" },
+      { id: "qa-rag-search-before-creative", label: "补搜真实笔记", action: "search_research" },
+      { id: "qa-rag-save-before-creative", label: "保存优质样本入库", action: "save_viral_knowledge", disabled: !hasSavedSamples }
     ];
   }
   if (isPublishWithoutDraftPlan(plan, workspace, postProject)) {
