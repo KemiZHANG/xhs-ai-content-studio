@@ -12,6 +12,7 @@ export type QualityViralCoverageView = {
     label: string;
     status: "covered" | "missing";
     viralCount: number;
+    weakViralCount?: number;
     realtimeCount: number;
     line: string;
   }>;
@@ -39,16 +40,19 @@ export function buildQualityViralCoverageView(
     detail: `${coverage.summary}；${missingText}`,
     items: coverage.fields.map((field) => {
       const viralCount = field.viralEvidenceIds.length;
+      const weakViralCount = field.weakViralEvidenceIds?.length ?? 0;
       const realtimeCount = field.realtimeEvidenceIds.length;
+      const weakLine = weakViralCount ? ` · 弱参考 ${weakViralCount} 条` : "";
       return {
         field: field.field,
         label: labelForQualityViralField(field.field),
         status: field.status,
         viralCount,
+        weakViralCount,
         realtimeCount,
         line: field.status === "covered"
-          ? `爆款库 ${viralCount} 条 · 实时 ${realtimeCount} 条`
-          : `缺爆款库 · 实时 ${realtimeCount} 条`
+          ? `可用爆款 ${viralCount} 条 · 实时 ${realtimeCount} 条${weakLine}`
+          : `缺可用爆款 · 实时 ${realtimeCount} 条${weakLine}`
       };
     })
   };

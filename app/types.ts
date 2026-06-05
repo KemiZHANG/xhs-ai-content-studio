@@ -625,6 +625,7 @@ export type PostProject = {
       fields: Array<{
         field: "title" | "content" | "tags" | "imagePrompt";
         viralEvidenceIds: string[];
+        weakViralEvidenceIds?: string[];
         realtimeEvidenceIds: string[];
         status: "covered" | "missing";
       }>;

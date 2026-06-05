@@ -254,8 +254,12 @@ export function runPostQualityGate(project: Pick<
 
 function buildViralCoverageReview(report: EvidenceCitationReport): NonNullable<QualityCheck["viralCoverage"]> {
   const fields = report.sections.map((section) => {
-    const viralEvidenceIds = section.insights
-      .filter((insight) => insight.sourceType === "viral_library")
+    const viralInsights = section.insights.filter((insight) => insight.sourceType === "viral_library");
+    const viralEvidenceIds = viralInsights
+      .filter((insight) => !isWeakViralInsight(insight))
+      .map((insight) => insight.id);
+    const weakViralEvidenceIds = viralInsights
+      .filter(isWeakViralInsight)
       .map((insight) => insight.id);
     const realtimeEvidenceIds = section.insights
       .filter((insight) => (insight.sourceType ?? "realtime") === "realtime")
@@ -263,6 +267,7 @@ function buildViralCoverageReview(report: EvidenceCitationReport): NonNullable<Q
     return {
       field: section.field,
       viralEvidenceIds,
+      weakViralEvidenceIds,
       realtimeEvidenceIds,
       status: viralEvidenceIds.length ? "covered" as const : "missing" as const
     };
@@ -271,13 +276,19 @@ function buildViralCoverageReview(report: EvidenceCitationReport): NonNullable<Q
     .filter((field) => field.status === "missing")
     .map((field) => labelForQualityCitationField(field.field));
   const coveredCount = fields.length - missingFields.length;
+  const weakCount = fields.reduce((sum, field) => sum + (field.weakViralEvidenceIds?.length ?? 0), 0);
+  const weakLine = weakCount ? `，弱参考 ${weakCount} 条不计入覆盖` : "";
   return {
     fields,
     missingFields,
     summary: missingFields.length
-      ? `爆款库覆盖 ${coveredCount}/${fields.length} 项，缺少：${missingFields.join("、")}`
-      : `爆款库已覆盖 ${fields.length}/${fields.length} 个创作字段`
+      ? `爆款库覆盖 ${coveredCount}/${fields.length} 项，缺少：${missingFields.join("、")}${weakLine}`
+      : `爆款库已覆盖 ${fields.length}/${fields.length} 个创作字段${weakLine}`
   };
+}
+
+function isWeakViralInsight(insight: EvidenceCitationReport["sections"][number]["insights"][number]): boolean {
+  return insight.insight.trim().startsWith("弱参考：");
 }
 
 function labelForQualityCitationField(field: EvidenceCitationReport["sections"][number]["field"]): string {

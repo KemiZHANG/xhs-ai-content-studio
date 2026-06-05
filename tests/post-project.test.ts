@@ -1631,6 +1631,13 @@ describe("post project", () => {
     expect(quality.canPublish).toBe(false);
     expect(quality.issues.join(" ")).toContain("弱参考爆款证据");
     expect(quality.suggestions.join(" ")).toContain("不要让弱参考单独支撑发布");
+    expect(quality.viralCoverage?.fields.find((field) => field.field === "content")).toMatchObject({
+      status: "missing",
+      viralEvidenceIds: [],
+      weakViralEvidenceIds: ["viral-weak-copy"]
+    });
+    expect(quality.viralCoverage?.summary).toContain("弱参考");
+    expect(quality.viralCoverage?.summary).toContain("不计入覆盖");
   });
 
   it("keeps saved viral sufficiency blocked when realtime evidence is missing", async () => {
