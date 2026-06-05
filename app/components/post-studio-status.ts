@@ -125,6 +125,7 @@ export function buildPostStudioStatusSummary({
   const readiness = buildPostReadinessReport(project);
   const versionStatus = getPostVersionStatus(project);
   const viralEvidenceCount = project.evidencePack.insights.filter((insight) => insight.sourceType === "viral_library").length;
+  const ragChip = buildRagStatusChip(project, viralEvidenceCount);
   const productReferenceCount = project.productInfo?.referenceAssetIds?.length ?? 0;
   const auditStatus = project.auditStatus ?? (project.qualityCheck ? (project.qualityCheck.canPublish ? "passed" : "blocked") : "unchecked");
   const blockers = [
@@ -165,7 +166,7 @@ export function buildPostStudioStatusSummary({
     blockers,
     chips: [
       chip("研究", evidenceCount ? `${evidenceCount} 条证据` : "待研究", evidenceCount ? "ok" : "warn"),
-      chip("RAG", viralEvidenceCount ? `${viralEvidenceCount} 条爆款库` : "待检索", viralEvidenceCount ? "ok" : "neutral"),
+      ragChip,
       chip("产品图", productReferenceCount ? `${productReferenceCount} 张` : "可选", productReferenceCount ? "ok" : "neutral"),
       chip("文案", hasDraft ? "已生成" : "待生成", hasDraft ? "ok" : "warn"),
       chip("图片", selectedImageCount ? `${selectedImageCount} 张` : "待选择", selectedImageCount ? "ok" : "warn"),
@@ -176,6 +177,45 @@ export function buildPostStudioStatusSummary({
 
 function chip(label: string, value: string, state: PostStudioStatusChip["state"]): PostStudioStatusChip {
   return { label, value, state };
+}
+
+function buildRagStatusChip(project: PostProject, fallbackViralEvidenceCount: number): PostStudioStatusChip {
+  const sufficiency = extractRagSufficiency(project.evidencePack.summary);
+  if (!sufficiency) {
+    return chip(
+      "RAG",
+      fallbackViralEvidenceCount ? `${fallbackViralEvidenceCount} 条爆款库` : "待检索",
+      fallbackViralEvidenceCount ? "ok" : "neutral"
+    );
+  }
+
+  const weakCount = sufficiency.weakViralCount ?? 0;
+  const value = weakCount
+    ? `可用 ${sufficiency.viralCount} / 弱 ${weakCount}`
+    : sufficiency.viralCount
+      ? `可用 ${sufficiency.viralCount}`
+      : "无可用爆款";
+  return chip("RAG", value, sufficiency.isEnough ? "ok" : sufficiency.viralCount ? "warn" : "neutral");
+}
+
+function extractRagSufficiency(summary: unknown): {
+  isEnough: boolean;
+  viralCount: number;
+  weakViralCount?: number;
+} | null {
+  if (!isRecord(summary) || !isRecord(summary.viralKnowledge) || !isRecord(summary.viralKnowledge.sufficiency)) {
+    return null;
+  }
+  const sufficiency = summary.viralKnowledge.sufficiency;
+  return {
+    isEnough: sufficiency.isEnough === true,
+    viralCount: typeof sufficiency.viralCount === "number" ? sufficiency.viralCount : 0,
+    weakViralCount: typeof sufficiency.weakViralCount === "number" ? sufficiency.weakViralCount : 0
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object";
 }
 
 function auditStatusLabel(auditStatus: string, qualityGateFresh: boolean): string {

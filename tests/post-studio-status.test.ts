@@ -100,7 +100,19 @@ describe("post studio status summary", () => {
           sourceSampleIds: ["viral-case-1"],
           confidence: 0.86,
           createdAt: "2026-05-31T00:00:00.000Z"
-        }]
+        }],
+        summary: {
+          viralKnowledge: {
+            sufficiency: {
+              isEnough: true,
+              realtimeCount: 4,
+              viralCount: 1,
+              weakViralCount: 2,
+              missing: [],
+              recommendation: "证据足够进入 CreativeBrief。"
+            }
+          }
+        }
       },
       currentStage: "evidence_ready"
     });
@@ -122,9 +134,53 @@ describe("post studio status summary", () => {
       canvasDirty: false
     });
 
-    expect(summary.chips.find((item) => item.label === "RAG")).toMatchObject({ value: "1 条爆款库", state: "ok" });
+    expect(summary.chips.find((item) => item.label === "RAG")).toMatchObject({ value: "可用 1 / 弱 2", state: "ok" });
     expect(summary.chips.find((item) => item.label === "产品图")).toMatchObject({ value: "2 张", state: "ok" });
     expect(summary.stageLine).toContain("证据已就绪");
+  });
+
+  it("keeps weak viral references out of the usable RAG count in the header", () => {
+    const project = createBlankPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: {
+        sampleIds: ["viral-case-weak"],
+        insights: [{
+          id: "viral-insight-weak",
+          type: "hook",
+          sourceType: "viral_library",
+          insight: "弱参考：样本证据偏薄，只能作为低置信补充。",
+          sourceSampleIds: ["viral-case-weak"],
+          confidence: 0.25,
+          createdAt: "2026-05-31T00:00:00.000Z"
+        }],
+        summary: {
+          viralKnowledge: {
+            sufficiency: {
+              isEnough: false,
+              realtimeCount: 3,
+              viralCount: 0,
+              weakViralCount: 1,
+              missing: ["爆款库匹配样本不足 2 条"],
+              recommendation: "建议继续保存高质量样本。"
+            }
+          }
+        }
+      },
+      currentStage: "evidence_ready"
+    });
+
+    const summary = buildPostStudioStatusSummary({
+      project,
+      workspace: null,
+      settings: defaultSettings,
+      health: null,
+      evidenceCount: 1,
+      hasDraft: false,
+      selectedImageCount: 0,
+      canvasDirty: false
+    });
+
+    expect(summary.chips.find((item) => item.label === "RAG")).toMatchObject({ value: "可用 0 / 弱 1", state: "neutral" });
   });
 
   it("routes the header status recommendation back to viral RAG when creative evidence is weak", () => {
