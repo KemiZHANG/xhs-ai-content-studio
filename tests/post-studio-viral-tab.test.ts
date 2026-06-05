@@ -92,6 +92,11 @@ const viralLibraryHealth: ViralLibraryHealthModel = {
 const viralApplication: ViralApplicationModel = {
   headline: "已选择本次重点爆款规律",
   detail: "后续生成会优先引用。",
+  readinessGate: {
+    status: "pending",
+    label: "先应用到 CreativeBrief",
+    detail: "RAG 证据足够，但还没有写入共享 Brief；先让文案和图片共用同一批证据。"
+  },
   ragStatus: "enough",
   ragLine: "RAG 证据充足",
   missingEvidence: [],
@@ -157,6 +162,8 @@ describe("post studio viral tab", () => {
     expect(html).toContain("爆款库工具与检索");
     expect(html).toContain("检索 / 过滤爆款库");
     expect(html).toContain("RAG 证据充足");
+    expect(html).toContain("先应用到 CreativeBrief");
+    expect(html).toContain("先让文案和图片共用同一批证据");
     expect(html).toContain("爆款库应用进度");
     expect(html).toContain("0/1 已应用");
     expect(html).toContain("先应用到 Brief，再带到文案和图片方向");

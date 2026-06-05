@@ -6201,6 +6201,47 @@ textarea {
   color: var(--warn);
 }
 
+.ragReadinessGate {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 9px 10px;
+}
+
+.ragReadinessGate strong,
+.ragReadinessGate span {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.ragReadinessGate span {
+  color: var(--muted);
+}
+
+.ragReadinessGate.ready {
+  background: rgba(18, 118, 97, 0.06);
+  border-color: rgba(18, 118, 97, 0.22);
+}
+
+.ragReadinessGate.ready strong {
+  color: var(--ok);
+}
+
+.ragReadinessGate.caution {
+  background: rgba(181, 125, 47, 0.08);
+  border-color: rgba(181, 125, 47, 0.24);
+}
+
+.ragReadinessGate.caution strong {
+  color: var(--warn);
+}
+
+.ragReadinessGate.pending {
+  background: rgba(35, 102, 150, 0.06);
+}
+
 .miniEvidenceList .keyViralInsight {
   border-color: rgba(18, 118, 97, 0.2);
   background: rgba(18, 118, 97, 0.055);

@@ -305,6 +305,7 @@ function ViralApplicationPanel({
   const readyRoutes = viralApplication.routes.filter((route) => route.status === "ready").length;
   const totalRoutes = viralApplication.routes.length || 1;
   const progressPercent = Math.round((readyRoutes / totalRoutes) * 100);
+  const readinessGate = viralApplication.readinessGate ?? fallbackReadinessGate(viralApplication.ragStatus);
 
   return (
     <div className={viralApplication.evidenceCount ? "viralApplyPanel ready" : "viralApplyPanel"}>
@@ -316,6 +317,10 @@ function ViralApplicationPanel({
         {viralApplication.citedEvidenceIds.length ? (
           <small>已被当前创作引用：{viralApplication.citedEvidenceIds.slice(0, 4).join(" / ")}</small>
         ) : null}
+        <div className={`ragReadinessGate ${readinessGate.status}`}>
+          <strong>{readinessGate.label}</strong>
+          <span>{readinessGate.detail}</span>
+        </div>
         <div className={`ragReadinessLine ${viralApplication.ragStatus}`}>
           <strong>{viralApplication.ragLine}</strong>
           {viralApplication.missingEvidence.length ? <span>缺口：{viralApplication.missingEvidence.slice(0, 3).join(" / ")}</span> : null}
@@ -348,6 +353,28 @@ function ViralApplicationPanel({
       </div>
     </div>
   );
+}
+
+function fallbackReadinessGate(ragStatus: ViralApplicationModel["ragStatus"]): ViralApplicationModel["readinessGate"] {
+  if (ragStatus === "enough") {
+    return {
+      status: "pending",
+      label: "先应用到 CreativeBrief",
+      detail: "RAG 证据足够，但还需要确认是否已写入共享 Brief。"
+    };
+  }
+  if (ragStatus === "insufficient") {
+    return {
+      status: "caution",
+      label: "先补证据再生成关键稿件",
+      detail: "当前爆款库证据还不足，建议继续实时研究或保存更多高质量样本。"
+    };
+  }
+  return {
+    status: "pending",
+    label: "先刷新 RAG 充分性",
+    detail: "还没有本次 RAG 充分性评估。"
+  };
 }
 
 function ViralInsightList({

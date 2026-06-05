@@ -20,6 +20,11 @@ export type ViralApplicationRoute = {
 export type ViralApplicationModel = {
   headline: string;
   detail: string;
+  readinessGate: {
+    status: "ready" | "caution" | "pending";
+    label: string;
+    detail: string;
+  };
   ragStatus: "none" | "insufficient" | "enough";
   ragLine: string;
   missingEvidence: string[];
@@ -42,6 +47,7 @@ export function buildViralApplicationModel(project: PostProject | null | undefin
     return {
       headline: "先把爆款库规律合入当前项目",
       detail: "刷新 RAG 后，Agent 会把标题钩子、正文结构、标签组合和图片风格写入当前 PostProject 的 evidencePack。",
+      readinessGate: buildReadinessGate(ragReadiness.ragStatus, false),
       ragStatus: ragReadiness.ragStatus,
       ragLine: ragReadiness.ragLine,
       missingEvidence: ragReadiness.missingEvidence,
@@ -151,6 +157,7 @@ export function buildViralApplicationModel(project: PostProject | null | undefin
       : briefUsesViral
       ? "当前 Brief / 文案 / 图片方向会优先学习这些规律；如果已选重点规律，后续生成会更聚焦，但仍只复用结构、风格和决策逻辑，不复制原文原图。"
       : "下一步建议先选择 1-3 条重点规律并刷新 CreativeBrief，让文案和图片方向共享同一批爆款库证据。",
+    readinessGate: buildReadinessGate(ragReadiness.ragStatus, briefUsesViral),
     ragStatus: ragReadiness.ragStatus,
     ragLine: ragReadiness.ragLine,
     missingEvidence: ragReadiness.missingEvidence,
@@ -160,6 +167,38 @@ export function buildViralApplicationModel(project: PostProject | null | undefin
     citedEvidenceIds: uniqueStrings([...briefEvidenceIds, ...draftEvidenceIds, ...visualEvidenceIds]),
     routes,
     actions: actions.slice(0, 3)
+  };
+}
+
+function buildReadinessGate(
+  ragStatus: ViralApplicationModel["ragStatus"],
+  briefUsesViral: boolean
+): ViralApplicationModel["readinessGate"] {
+  if (ragStatus === "enough" && briefUsesViral) {
+    return {
+      status: "ready",
+      label: "可继续生成关键稿件",
+      detail: "爆款库 RAG 已足够，CreativeBrief 已引用爆款证据，可以进入文案、图片方向或发布检查。"
+    };
+  }
+  if (ragStatus === "enough") {
+    return {
+      status: "pending",
+      label: "先应用到 CreativeBrief",
+      detail: "RAG 证据足够，但还没有写入共享 Brief；先让文案和图片共用同一批证据。"
+    };
+  }
+  if (ragStatus === "insufficient") {
+    return {
+      status: "caution",
+      label: "先补证据再生成关键稿件",
+      detail: "当前爆款库可作参考，但不足以支撑最终标题、正文和图片方向；建议继续实时研究或保存更多高质量样本。"
+    };
+  }
+  return {
+    status: "pending",
+    label: "先刷新 RAG 充分性",
+    detail: "还没有本次 RAG 充分性评估，先检索爆款库再决定是否进入 CreativeBrief 和创作。"
   };
 }
 

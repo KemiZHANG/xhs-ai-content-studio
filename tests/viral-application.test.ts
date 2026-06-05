@@ -76,6 +76,10 @@ describe("viral application model", () => {
     expectModelFreeFromMojibake(model);
     expect(model.ragStatus).toBe("insufficient");
     expect(model.headline).toContain("需要补强");
+    expect(model.readinessGate).toMatchObject({
+      status: "caution",
+      label: "先补证据再生成关键稿件"
+    });
     expect(model.ragLine).toContain("实时 1 条");
     expect(model.missingEvidence).toEqual(["实时小红书样本不足 3 条", "缺少图片风格规律"]);
     expect(model.recommendation).toBe("建议继续搜索或补充参考样本。");
@@ -106,6 +110,10 @@ describe("viral application model", () => {
 
     expectModelFreeFromMojibake(model);
     expect(model.ragStatus).toBe("enough");
+    expect(model.readinessGate).toMatchObject({
+      status: "pending",
+      label: "先应用到 CreativeBrief"
+    });
     expect(model.ragLine).toContain("实时 4 条");
     expect(model.missingEvidence).toEqual([]);
   });
@@ -113,7 +121,21 @@ describe("viral application model", () => {
   it("shows when viral evidence has been selected as this post's focus", () => {
     const project = createBlankPostProject({
       topic: "广州咖啡馆",
-      evidencePack: { sampleIds: ["viral-case-1"], insights: [viralInsight] },
+      evidencePack: {
+        sampleIds: ["viral-case-1"],
+        insights: [viralInsight],
+        summary: {
+          viralKnowledge: {
+            sufficiency: {
+              isEnough: true,
+              realtimeCount: 4,
+              viralCount: 3,
+              missing: [],
+              recommendation: "证据足够进入 CreativeBrief。"
+            }
+          }
+        }
+      },
       focusedEvidenceIds: ["viral-insight-hook"]
     });
     const model = buildViralApplicationModel(project);
@@ -148,6 +170,7 @@ describe("viral application model", () => {
 
     expectModelFreeFromMojibake(model);
     expect(model.headline).toContain("已接入创作链路");
+    expect(model.readinessGate.status).toBe("pending");
     expect(model.routes.map((route) => route.status)).toEqual(["ready", "pending", "pending"]);
     expect(model.citedEvidenceIds).toEqual(["viral-insight-hook"]);
     expect(model.actions.map((action) => action.action)).toEqual(["generate_copy", "plan_visuals"]);
@@ -156,7 +179,21 @@ describe("viral application model", () => {
   it("shows which creative outputs already cite viral evidence", () => {
     const project = createBlankPostProject({
       topic: "广州咖啡馆",
-      evidencePack: { sampleIds: ["viral-case-1"], insights: [viralInsight] },
+      evidencePack: {
+        sampleIds: ["viral-case-1"],
+        insights: [viralInsight],
+        summary: {
+          viralKnowledge: {
+            sufficiency: {
+              isEnough: true,
+              realtimeCount: 4,
+              viralCount: 3,
+              missing: [],
+              recommendation: "证据足够进入 CreativeBrief。"
+            }
+          }
+        }
+      },
       creativeBrief: {
         audience: "周末探店人群",
         painPoint: "怕踩雷",
@@ -199,6 +236,7 @@ describe("viral application model", () => {
 
     expectModelFreeFromMojibake(model);
     expect(model.routes.map((route) => route.status)).toEqual(["ready", "ready", "ready"]);
+    expect(model.readinessGate.detail).toContain("CreativeBrief 已引用爆款证据");
     expect(model.routes.every((route) => route.evidenceIds.includes("viral-insight-hook"))).toBe(true);
     expect(model.actions[0]).toMatchObject({ action: "retrieve_viral_knowledge" });
   });
