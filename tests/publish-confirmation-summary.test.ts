@@ -319,6 +319,7 @@ describe("publish confirmation summary", () => {
     expect(summary.evidenceLine).toContain("参考证据：实时研究 2 条、爆款库 1 条。");
     expect(summary.evidenceLine).toContain("实时 2 / 爆款库 1 / 用户输入 0");
     expect(summary.evidenceLine).toContain("标题 2 / 正文 2 / 标签 1 / 图片Prompt 0");
+    expect(summary.evidenceLine).toContain("缺字段：图片 Prompt");
     expect(summary.evidenceLine).toContain("缺失 1 / 警告 1");
     expect(summary.confirmationItems).toEqual([
       {

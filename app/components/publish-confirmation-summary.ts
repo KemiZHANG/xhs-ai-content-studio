@@ -433,10 +433,27 @@ function formatEvidenceLine({
     `标签 ${Number(fieldCounts.tags ?? 0)}`,
     `图片Prompt ${Number(fieldCounts.imagePrompt ?? 0)}`
   ].join(" / ");
+  const missingFieldLine = formatMissingEvidenceFieldLine(fieldCounts);
   const missing = evidenceCitationSummary.missingEvidenceIds?.length ?? 0;
   const warnings = evidenceCitationSummary.warnings?.filter(Boolean).length ?? 0;
   const summary = evidenceCitationSummary.summary?.trim();
-  return `${base}；${summary ? `${summary}；` : ""}${sourceLine}；${fieldLine}；缺失 ${missing} / 警告 ${warnings}`;
+  return `${base}；${summary ? `${summary}；` : ""}${sourceLine}；${fieldLine}${missingFieldLine ? `；${missingFieldLine}` : ""}；缺失 ${missing} / 警告 ${warnings}`;
+}
+
+function formatMissingEvidenceFieldLine(
+  fieldCounts: { title?: number; content?: number; tags?: number; imagePrompt?: number } | undefined
+): string | null {
+  if (!fieldCounts || Object.keys(fieldCounts).length === 0) return null;
+  const fields: Array<[keyof typeof fieldCounts, string]> = [
+    ["title", "标题"],
+    ["content", "正文"],
+    ["tags", "标签"],
+    ["imagePrompt", "图片 Prompt"]
+  ];
+  const missingFields = fields
+    .filter(([key]) => Number(fieldCounts[key] ?? 0) <= 0)
+    .map(([, label]) => label);
+  return missingFields.length ? `缺字段：${missingFields.join("、")}` : "字段证据完整";
 }
 
 function formatVersionLine(
