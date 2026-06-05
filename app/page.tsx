@@ -699,9 +699,15 @@ export default function Home() {
         await startNewProject();
         return;
       case "recover":
+        {
+          const data = (await clientApi("/api/post-project", {
+            method: "PATCH",
+            body: JSON.stringify({ action: "recover" })
+          })) as { project: PostProject };
+          setPostProject(data.project);
+        }
         await loadWorkspace();
-        await loadPostProject();
-        setNotice("已刷新当前项目状态。");
+        setNotice("已恢复当前项目到可继续操作状态。");
         return;
       default:
         setChatInput(`请继续执行下一步：${action}`);

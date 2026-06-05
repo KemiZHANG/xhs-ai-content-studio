@@ -5,6 +5,7 @@ import { copyVersionFromDraft, deriveFinalPost } from "@/lib/post-project/brief"
 import { runPostQualityGate } from "@/lib/post-project/quality";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import type { PostReadinessReport } from "@/lib/post-project/readiness";
+import { inferPostStage } from "@/lib/post-project/stage-machine";
 import { readPostProject, updatePostProject } from "@/lib/post-project/store";
 import { createDraftRecord, writeCurrentDraft, type DraftRecord } from "@/lib/storage/drafts";
 import { getAsset } from "@/lib/storage/assets";
@@ -46,6 +47,9 @@ type PostProjectActionBody =
   | {
       action: "update_reference_assets";
       referenceAssetIds: string[];
+    }
+  | {
+      action: "recover";
     };
 
 export async function GET() {
@@ -180,6 +184,25 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
       publishPlan: null,
       qualityCheck: undefined,
       auditStatus: "unchecked"
+    });
+    return { project: nextProject };
+  }
+
+  if (body.action === "recover") {
+    const auditStatus: PostProject["auditStatus"] = project.qualityCheck
+      ? (project.qualityCheck.canPublish ? "passed" : "blocked")
+      : "unchecked";
+    const recoveredProject = {
+      ...project,
+      publishPlan: project.publishPlan?.status === "blocked" || project.publishPlan?.status === "failed"
+        ? null
+        : project.publishPlan,
+      auditStatus
+    };
+    const nextProject = await updatePostProject({
+      publishPlan: recoveredProject.publishPlan,
+      auditStatus: recoveredProject.auditStatus,
+      currentStage: inferPostStage(recoveredProject)
     });
     return { project: nextProject };
   }

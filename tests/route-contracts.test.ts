@@ -2469,6 +2469,54 @@ describe("API route contracts", () => {
     }));
   });
 
+  it("recovers a failed PostProject to the stage implied by its current canvas", async () => {
+    const failedProject = {
+      id: "post-failed",
+      topic: "广州咖啡馆",
+      currentStage: "failed",
+      publishPlan: { status: "failed" },
+      auditStatus: "blocked",
+      copyDraft: {
+        id: "draft-1",
+        updatedAt: "2026-05-31T00:00:00.000Z",
+        draft: {
+          title: "咖啡馆标题",
+          content: "咖啡馆正文",
+          tags: ["咖啡"],
+          structure: [],
+          imagePrompt: "自然光咖啡馆"
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      },
+      selectedImages: ["asset-1"],
+      imagePrompts: [],
+      evidencePack: { insights: [] },
+      selectedSamples: [],
+      copyVersions: [],
+      generatedImages: [],
+      agentMemory: []
+    };
+    const updatePostProject = vi.fn(async (patch) => ({ ...failedProject, ...patch }));
+
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => failedProject,
+      updatePostProject
+    }));
+
+    const { PATCH } = await import("@/app/api/post-project/route");
+    const response = await PATCH(jsonRequest({ action: "recover" }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(updatePostProject).toHaveBeenCalledWith({
+      publishPlan: null,
+      auditStatus: "unchecked",
+      currentStage: "image_ready"
+    });
+    expect(payload.project.currentStage).toBe("image_ready");
+  });
+
   it("syncs uploaded reference assets into PostProject product info", async () => {
     const updateWorkspaceState = vi.fn();
     const updatePostProject = vi.fn(async (patch) => ({
