@@ -18,6 +18,7 @@ type VersionSwitchGuidance = {
 
 export function PostCanvasPanel({
   canGenerateCopy,
+  ragCreativeBlocked = false,
   generatedCopyPrompt,
   creationProvenance,
   canvasVersionDisplay,
@@ -42,6 +43,7 @@ export function PostCanvasPanel({
   onCommitCanvas
 }: {
   canGenerateCopy: boolean;
+  ragCreativeBlocked?: boolean;
   generatedCopyPrompt: string;
   creationProvenance: CreationProvenanceCard[];
   canvasVersionDisplay: CanvasVersionDisplay;
@@ -67,6 +69,15 @@ export function PostCanvasPanel({
 }) {
   const hasDraftContent = Boolean(publishDraft.title.trim() || publishDraft.content.trim() || publishDraft.tagsText.trim());
   const showCanvasStarter = !hasDraftContent && !selectedAssets.length;
+  const copyActionLabel = ragCreativeBlocked ? "补强爆款证据" : "生成文案";
+  const copyActionDisabled = !canGenerateCopy && !ragCreativeBlocked;
+  const handleCopyAction = () => {
+    if (ragCreativeBlocked) {
+      onQuickAction("retrieve_viral_knowledge");
+      return;
+    }
+    onGenerateCopy(generatedCopyPrompt);
+  };
 
   return (
     <section className="panel postCanvasPane">
@@ -75,15 +86,16 @@ export function PostCanvasPanel({
           <h2>Post Canvas</h2>
           <p>最终帖子画布。标题、正文、标签、图片和发布预览在这里合并。</p>
         </div>
-        <button className="secondaryButton" disabled={!canGenerateCopy} onClick={() => onGenerateCopy(generatedCopyPrompt)} type="button">
+        <button className="secondaryButton" disabled={copyActionDisabled} onClick={handleCopyAction} type="button">
           <Bot size={16} />
-          生成文案
+          {copyActionLabel}
         </button>
       </div>
 
       {showCanvasStarter ? (
         <CanvasStarterGuide
           canGenerateCopy={canGenerateCopy}
+          ragCreativeBlocked={ragCreativeBlocked}
           onGenerateCopy={() => onGenerateCopy(generatedCopyPrompt)}
           onQuickAction={onQuickAction}
         />
@@ -132,6 +144,7 @@ export function PostCanvasPanel({
         canvasDirty={canvasDirty}
         project={project}
         publishDraft={publishDraft}
+        ragCreativeBlocked={ragCreativeBlocked}
         onCommitCanvas={onCommitCanvas}
         onQuickAction={onQuickAction}
       />
@@ -141,13 +154,25 @@ export function PostCanvasPanel({
 
 function CanvasStarterGuide({
   canGenerateCopy,
+  ragCreativeBlocked,
   onGenerateCopy,
   onQuickAction
 }: {
   canGenerateCopy: boolean;
+  ragCreativeBlocked: boolean;
   onGenerateCopy: () => void;
   onQuickAction: (action: string) => void;
 }) {
+  const copyActionLabel = ragCreativeBlocked ? "补强爆款证据" : "生成文案";
+  const copyActionDisabled = !canGenerateCopy && !ragCreativeBlocked;
+  const handleCopyAction = () => {
+    if (ragCreativeBlocked) {
+      onQuickAction("retrieve_viral_knowledge");
+      return;
+    }
+    onGenerateCopy();
+  };
+
   return (
     <section className="canvasStarterGuide" aria-label="Post Canvas 起步引导">
       <div>
@@ -157,7 +182,7 @@ function CanvasStarterGuide({
       </div>
       <div>
         <button type="button" onClick={() => onQuickAction("search_research")}>搜索真实笔记</button>
-        <button disabled={!canGenerateCopy} type="button" onClick={onGenerateCopy}>生成文案</button>
+        <button disabled={copyActionDisabled} type="button" onClick={handleCopyAction}>{copyActionLabel}</button>
         <button type="button" onClick={() => onQuickAction("select_images")}>选择图片</button>
       </div>
     </section>
@@ -514,23 +539,29 @@ function CanvasActionRow({
   publishDraft,
   canvasDirty,
   project,
+  ragCreativeBlocked,
   onCommitCanvas,
   onQuickAction
 }: {
   publishDraft: PublishDraftState;
   canvasDirty: boolean;
   project: PostProject | null;
+  ragCreativeBlocked: boolean;
   onCommitCanvas: () => void;
   onQuickAction: (action: string) => void;
 }) {
   const visualDirectionConfirmed = Boolean(project?.visualDirection?.confirmedAt || project?.visualDirection?.confirmationStatus === "confirmed");
   const hasVisualDirection = Boolean(project?.visualDirection);
   const imageGenerationBlocked = !visualDirectionConfirmed;
-  const imageGenerationLabel = visualDirectionConfirmed
+  const imageGenerationLabel = ragCreativeBlocked
+    ? "先补强爆款证据"
+    : visualDirectionConfirmed
     ? "Agent 生图"
     : hasVisualDirection
       ? "先确认图片方向"
       : "先规划图片方向";
+  const visualPlanningAction = ragCreativeBlocked ? "retrieve_viral_knowledge" : "plan_visuals";
+  const visualPlanningLabel = ragCreativeBlocked ? "补强爆款证据" : "规划图片方向";
 
   return (
     <div className="canvasActionRow">
@@ -538,9 +569,9 @@ function CanvasActionRow({
         <FileText size={16} />
         {canvasDirty ? "保存画布" : "画布已同步"}
       </button>
-      <button className="secondaryButton" onClick={() => onQuickAction("plan_visuals")} type="button">
+      <button className="secondaryButton" onClick={() => onQuickAction(visualPlanningAction)} type="button">
         <Sparkles size={16} />
-        规划图片方向
+        {visualPlanningLabel}
       </button>
       <button
         className="secondaryButton"

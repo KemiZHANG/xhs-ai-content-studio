@@ -252,6 +252,51 @@ describe("post canvas panel", () => {
     expect(html).toContain("选择图片");
   });
 
+  it("routes canvas creative buttons to viral RAG refresh when evidence is weak", () => {
+    const emptyDraft: PublishDraftState = {
+      title: "",
+      content: "",
+      tagsText: "",
+      imagePrompt: ""
+    };
+    const html = renderToStaticMarkup(createElement(PostCanvasPanel, {
+      canGenerateCopy: true,
+      ragCreativeBlocked: true,
+      generatedCopyPrompt: "生成探店文案",
+      creationProvenance: [],
+      canvasVersionDisplay: {
+        tone: "neutral",
+        label: "待生成",
+        detail: "等待文案和图片。",
+        changedLabels: [],
+        lanes: []
+      },
+      canvasDirty: false,
+      selectedAssets: [],
+      copyVersions: [],
+      copyVersionGuidance: { state: "empty", label: "待生成", detail: "暂无版本" },
+      publishDraft: emptyDraft,
+      latestImagePrompt: "",
+      project: null,
+      imagePromptVersions: [],
+      promptVersionGuidance: { state: "empty", label: "待生成", detail: "暂无 Prompt" },
+      versionStatus: null,
+      versionDiff: null,
+      citationReport: null,
+      onGenerateCopy: () => undefined,
+      onOpenEvidence: () => undefined,
+      onDraftChange: () => undefined,
+      onSelectCopyVersion: () => undefined,
+      onSelectImagePromptVersion: () => undefined,
+      onQuickAction: () => undefined,
+      onCommitCanvas: () => undefined
+    }));
+
+    expect(html).toContain("补强爆款证据");
+    expect(html).not.toContain("生成文案");
+    expect(html).not.toContain("规划图片方向");
+  });
+
   it("renders a readable unified copy, image, version, final post, and evidence canvas", () => {
     const html = renderToStaticMarkup(createElement(PostCanvasPanel, {
       canGenerateCopy: true,

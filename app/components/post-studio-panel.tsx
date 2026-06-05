@@ -525,6 +525,7 @@ export function PostStudioPanel({
 
         <PostCanvasPanel
           canGenerateCopy={canGenerateCopy}
+          ragCreativeBlocked={viralApplication.readinessGate.status === "caution"}
           generatedCopyPrompt={generatedCopyPrompt}
           creationProvenance={creationProvenance}
           canvasVersionDisplay={canvasVersionDisplay}
