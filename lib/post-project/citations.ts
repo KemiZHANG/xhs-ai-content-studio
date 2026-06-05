@@ -44,8 +44,15 @@ export type EvidenceReferenceSummary = {
   summary: string;
 };
 
+type EvidenceCitationProject = Pick<PostProject, "evidencePack" | "creativeBrief"> & {
+  visualDirection?: { basedOnEvidenceIds?: string[] };
+  imagePrompts?: Array<{ basedOnEvidenceIds?: string[] }>;
+  generatedImages?: Array<{ basedOnEvidenceIds?: string[] }>;
+  finalPost?: { basedOnEvidenceIds?: string[] };
+};
+
 export function buildEvidenceCitationReport(
-  project: Pick<PostProject, "evidencePack" | "creativeBrief">,
+  project: EvidenceCitationProject,
   evidenceIds: string[] = [],
   evidenceReferences?: GeneratedDraft["evidenceReferences"]
 ): EvidenceCitationReport {
@@ -53,9 +60,16 @@ export function buildEvidenceCitationReport(
     ...evidenceIds,
     ...(project.creativeBrief?.basedOnEvidenceIds ?? [])
   ]);
+  const visualFallbackIds = uniqueIds([
+    ...fallbackIds,
+    ...(project.visualDirection?.basedOnEvidenceIds ?? []),
+    ...(project.imagePrompts ?? []).flatMap((prompt) => prompt.basedOnEvidenceIds ?? []),
+    ...(project.generatedImages ?? []).flatMap((image) => image.basedOnEvidenceIds ?? []),
+    ...(project.finalPost?.basedOnEvidenceIds ?? [])
+  ]);
   const sections: EvidenceCitationSection[] = (["title", "content", "tags", "imagePrompt"] as const).map((field) => {
     const explicitIds = evidenceReferences?.[field] ?? [];
-    const inferredIds = inferFieldEvidenceIds(project.evidencePack.insights, field, fallbackIds);
+    const inferredIds = inferFieldEvidenceIds(project.evidencePack.insights, field, field === "imagePrompt" ? visualFallbackIds : fallbackIds);
     const ids = uniqueIds([...(explicitIds.length ? explicitIds : []), ...inferredIds]).slice(0, 8);
     return buildCitationSection(project.evidencePack.insights, field, ids);
   });

@@ -39,7 +39,14 @@ export function runPostQualityGate(project: Pick<
   const evidencePack = project.evidencePack;
   const ragSufficiencyIssue = getRagSufficiencyIssue(evidencePack?.summary);
   const citationReport = project.copyDraft && evidencePack?.insights.length
-    ? buildEvidenceCitationReport({ evidencePack, creativeBrief: project.creativeBrief }, draftEvidenceIds, project.copyDraft.draft.evidenceReferences)
+    ? buildEvidenceCitationReport({
+        evidencePack,
+        creativeBrief: project.creativeBrief,
+        visualDirection: project.visualDirection,
+        imagePrompts: project.imagePrompts,
+        generatedImages: project.generatedImages,
+        finalPost
+      }, draftEvidenceIds, project.copyDraft.draft.evidenceReferences)
     : null;
   const viralCoverage = citationReport ? buildViralCoverageReview(citationReport) : undefined;
   const finalImageIds = finalPost?.imageIds ?? [];

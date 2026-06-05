@@ -715,6 +715,92 @@ describe("post project", () => {
     expect(quality.suggestions.join(" ")).toContain("爆款库证据未覆盖");
   });
 
+  it("counts image prompt and generated-image evidence in Quality Gate viral coverage", () => {
+    const quality = runPostQualityGate({
+      creativeBrief: {
+        audience: "广州咖啡爱好者",
+        painPoint: "怕踩雷",
+        contentAngle: "真实探店",
+        emotionalHook: "先给适合谁",
+        proofPoints: ["人均", "排队"],
+        tone: "真实",
+        visualMood: "自然光",
+        imageMustHave: ["窗边"],
+        imageMustAvoid: [],
+        platformStyle: "小红书",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-live"]
+      },
+      visualDirection: undefined,
+      imagePrompts: [{
+        id: "prompt-viral-visual",
+        label: "窗边自然光封面",
+        createdAt: "2026-05-30T00:00:00.000Z",
+        value: { prompt: "窗边自然光咖啡馆封面，真实座位细节" },
+        basedOnEvidenceIds: ["viral-insight-style"]
+      }],
+      generatedImages: [{
+        id: "asset-1",
+        assetId: "asset-1",
+        createdAt: "2026-05-30T00:00:00.000Z",
+        promptVersionId: "prompt-viral-visual",
+        basedOnEvidenceIds: ["viral-insight-style"]
+      }],
+      selectedImages: ["asset-1"],
+      evidencePack: {
+        sampleIds: ["note-1", "viral-1"],
+        insights: [
+          {
+            id: "insight-live",
+            sourceType: "realtime",
+            type: "copy",
+            insight: "正文先说明适合人群，再补充排队和人均。",
+            sourceSampleIds: ["note-1"],
+            confidence: 0.82,
+            createdAt: "2026-05-30T00:00:00.000Z"
+          },
+          {
+            id: "viral-insight-style",
+            sourceType: "viral_library",
+            type: "visual",
+            insight: "封面突出窗边自然光和真实座位细节。",
+            sourceSampleIds: ["viral-1"],
+            confidence: 0.8,
+            createdAt: "2026-05-30T00:00:00.000Z"
+          }
+        ]
+      },
+      finalPost: {
+        title: "广州咖啡周末指南",
+        content: "这篇适合想周末找安静咖啡馆的人。先看人均和排队，再看座位光线，最后给适合人群和避峰建议。",
+        tags: ["广州咖啡馆", "探店"],
+        imageIds: ["asset-1"],
+        imagePromptVersionIds: ["prompt-viral-visual"]
+      },
+      copyDraft: {
+        id: "draft-prompt-coverage",
+        updatedAt: "2026-05-30T00:00:00.000Z",
+        draft: {
+          title: "广州咖啡周末指南",
+          content: "这篇适合想周末找安静咖啡馆的人。先看人均和排队，再看座位光线，最后给适合人群和避峰建议。",
+          tags: ["广州咖啡馆", "探店"],
+          structure: [],
+          imagePrompt: "窗边自然光咖啡",
+          basedOnEvidenceIds: ["insight-live"]
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      }
+    });
+
+    expect(quality.viralCoverage?.fields.find((field) => field.field === "imagePrompt")).toMatchObject({
+      status: "covered",
+      viralEvidenceIds: ["viral-insight-style"]
+    });
+    expect(quality.evidenceReview?.viralEvidenceIds).toEqual(["viral-insight-style"]);
+  });
+
   it("blocks publish quality when the draft only cites viral-library evidence", () => {
     const quality = runPostQualityGate({
       creativeBrief: {
