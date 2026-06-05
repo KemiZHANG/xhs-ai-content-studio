@@ -1097,6 +1097,36 @@ describe("API route contracts", () => {
     }));
   });
 
+  it("marks the active PostProject failed when the publish route crashes", async () => {
+    const updatePostProject = vi.fn(async () => ({}));
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => {
+        throw new Error("settings unavailable");
+      },
+      isPublishVisibility: (value: unknown) => typeof value === "string"
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: vi.fn(),
+      updatePostProject
+    }));
+
+    const { POST } = await import("@/app/api/publish/route");
+    const response = await POST(jsonRequest({
+      title: "发布失败测试",
+      content: "这是一段发布失败测试正文",
+      tags: ["测试"],
+      confirmed: true
+    }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(payload.error).toBe("settings unavailable");
+    expect(updatePostProject).toHaveBeenCalledWith({
+      currentStage: "failed",
+      auditStatus: "blocked"
+    });
+  });
+
   it("blocks real publish calls without a saved PostProject quality context", async () => {
     const asset = {
       id: "asset-1",

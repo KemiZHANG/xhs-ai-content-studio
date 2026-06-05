@@ -257,6 +257,10 @@ export async function POST(request: Request) {
       currentDraft
     });
   } catch (error) {
+    await updatePostProject({
+      currentStage: "failed",
+      auditStatus: "blocked"
+    }).catch(() => undefined);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "发布失败" },
       { status: 500 }
