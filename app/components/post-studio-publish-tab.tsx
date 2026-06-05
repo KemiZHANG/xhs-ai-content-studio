@@ -29,20 +29,6 @@ type PublishFocusBlocker = {
   actionLabel?: string;
 };
 
-export function buildPublishFocusModel(publishSummary: PublishConfirmationSummary) {
-  const blockerPreview = publishSummary.visibleBlockers.slice(0, 3);
-  const blockerActions = blockerPreview.map((text) => ({
-    text,
-    ...actionForPublishBlocker(text)
-  }));
-  return {
-    blockerPreview,
-    blockerActions,
-    hiddenBlockerCount: Math.max(0, publishSummary.visibleBlockers.length - blockerPreview.length),
-    hasBlockers: blockerPreview.length > 0
-  };
-}
-
 export function PostStudioPublishTab({
   summary,
   publishDraft,
@@ -64,6 +50,7 @@ export function PostStudioPublishTab({
   publishAccountSafety,
   auditSummary,
   publishSafetyBoundary,
+  ragCreativeBlocked = false,
   activePublishPlan,
   requiredConfirmations,
   confirmedRequiredCount,
@@ -102,6 +89,7 @@ export function PostStudioPublishTab({
   publishAccountSafety: PublishAccountSafety;
   auditSummary: PublishAuditSafetySummary;
   publishSafetyBoundary: PublishSafetyBoundaryModel;
+  ragCreativeBlocked?: boolean;
   activePublishPlan: WorkspacePublishPlan | null;
   requiredConfirmations: RequiredConfirmation[];
   confirmedRequiredCount: number;
@@ -120,7 +108,7 @@ export function PostStudioPublishTab({
   onPreparePublish: () => void;
   onOpenPublish: () => void;
 }) {
-  const publishFocus = buildPublishFocusModel(publishSummary);
+  const publishFocus = buildPublishFocusModel(publishSummary, ragCreativeBlocked);
 
   return (
     <section className="studioSideSection">
@@ -203,6 +191,7 @@ export function PostStudioPublishTab({
         activeLoginName={activeLoginName}
         publishSafetyBoundary={publishSafetyBoundary}
         hasExistingVisualDirection={hasExistingVisualDirection}
+        ragCreativeBlocked={ragCreativeBlocked}
         busy={busy}
         onVisibilityChange={onVisibilityChange}
         onScheduleAtChange={onScheduleAtChange}
@@ -368,8 +357,25 @@ function CheckItem({ ok, label }: { ok: boolean; label: string }) {
   return <span className={ok ? "checkItem ok" : "checkItem"}>{ok ? "✓" : "!"} {label}</span>;
 }
 
-function actionForPublishBlocker(blocker: string): Pick<PublishFocusBlocker, "action" | "actionLabel"> {
+export function buildPublishFocusModel(publishSummary: PublishConfirmationSummary, ragCreativeBlocked = false) {
+  const blockerPreview = publishSummary.visibleBlockers.slice(0, 3);
+  const blockerActions = blockerPreview.map((text) => ({
+    text,
+    ...actionForPublishBlocker(text, ragCreativeBlocked)
+  }));
+  return {
+    blockerPreview,
+    blockerActions,
+    hiddenBlockerCount: Math.max(0, publishSummary.visibleBlockers.length - blockerPreview.length),
+    hasBlockers: blockerPreview.length > 0
+  };
+}
+
+function actionForPublishBlocker(blocker: string, ragCreativeBlocked = false): Pick<PublishFocusBlocker, "action" | "actionLabel"> {
   if (blocker.includes("图片方向") || blocker.includes("Prompt") || blocker.includes("视觉")) {
+    if (ragCreativeBlocked) {
+      return { action: "retrieve_viral_knowledge", actionLabel: "补强爆款证据" };
+    }
     return { action: "plan_visuals", actionLabel: "规划图片" };
   }
   if (blocker.includes("图片")) {
@@ -379,6 +385,9 @@ function actionForPublishBlocker(blocker: string): Pick<PublishFocusBlocker, "ac
     return { action: "run_quality_gate", actionLabel: "刷新检查" };
   }
   if (blocker.includes("标题") || blocker.includes("正文") || blocker.includes("标签") || blocker.includes("文案")) {
+    if (ragCreativeBlocked) {
+      return { action: "retrieve_viral_knowledge", actionLabel: "补强爆款证据" };
+    }
     return { action: "generate_copy", actionLabel: "补文案" };
   }
   if (blocker.includes("证据") || blocker.includes("引用")) {

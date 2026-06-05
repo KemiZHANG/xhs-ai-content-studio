@@ -83,6 +83,34 @@ describe("post studio publish readiness panel", () => {
     expect(html).toContain("选择发布图片");
   });
 
+  it("routes creative fixes to viral RAG refresh when evidence is weak", () => {
+    const html = renderToStaticMarkup(createElement(PostStudioPublishReadinessPanel, {
+      publishVisibility: "仅自己可见",
+      publishScheduleAt: "",
+      publishReady: false,
+      publishDraft: { ...draft, content: "", tagsText: "" },
+      selectedImageCount: 0,
+      hasVisualDirection: false,
+      citationTraceReady: false,
+      accountReady: true,
+      quality: undefined,
+      qualityGateFresh: false,
+      pendingPublish: null,
+      activeLoginName: "xiaohongshu-mcp",
+      publishSafetyBoundary,
+      hasExistingVisualDirection: false,
+      ragCreativeBlocked: true,
+      busy: false,
+      onVisibilityChange: () => undefined,
+      onScheduleAtChange: () => undefined,
+      onQuickAction: () => undefined
+    }));
+
+    expect(html).toContain("补强爆款证据");
+    expect(html).not.toContain("补文案");
+    expect(html).not.toContain(">去规划<");
+  });
+
   it("renders confirmation state after publish requirements are ready", () => {
     const html = renderToStaticMarkup(createElement(PostStudioPublishReadinessPanel, {
       publishVisibility: "仅自己可见",

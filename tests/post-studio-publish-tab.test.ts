@@ -29,6 +29,28 @@ describe("post studio publish tab", () => {
     expect(model.hasBlockers).toBe(true);
   });
 
+  it("routes publish focus creative blockers to viral RAG refresh when evidence is weak", () => {
+    const model = buildPublishFocusModel({
+      visibleBlockers: ["缺少标题正文标签", "未确认图片方向", "缺少图片"]
+    } as unknown as PublishConfirmationSummary, true);
+
+    expect(model.blockerActions[0]).toMatchObject({
+      text: "缺少标题正文标签",
+      action: "retrieve_viral_knowledge",
+      actionLabel: "补强爆款证据"
+    });
+    expect(model.blockerActions[1]).toMatchObject({
+      text: "未确认图片方向",
+      action: "retrieve_viral_knowledge",
+      actionLabel: "补强爆款证据"
+    });
+    expect(model.blockerActions[2]).toMatchObject({
+      text: "缺少图片",
+      action: "select_images",
+      actionLabel: "选择图片"
+    });
+  });
+
   it("renders readable publish safety checks and confirmation actions", () => {
     const html = renderToStaticMarkup(createElement(PostStudioPublishTab, {
       summary: {

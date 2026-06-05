@@ -19,6 +19,7 @@ export function PostStudioPublishReadinessPanel({
   activeLoginName,
   publishSafetyBoundary,
   hasExistingVisualDirection,
+  ragCreativeBlocked = false,
   busy,
   onVisibilityChange,
   onScheduleAtChange,
@@ -38,6 +39,7 @@ export function PostStudioPublishReadinessPanel({
   activeLoginName?: string;
   publishSafetyBoundary: PublishSafetyBoundaryModel;
   hasExistingVisualDirection: boolean;
+  ragCreativeBlocked?: boolean;
   busy: boolean;
   onVisibilityChange: (value: RedactedSettings["defaultVisibility"]) => void;
   onScheduleAtChange: (value: string) => void;
@@ -52,7 +54,8 @@ export function PostStudioPublishReadinessPanel({
     quality,
     qualityGateFresh,
     publishScheduleAt,
-    hasExistingVisualDirection
+    hasExistingVisualDirection,
+    ragCreativeBlocked
   });
   const scheduleInputValue = toDatetimeLocalInputValue(publishScheduleAt);
 
@@ -124,8 +127,12 @@ export function PostStudioPublishReadinessPanel({
         {!publishReady ? (
           <div className="publishInlineFixes" aria-label="发布前快速处理">
             {!hasVisualDirection ? (
-              <button disabled={busy} type="button" onClick={() => onQuickAction(hasExistingVisualDirection ? "confirm_visual_direction" : "plan_visuals")}>
-                {hasExistingVisualDirection ? "确认图片方向" : "规划图片方向"}
+              <button
+                disabled={busy}
+                type="button"
+                onClick={() => onQuickAction(hasExistingVisualDirection ? "confirm_visual_direction" : ragCreativeBlocked ? "retrieve_viral_knowledge" : "plan_visuals")}
+              >
+                {hasExistingVisualDirection ? "确认图片方向" : ragCreativeBlocked ? "补强爆款证据" : "规划图片方向"}
               </button>
             ) : null}
             {(!quality || quality?.canPublish === false || !qualityGateFresh) ? (
@@ -161,7 +168,8 @@ function buildPublishFixChecklist({
   quality,
   qualityGateFresh,
   publishScheduleAt,
-  hasExistingVisualDirection
+  hasExistingVisualDirection,
+  ragCreativeBlocked
 }: {
   publishDraft: PublishDraftState;
   selectedImageCount: number;
@@ -172,22 +180,23 @@ function buildPublishFixChecklist({
   qualityGateFresh: boolean;
   publishScheduleAt: string;
   hasExistingVisualDirection: boolean;
+  ragCreativeBlocked: boolean;
 }): PublishFixChecklistItem[] {
   const items: PublishFixChecklistItem[] = [];
   if (!publishDraft.title.trim() || !publishDraft.content.trim() || !publishDraft.tagsText.trim()) {
     items.push({
       label: "补齐标题/正文/标签",
-      detail: "最终发布稿需要完整文案",
-      action: "generate_copy",
-      actionLabel: "补文案"
+      detail: ragCreativeBlocked ? "爆款库证据不足，先刷新 RAG 再生成最终文案" : "最终发布稿需要完整文案",
+      action: ragCreativeBlocked ? "retrieve_viral_knowledge" : "generate_copy",
+      actionLabel: ragCreativeBlocked ? "补强爆款证据" : "补文案"
     });
   }
   if (!hasVisualDirection) {
     items.push({
       label: hasExistingVisualDirection ? "确认图片方向" : "规划图片方向",
-      detail: "图片方向会影响生图和发布风险",
-      action: hasExistingVisualDirection ? "confirm_visual_direction" : "plan_visuals",
-      actionLabel: hasExistingVisualDirection ? "确认方向" : "去规划"
+      detail: !hasExistingVisualDirection && ragCreativeBlocked ? "爆款库证据不足，先刷新 RAG 再规划图片方向" : "图片方向会影响生图和发布风险",
+      action: hasExistingVisualDirection ? "confirm_visual_direction" : ragCreativeBlocked ? "retrieve_viral_knowledge" : "plan_visuals",
+      actionLabel: hasExistingVisualDirection ? "确认方向" : ragCreativeBlocked ? "补强爆款证据" : "去规划"
     });
   }
   if (!selectedImageCount) {

@@ -632,6 +632,7 @@ export function PostStudioPanel({
             quality,
             qualityGateFresh: versionStatus?.qualityGateFresh === true,
             qualityViralCoverage,
+            ragCreativeBlocked: viralApplication.readinessGate.status === "caution",
             requiredConfirmations,
             selectedImageCount: selectedAssets.length,
             staleAccountPublishPlan,
