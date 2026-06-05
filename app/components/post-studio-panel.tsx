@@ -159,7 +159,7 @@ export function PostStudioPanel({
   onSaveManyToViralLibrary: (samples: SampleEvidence[]) => void;
   onReloadViralLibrary: () => void;
   onSearchViralLibrary: (filters: ViralLibrarySearchFilters) => void;
-  onRefreshViralEvidence: () => void;
+  onRefreshViralEvidence: (filters?: ViralLibrarySearchFilters) => void;
   onOpenImageStudio: () => void;
   onUploadReferenceFiles: (files: FileList | File[]) => void;
   onOpenPublish: () => void;

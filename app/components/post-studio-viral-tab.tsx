@@ -84,7 +84,7 @@ export function PostStudioViralTab({
   onQuickAction: (action: string) => void;
   onFocusEvidenceIds: (ids: string[]) => void;
   onOpenViralCase: (viralCase: ViralCase) => void;
-  onRefreshViralEvidence: () => void;
+  onRefreshViralEvidence: (filters: ViralLibrarySearchFilters) => void;
   onReloadViralLibrary: () => void;
 }) {
   const focusedEvidenceIdSet = new Set(focusedEvidenceIds);
@@ -110,7 +110,7 @@ export function PostStudioViralTab({
         viralInsights={viralInsights}
       />
       <div className="sideActionStack">
-        <button className="primaryButton fullWidth" onClick={onRefreshViralEvidence} type="button">
+        <button className="primaryButton fullWidth" onClick={() => onRefreshViralEvidence(viralSearchForm)} type="button">
           <Sparkles size={16} />
           刷新当前项目 RAG 证据
         </button>

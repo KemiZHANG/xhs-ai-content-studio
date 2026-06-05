@@ -357,15 +357,16 @@ export default function Home() {
     return data.cases ?? [];
   }
 
-  async function refreshViralRagPreview() {
+  async function refreshViralRagPreview(filters: ViralLibrarySearchFilters = {}) {
     setBusy("viral");
     try {
+      const params = buildViralKnowledgeSearchParams(filters, 8);
       const data = await clientApi<{
         viralKnowledge: ViralRagPack;
         project: PostProject;
         addedInsightIds: string[];
         invalidatedDownstream: boolean;
-      }>("/api/viral-rag", {
+      }>(`/api/viral-rag?${params.toString()}`, {
         method: "POST",
         body: JSON.stringify({ action: "refresh_project_evidence" })
       });
@@ -1508,7 +1509,7 @@ export default function Home() {
             onSaveManyToViralLibrary={(samples) => void saveSamplesToViralLibrary(samples)}
             onReloadViralLibrary={() => void loadViralKnowledge()}
             onSearchViralLibrary={(filters) => void loadViralKnowledge(filters)}
-            onRefreshViralEvidence={() => void handlePostStudioAction("retrieve_viral_knowledge")}
+            onRefreshViralEvidence={(filters) => void refreshViralRagPreview(filters)}
             onOpenImageStudio={() => setSection("imageStudio")}
             onUploadReferenceFiles={(files) => void attachPostStudioReferenceFiles(files)}
             onOpenPublish={() => void openPublishAssemblyFromWorkspace({ stayInStudio: true })}

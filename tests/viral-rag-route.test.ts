@@ -208,7 +208,7 @@ describe("viral RAG API", () => {
       }
     });
 
-    const response = await POST(new Request("http://localhost/api/viral-rag?limit=5", {
+    const response = await POST(new Request("http://localhost/api/viral-rag?limit=5&category=product&audience=office&painPoint=laptop&minCollects=1000&sortBy=collects&sortOrder=desc", {
       method: "POST",
       body: JSON.stringify({ action: "refresh_project_evidence" })
     }));
@@ -221,6 +221,14 @@ describe("viral RAG API", () => {
     };
 
     expect(payload.viralKnowledge.results[0].case.id).toBe(viralCase.id);
+    expect(payload.viralKnowledge.filters).toMatchObject({
+      category: "product",
+      audience: "office",
+      painPoint: "laptop",
+      minCollects: 1000,
+      sortBy: "collects",
+      sortOrder: "desc"
+    });
     expect(payload.project.evidencePack.sampleIds).toContain(viralCase.id);
     expect(payload.project.evidencePack.insights.some((insight) => insight.sourceType === "viral_library")).toBe(true);
     expect(payload.addedInsightIds.length).toBeGreaterThan(0);
