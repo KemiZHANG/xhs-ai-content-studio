@@ -227,6 +227,53 @@ describe("viral knowledge base", () => {
     expect(Math.max(...insights.map((item) => item.confidence))).toBeLessThanOrEqual(0.48);
   });
 
+  it("penalizes forced low-quality cases during semantic retrieval", async () => {
+    const strongCase = await createViralCaseFromEvidence({
+      sample: {
+        ...sample,
+        id: "note-strong-rag",
+        title: "Quiet cafe guide with saveable seat details",
+        detailText: "Start with who should save it, then compare quiet seats, power outlets, price, lighting, and weekend timing.",
+        url: "https://www.xiaohongshu.com/explore/note-strong-rag"
+      },
+      topic: "Quiet cafe guide",
+      category: "Cafe review"
+    });
+    const weakSample: SampleEvidence = {
+      id: "note-weak-rag",
+      title: "Quiet cafe guide",
+      author: "author",
+      likes: 0,
+      collects: 0,
+      comments: 0,
+      shares: 0,
+      score: 0,
+      url: "",
+      imageUrls: [],
+      cachedImageUrls: [],
+      detailText: "",
+      commentSnippets: [],
+      reasonHighlights: []
+    };
+    const weakCase = markForcedLowQualityViralCase(await createViralCaseFromEvidence({
+      sample: weakSample,
+      topic: "Quiet cafe guide",
+      category: "Cafe review"
+    }), reviewViralSaveCandidate(weakSample));
+    await upsertViralCases([weakCase, strongCase]);
+
+    const results = await searchViralCases({
+      query: "quiet cafe guide saveable seat details",
+      topic: "Quiet cafe guide",
+      limit: 5
+    });
+    const weakResult = results.find((result) => result.case.id === weakCase.id);
+
+    expect(results[0].case.id).toBe(strongCase.id);
+    expect(weakResult?.score).toBeLessThan(results[0].score);
+    expect(weakResult?.reasons.join(" ")).toContain("弱参考");
+  });
+
   it("backfills creative safety for legacy viral cases", async () => {
     const viralCase = await createViralCaseFromEvidence({
       sample,

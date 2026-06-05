@@ -809,7 +809,10 @@ function scoreViralCase(item: ViralCase, queryTokens: string[], input: ViralSear
   const tokenHits = queryTokens.filter((token) => textTokens.includes(token));
   const semanticScore = cosineSimilarity(createLocalEmbedding(queryTokens.join(" ")), item.embedding);
   const metricScore = Math.min(0.25, Math.log10(1 + item.metrics.likes + item.metrics.collects * 1.4 + item.metrics.comments * 0.6) / 20);
-  const qualityScore = Math.min(0.08, (item.quality?.score ?? 0.5) * 0.08);
+  const forcedLowQuality = isForcedLowQualityViralCase(item);
+  const qualityScore = forcedLowQuality
+    ? Math.min(0.01, (item.quality?.score ?? 0.5) * 0.02)
+    : Math.min(0.08, (item.quality?.score ?? 0.5) * 0.08);
   const filterBonus = [
     input.topic && includesLoose(item.topic, input.topic),
     input.category && includesLoose(item.category, input.category),
@@ -818,7 +821,8 @@ function scoreViralCase(item: ViralCase, queryTokens: string[], input: ViralSear
   ].filter(Boolean).length * 0.08;
   const keywordScore = tokenHits.length * 0.08;
   const weightedSemanticScore = semanticScore * 0.55;
-  const score = keywordScore + weightedSemanticScore + metricScore + qualityScore + filterBonus;
+  const rawScore = keywordScore + weightedSemanticScore + metricScore + qualityScore + filterBonus;
+  const score = forcedLowQuality ? rawScore * 0.55 : rawScore;
   return {
     case: item,
     score: Number(score.toFixed(4)),
@@ -835,7 +839,8 @@ function scoreViralCase(item: ViralCase, queryTokens: string[], input: ViralSear
       tokenHits.length ? `命中关键词：${tokenHits.slice(0, 5).join("、")}` : "",
       semanticScore > 0.1 ? "语义相似" : "",
       metricScore > 0.05 ? "互动数据较强" : "",
-      qualityScore > 0.05 ? "结构化规律质量较高" : ""
+      qualityScore > 0.05 ? "结构化规律质量较高" : "",
+      forcedLowQuality ? "弱参考：低质量样本强制入库，已降低召回权重" : ""
     ].filter(Boolean)
   };
 }
