@@ -75,6 +75,37 @@ describe("agent planner", () => {
     expect(plan.steps[0].reason).toContain("close to publishing");
   });
 
+  it("treats explicit publish confirmation sheet requests as guarded publish prep", () => {
+    const plan = createAgentPlan({
+      message: "生成发布确认单",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      postStage: "reviewing",
+      hasEvidence: true,
+      hasCreativeBrief: true,
+      hasSelectedImages: true
+    });
+
+    expect(plan.intent).toBe("prepare_publish");
+    expect(plan.steps.map((step) => step.action)).toEqual(["preparePublish"]);
+    expect(plan.steps[0].toolName).toBe("publish.prepare");
+  });
+
+  it("does not mistake publish current draft for generating a new draft", () => {
+    const plan = createAgentPlan({
+      message: "publish current draft",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      postStage: "reviewing",
+      hasEvidence: true,
+      hasCreativeBrief: true,
+      hasSelectedImages: true
+    });
+
+    expect(plan.intent).toBe("prepare_publish");
+    expect(plan.steps.map((step) => step.action)).toEqual(["preparePublish"]);
+  });
+
   it("adds publish assembly and Quality Gate when a full research request asks for publish review", () => {
     const plan = createAgentPlan({
       message: "帮我找最近一周广州咖啡馆高收藏笔记，分析标题和图片风格，生成图文笔记，然后进入发布检查",

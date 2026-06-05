@@ -3193,4 +3193,125 @@ describe("agent orchestrator", () => {
     expect(publishCalls).toBe(0);
     expect(result.workspace.publishPlan?.status).toBe("awaiting_approval");
   });
+
+  it("attaches traceable evidence citations to chat-created publish confirmations", async () => {
+    const draft = {
+      id: "draft-publish-citations",
+      updatedAt: "2026-05-30T00:00:00.000Z",
+      draft: {
+        title: "广州咖啡周末指南",
+        content: "这篇适合想周末找安静咖啡馆的人。先看人均和排队，再看座位光线，最后给适合人群和避峰建议。",
+        tags: ["广州咖啡馆", "探店"],
+        structure: ["适合谁", "体验", "避坑"],
+        imagePrompt: "窗边自然光咖啡",
+        basedOnEvidenceIds: ["insight-title", "insight-copy", "insight-tag"]
+      },
+      images: [{ path: path.join(tempDir, "generated-assets", "generated", "draft.png") }],
+      visibility: defaultSettings.defaultVisibility
+    };
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: {
+        sampleIds: ["note-1", "viral-1"],
+        insights: [
+          {
+            id: "insight-title",
+            sourceType: "realtime",
+            type: "title",
+            insight: "标题前置适合人群和避坑收益",
+            sourceSampleIds: ["note-1"],
+            confidence: 0.82,
+            createdAt: "2026-05-30T00:00:00.000Z"
+          },
+          {
+            id: "insight-copy",
+            sourceType: "realtime",
+            type: "copy",
+            insight: "正文先说明适合人群，再补充排队和人均。",
+            sourceSampleIds: ["note-1"],
+            confidence: 0.82,
+            createdAt: "2026-05-30T00:00:00.000Z"
+          },
+          {
+            id: "insight-tag",
+            sourceType: "realtime",
+            type: "tag",
+            insight: "标签使用城市、品类和场景组合。",
+            sourceSampleIds: ["note-1"],
+            confidence: 0.78,
+            createdAt: "2026-05-30T00:00:00.000Z"
+          },
+          {
+            id: "viral-insight-visual",
+            sourceType: "viral_library",
+            type: "visual",
+            insight: "封面突出窗边自然光和真实座位细节。",
+            sourceSampleIds: ["viral-1"],
+            confidence: 0.8,
+            createdAt: "2026-05-30T00:00:00.000Z"
+          }
+        ]
+      },
+      creativeBrief: {
+        audience: "广州咖啡爱好者",
+        painPoint: "怕踩雷",
+        contentAngle: "真实探店",
+        emotionalHook: "先给适合谁",
+        proofPoints: ["人均", "排队"],
+        tone: "真实",
+        visualMood: "自然光",
+        imageMustHave: ["窗边"],
+        imageMustAvoid: [],
+        platformStyle: "小红书",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-title", "insight-copy", "insight-tag"]
+      },
+      copyDraft: draft,
+      imagePrompts: [{
+        id: "prompt-viral-visual",
+        label: "窗边自然光封面",
+        createdAt: "2026-05-30T00:00:00.000Z",
+        value: { prompt: "窗边自然光咖啡馆封面，真实座位细节" },
+        basedOnEvidenceIds: ["viral-insight-visual"]
+      }],
+      selectedImages: ["asset-1"],
+      currentStage: "reviewing"
+    });
+
+    const result = await runAgentTurn({
+      message: "publish current draft",
+      conversationId: "chat-publish-citations",
+      settings: { ...defaultSettings, agentPublishPolicy: "auto_publish_allowed" },
+      history: [],
+      currentDraft: draft,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    const summary = result.workspace.publishPlan?.evidenceCitationSummary;
+    expect(result.agentRun.plan).toMatchObject({ intent: "prepare_publish" });
+    expect(result.workspace.publishPlan?.status).toBe("awaiting_approval");
+    expect(summary?.fieldCounts).toMatchObject({
+      title: expect.any(Number),
+      content: expect.any(Number),
+      tags: expect.any(Number),
+      imagePrompt: expect.any(Number)
+    });
+    expect(summary?.fieldCounts.title).toBeGreaterThan(0);
+    expect(summary?.fieldCounts.content).toBeGreaterThan(0);
+    expect(summary?.fieldCounts.tags).toBeGreaterThan(0);
+    expect(summary?.fieldCounts.imagePrompt).toBeGreaterThan(0);
+    expect(summary?.sourceCounts.viral_library).toBeGreaterThan(0);
+  });
 });

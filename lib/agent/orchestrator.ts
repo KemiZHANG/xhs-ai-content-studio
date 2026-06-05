@@ -10,6 +10,7 @@ import type {
   AgentAction,
   AgentPlan,
   AgentQuickAction,
+  PublishEvidenceCitationSummary,
   AgentResponseCard,
   AgentRuntimeContext,
   AgentToolTraceItem,
@@ -3192,6 +3193,7 @@ async function maybeHandleGuardedPublishTurn(
     };
   }
 
+  const projectForPublish = projectWithPublishDraft(activeProject, currentDraft);
   const guardedPublish = await executeGuardedPublish({
     args: {
       title: currentDraft.draft.title,
@@ -3212,7 +3214,8 @@ async function maybeHandleGuardedPublishTurn(
       mcpUrl: input.settings.mcpUrl
     },
     publishContext: {
-      versionSnapshot: buildPublishVersionSnapshot(projectWithPublishDraft(activeProject, currentDraft))
+      evidenceCitationSummary: buildAgentPublishEvidenceCitationSummary(projectForPublish, currentDraft),
+      versionSnapshot: buildPublishVersionSnapshot(projectForPublish)
     },
     publish: (args) => input.mcp.publishContent(args)
   });
@@ -3777,6 +3780,36 @@ function summarizeEvidenceCitationReport(
 ): string {
   const report = buildEvidenceCitationReport(project, evidenceIds, evidenceReferences);
   return report.allEvidenceIds.length ? formatEvidenceCitationReport(report) : "";
+}
+
+function buildAgentPublishEvidenceCitationSummary(
+  project: PostProject,
+  draft: DraftRecord
+): PublishEvidenceCitationSummary | undefined {
+  const evidenceIds = uniqueIds([
+    ...(draft.draft.basedOnEvidenceIds ?? []),
+    ...(project.finalPost?.basedOnEvidenceIds ?? []),
+    ...(project.creativeBrief?.basedOnEvidenceIds ?? []),
+    ...(project.visualDirection?.basedOnEvidenceIds ?? []),
+    ...project.imagePrompts.flatMap((prompt) => prompt.basedOnEvidenceIds ?? []),
+    ...project.generatedImages.flatMap((image) => image.basedOnEvidenceIds ?? [])
+  ]).slice(0, 12);
+  if (!project.evidencePack.insights.length || !evidenceIds.length) {
+    return undefined;
+  }
+  const report = buildEvidenceCitationReport(project, evidenceIds, draft.draft.evidenceReferences);
+  return {
+    summary: report.summary,
+    missingEvidenceIds: report.missingEvidenceIds,
+    warnings: report.warnings,
+    sourceCounts: report.sourceCounts,
+    fieldCounts: {
+      title: report.sections.find((section) => section.field === "title")?.insights.length ?? 0,
+      content: report.sections.find((section) => section.field === "content")?.insights.length ?? 0,
+      tags: report.sections.find((section) => section.field === "tags")?.insights.length ?? 0,
+      imagePrompt: report.sections.find((section) => section.field === "imagePrompt")?.insights.length ?? 0
+    }
+  };
 }
 
 function buildViralSafetyContextForPrompt(project: PostProject) {

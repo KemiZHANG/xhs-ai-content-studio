@@ -83,6 +83,14 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
     });
   }
 
+  if (isPublishConfirmationCreationRequest(message, lower) && input.hasCurrentDraft) {
+    return buildPlan({
+      intent: "prepare_publish",
+      topic: inferTopic(message),
+      steps: [step("preparePublish", "Create a guarded publish confirmation intent for the current draft.", "publish.prepare")]
+    });
+  }
+
   if (isQualityCheckRequest(message, lower) && input.hasCurrentDraft) {
     return buildPlan({
       intent: "quality_check",
@@ -175,7 +183,7 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
     });
   }
 
-  if (isDraftCreationFromProjectRequest(message, lower) && (input.hasEvidence || input.hasCreativeBrief)) {
+  if (isDraftCreationFromProjectRequest(message, lower) && !isPublishRequest(message, lower) && (input.hasEvidence || input.hasCreativeBrief)) {
     return buildPlan({
       intent: "answer",
       topic: inferTopic(message),
@@ -543,6 +551,12 @@ function isImageSelectionRequest(message: string, lower: string): boolean {
 function isQualityCheckRequest(message: string, lower: string): boolean {
   return /发布检查|质量检查|检查发布|进入发布检查|组合(?:成)?(?:最终)?帖子|组装(?:成)?(?:最终)?帖子|生成确认单|发布前检查/.test(message) ||
     lower.includes("quality gate");
+}
+
+function isPublishConfirmationCreationRequest(message: string, lower: string): boolean {
+  return /(?:生成|创建|准备|出).{0,8}(?:发布)?确认单|发布确认单/.test(message) ||
+    lower.includes("create publish confirmation") ||
+    lower.includes("publish confirmation");
 }
 
 function isAssemblePostRequest(message: string, lower: string): boolean {
