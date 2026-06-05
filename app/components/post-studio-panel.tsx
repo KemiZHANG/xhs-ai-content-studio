@@ -250,7 +250,8 @@ export function PostStudioPanel({
   const briefTabSummary = buildBriefTabSummary({
     project,
     evidenceCount: insights.length,
-    viralEvidenceCount: viralInsights.length
+    viralEvidenceCount: viralInsights.length,
+    ragCreativeBlocked: viralApplication.readinessGate.status === "caution"
   });
   const referenceTabSummary = buildImageTabSummary({
     selectedCount: referenceAssetSummary.selectedCount,

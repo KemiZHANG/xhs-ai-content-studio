@@ -66,6 +66,35 @@ describe("studio tab summary", () => {
     expect(summary.detail).toContain("安静咖啡馆");
   });
 
+  it("routes an existing Brief back to viral RAG when creative evidence is weak", () => {
+    const summary = buildBriefTabSummary({
+      project: project({
+        creativeBrief: {
+          audience: "探店人群",
+          painPoint: "选择困难",
+          contentAngle: "安静咖啡馆",
+          emotionalHook: "慢下来",
+          proofPoints: ["真实体验"],
+          tone: "真实分享",
+          visualMood: "自然光",
+          imageMustHave: [],
+          imageMustAvoid: [],
+          platformStyle: "小红书",
+          tabooWords: [],
+          complianceNotes: [],
+          basedOnEvidenceIds: ["viral-insight-1"]
+        }
+      }),
+      evidenceCount: 3,
+      viralEvidenceCount: 1,
+      ragCreativeBlocked: true
+    });
+
+    expect(summary.primaryAction).toBe("retrieve_viral_knowledge");
+    expect(summary.primaryActionLabel).toBe("刷新爆款库 RAG");
+    expect(summary.detail).toContain("爆款库 RAG 证据还不足");
+  });
+
   it("summarizes image tabs without exposing the whole asset library", () => {
     expect(buildImageTabSummary({
       selectedCount: 0,

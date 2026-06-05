@@ -13,20 +13,28 @@ export type StudioTabSummary = {
 export function buildBriefTabSummary({
   project,
   evidenceCount,
-  viralEvidenceCount
+  viralEvidenceCount,
+  ragCreativeBlocked = false
 }: {
   project: PostProject | null | undefined;
   evidenceCount: number;
   viralEvidenceCount: number;
+  ragCreativeBlocked?: boolean;
 }): StudioTabSummary {
   const brief = project?.creativeBrief;
   if (brief) {
     return {
       headline: "Brief 已建立，文案和图片会共享这份策略",
-      detail: `${brief.contentAngle || "待补充角度"} · ${brief.tone || "待补充语气"} · 证据 ${brief.basedOnEvidenceIds.length} 条`,
+      detail: ragCreativeBlocked
+        ? `${brief.contentAngle || "待补充角度"} · 爆款库 RAG 证据还不足，先补强再生成关键文案。`
+        : `${brief.contentAngle || "待补充角度"} · ${brief.tone || "待补充语气"} · 证据 ${brief.basedOnEvidenceIds.length} 条`,
       state: "ready",
-      primaryActionLabel: project?.copyDraft ? "刷新 Brief" : "基于 Brief 生成文案",
-      primaryAction: project?.copyDraft ? "create_creative_brief" : "generate_copy"
+      primaryActionLabel: ragCreativeBlocked
+        ? "刷新爆款库 RAG"
+        : project?.copyDraft ? "刷新 Brief" : "基于 Brief 生成文案",
+      primaryAction: ragCreativeBlocked
+        ? "retrieve_viral_knowledge"
+        : project?.copyDraft ? "create_creative_brief" : "generate_copy"
     };
   }
 
