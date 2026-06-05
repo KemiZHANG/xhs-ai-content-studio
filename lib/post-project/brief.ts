@@ -18,9 +18,7 @@ export function deriveCreativeBrief(project: Pick<
   }
   const allInsights = project.evidencePack.insights;
   const focusedIds = new Set(project.focusedEvidenceIds ?? []);
-  const insights = focusedIds.size
-    ? allInsights.filter((insight) => focusedIds.has(insight.id))
-    : allInsights;
+  const insights = prioritizeBriefInsights(allInsights, project.focusedEvidenceIds ?? []);
   if (!allInsights.length && !project.topic && !project.productInfo.name) {
     return undefined;
   }
@@ -177,6 +175,32 @@ function getActiveImagePromptVersions(imagePrompts: PostProject["imagePrompts"])
 
 function byType(insights: EvidenceInsight[], type: EvidenceInsight["type"]): EvidenceInsight[] {
   return insights.filter((insight) => insight.type === type);
+}
+
+function prioritizeBriefInsights(insights: EvidenceInsight[], focusedEvidenceIds: string[]): EvidenceInsight[] {
+  if (!focusedEvidenceIds.length) {
+    return insights;
+  }
+  const focusedSet = new Set(focusedEvidenceIds);
+  const focused = focusedEvidenceIds
+    .map((id) => insights.find((insight) => insight.id === id))
+    .filter((insight): insight is EvidenceInsight => Boolean(insight));
+  const focusedTypes = new Set(focused.map((insight) => insight.type));
+  const supplemental = insights.filter((insight) => {
+    if (focusedSet.has(insight.id)) return false;
+    if (insight.sourceType === "user_input" || (insight.sourceType ?? "realtime") === "realtime") return true;
+    return !focusedTypes.has(insight.type);
+  });
+  return uniqueInsights([...focused, ...supplemental]);
+}
+
+function uniqueInsights(insights: EvidenceInsight[]): EvidenceInsight[] {
+  const seen = new Set<string>();
+  return insights.filter((insight) => {
+    if (seen.has(insight.id)) return false;
+    seen.add(insight.id);
+    return true;
+  });
 }
 
 function firstText(insights: EvidenceInsight[]): string | undefined {

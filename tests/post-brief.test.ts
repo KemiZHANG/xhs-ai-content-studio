@@ -67,11 +67,11 @@ describe("PostProject CreativeBrief", () => {
     expect(brief?.proofPoints).toContain("audience / scene / proof / reminder");
   });
 
-  it("prioritizes focused evidence ids when deriving a new CreativeBrief", () => {
+  it("prioritizes focused evidence ids without dropping realtime and user-input support", () => {
     const brief = deriveCreativeBrief(project({
       focusedEvidenceIds: ["viral-insight-visual"],
       evidencePack: {
-        sampleIds: ["viral-case-1"],
+        sampleIds: ["viral-case-1", "sample-live"],
         insights: [
           {
             id: "viral-insight-hook",
@@ -90,12 +90,33 @@ describe("PostProject CreativeBrief", () => {
             sourceSampleIds: ["viral-case-1"],
             confidence: 0.84,
             createdAt: "2026-05-30T00:00:00.000Z"
+          },
+          {
+            id: "live-audience",
+            sourceType: "realtime",
+            type: "audience",
+            insight: "周末想找安静座位的广州上班族",
+            sourceSampleIds: ["sample-live"],
+            confidence: 0.8,
+            createdAt: "2026-05-30T00:00:00.000Z"
+          },
+          {
+            id: "user-tone",
+            sourceType: "user_input",
+            type: "copy",
+            insight: "用户要求语气真实生活化，不要像硬广",
+            sourceSampleIds: [],
+            confidence: 1,
+            createdAt: "2026-05-30T00:00:00.000Z"
           }
         ]
       }
     }));
 
     expect(brief?.visualMood).toBe("Use close-up window light and handwritten checklist cards");
-    expect(brief?.basedOnEvidenceIds).toEqual(["viral-insight-visual"]);
+    expect(brief?.audience).toBe("周末想找安静座位的广州上班族");
+    expect(brief?.proofPoints).toContain("用户要求语气真实生活化，不要像硬广");
+    expect(brief?.basedOnEvidenceIds[0]).toBe("viral-insight-visual");
+    expect(brief?.basedOnEvidenceIds).toEqual(expect.arrayContaining(["live-audience", "user-tone"]));
   });
 });
