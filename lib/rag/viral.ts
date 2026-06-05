@@ -357,7 +357,7 @@ export function evaluateRagSufficiency({
   if (!hasTag) missing.push("缺少标签组合规律");
   if (!hasAudienceOrPain) missing.push("缺少人群/痛点规律");
   return {
-    isEnough: missing.length <= 1,
+    isEnough: missing.length === 0,
     realtimeCount,
     viralCount,
     missing,

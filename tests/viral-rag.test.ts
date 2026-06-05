@@ -177,6 +177,22 @@ describe("viral RAG retrieval", () => {
     expect(sufficiency.recommendation).toContain("缺少人群/痛点规律");
   });
 
+  it("does not mark RAG enough when only one required dimension is missing", () => {
+    const sufficiency = evaluateRagSufficiency({
+      realtimeCount: 4,
+      viralCount: 2,
+      hasVisual: false,
+      hasHook: true,
+      hasStructure: true,
+      hasTag: true,
+      hasAudienceOrPain: true
+    });
+
+    expect(sufficiency.isEnough).toBe(false);
+    expect(sufficiency.missing).toEqual(["缺少图片风格规律"]);
+    expect(sufficiency.recommendation).toContain("缺少图片风格规律");
+  });
+
   it("exposes viral knowledge as replaceable retriever adapters", async () => {
     const viralCase = await createViralCaseFromEvidence({
       sample,
