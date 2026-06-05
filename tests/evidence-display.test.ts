@@ -100,12 +100,14 @@ describe("evidence display helpers", () => {
     expect(text).toBe("标题钩子清晰，先给结论再补场景。");
   });
 
-  it("truncates long raw text if it is the only available signal", () => {
+  it("compresses raw detail text instead of exposing it directly in the main panel", () => {
     const text = "用户评价和正文内容".repeat(20);
     const summary = summarizeEvidenceSample(sample("raw", { detailText: text }), 30);
 
     expect(summary.length).toBeLessThanOrEqual(30);
     expect(summary.endsWith("…")).toBe(true);
+    expect(summary).toContain("正文摘要已压缩");
+    expect(summary).not.toBe(text.slice(0, 30));
   });
 
   it("normalizes whitespace before truncating", () => {

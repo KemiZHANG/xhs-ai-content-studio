@@ -63,7 +63,7 @@ export function summarizeEvidenceSample(sample: SampleEvidence, maxLength = 120)
   const source =
     sample.reasonHighlights.find(Boolean) ??
     buildMetricSummary(sample) ??
-    sample.detailText ??
+    buildCompressedDetailSummary(sample.detailText) ??
     "暂无正文，仍可参考互动数据和图片风格。";
 
   return truncateEvidenceText(source, maxLength);
@@ -91,4 +91,10 @@ function buildMetricSummary(sample: SampleEvidence): string | undefined {
   }
 
   return `互动表现：${signals.join(" · ")}。点击详情查看正文、评论和图片。`;
+}
+
+function buildCompressedDetailSummary(detailText: string | undefined): string | undefined {
+  const detail = detailText?.replace(/\s+/g, " ").trim();
+  if (!detail) return undefined;
+  return `正文摘要已压缩：${truncateEvidenceText(detail, 48)}。打开详情查看完整正文、评论和图片。`;
 }
