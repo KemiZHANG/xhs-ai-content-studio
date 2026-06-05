@@ -292,6 +292,7 @@ export function PublishAuditPanel({
                   {audit.evidenceCitationSummary ? (
                     <p className="muted">
                       证据追踪：{audit.evidenceCitationSummary.summary}
+                      {formatAuditViralTraceLine(audit.evidenceCitationSummary.viralEvidenceTrace)}
                       {audit.evidenceCitationSummary.missingEvidenceIds.length ? `；缺失 ${audit.evidenceCitationSummary.missingEvidenceIds.length} 个` : ""}
                     </p>
                   ) : null}
@@ -326,6 +327,20 @@ export function PublishAuditPanel({
 
 function formatAuditSchedule(audit: PublishAuditRecord): string {
   return audit.scheduleTimezone ? `${audit.scheduleAt}（${audit.scheduleTimezone}）` : audit.scheduleAt ?? "";
+}
+
+function formatAuditViralTraceLine(trace: NonNullable<PublishAuditRecord["evidenceCitationSummary"]>["viralEvidenceTrace"]): string {
+  if (!Array.isArray(trace) || !trace.length) return "";
+  const visible = trace
+    .map((item) => {
+      const caseId = item.caseId?.trim();
+      if (!caseId) return "";
+      const sourceSampleId = item.sourceSampleId?.trim();
+      return sourceSampleId ? `${caseId}/${sourceSampleId}` : caseId;
+    })
+    .filter(Boolean)
+    .slice(0, 3);
+  return visible.length ? `；爆款追溯 ${trace.length} 条：${visible.join("、")}` : "";
 }
 
 export function JobsPanel({

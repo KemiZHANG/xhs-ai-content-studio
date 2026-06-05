@@ -23,7 +23,16 @@ const baseAudit: PublishAuditRecord = {
     missingEvidenceIds: [],
     warnings: [],
     sourceCounts: { realtime: 2 },
-    fieldCounts: { title: 1, content: 1, tags: 1, imagePrompt: 1 }
+    fieldCounts: { title: 1, content: 1, tags: 1, imagePrompt: 1 },
+    viralEvidenceTrace: [{
+      caseId: "viral-case-1",
+      sourceSampleId: "source-note-1",
+      sourceUrl: "https://example.com/source-note-1",
+      score: 0.89,
+      matchedQueries: ["咖啡馆 避坑"],
+      reasons: ["semantic match"],
+      evidenceInsightIds: ["viral-insight-1"]
+    }]
   }
 };
 
@@ -53,6 +62,7 @@ describe("publish audit safety summary", () => {
     expect(summary.eventLabel).toBe("待人工确认");
     expect(summary.title).toBe("旧标题");
     expect(summary.evidenceLine).toContain("字段级证据可追溯");
+    expect(summary.evidenceLine).toContain("爆款追溯 1 条：viral-case-1/source-note-1");
   });
 
   it("surfaces blocked and failed audit reasons as warnings", () => {

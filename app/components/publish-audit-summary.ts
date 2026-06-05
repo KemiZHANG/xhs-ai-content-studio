@@ -65,7 +65,7 @@ export function buildPublishAuditSafetySummary({
     createdAt: matching.createdAt,
     reasonLine: matching.reasons.length ? matching.reasons.slice(0, 2).join("；") : undefined,
     evidenceLine: evidence
-      ? `${evidence.summary}${evidence.missingEvidenceIds.length ? `；缺失 ${evidence.missingEvidenceIds.length} 个证据 ID` : ""}`
+      ? `${evidence.summary}${formatAuditViralTraceLine(evidence.viralEvidenceTrace)}${evidence.missingEvidenceIds.length ? `；缺失 ${evidence.missingEvidenceIds.length} 个证据 ID` : ""}`
       : undefined,
     accountLine: [
       activeAccount?.displayName ?? matching.accountId,
@@ -74,6 +74,22 @@ export function buildPublishAuditSafetySummary({
     ].filter(Boolean).join(" · "),
     shouldReviewHistory: failed || Boolean(matching.resultSummary)
   };
+}
+
+function formatAuditViralTraceLine(trace: NonNullable<PublishAuditRecord["evidenceCitationSummary"]>["viralEvidenceTrace"]): string {
+  if (!Array.isArray(trace) || !trace.length) return "";
+  const visible = trace
+    .map((item) => {
+      if (!item || typeof item !== "object") return "";
+      const record = item as { caseId?: string; sourceSampleId?: string };
+      const caseId = record.caseId?.trim();
+      if (!caseId) return "";
+      const sourceSampleId = record.sourceSampleId?.trim();
+      return sourceSampleId ? `${caseId}/${sourceSampleId}` : caseId;
+    })
+    .filter(Boolean)
+    .slice(0, 3);
+  return visible.length ? `；爆款追溯 ${trace.length} 条：${visible.join("、")}` : "";
 }
 
 function auditMatchesCurrentPost(

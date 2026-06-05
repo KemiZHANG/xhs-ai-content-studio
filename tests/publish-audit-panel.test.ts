@@ -22,7 +22,23 @@ describe("publish audit panel", () => {
       accountId: "account-a",
       mcpUrl: "http://localhost:18060/mcp",
       publishIntentId: "publish-1",
-      reasons: []
+      reasons: [],
+      evidenceCitationSummary: {
+        summary: "字段级证据可追溯",
+        missingEvidenceIds: [],
+        warnings: [],
+        sourceCounts: { realtime: 1, viral_library: 1, user_input: 0 },
+        fieldCounts: { title: 1, content: 1, tags: 1, imagePrompt: 1 },
+        viralEvidenceTrace: [{
+          caseId: "viral-case-1",
+          sourceSampleId: "source-note-1",
+          sourceUrl: "https://example.com/source-note-1",
+          score: 0.89,
+          matchedQueries: ["咖啡馆 避坑"],
+          reasons: ["semantic match"],
+          evidenceInsightIds: ["viral-insight-1"]
+        }]
+      }
     };
 
     const html = renderToStaticMarkup(createElement(PublishAuditPanel, {
@@ -34,5 +50,6 @@ describe("publish audit panel", () => {
     expect(html).toContain("定时 2026-06-02T20:00:00+08:00");
     expect(html).toContain("+08:00");
     expect(html).toContain("确认单：publish-1");
+    expect(html).toContain("爆款追溯 1 条：viral-case-1/source-note-1");
   });
 });
