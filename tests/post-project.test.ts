@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { resetWorkspaceState, updateWorkspaceState } from "@/lib/agent/state";
+import { deriveCreativeBrief } from "@/lib/post-project/brief";
 import {
   addViralCasesToPostProject,
   addViralCasesToPostProjectWithSummary,
@@ -1486,6 +1487,64 @@ describe("post project", () => {
     expect(result.addedInsights.every((insight) => insight.insight.startsWith("弱参考："))).toBe(true);
     expect(Math.max(...result.addedInsights.map((insight) => insight.confidence))).toBeLessThanOrEqual(0.48);
     expect(summary.viralKnowledge?.evidenceTrace?.[0].reasons?.join(" ")).toContain("弱参考");
+  });
+
+  it("keeps weak viral references out of CreativeBrief primary fields when stronger evidence exists", () => {
+    const brief = deriveCreativeBrief({
+      topic: "Quiet cafe guide",
+      productInfo: { referenceAssetIds: [] },
+      targetAudience: undefined,
+      goal: undefined,
+      tone: undefined,
+      focusedEvidenceIds: [],
+      creativeBrief: undefined,
+      evidencePack: {
+        sampleIds: ["viral-weak", "note-live"],
+        insights: [
+          {
+            id: "viral-weak-audience",
+            sourceType: "viral_library",
+            type: "audience",
+            insight: "弱参考：泛泛的咖啡用户",
+            sourceSampleIds: ["viral-weak"],
+            confidence: 0.42,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          },
+          {
+            id: "live-audience",
+            sourceType: "realtime",
+            type: "audience",
+            insight: "需要安静座位和插座的广州自习/办公人群",
+            sourceSampleIds: ["note-live"],
+            confidence: 0.82,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          },
+          {
+            id: "live-pain",
+            sourceType: "realtime",
+            type: "pain_point",
+            insight: "到店前不知道噪音、座位和周末排队情况",
+            sourceSampleIds: ["note-live"],
+            confidence: 0.8,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          },
+          {
+            id: "live-visual",
+            sourceType: "realtime",
+            type: "visual",
+            insight: "封面展示自然光、桌面空间和清晰座位环境",
+            sourceSampleIds: ["note-live"],
+            confidence: 0.78,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }
+        ]
+      }
+    });
+
+    expect(brief?.audience).toBe("需要安静座位和插座的广州自习/办公人群");
+    expect(brief?.painPoint).toBe("到店前不知道噪音、座位和周末排队情况");
+    expect(brief?.visualMood).toBe("封面展示自然光、桌面空间和清晰座位环境");
+    expect(brief?.basedOnEvidenceIds.slice(0, 3)).toEqual(["live-audience", "live-pain", "live-visual"]);
   });
 
   it("keeps saved viral sufficiency blocked when realtime evidence is missing", async () => {

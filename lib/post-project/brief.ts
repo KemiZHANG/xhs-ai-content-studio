@@ -179,7 +179,7 @@ function byType(insights: EvidenceInsight[], type: EvidenceInsight["type"]): Evi
 
 function prioritizeBriefInsights(insights: EvidenceInsight[], focusedEvidenceIds: string[]): EvidenceInsight[] {
   if (!focusedEvidenceIds.length) {
-    return insights;
+    return sortBriefInsights(insights);
   }
   const focusedSet = new Set(focusedEvidenceIds);
   const focused = focusedEvidenceIds
@@ -191,7 +191,26 @@ function prioritizeBriefInsights(insights: EvidenceInsight[], focusedEvidenceIds
     if (insight.sourceType === "user_input" || (insight.sourceType ?? "realtime") === "realtime") return true;
     return !focusedTypes.has(insight.type);
   });
-  return uniqueInsights([...focused, ...supplemental]);
+  return uniqueInsights([...focused, ...sortBriefInsights(supplemental)]);
+}
+
+function sortBriefInsights(insights: EvidenceInsight[]): EvidenceInsight[] {
+  return [...insights].sort((left, right) => {
+    const weak = Number(isWeakReferenceInsight(left)) - Number(isWeakReferenceInsight(right));
+    const bySource = briefSourcePriority(left) - briefSourcePriority(right);
+    return weak || bySource || right.confidence - left.confidence || left.id.localeCompare(right.id);
+  });
+}
+
+function isWeakReferenceInsight(insight: EvidenceInsight): boolean {
+  return insight.insight.trim().startsWith("弱参考：");
+}
+
+function briefSourcePriority(insight: EvidenceInsight): number {
+  if (insight.sourceType === "user_input") return 0;
+  if (insight.sourceType === "realtime" || !insight.sourceType) return 1;
+  if (insight.sourceType === "viral_library") return 2;
+  return 3;
 }
 
 function uniqueInsights(insights: EvidenceInsight[]): EvidenceInsight[] {
