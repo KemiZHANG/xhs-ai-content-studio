@@ -1645,6 +1645,128 @@ describe("agent orchestrator", () => {
     expect(writerPrompt).toContain("不要复制");
   });
 
+  it("refreshes stale viral RAG before generating copy when project context changes", async () => {
+    const bagSample: SampleEvidence = {
+      id: "note-viral-bag",
+      title: "通勤包高收藏真实测评",
+      author: "author",
+      likes: 900,
+      collects: 1300,
+      comments: 80,
+      shares: 12,
+      score: 1900,
+      url: "https://www.xiaohongshu.com/explore/note-viral-bag",
+      imageUrls: ["https://example.com/bag.jpg"],
+      cachedImageUrls: [],
+      detailText: "先讲容量痛点，再拆分电脑位、肩带、通勤场景，最后给适合人群和避坑提醒。",
+      commentSnippets: ["能不能放电脑", "肩带勒不勒"],
+      reasonHighlights: []
+    };
+    const bagCase = await createViralCaseFromEvidence({
+      sample: bagSample,
+      topic: "通勤包",
+      category: "好物"
+    });
+    await upsertViralCases([bagCase]);
+    await resetPostProject({
+      topic: "通勤包",
+      targetAudience: "上班族",
+      goal: "生成真实通勤包种草笔记",
+      tone: "生活化",
+      evidencePack: {
+        sampleIds: ["old-viral-case", "note-live-bag"],
+        insights: [
+          {
+            id: "old-viral-coffee",
+            sourceType: "viral_library",
+            type: "hook",
+            insight: "旧主题咖啡馆钩子，不应继续用于通勤包",
+            sourceSampleIds: ["old-viral-case"],
+            confidence: 0.8,
+            createdAt: "2026-05-30T00:00:00.000Z"
+          },
+          {
+            id: "insight-live-bag",
+            sourceType: "realtime",
+            type: "audience",
+            insight: "上班族关心电脑位、肩带和通勤拿取效率",
+            sourceSampleIds: ["note-live-bag"],
+            confidence: 0.84,
+            createdAt: "2026-05-30T00:00:00.000Z"
+          }
+        ],
+        summary: {
+          viralKnowledge: {
+            query: "广州咖啡馆 探店账号",
+            retrievalSignature: "stale-coffee-signature",
+            results: [],
+            insights: [],
+            sufficiency: {
+              isEnough: true,
+              realtimeCount: 4,
+              viralCount: 3,
+              missing: [],
+              recommendation: "旧主题证据足够"
+            }
+          }
+        }
+      },
+      currentStage: "evidence_ready"
+    });
+    let writerPrompt = "";
+
+    const result = await runAgentTurn({
+      message: "请基于当前通勤包项目生成文案",
+      conversationId: "chat-refresh-stale-rag",
+      settings: { ...defaultSettings, textApiKey: "text-key" },
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async (prompt) => {
+          writerPrompt = prompt;
+          return JSON.stringify({
+            title: "通勤包别再乱塞了",
+            content: "这篇从电脑位、肩带和通勤拿取效率讲起，适合上班族判断是否适合日常通勤。",
+            tags: ["通勤包", "上班族"],
+            structure: ["痛点", "容量", "适合人群"],
+            imagePrompt: "通勤包桌面平铺，展示电脑和日常物品",
+            basedOnEvidenceIds: ["insight-live-bag"],
+            evidenceReferences: {
+              title: ["insight-live-bag"],
+              content: ["insight-live-bag"],
+              tags: ["insight-live-bag"],
+              imagePrompt: ["insight-live-bag"]
+            }
+          });
+        },
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    const insights = result.postProject?.evidencePack.insights ?? [];
+    const viralInsights = insights.filter((insight) => insight.sourceType === "viral_library");
+    const viralSummary = result.postProject?.evidencePack.summary as { viralKnowledge?: { retrievalSignature?: string; query?: string } } | undefined;
+
+    expect(insights.map((insight) => insight.id)).not.toContain("old-viral-coffee");
+    expect(result.postProject?.evidencePack.sampleIds).not.toContain("old-viral-case");
+    expect(result.postProject?.evidencePack.sampleIds).toContain(bagCase.id);
+    expect(viralInsights.length).toBeGreaterThan(0);
+    expect(viralInsights.some((insight) => insight.sourceSampleIds.includes(bagCase.id))).toBe(true);
+    expect(viralSummary?.viralKnowledge?.retrievalSignature).toBeTruthy();
+    expect(viralSummary?.viralKnowledge?.retrievalSignature).not.toBe("stale-coffee-signature");
+    expect(viralSummary?.viralKnowledge?.query).toContain("通勤包");
+    expect(writerPrompt).toContain("通勤包");
+    expect(writerPrompt).not.toContain("旧主题咖啡馆钩子");
+  });
+
   it("passes selected focus evidence into the Writer prompt", async () => {
     await resetPostProject({
       topic: "通勤包",

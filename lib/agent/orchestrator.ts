@@ -3470,19 +3470,17 @@ async function ensureViralEvidenceForProject(
   options: { force?: boolean; filters?: ReturnType<typeof createAgentPlan>["ragFilters"] } = {}
 ): Promise<PostProject> {
   const hasViralEvidence = project.evidencePack.insights.some((insight) => insight.sourceType === "viral_library");
-  if ((hasViralEvidence && !options.force) || !project.topic) {
+  const retrievalSignature = buildViralRetrievalSignature(project, options.filters);
+  const existingSignature = getStoredViralRetrievalSignature(project.evidencePack.summary);
+  const shouldRefreshForContext = hasViralEvidence && existingSignature !== retrievalSignature;
+  if ((hasViralEvidence && !options.force && !shouldRefreshForContext) || !project.topic) {
     return project;
   }
 
   const registry = createAgentToolRegistry();
+  const query = buildViralRetrievalQuery(project);
   const toolResult = await registry.call("knowledge.retrieveViralPatterns", {
-    query: [
-      project.topic,
-      project.productInfo.name,
-      project.targetAudience,
-      project.goal,
-      project.tone
-    ].filter(Boolean).join(" "),
+    query,
     topic: project.topic,
     ...options.filters,
     limit: 6,
@@ -3493,13 +3491,14 @@ async function ensureViralEvidenceForProject(
     return updatePostProject({
       evidencePack: {
         ...project.evidencePack,
-        summary: mergeViralKnowledgeIntoSummary(project.evidencePack.summary, pack),
+        summary: mergeViralKnowledgeIntoSummary(project.evidencePack.summary, pack, retrievalSignature),
         updatedAt: new Date().toISOString()
       }
     });
   }
 
-  const evidenceBuild = buildEvidencePackWithViralKnowledge(project, pack);
+  const mergeProject = shouldRefreshForContext ? withoutViralLibraryEvidence(project) : project;
+  const evidenceBuild = buildEvidencePackWithViralKnowledge(mergeProject, pack, { retrievalSignature });
   const nextProject = {
     ...project,
     evidencePack: evidenceBuild.evidencePack
@@ -3515,10 +3514,80 @@ async function ensureViralEvidenceForProject(
   });
 }
 
-function mergeViralKnowledgeIntoSummary(summary: unknown, pack: ViralKnowledgePack): unknown {
+function buildViralRetrievalQuery(project: PostProject): string {
+  return [
+    project.topic,
+    project.productInfo.name,
+    project.targetAudience,
+    project.goal,
+    project.tone
+  ].filter(Boolean).join(" ");
+}
+
+function buildViralRetrievalSignature(
+  project: PostProject,
+  filters?: ReturnType<typeof createAgentPlan>["ragFilters"]
+): string {
+  return JSON.stringify({
+    query: normalizeSignatureText(buildViralRetrievalQuery(project)),
+    topic: normalizeSignatureText(project.topic ?? ""),
+    filters: normalizeSignatureValue(filters ?? {})
+  });
+}
+
+function getStoredViralRetrievalSignature(summary: unknown): string | null {
+  const viralKnowledge = isRecord(summary) ? summary.viralKnowledge : undefined;
+  return isRecord(viralKnowledge) && typeof viralKnowledge.retrievalSignature === "string"
+    ? viralKnowledge.retrievalSignature
+    : null;
+}
+
+function withoutViralLibraryEvidence(project: PostProject): PostProject {
+  const staleViralInsights = project.evidencePack.insights.filter((insight) => insight.sourceType === "viral_library");
+  const staleViralIds = new Set(staleViralInsights.map((insight) => insight.id));
+  const staleViralSampleIds = new Set(staleViralInsights.flatMap((insight) => insight.sourceSampleIds));
+  return {
+    ...project,
+    evidencePack: {
+      ...project.evidencePack,
+      insights: project.evidencePack.insights.filter((insight) => insight.sourceType !== "viral_library"),
+      sampleIds: project.evidencePack.sampleIds.filter((id) => !staleViralSampleIds.has(id))
+    },
+    focusedEvidenceIds: (project.focusedEvidenceIds ?? []).filter((id) => !staleViralIds.has(id)),
+    creativeBrief: project.creativeBrief
+      ? {
+          ...project.creativeBrief,
+          basedOnEvidenceIds: project.creativeBrief.basedOnEvidenceIds.filter((id) => !staleViralIds.has(id))
+        }
+      : project.creativeBrief
+  };
+}
+
+function normalizeSignatureText(value: string): string {
+  return value.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function normalizeSignatureValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(normalizeSignatureValue);
+  }
+  if (isRecord(value)) {
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) => [key, normalizeSignatureValue(value[key])])
+    );
+  }
+  return typeof value === "string" ? normalizeSignatureText(value) : value;
+}
+
+function mergeViralKnowledgeIntoSummary(summary: unknown, pack: ViralKnowledgePack, retrievalSignature?: string): unknown {
   return {
     ...(isRecord(summary) ? summary : {}),
-    viralKnowledge: pack
+    viralKnowledge: {
+      ...pack,
+      ...(retrievalSignature ? { retrievalSignature } : {})
+    }
   };
 }
 

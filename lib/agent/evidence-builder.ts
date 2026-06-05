@@ -10,7 +10,8 @@ export type EvidenceBuildResult = {
 
 export function buildEvidencePackWithViralKnowledge(
   project: Pick<PostProject, "evidencePack" | "creativeBrief">,
-  pack: ViralKnowledgePack
+  pack: ViralKnowledgePack,
+  options: { retrievalSignature?: string } = {}
 ): EvidenceBuildResult {
   const existingInsightIds = new Set(project.evidencePack.insights.map((insight) => insight.id));
   const normalizedViralInsights = normalizeEvidenceInsights(pack.insights, "viral_library");
@@ -27,7 +28,7 @@ export function buildEvidencePackWithViralKnowledge(
       ...project.evidencePack,
       sampleIds: mergeSampleIds(project.evidencePack.sampleIds, pack.results.map((result) => result.case.id)),
       insights,
-      summary: mergeViralKnowledgeSummary(project.evidencePack.summary, pack, sourceCounts),
+      summary: mergeViralKnowledgeSummary(project.evidencePack.summary, pack, sourceCounts, options.retrievalSignature),
       updatedAt: new Date().toISOString()
     },
     addedInsightIds: addedInsights.map((insight) => insight.id),
@@ -62,11 +63,13 @@ function countEvidenceSources(insights: EvidenceInsight[]): Record<EvidenceSourc
 function mergeViralKnowledgeSummary(
   summary: unknown,
   pack: ViralKnowledgePack,
-  sourceCounts: Record<EvidenceSourceType, number>
+  sourceCounts: Record<EvidenceSourceType, number>,
+  retrievalSignature?: string
 ): unknown {
   const nextViralKnowledge = {
     ...pack,
-    evidenceSourceCounts: sourceCounts
+    evidenceSourceCounts: sourceCounts,
+    ...(retrievalSignature ? { retrievalSignature } : {})
   };
   if (isRecord(summary)) {
     return {
