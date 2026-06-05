@@ -183,6 +183,7 @@ describe("post studio evidence tabs", () => {
     const html = renderToStaticMarkup(createElement(PostStudioInsightsTab, {
       realtimeCount: 1,
       viralCount: 1,
+      weakViralCount: 2,
       viralEvidenceSummary: viralSummary,
       keyLearningInsights: [insight],
       totalInsightCount: 2,
@@ -194,9 +195,11 @@ describe("post studio evidence tabs", () => {
 
     expect(html).toContain("可学习结论");
     expect(html).toContain("实时证据 1");
+    expect(html).toContain("可用爆款 1");
+    expect(html).toContain("弱参考 2");
     expect(html).toContain("证据来源构成");
     expect(html).toContain("实时搜索 1");
-    expect(html).toContain("爆款库 1");
+    expect(html).toContain("可用爆款 1");
     expect(html).toContain("用户输入 0");
     expect(html).toContain("爆款库规律已接入");
     expect(html).toContain("当前草稿证据引用");

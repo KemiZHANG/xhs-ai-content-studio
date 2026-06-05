@@ -17,6 +17,7 @@ type CreativeBrief = NonNullable<PostProject["creativeBrief"]>;
 export function PostStudioInsightsTab({
   realtimeCount,
   viralCount,
+  weakViralCount = 0,
   viralEvidenceSummary,
   keyLearningInsights,
   totalInsightCount,
@@ -27,6 +28,7 @@ export function PostStudioInsightsTab({
 }: {
   realtimeCount: number;
   viralCount: number;
+  weakViralCount?: number;
   viralEvidenceSummary: ViralEvidenceSummaryModel;
   keyLearningInsights: EvidenceInsight[];
   totalInsightCount: number;
@@ -39,11 +41,13 @@ export function PostStudioInsightsTab({
     <SideSection icon={FileText} title="可学习结论">
       <div className="evidenceSourceStrip">
         <span>实时证据 {realtimeCount}</span>
-        <span>爆款库 {viralCount}</span>
+        <span>可用爆款 {viralCount}</span>
+        {weakViralCount ? <span>弱参考 {weakViralCount}</span> : null}
       </div>
       <EvidenceSourceBreakdown
         realtimeCount={realtimeCount}
         viralCount={viralCount}
+        weakViralCount={weakViralCount}
         userInputCount={Number(citationReport?.sourceCounts.user_input ?? 0)}
       />
       <ViralEvidenceDigest summary={viralEvidenceSummary} compact onOpenViral={onOpenViral} />
@@ -312,10 +316,12 @@ function CitationSummaryBox({ citationReport }: { citationReport: EvidenceCitati
 function EvidenceSourceBreakdown({
   realtimeCount,
   viralCount,
+  weakViralCount = 0,
   userInputCount
 }: {
   realtimeCount: number;
   viralCount: number;
+  weakViralCount?: number;
   userInputCount: number;
 }) {
   const total = realtimeCount + viralCount + userInputCount;
@@ -325,7 +331,8 @@ function EvidenceSourceBreakdown({
       <strong>证据来源构成</strong>
       <div>
         <span className={realtimeCount ? "ready" : ""}>实时搜索 {realtimeCount}</span>
-        <span className={viralCount ? "ready" : ""}>爆款库 {viralCount}</span>
+        <span className={viralCount ? "ready" : ""}>可用爆款 {viralCount}</span>
+        {weakViralCount ? <span>弱参考 {weakViralCount}</span> : null}
         <span className={userInputCount ? "ready" : ""}>用户输入 {userInputCount}</span>
       </div>
       <small>{total ? "生成内容会优先引用这些结构化结论，不直接复制原文。" : "完成研究后会显示证据来源。"}</small>

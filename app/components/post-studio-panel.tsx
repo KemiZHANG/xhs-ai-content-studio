@@ -604,6 +604,7 @@ export function PostStudioPanel({
             realtimeCount: realtimeInsights.length,
             totalInsightCount: insights.length,
             viralCount: viralInsights.length,
+            weakViralCount: viralPack?.sufficiency.weakViralCount ?? 0,
             viralEvidenceSummary
           }}
           onNavigate={onNavigate}
