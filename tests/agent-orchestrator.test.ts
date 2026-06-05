@@ -2095,10 +2095,23 @@ describe("agent orchestrator", () => {
       currentStage: "evidence_ready"
     });
 
+    const generateStructuredText = vi.fn(async () => JSON.stringify({
+      titleHooks: ["用具体拍照座位和收藏理由做标题钩子"],
+      copyStructures: ["适合人群 -> 光线座位 -> 人均 -> 周末避峰建议"],
+      tagPatterns: ["城市 tag + 场景 tag + 收藏理由 tag"],
+      visualPatterns: ["窗边自然光，主体是座位和咖啡"],
+      audienceSignals: ["周末探店和拍照用户"],
+      painPoints: ["怕到店没有出片座位"],
+      emotionalTriggers: ["提前收藏，少踩雷"],
+      commentConcerns: ["哪张桌子出片", "人均多少"],
+      reusableRules: ["把评论问题转成正文决策信息"],
+      avoidCopying: ["不要复制原标题和原正文表述"]
+    }));
+
     const result = await runAgentTurn({
       message: "把这些高收藏样本保存到爆款库",
       conversationId: "chat-save-viral",
-      settings: defaultSettings,
+      settings: { ...defaultSettings, textApiKey: "text-key" },
       history: [],
       currentDraft: null,
       attachedAssets: [],
@@ -2108,7 +2121,7 @@ describe("agent orchestrator", () => {
         publishContent: async () => ({ ok: true })
       },
       model: {
-        generateStructuredText: async () => "",
+        generateStructuredText,
         analyzeImageStyle: async () => "",
         generateImage: async () => null,
         generateImageFromReference: async () => null
@@ -2116,7 +2129,9 @@ describe("agent orchestrator", () => {
     });
 
     expect(result.intent).toBe("save_viral_knowledge");
+    expect(generateStructuredText).toHaveBeenCalled();
     expect(result.answer).toContain("保存进爆款库");
+    expect(result.answer).toContain("AI 结构化提炼 1 条");
     expect(result.postProject?.evidencePack.insights.some((insight) => insight.sourceType === "viral_library")).toBe(true);
     expect(result.cards.map((card) => card.type)).toContain("viral_knowledge");
     expect(result.toolTrace).toEqual(expect.arrayContaining([

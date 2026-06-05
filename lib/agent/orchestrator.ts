@@ -3439,6 +3439,7 @@ async function maybeHandleViralKnowledgeSaveTurn(
     lastUserIntent: "save_viral_knowledge"
   });
   const savedCount = savedResults.length;
+  const extractionLine = summarizeViralSaveExtraction(savedResults);
   const reviewLines = candidates.slice(0, 5).map((item) =>
     `- ${item.sample.title}：质量分 ${item.review.score}/100；${item.review.reasons.slice(0, 2).join("；") || "可作为轻量参考"}`
   );
@@ -3448,6 +3449,7 @@ async function maybeHandleViralKnowledgeSaveTurn(
         ? `已把 ${savedCount} 条高价值研究样本保存进爆款库，并为当前 PostProject 增加 ${addedInsightIds.length} 条可追溯爆款库证据。`
         : "这批样本暂时没有达到爆款库入库门槛，所以没有写入长期爆款库。",
       "入库只保存标题钩子、正文结构、标签组合、图片风格、痛点和评论关注点等规律，不会把原文当作仿写素材。",
+      extractionLine,
       reviewLines.length ? `样本评估：\n${reviewLines.join("\n")}` : "",
       skippedSampleIds.length ? `跳过样本：${uniqueIds(skippedSampleIds).join("、")}` : "",
       savedCount ? "下一步建议刷新 CreativeBrief，让文案和图片方向共享这些爆款库规律。" : "可以继续扩大样本数，或明确说“强制保存”把低分样本作为弱参考入库。"
@@ -3458,6 +3460,32 @@ async function maybeHandleViralKnowledgeSaveTurn(
     skippedSampleIds: uniqueIds(skippedSampleIds),
     addedInsightIds
   };
+}
+
+function summarizeViralSaveExtraction(savedResults: unknown[]): string {
+  if (!savedResults.length) return "";
+  const methods = savedResults.map((result) => {
+    const savedCase = isRecord(result) && isRecord(result.data) && isRecord(result.data.case)
+      ? result.data.case
+      : null;
+    const extraction = savedCase && isRecord(savedCase.extraction) ? savedCase.extraction : null;
+    return extraction?.method === "model" ? "model" : "heuristic";
+  });
+  const modelCount = methods.filter((method) => method === "model").length;
+  const heuristicCount = methods.length - modelCount;
+  const fallbackReasons = savedResults.flatMap((result) => {
+    const savedCase = isRecord(result) && isRecord(result.data) && isRecord(result.data.case)
+      ? result.data.case
+      : null;
+    const extraction = savedCase && isRecord(savedCase.extraction) ? savedCase.extraction : null;
+    return typeof extraction?.fallbackReason === "string" && extraction.fallbackReason.trim()
+      ? [extraction.fallbackReason.trim()]
+      : [];
+  });
+  return [
+    `提取方式：AI 结构化提炼 ${modelCount} 条，启发式提炼 ${heuristicCount} 条。`,
+    fallbackReasons.length ? `回退原因：${uniqueIds(fallbackReasons).join("；")}` : ""
+  ].filter(Boolean).join(" ");
 }
 
 function projectWithMorePublishContext(project: PostProject, fallbackProject?: PostProject): PostProject {

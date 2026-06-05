@@ -121,6 +121,7 @@ function defaultToolDefinitions(): AgentToolDefinition[] {
         const viralCase = await createViralCaseFromEvidence(request);
         const [saved] = await upsertViralCases([viralCase]);
         const saveResult = await addViralCasesToPostProjectWithSummary([saved]);
+        const extractionLabel = saved.extraction.method === "model" ? "AI 结构化提炼" : "启发式提炼";
         return {
           ok: true,
           data: {
@@ -132,11 +133,14 @@ function defaultToolDefinitions(): AgentToolDefinition[] {
             candidateReview,
             skippedSampleIds: []
           },
-          warnings: request.model ? [] : ["未提供模型，已使用本地启发式提取爆款规律。"],
+          warnings: [
+            request.model ? "" : "未提供模型，已使用本地启发式提取爆款规律。",
+            saved.extraction.fallbackReason ? `AI 提取失败后已回退：${saved.extraction.fallbackReason}` : ""
+          ].filter(Boolean),
           risk: "local_write",
           display: {
             title: "已保存爆款规律",
-            summary: `${saved.topic} · ${saved.hookType} · ${saved.extractedInsights.reusableRules.slice(0, 2).join("；")}`,
+            summary: `${saved.topic} · ${extractionLabel} · ${saved.hookType} · ${saved.extractedInsights.reusableRules.slice(0, 2).join("；")}`,
             items: saved.extractedInsights.reusableRules
           }
         };
