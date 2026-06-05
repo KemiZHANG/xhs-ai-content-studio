@@ -7,13 +7,13 @@ export function titleForSection(section: Section): string {
     dashboard: "高级控制台",
     workflow: "高级主题研究",
     jobs: "高级任务进度",
-    assets: "素材管理",
+    assets: "Assets",
     imageStudio: "高级图片工具",
     chat: "旧版 AI 工作台",
     publish: "备用发布装配",
-    audit: "发布历史",
+    audit: "Publish History",
     history: "旧版历史记录",
-    settings: "模型与连接设置"
+    settings: "Settings"
   };
   return titles[section];
 }

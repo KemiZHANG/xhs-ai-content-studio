@@ -5,8 +5,9 @@ import type { WorkflowSample } from "@/app/types";
 describe("xhs display utils", () => {
   it("keeps primary navigation copy readable and centered on Post Studio", () => {
     expect(titleForSection("flow")).toBe("Post Studio");
-    expect(titleForSection("assets")).toBe("素材管理");
-    expect(titleForSection("settings")).toBe("模型与连接设置");
+    expect(titleForSection("assets")).toBe("Assets");
+    expect(titleForSection("audit")).toBe("Publish History");
+    expect(titleForSection("settings")).toBe("Settings");
     expect(subtitleForSection("flow")).toContain("帖子项目");
     expect(titleForSection("workflow")).toBe("高级主题研究");
     expect(titleForSection("chat")).toBe("旧版 AI 工作台");
