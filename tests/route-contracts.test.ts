@@ -2406,6 +2406,7 @@ describe("API route contracts", () => {
           createdAt: "2026-05-30T00:00:00.000Z",
           selected: false
         }],
+        generatedImageVersions: [],
         creativeBrief: { basedOnEvidenceIds: ["brief-insight"] },
         visualDirection: { basedOnEvidenceIds: ["visual-insight"] },
         imagePrompts: [{
@@ -2472,6 +2473,16 @@ describe("API route contracts", () => {
           basedOnEvidenceIds: ["asset-visual-insight"],
           sourceAssetIds: ["product-asset"],
           selected: true
+        })
+      ],
+      generatedImageVersions: [
+        expect.objectContaining({
+          label: "Selected image set",
+          imageIds: ["asset-1", "asset-2"],
+          selectedImageIds: ["asset-1", "asset-2"],
+          promptVersionId: "prompt-existing",
+          basedOnEvidenceIds: ["insight-existing", "asset-visual-insight"],
+          sourceAssetIds: ["product-1", "product-asset"]
         })
       ],
       publishPlan: null,

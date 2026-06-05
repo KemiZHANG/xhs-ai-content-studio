@@ -4098,6 +4098,53 @@ function mergeSelectedGeneratedImages(project: PostProject, candidates: string[]
   });
 }
 
+function upsertGeneratedImageVersion(
+  project: PostProject,
+  {
+    imageIds,
+    selectedImageIds,
+    promptVersionId,
+    basedOnEvidenceIds,
+    sourceAssetIds,
+    label
+  }: {
+    imageIds: string[];
+    selectedImageIds: string[];
+    promptVersionId?: string;
+    basedOnEvidenceIds: string[];
+    sourceAssetIds: string[];
+    label: string;
+  }
+): PostProject["generatedImageVersions"] {
+  const images = uniqueIds(imageIds);
+  const selected = uniqueIds(selectedImageIds);
+  const existingVersions = project.generatedImageVersions ?? [];
+  if (!images.length) return existingVersions;
+  const existing = existingVersions.find((version) =>
+    sameStringSet(version.imageIds, images) && sameStringSet(version.selectedImageIds, selected)
+  );
+  if (existing) return existingVersions;
+  return [
+    ...existingVersions,
+    {
+      id: `generated-images-${Date.now()}-${images.join("-").slice(0, 32)}`,
+      createdAt: new Date().toISOString(),
+      label,
+      imageIds: images,
+      selectedImageIds: selected,
+      promptVersionId,
+      basedOnEvidenceIds: uniqueIds(basedOnEvidenceIds),
+      sourceAssetIds: uniqueIds(sourceAssetIds)
+    }
+  ];
+}
+
+function sameStringSet(left: string[], right: string[]): boolean {
+  const leftSet = new Set(left.map(String).filter(Boolean));
+  const rightSet = new Set(right.map(String).filter(Boolean));
+  return leftSet.size === rightSet.size && [...leftSet].every((item) => rightSet.has(item));
+}
+
 async function appendGeneratedAssetsToPostProject({
   assetIds,
   promptId,
@@ -4150,8 +4197,17 @@ async function appendGeneratedAssetsToPostProject({
         : enrichedImage;
   });
   const selectedImages = select ? ids : project.selectedImages;
+  const generatedImageVersions = upsertGeneratedImageVersion(project, {
+    imageIds: ids,
+    selectedImageIds: select ? ids : project.selectedImages,
+    promptVersionId: promptId ?? undefined,
+    basedOnEvidenceIds: basedOnEvidenceIds ?? [],
+    sourceAssetIds: sourceAssetIds ?? [],
+    label: select ? "Agent generated selected images" : "Agent generated image batch"
+  });
   return updatePostProject({
     generatedImages,
+    generatedImageVersions,
     selectedImages,
     finalPost: undefined,
     publishPlan: null,

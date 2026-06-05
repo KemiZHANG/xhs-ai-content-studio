@@ -110,7 +110,7 @@ export function deriveImagePromptVersion(
   };
 }
 
-export function deriveFinalPost(project: Pick<PostProject, "copyDraft" | "selectedImages" | "imagePrompts" | "finalPost">): FinalPost | undefined {
+export function deriveFinalPost(project: Pick<PostProject, "copyDraft" | "selectedImages" | "imagePrompts" | "finalPost"> & Partial<Pick<PostProject, "generatedImageVersions">>): FinalPost | undefined {
   if (project.finalPost && finalPostStillMatchesProject(project.finalPost, project)) {
     return project.finalPost;
   }
@@ -119,6 +119,7 @@ export function deriveFinalPost(project: Pick<PostProject, "copyDraft" | "select
     return undefined;
   }
   const activeImagePrompts = getActiveImagePromptVersions(project.imagePrompts);
+  const generatedImageVersionId = getActiveGeneratedImageVersionId(project);
   return {
     title: draft.draft.title,
     content: draft.draft.content,
@@ -127,6 +128,7 @@ export function deriveFinalPost(project: Pick<PostProject, "copyDraft" | "select
     coverImageId: project.selectedImages[0],
     copyVersionId: `copy-${draft.id}`,
     imagePromptVersionIds: activeImagePrompts.map((prompt) => prompt.id),
+    generatedImageVersionId,
     basedOnEvidenceIds: uniqueStrings([
       ...(draft.draft.basedOnEvidenceIds ?? []),
       ...activeImagePrompts.flatMap((prompt) => prompt.basedOnEvidenceIds ?? [])
@@ -136,7 +138,7 @@ export function deriveFinalPost(project: Pick<PostProject, "copyDraft" | "select
 
 function finalPostStillMatchesProject(
   finalPost: FinalPost,
-  project: Pick<PostProject, "copyDraft" | "selectedImages" | "imagePrompts">
+  project: Pick<PostProject, "copyDraft" | "selectedImages" | "imagePrompts"> & Partial<Pick<PostProject, "generatedImageVersions">>
 ): boolean {
   if (!project.copyDraft) {
     return false;
@@ -146,13 +148,18 @@ function finalPostStillMatchesProject(
   const finalImageIds = [...finalPost.imageIds].sort().join("|");
   const promptIds = getActiveImagePromptVersions(project.imagePrompts).map((prompt) => prompt.id).sort().join("|");
   const finalPromptIds = [...finalPost.imagePromptVersionIds].sort().join("|");
+  const activeGeneratedImageVersionId = getActiveGeneratedImageVersionId(project);
+  const generatedImageVersionMatches = !activeGeneratedImageVersionId && !finalPost.generatedImageVersionId
+    ? true
+    : finalPost.generatedImageVersionId === activeGeneratedImageVersionId;
   return (
     finalPost.copyVersionId === copyVersionId &&
     finalPost.title === project.copyDraft.draft.title &&
     finalPost.content === project.copyDraft.draft.content &&
     finalPost.tags.join("|") === project.copyDraft.draft.tags.join("|") &&
     imageIds === finalImageIds &&
-    promptIds === finalPromptIds
+    promptIds === finalPromptIds &&
+    generatedImageVersionMatches
   );
 }
 
@@ -171,6 +178,21 @@ export function copyVersionFromDraft(draft: DraftRecord, basedOnEvidenceIds: str
 
 function getActiveImagePromptVersions(imagePrompts: PostProject["imagePrompts"]): PostProject["imagePrompts"] {
   return imagePrompts.length ? [imagePrompts[imagePrompts.length - 1]] : [];
+}
+
+function getActiveGeneratedImageVersionId(project: Pick<PostProject, "selectedImages"> & Partial<Pick<PostProject, "generatedImageVersions">>): string | undefined {
+  const versions = Array.isArray(project.generatedImageVersions) ? project.generatedImageVersions : [];
+  const selectedImages = project.selectedImages ?? [];
+  if (!versions.length || !selectedImages.length) {
+    return undefined;
+  }
+  return [...versions].reverse().find((version) => sameStringSet(version.selectedImageIds, selectedImages))?.id;
+}
+
+function sameStringSet(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) return false;
+  const rightSet = new Set(right);
+  return left.every((item) => rightSet.has(item));
 }
 
 function byType(insights: EvidenceInsight[], type: EvidenceInsight["type"]): EvidenceInsight[] {

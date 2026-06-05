@@ -193,6 +193,7 @@ export function createBlankPostProject(seed: Partial<PostProject> = {}): PostPro
     visualDirection: seed.visualDirection,
     imagePrompts: Array.isArray(seed.imagePrompts) ? seed.imagePrompts : [],
     generatedImages: Array.isArray(seed.generatedImages) ? seed.generatedImages : [],
+    generatedImageVersions: Array.isArray(seed.generatedImageVersions) ? seed.generatedImageVersions : [],
     selectedImages: Array.isArray(seed.selectedImages) ? seed.selectedImages : [],
     finalPost: seed.finalPost,
     publishPlan: seed.publishPlan ?? null,
@@ -264,6 +265,12 @@ export function postProjectFromWorkspace(workspace: WorkspaceState): PostProject
       createdAt: workspace.updatedAt,
       selected: true
     })),
+    generatedImageVersions: createGeneratedImageVersionLedger({
+      imageIds: workspace.selectedImageIds,
+      selectedImageIds: workspace.selectedImageIds,
+      createdAt: workspace.updatedAt,
+      label: "Workspace selected images"
+    }),
     selectedImages: workspace.selectedImageIds,
     publishPlan: workspace.publishPlan ?? null,
     agentMemory: [],
@@ -331,6 +338,7 @@ function normalizePostProject(project: PostProject): PostProject {
     visualDirection: project.visualDirection,
     imagePrompts: Array.isArray(project.imagePrompts) ? project.imagePrompts : [],
     generatedImages: Array.isArray(project.generatedImages) ? project.generatedImages : [],
+    generatedImageVersions: Array.isArray(project.generatedImageVersions) ? project.generatedImageVersions : [],
     selectedImages: Array.isArray(project.selectedImages) ? project.selectedImages : [],
     finalPost: project.finalPost,
     publishPlan: project.publishPlan ?? null,
@@ -394,6 +402,7 @@ function hasProjectWork(project: PostProject): boolean {
       project.visualDirection ||
       project.imagePrompts.length ||
       project.generatedImages.length ||
+      (project.generatedImageVersions ?? []).length ||
       project.selectedImages.length ||
       project.finalPost ||
       project.publishPlan ||
@@ -409,6 +418,7 @@ function hasWorkspaceAuthoredProjectContent(project: PostProject): boolean {
       project.copyDraft ||
       project.copyVersions.length ||
       project.generatedImages.length ||
+      (project.generatedImageVersions ?? []).length ||
       project.selectedImages.length ||
       project.finalPost ||
       project.publishPlan
@@ -432,6 +442,7 @@ function enrichPostProject(project: PostProject): PostProject {
     copyDraft: withBrief.copyDraft,
     selectedImages: withBrief.selectedImages,
     imagePrompts,
+    generatedImageVersions: project.generatedImageVersions ?? [],
     finalPost: project.finalPost
   });
   const qualityCheck = finalPost
@@ -456,6 +467,7 @@ function enrichPostProject(project: PostProject): PostProject {
 function mergePostProjects(existing: PostProject, migrated: PostProject): PostProject {
   const migratedCopyIds = new Set(migrated.copyVersions.map((version) => version.id));
   const migratedPromptIds = new Set(migrated.imagePrompts.map((version) => version.id));
+  const migratedGeneratedImageVersionIds = new Set((migrated.generatedImageVersions ?? []).map((version) => version.id));
   const merged = normalizePostProject({
     ...existing,
     topic: migrated.topic ?? existing.topic,
@@ -481,6 +493,10 @@ function mergePostProjects(existing: PostProject, migrated: PostProject): PostPr
       ...migrated.imagePrompts
     ],
     generatedImages: mergeImages(existing.generatedImages, migrated.generatedImages),
+    generatedImageVersions: [
+      ...(existing.generatedImageVersions ?? []).filter((version) => !migratedGeneratedImageVersionIds.has(version.id)),
+      ...(migrated.generatedImageVersions ?? [])
+    ],
     selectedImages: migrated.selectedImages.length ? migrated.selectedImages : existing.selectedImages,
     finalPost: migrated.copyDraft || migrated.selectedImages.length ? undefined : existing.finalPost,
     publishPlan: migrated.publishPlan ?? existing.publishPlan,
@@ -678,4 +694,35 @@ function uniqueIds(ids: string[]): string[] {
 function mergeImages<T extends { id: string }>(existing: T[], next: T[]): T[] {
   const ids = new Set(next.map((image) => image.id));
   return [...existing.filter((image) => !ids.has(image.id)), ...next];
+}
+
+function createGeneratedImageVersionLedger({
+  imageIds,
+  selectedImageIds,
+  createdAt,
+  label,
+  promptVersionId,
+  basedOnEvidenceIds,
+  sourceAssetIds
+}: {
+  imageIds: string[];
+  selectedImageIds: string[];
+  createdAt: string;
+  label: string;
+  promptVersionId?: string;
+  basedOnEvidenceIds?: string[];
+  sourceAssetIds?: string[];
+}): PostProject["generatedImageVersions"] {
+  const ids = uniqueIds(imageIds);
+  if (!ids.length) return [];
+  return [{
+    id: `generated-images-${createdAt.replace(/[^0-9]/g, "").slice(0, 14)}-${ids.join("-").slice(0, 32)}`,
+    createdAt,
+    label,
+    imageIds: ids,
+    selectedImageIds: uniqueIds(selectedImageIds),
+    promptVersionId,
+    basedOnEvidenceIds: uniqueIds(basedOnEvidenceIds ?? []),
+    sourceAssetIds: uniqueIds(sourceAssetIds ?? [])
+  }];
 }

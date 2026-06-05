@@ -127,6 +127,17 @@ export type GeneratedProjectImage = {
   selected?: boolean;
 };
 
+export type GeneratedImageVersion = {
+  id: string;
+  createdAt: string;
+  label: string;
+  imageIds: string[];
+  selectedImageIds: string[];
+  promptVersionId?: string;
+  basedOnEvidenceIds: string[];
+  sourceAssetIds: string[];
+};
+
 export type FinalPost = {
   title: string;
   content: string;
@@ -135,6 +146,7 @@ export type FinalPost = {
   coverImageId?: string;
   copyVersionId?: string;
   imagePromptVersionIds: string[];
+  generatedImageVersionId?: string;
   basedOnEvidenceIds?: string[];
 };
 
@@ -206,6 +218,7 @@ export type PostProject = {
   visualDirection?: VisualDirection;
   imagePrompts: ImagePromptVersion[];
   generatedImages: GeneratedProjectImage[];
+  generatedImageVersions?: GeneratedImageVersion[];
   selectedImages: string[];
   finalPost?: FinalPost;
   publishPlan?: PublishIntent | null;

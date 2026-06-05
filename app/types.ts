@@ -445,6 +445,7 @@ export type WorkspacePublishPlan = {
   versionSnapshot?: {
     copyVersionId?: string;
     imagePromptVersionIds: string[];
+    generatedImageVersionId?: string;
     selectedImageIds: string[];
     finalPostEvidenceIds: string[];
     qualityGateFresh: boolean;
@@ -578,6 +579,16 @@ export type PostProject = {
     sourceAssetIds?: string[];
     selected?: boolean;
   }>;
+  generatedImageVersions?: Array<{
+    id: string;
+    label: string;
+    createdAt: string;
+    imageIds: string[];
+    selectedImageIds: string[];
+    promptVersionId?: string;
+    basedOnEvidenceIds: string[];
+    sourceAssetIds: string[];
+  }>;
   selectedImages: string[];
   finalPost?: {
     title: string;
@@ -587,6 +598,7 @@ export type PostProject = {
     coverImageId?: string;
     copyVersionId?: string;
     imagePromptVersionIds: string[];
+    generatedImageVersionId?: string;
     basedOnEvidenceIds?: string[];
   };
   publishPlan?: WorkspacePublishPlan | null;

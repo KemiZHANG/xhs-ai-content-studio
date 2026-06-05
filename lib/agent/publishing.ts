@@ -239,6 +239,7 @@ function versionSnapshotSignature(snapshot: PublishVersionSnapshot): string {
   return JSON.stringify({
     copyVersionId: snapshot.copyVersionId ?? "",
     imagePromptVersionIds: [...snapshot.imagePromptVersionIds].sort(),
+    generatedImageVersionId: snapshot.generatedImageVersionId ?? "",
     selectedImageIds: [...snapshot.selectedImageIds].sort(),
     finalPostEvidenceIds: [...safeStringArray(snapshot.finalPostEvidenceIds)].sort(),
     qualityGateFresh: snapshot.qualityGateFresh === true,

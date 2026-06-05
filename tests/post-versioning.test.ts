@@ -183,6 +183,48 @@ describe("post versioning status", () => {
     expect(report.changes.find((item) => item.field === "title")?.afterSummary).toContain("Updated commuter");
   });
 
+  it("treats a changed generated image batch as a stale final post even when selected image ids match", () => {
+    const project = {
+      ...baseProject,
+      generatedImageVersions: [
+        {
+          id: "image-batch-old",
+          createdAt: "2026-05-29T00:00:00.000Z",
+          label: "Old generated batch",
+          imageIds: ["asset-1"],
+          selectedImageIds: ["asset-1"],
+          promptVersionId: "prompt-old",
+          basedOnEvidenceIds: ["insight-old"],
+          sourceAssetIds: ["source-old"]
+        },
+        {
+          id: "image-batch-current",
+          createdAt: "2026-05-30T00:00:00.000Z",
+          label: "Current generated batch",
+          imageIds: ["asset-1"],
+          selectedImageIds: ["asset-1"],
+          promptVersionId: "prompt-1",
+          basedOnEvidenceIds: ["insight-1"],
+          sourceAssetIds: ["source-new"]
+        }
+      ],
+      finalPost: {
+        ...baseProject.finalPost,
+        generatedImageVersionId: "image-batch-old"
+      }
+    };
+
+    const status = getPostVersionStatus(project);
+    const diff = getPostVersionDiffReport(project);
+    const snapshot = buildPublishVersionSnapshot(project);
+
+    expect(status.activeGeneratedImageVersionId).toBe("image-batch-current");
+    expect(status.finalPostMatchesCanvas).toBe(false);
+    expect(status.qualityGateFresh).toBe(false);
+    expect(diff.changedFields).toContain("images");
+    expect(snapshot.generatedImageVersionId).toBe("image-batch-current");
+  });
+
   it("tolerates legacy finalPost snapshots without image prompt version ids", () => {
     const legacyProject = {
       ...baseProject,

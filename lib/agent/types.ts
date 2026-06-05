@@ -173,6 +173,7 @@ export type PublishIntent = {
 export type PublishVersionSnapshot = {
   copyVersionId?: string;
   imagePromptVersionIds: string[];
+  generatedImageVersionId?: string;
   selectedImageIds: string[];
   finalPostEvidenceIds: string[];
   qualityGateFresh: boolean;

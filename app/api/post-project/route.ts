@@ -141,10 +141,12 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
   const project = await readPostProject();
   if (body.action === "select_images") {
     const selectedImageIds = body.selectedImageIds.map(String).filter(Boolean);
+    const generatedImages = await mergeSelectedImageRecords(project, selectedImageIds);
     await updateWorkspaceState({ selectedImageIds, publishPlan: null });
     const nextProject = await updatePostProject({
       selectedImages: selectedImageIds,
-      generatedImages: await mergeSelectedImageRecords(project, selectedImageIds),
+      generatedImages,
+      generatedImageVersions: upsertGeneratedImageVersion(project, generatedImages, selectedImageIds, "Selected image set"),
       finalPost: undefined,
       publishPlan: null,
       qualityCheck: undefined,
@@ -347,6 +349,44 @@ async function mergeSelectedImageRecords(project: PostProject, selectedImageIds:
       selected: true
     };
   });
+}
+
+function upsertGeneratedImageVersion(
+  project: PostProject,
+  generatedImages: PostProject["generatedImages"],
+  selectedImageIds: string[],
+  label: string
+): PostProject["generatedImageVersions"] {
+  const selected = uniqueStrings(selectedImageIds);
+  const existingVersions = project.generatedImageVersions ?? [];
+  if (!selected.length) return existingVersions;
+  const existing = existingVersions.find((version) => sameStringSet(version.selectedImageIds, selected));
+  if (existing) return existingVersions;
+  const selectedSet = new Set(selected);
+  const selectedRecords = generatedImages.filter((image) => selectedSet.has(image.assetId ?? image.id));
+  const promptVersionIds = uniqueStrings(selectedRecords.flatMap((image) => [image.promptVersionId, image.promptId].filter(Boolean) as string[]));
+  const createdAt = new Date().toISOString();
+  return [
+    ...existingVersions,
+    {
+      id: `generated-images-${Date.now()}-${selected.join("-").slice(0, 32)}`,
+      createdAt,
+      label,
+      imageIds: uniqueStrings(selectedRecords.map((image) => image.assetId ?? image.id)).length
+        ? uniqueStrings(selectedRecords.map((image) => image.assetId ?? image.id))
+        : selected,
+      selectedImageIds: selected,
+      promptVersionId: promptVersionIds[0],
+      basedOnEvidenceIds: uniqueStrings(selectedRecords.flatMap((image) => image.basedOnEvidenceIds ?? [])),
+      sourceAssetIds: uniqueStrings(selectedRecords.flatMap((image) => image.sourceAssetIds ?? []))
+    }
+  ];
+}
+
+function sameStringSet(left: string[], right: string[]): boolean {
+  const leftSet = new Set(left.map(String).filter(Boolean));
+  const rightSet = new Set(right.map(String).filter(Boolean));
+  return leftSet.size === rightSet.size && [...leftSet].every((item) => rightSet.has(item));
 }
 
 function uniqueStrings(values: string[]): string[] {

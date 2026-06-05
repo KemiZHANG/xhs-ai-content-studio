@@ -4,6 +4,7 @@ import type { PostProject } from "@/lib/post-project/types";
 export type PostVersionStatus = {
   activeCopyVersionId?: string;
   activeImagePromptVersionIds: string[];
+  activeGeneratedImageVersionId?: string;
   finalPostMatchesCanvas: boolean;
   qualityGateFresh: boolean;
   needsReassemble: boolean;
@@ -30,11 +31,12 @@ export type PostVersionDiffReport = {
 export function getPostVersionStatus(project: Pick<
   PostProject,
   "copyDraft" | "selectedImages" | "imagePrompts" | "finalPost" | "qualityCheck"
->): PostVersionStatus {
+> & Partial<Pick<PostProject, "generatedImageVersions">>): PostVersionStatus {
   const activeCopyVersionId = project.copyDraft ? `copy-${project.copyDraft.id}` : undefined;
   const selectedImages = Array.isArray(project.selectedImages) ? project.selectedImages : [];
   const imagePrompts = Array.isArray(project.imagePrompts) ? project.imagePrompts : [];
   const activeImagePromptVersionIds = getActiveImagePromptVersionIds(imagePrompts);
+  const activeGeneratedImageVersionId = getActiveGeneratedImageVersionId(project);
   const finalPost = project.finalPost;
   const copyMatchesFinalPost = Boolean(
     finalPost &&
@@ -49,7 +51,8 @@ export function getPostVersionStatus(project: Pick<
     finalPost &&
       copyMatchesFinalPost &&
       sameStringSet(finalPost.imageIds ?? [], selectedImages) &&
-      sameStringSet(safeStringArray(finalPost.imagePromptVersionIds), activeImagePromptVersionIds)
+      sameStringSet(safeStringArray(finalPost.imagePromptVersionIds), activeImagePromptVersionIds) &&
+      generatedImageVersionMatches(finalPost.generatedImageVersionId, activeGeneratedImageVersionId)
   );
   const hasQualityCheck = Boolean(project.qualityCheck);
   const qualityGateFresh = Boolean(project.qualityCheck?.canPublish && finalPostMatchesCanvas);
@@ -65,6 +68,7 @@ export function getPostVersionStatus(project: Pick<
   return {
     activeCopyVersionId,
     activeImagePromptVersionIds,
+    activeGeneratedImageVersionId,
     finalPostMatchesCanvas,
     qualityGateFresh,
     needsReassemble: Boolean(project.copyDraft && selectedImages.length && !finalPostMatchesCanvas),
@@ -81,15 +85,16 @@ export function getPostVersionStatus(project: Pick<
 export function getPostVersionDiffReport(project: Pick<
   PostProject,
   "copyDraft" | "selectedImages" | "imagePrompts" | "finalPost"
->): PostVersionDiffReport {
+> & Partial<Pick<PostProject, "generatedImageVersions">>): PostVersionDiffReport {
   const finalPost = project.finalPost;
   const draft = project.copyDraft?.draft;
   const activePromptIds = getActiveImagePromptVersionIds(project.imagePrompts);
+  const activeGeneratedImageVersionId = getActiveGeneratedImageVersionId(project);
   const changes: PostVersionDiff[] = [
     diffItem("title", "标题", finalPost?.title ?? "", draft?.title ?? ""),
     diffItem("content", "正文", finalPost?.content ?? "", draft?.content ?? ""),
     diffItem("tags", "标签", finalPost?.tags.join(" / ") ?? "", draft?.tags.join(" / ") ?? ""),
-    diffItem("images", "图片", safeStringArray(finalPost?.imageIds).join(" / "), safeStringArray(project.selectedImages).join(" / ")),
+    diffItem("images", "图片", summarizeImagesWithVersion(safeStringArray(finalPost?.imageIds), finalPost?.generatedImageVersionId), summarizeImagesWithVersion(safeStringArray(project.selectedImages), activeGeneratedImageVersionId)),
     diffItem("imagePrompts", "图片 Prompt", safeStringArray(finalPost?.imagePromptVersionIds).join(" / "), activePromptIds.join(" / "))
   ];
   const changedFields = changes.filter((item) => item.changed).map((item) => item.field);
@@ -106,11 +111,12 @@ export function getPostVersionDiffReport(project: Pick<
 export function buildPublishVersionSnapshot(project: Pick<
   PostProject,
   "copyDraft" | "selectedImages" | "imagePrompts" | "finalPost" | "qualityCheck"
->): PublishVersionSnapshot {
+> & Partial<Pick<PostProject, "generatedImageVersions">>): PublishVersionSnapshot {
   const status = getPostVersionStatus(project);
   return {
     copyVersionId: status.activeCopyVersionId,
     imagePromptVersionIds: status.activeImagePromptVersionIds,
+    generatedImageVersionId: status.activeGeneratedImageVersionId,
     selectedImageIds: safeStringArray(project.selectedImages),
     finalPostEvidenceIds: project.finalPost?.basedOnEvidenceIds ?? [],
     qualityGateFresh: status.qualityGateFresh,
@@ -144,6 +150,22 @@ export function compareTextVersion<T extends { title?: string; content?: string;
 
 function getActiveImagePromptVersionIds(imagePrompts: PostProject["imagePrompts"]): string[] {
   return imagePrompts.length ? [imagePrompts[imagePrompts.length - 1].id] : [];
+}
+
+function getActiveGeneratedImageVersionId(project: Pick<PostProject, "selectedImages"> & Partial<Pick<PostProject, "generatedImageVersions">>): string | undefined {
+  const selectedImages = safeStringArray(project.selectedImages);
+  const versions = Array.isArray(project.generatedImageVersions) ? project.generatedImageVersions : [];
+  if (!selectedImages.length || !versions.length) return undefined;
+  return [...versions].reverse().find((version) => sameStringSet(version.selectedImageIds, selectedImages))?.id;
+}
+
+function generatedImageVersionMatches(finalVersionId: string | undefined, activeVersionId: string | undefined): boolean {
+  if (!finalVersionId && !activeVersionId) return true;
+  return finalVersionId === activeVersionId;
+}
+
+function summarizeImagesWithVersion(imageIds: string[], versionId?: string): string {
+  return [imageIds.join(" / "), versionId ? `version:${versionId}` : ""].filter(Boolean).join(" | ");
 }
 
 function safeStringArray(value: unknown): string[] {
