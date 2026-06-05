@@ -51,7 +51,7 @@ export function buildGeneratedAssetSummary({
   limit?: number;
 }): AssetPanelSummary {
   const displayLimit = Math.min(3, Math.max(0, limit));
-  const previewAssets = uniqueAssets([...selectedAssets, ...generatedAssets]).slice(0, displayLimit);
+  const previewAssets = uniqueAssets([...selectedAssets, ...sortNewestAssets(generatedAssets)]).slice(0, displayLimit);
   const hiddenCount = Math.max(0, Math.max(totalGeneratedCount, generatedAssets.length) - previewAssets.length);
   return {
     headline: previewAssets.length ? `当前展示 ${previewAssets.length} 张关键图片` : "还没有生成图",
@@ -74,4 +74,8 @@ function uniqueAssets(assets: AssetRecord[]): AssetRecord[] {
     seen.add(asset.id);
     return true;
   });
+}
+
+function sortNewestAssets(assets: AssetRecord[]): AssetRecord[] {
+  return [...assets].sort((left, right) => Date.parse(right.createdAt || "") - Date.parse(left.createdAt || ""));
 }

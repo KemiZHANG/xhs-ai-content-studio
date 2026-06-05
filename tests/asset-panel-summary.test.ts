@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildGeneratedAssetSummary, buildReferenceAssetSummary } from "@/app/components/asset-panel-summary";
 import type { AssetRecord } from "@/app/types";
 
-function asset(id: string, kind: AssetRecord["kind"] = "generated"): AssetRecord {
+function asset(id: string, kind: AssetRecord["kind"] = "generated", createdAt = "2026-05-31T00:00:00.000Z"): AssetRecord {
   return {
     id,
     kind,
@@ -10,7 +10,7 @@ function asset(id: string, kind: AssetRecord["kind"] = "generated"): AssetRecord
     originalName: `${id}.png`,
     mimeType: "image/png",
     size: 100,
-    createdAt: "2026-05-31T00:00:00.000Z"
+    createdAt
   };
 }
 
@@ -44,6 +44,23 @@ describe("asset panel summary", () => {
     expect(summary.hiddenCount).toBe(2);
     expect(summary.state).toBe("needs_selection");
     expect(summary.compressionLine).toContain("最多显示 3 张生成结果");
+  });
+
+  it("keeps selected images first and otherwise shows the newest generated assets", () => {
+    const selected = [asset("selected", "generated", "2026-05-01T00:00:00.000Z")];
+    const summary = buildGeneratedAssetSummary({
+      selectedAssets: selected,
+      generatedAssets: [
+        asset("old", "generated", "2026-05-02T00:00:00.000Z"),
+        asset("newest", "generated", "2026-05-05T00:00:00.000Z"),
+        asset("middle", "generated", "2026-05-03T00:00:00.000Z"),
+        selected[0]
+      ],
+      totalGeneratedCount: 4
+    });
+
+    expect(summary.previewAssets.map((item) => item.id)).toEqual(["selected", "newest", "middle"]);
+    expect(summary.detail).toContain("已选图片会固定优先展示");
   });
 
   it("caps image previews at three even when callers request a larger limit", () => {
