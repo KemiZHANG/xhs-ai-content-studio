@@ -54,6 +54,11 @@ function ViralSourceTraceList({ viralPack }: { viralPack: ViralKnowledgePack }) 
           {trace.reasons.length ? <small>命中原因：{trace.reasons.slice(0, 2).join(" / ")}</small> : null}
           {trace.scoreBreakdown ? <small>评分拆解：{trace.scoreBreakdown}</small> : null}
           {trace.evidenceInsightIds.length ? <small>进入 evidencePack：{trace.evidenceInsightIds.slice(0, 4).join(" / ")}</small> : null}
+          {trace.sourceUrl ? (
+            <a className="textButton" href={trace.sourceUrl} target="_blank" rel="noreferrer">
+              来源链接
+            </a>
+          ) : null}
         </article>
       ))}
     </div>
@@ -67,6 +72,7 @@ function buildViralSourceTraceItems(viralPack: ViralKnowledgePack): Array<{
   reasons: string[];
   evidenceInsightIds: string[];
   scoreBreakdown: string;
+  sourceUrl: string;
 }> {
   const resultsByCaseId = new Map((viralPack.results ?? []).map((result) => [result.case.id, result]));
   const traces = viralPack.evidenceTrace?.map((trace) => ({
@@ -75,7 +81,8 @@ function buildViralSourceTraceItems(viralPack: ViralKnowledgePack): Array<{
     matchedQueries: trace.matchedQueries ?? [],
     reasons: trace.reasons ?? [],
     evidenceInsightIds: trace.evidenceInsightIds ?? [],
-    scoreBreakdown: formatScoreBreakdown(resultsByCaseId.get(trace.caseId)?.scoreBreakdown)
+    scoreBreakdown: formatScoreBreakdown(resultsByCaseId.get(trace.caseId)?.scoreBreakdown),
+    sourceUrl: trace.sourceUrl ?? resultsByCaseId.get(trace.caseId)?.case.sourceUrl ?? ""
   })) ?? [];
   const fallback = viralPack.results?.map((result) => ({
     caseId: result.case.id,
@@ -83,7 +90,8 @@ function buildViralSourceTraceItems(viralPack: ViralKnowledgePack): Array<{
     matchedQueries: result.matchedQueries ?? [],
     reasons: result.reasons ?? [],
     evidenceInsightIds: [],
-    scoreBreakdown: formatScoreBreakdown(result.scoreBreakdown)
+    scoreBreakdown: formatScoreBreakdown(result.scoreBreakdown),
+    sourceUrl: result.case.sourceUrl
   })) ?? [];
   return uniqueTraceItems([...traces, ...fallback]);
 }

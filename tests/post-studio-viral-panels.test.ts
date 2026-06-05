@@ -93,6 +93,8 @@ describe("post studio viral panels", () => {
     expect(html).toContain("广州咖啡馆 标题钩子");
     expect(html).toContain("评分拆解：语义 0.31 / 关键词 0.16 / 互动 0.12 / 质量 0.06 / 筛选 0.08");
     expect(html).toContain("进入 evidencePack：viral-insight-1 / viral-insight-visual");
+    expect(html).toContain("来源链接");
+    expect(html).toContain("href=\"https://example.com/note\"");
   });
 
   it("renders recent viral summaries with a drawer handoff action", () => {
