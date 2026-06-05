@@ -30,11 +30,11 @@ describe("post side digest", () => {
   it("keeps studio tab groups readable and compact", () => {
     const groups = buildStudioTabGroups("generated");
 
-    expect(groups.map((group) => group.label)).toEqual(["需求与证据", "文案与图片", "发布检查"]);
+    expect(groups.map((group) => group.label)).toEqual(["研究与证据", "图片与素材", "发布检查"]);
     expect(groups[1]).toMatchObject({
       active: true,
-      detail: "参考图、生成图"
+      detail: "图片参考、已生成素材"
     });
-    expect(groups[1].tabs.map((tab) => tab.label)).toEqual(["参考图", "生成图"]);
+    expect(groups[1].tabs.map((tab) => tab.label)).toEqual(["图片参考", "已生成素材"]);
   });
 });
