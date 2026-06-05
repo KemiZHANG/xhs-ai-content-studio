@@ -17,29 +17,29 @@ export type StudioTabGroup = {
 const groupDefinitions: Array<Omit<StudioTabGroup, "active" | "tabs"> & { tabs: Array<{ id: StudioTabId; label: string }> }> = [
   {
     id: "evidence",
-    label: "需求与证据",
-    detail: "研究、结论、爆款库",
+    label: "研究与证据",
+    detail: "可学习结论、研究证据、爆款库 RAG",
     tabs: [
-      { id: "insights", label: "结论" },
-      { id: "brief", label: "Brief" },
-      { id: "evidence", label: "样本" },
+      { id: "insights", label: "可学习结论" },
+      { id: "brief", label: "CreativeBrief" },
+      { id: "evidence", label: "研究证据" },
       { id: "viral", label: "爆款库" }
     ]
   },
   {
     id: "creation",
-    label: "文案与图片",
-    detail: "参考图、生成图",
+    label: "图片与素材",
+    detail: "图片参考、已生成素材",
     tabs: [
-      { id: "references", label: "参考图" },
-      { id: "generated", label: "生成图" }
+      { id: "references", label: "图片参考" },
+      { id: "generated", label: "已生成素材" }
     ]
   },
   {
     id: "publish",
     label: "发布检查",
-    detail: "质量、账号、确认单",
-    tabs: [{ id: "publish", label: "检查" }]
+    detail: "Quality Gate、账号、确认单",
+    tabs: [{ id: "publish", label: "发布检查" }]
   }
 ];
 

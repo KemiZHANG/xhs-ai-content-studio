@@ -5,13 +5,16 @@ describe("studio tab groups", () => {
   it("compresses internal tabs into three user-facing workflow groups", () => {
     const groups = buildStudioTabGroups("generated");
 
-    expect(groups.map((group) => group.label)).toEqual(["需求与证据", "文案与图片", "发布检查"]);
+    expect(groups.map((group) => group.label)).toEqual(["研究与证据", "图片与素材", "发布检查"]);
     expect(groups).toHaveLength(3);
-    expect(groups[0].tabs.map((tab) => tab.id)).toEqual(["insights", "brief", "evidence", "viral"]);
+    expect(groups[0].detail).toBe("可学习结论、研究证据、爆款库 RAG");
+    expect(groups[0].tabs.map((tab) => tab.label)).toEqual(["可学习结论", "CreativeBrief", "研究证据", "爆款库"]);
     expect(groups[1]).toMatchObject({
       id: "creation",
-      active: true
+      active: true,
+      detail: "图片参考、已生成素材"
     });
+    expect(groups[1].tabs.map((tab) => tab.label)).toEqual(["图片参考", "已生成素材"]);
     expect(groups[1].tabs.find((tab) => tab.id === "generated")).toMatchObject({ active: true });
   });
 
@@ -23,7 +26,7 @@ describe("studio tab groups", () => {
       expect.objectContaining({
         id: "publish",
         label: "发布检查",
-        tabs: [expect.objectContaining({ id: "publish", active: true })]
+        tabs: [expect.objectContaining({ id: "publish", label: "发布检查", active: true })]
       })
     ]);
   });

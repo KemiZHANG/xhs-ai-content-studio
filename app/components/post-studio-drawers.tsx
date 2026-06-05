@@ -13,6 +13,8 @@ export function EvidenceDrawer({
   onClose: () => void;
   onSave: () => void;
 }) {
+  const imageUrls = uniqueStrings([...(sample.cachedImageUrls ?? []), ...(sample.imageUrls ?? [])]);
+
   return (
     <div className="studioDrawerBackdrop" role="presentation" onClick={onClose}>
       <aside className="studioDrawer" role="dialog" aria-modal="true" aria-label="证据详情" onClick={(event) => event.stopPropagation()}>
@@ -30,32 +32,13 @@ export function EvidenceDrawer({
           <p>{sample.detailText || "当前 MCP 详情没有返回正文；可以保留互动数据和图片风格作为证据。"}</p>
         </section>
 
-        {sample.reasonHighlights.length ? (
-          <section className="drawerSection">
-            <h4>为什么值得参考</h4>
-            <ul>
-              {sample.reasonHighlights.slice(0, 6).map((item) => <li key={item}>{item}</li>)}
-            </ul>
-          </section>
-        ) : null}
+        <ExpandableTextList title="为什么值得参考" items={sample.reasonHighlights} initialCount={6} />
+        <ExpandableTextList title="评论关注点" items={sample.commentSnippets} initialCount={8} />
 
-        {sample.commentSnippets.length ? (
-          <section className="drawerSection">
-            <h4>评论关注点</h4>
-            <ul>
-              {sample.commentSnippets.slice(0, 8).map((item) => <li key={item}>{item}</li>)}
-            </ul>
-          </section>
-        ) : null}
-
-        {(sample.cachedImageUrls?.length ?? 0) || (sample.imageUrls?.length ?? 0) ? (
+        {imageUrls.length ? (
           <section className="drawerSection">
             <h4>图片参考</h4>
-            <div className="drawerImageGrid">
-              {[...(sample.cachedImageUrls ?? []), ...(sample.imageUrls ?? [])].slice(0, 6).map((url) => (
-                <img alt={sample.title} key={url} src={url} />
-              ))}
-            </div>
+            <ExpandableImageGrid alt={sample.title} urls={imageUrls} initialCount={6} />
           </section>
         ) : null}
 
@@ -93,7 +76,7 @@ export function EvidenceCatalogDrawer({
           <div>
             <span>Evidence Catalog</span>
             <h3>研究证据目录</h3>
-            <p>完整样本留在抽屉里，不打断主创作台；打开单条后可查看正文、评论和图片。</p>
+            <p>完整样本留在抽屉里，不打断主创作台；打开单条后可查看正文、评论和图片，超出摘要的内容可继续展开。</p>
           </div>
           <button type="button" onClick={onClose}>关闭</button>
         </header>
@@ -146,9 +129,7 @@ export function ViralCaseDrawer({ viralCase, onClose }: { viralCase: ViralCase; 
 
         <section className="drawerSection">
           <h4>可复用规律</h4>
-          <ul>
-            {insights.reusableRules.slice(0, 8).map((item) => <li key={item}>{item}</li>)}
-          </ul>
+          <ExpandableTextList items={insights.reusableRules} initialCount={8} />
         </section>
 
         <section className="drawerSection">
@@ -174,23 +155,8 @@ export function ViralCaseDrawer({ viralCase, onClose }: { viralCase: ViralCase; 
           </div>
         </section>
 
-        {insights.commentConcerns.length ? (
-          <section className="drawerSection">
-            <h4>评论关注点</h4>
-            <ul>
-              {insights.commentConcerns.slice(0, 8).map((item) => <li key={item}>{item}</li>)}
-            </ul>
-          </section>
-        ) : null}
-
-        {insights.avoidCopying.length ? (
-          <section className="drawerSection warningSection">
-            <h4>不可复制/仿写</h4>
-            <ul>
-              {insights.avoidCopying.slice(0, 6).map((item) => <li key={item}>{item}</li>)}
-            </ul>
-          </section>
-        ) : null}
+        <ExpandableTextList title="评论关注点" items={insights.commentConcerns} initialCount={8} />
+        <ExpandableTextList title="不可复制/仿写" items={insights.avoidCopying} initialCount={6} className="warningSection" />
 
         {viralCase.bodyExcerpt ? (
           <section className="drawerSection">
@@ -213,6 +179,73 @@ export function ViralCaseDrawer({ viralCase, onClose }: { viralCase: ViralCase; 
   );
 }
 
+function ExpandableTextList({
+  title,
+  items,
+  initialCount,
+  className
+}: {
+  title?: string;
+  items: string[];
+  initialCount: number;
+  className?: string;
+}) {
+  const cleaned = items.map((item) => item.trim()).filter(Boolean);
+  if (!cleaned.length) return null;
+  const visible = cleaned.slice(0, initialCount);
+  const hidden = cleaned.slice(initialCount);
+
+  return (
+    <section className={["drawerSection", className].filter(Boolean).join(" ")}>
+      {title ? <h4>{title}</h4> : null}
+      <ul>
+        {visible.map((item) => <li key={item}>{item}</li>)}
+      </ul>
+      {hidden.length ? (
+        <details className="compressedEvidenceDetails">
+          <summary>还有 {hidden.length} 条，展开全部</summary>
+          <ul>
+            {hidden.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </details>
+      ) : null}
+    </section>
+  );
+}
+
+function ExpandableImageGrid({
+  alt,
+  urls,
+  initialCount
+}: {
+  alt: string;
+  urls: string[];
+  initialCount: number;
+}) {
+  const visible = urls.slice(0, initialCount);
+  const hidden = urls.slice(initialCount);
+
+  return (
+    <>
+      <div className="drawerImageGrid">
+        {visible.map((url) => (
+          <img alt={alt} key={url} src={url} />
+        ))}
+      </div>
+      {hidden.length ? (
+        <details className="compressedEvidenceDetails">
+          <summary>还有 {hidden.length} 张，展开全部</summary>
+          <div className="drawerImageGrid">
+            {hidden.map((url) => (
+              <img alt={alt} key={url} src={url} />
+            ))}
+          </div>
+        </details>
+      ) : null}
+    </>
+  );
+}
+
 function KnowledgeList({ title, items }: { title: string; items: string[] }) {
   const visible = items.map((item) => item.trim()).filter(Boolean).slice(0, 5);
   if (!visible.length) return null;
@@ -224,4 +257,8 @@ function KnowledgeList({ title, items }: { title: string; items: string[] }) {
       </ul>
     </article>
   );
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values.filter(Boolean))];
 }

@@ -63,9 +63,9 @@ describe("post studio side navigator", () => {
     expect(html).toContain("图片素材");
     expect(html).toContain("发布安全");
     expect(html).toContain("右侧工作区分组");
-    expect(html).toContain("需求与证据");
-    expect(html).toContain("文案与图片");
+    expect(html).toContain("研究与证据");
+    expect(html).toContain("图片与素材");
     expect(html).toContain("发布检查");
-    expect(html).toContain("生成图");
+    expect(html).toContain("已生成素材");
   });
 });
