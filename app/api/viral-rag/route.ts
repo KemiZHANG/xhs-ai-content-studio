@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { updateWorkspaceState } from "@/lib/agent/state";
 import { readPostProject } from "@/lib/post-project/store";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
+import { retrieveAndApplyViralKnowledgeToPostProject } from "@/lib/post-project/viral-rag";
 import { retrieveViralKnowledge, type ViralRetrievalInput } from "@/lib/rag/viral";
 
 export const runtime = "nodejs";
@@ -29,6 +31,41 @@ export async function GET(request: Request) {
       }
     },
     readiness: buildPostReadinessReport(project)
+  });
+}
+
+export async function POST(request: Request) {
+  const project = await readPostProject();
+  const url = new URL(request.url);
+  const body = await readJsonBody(request);
+  const input = {
+    ...viralRetrievalInputFromSearchParams(url.searchParams, project),
+    ...viralRetrievalInputFromBody(body)
+  };
+  const result = await retrieveAndApplyViralKnowledgeToPostProject(project, input);
+  await updateWorkspaceState({
+    topic: result.project.topic,
+    evidenceSummary: result.project.evidencePack.summary,
+    selectedSamples: result.project.selectedSamples,
+    lastUserIntent: "retrieve_viral_knowledge"
+  });
+
+  return NextResponse.json({
+    viralKnowledge: result.viralKnowledge,
+    pack: result.viralKnowledge,
+    project: result.project,
+    addedInsightIds: result.addedInsightIds,
+    invalidatedDownstream: result.invalidatedDownstream,
+    retrievalSignature: result.retrievalSignature,
+    projectContext: {
+      projectId: result.project.id,
+      projectTopic: result.project.topic,
+      topic: input.topic,
+      query: input.query,
+      realtimeEvidenceCount: input.realtimeEvidenceCount ?? 0,
+      appliedToProject: true
+    },
+    readiness: buildPostReadinessReport(result.project)
   });
 }
 
@@ -111,4 +148,61 @@ function parseSortBy(value: string | null): ViralRetrievalInput["sortBy"] {
 
 function parseSortOrder(value: string | null): ViralRetrievalInput["sortOrder"] {
   return value === "asc" || value === "desc" ? value : undefined;
+}
+
+async function readJsonBody(request: Request): Promise<Record<string, unknown>> {
+  try {
+    const parsed = await request.json();
+    return isRecord(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function viralRetrievalInputFromBody(body: Record<string, unknown>): Partial<ViralRetrievalInput> {
+  return stripUndefined({
+    query: optionalString(body.query ?? body.q),
+    topic: optionalString(body.topic),
+    category: optionalString(body.category),
+    audience: optionalString(body.audience),
+    painPoint: optionalString(body.painPoint),
+    createdAfter: optionalString(body.createdAfter),
+    createdBefore: optionalString(body.createdBefore),
+    minLikes: optionalNumber(body.minLikes),
+    minCollects: optionalNumber(body.minCollects),
+    minComments: optionalNumber(body.minComments),
+    minShares: optionalNumber(body.minShares),
+    minScore: optionalNumber(body.minScore),
+    sortBy: parseSortBy(optionalString(body.sortBy) ?? null),
+    sortOrder: parseSortOrder(optionalString(body.sortOrder) ?? null),
+    tags: optionalStringArray(body.tags),
+    limit: optionalNumber(body.limit),
+    realtimeEvidenceCount: optionalNumber(body.realtimeEvidenceCount)
+  });
+}
+
+function optionalString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function optionalNumber(value: unknown): number | undefined {
+  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function optionalStringArray(value: unknown): string[] | undefined {
+  if (Array.isArray(value)) {
+    const items = value.map((item) => String(item).trim()).filter(Boolean);
+    return items.length ? items : undefined;
+  }
+  const single = optionalString(value);
+  return single ? single.split(",").map((item) => item.trim()).filter(Boolean) : undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object";
+}
+
+function stripUndefined<T extends Record<string, unknown>>(value: T): Partial<T> {
+  return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as Partial<T>;
 }

@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { GET } from "@/app/api/viral-rag/route";
+import { GET, POST } from "@/app/api/viral-rag/route";
 import { resetPostProject } from "@/lib/post-project/store";
 import { createViralCaseFromEvidence, upsertViralCases } from "@/lib/viral-knowledge/store";
 import type { ViralKnowledgePack } from "@/lib/rag/viral";
@@ -118,5 +118,119 @@ describe("viral RAG API", () => {
     expect(payload.projectContext.defaultsApplied.query).toBe(false);
     expect(payload.projectContext.defaultsApplied.audience).toBe(false);
     expect(payload.viralKnowledge.evidenceTrace?.[0]?.matchedQueries.length).toBeGreaterThan(0);
+  });
+
+  it("applies retrieved viral RAG evidence to the active PostProject through POST", async () => {
+    const viralCase = await createViralCaseFromEvidence({
+      sample,
+      topic: "commuter bag",
+      category: "product"
+    });
+    await upsertViralCases([viralCase]);
+    await resetPostProject({
+      topic: "commuter bag",
+      targetAudience: "office workers",
+      evidencePack: {
+        sampleIds: ["live-note-1"],
+        insights: [{
+          id: "live-insight-bag",
+          sourceType: "realtime",
+          type: "audience",
+          insight: "Office workers care about laptop fit and rainy commute materials.",
+          sourceSampleIds: ["live-note-1"],
+          confidence: 0.83,
+          createdAt: "2026-06-05T00:00:00.000Z"
+        }]
+      },
+      creativeBrief: {
+        audience: "office workers",
+        painPoint: "daily commute is messy",
+        contentAngle: "bag checklist",
+        emotionalHook: "reduce commute friction",
+        proofPoints: ["laptop fit"],
+        tone: "life-like",
+        visualMood: "natural commute scenes",
+        imageMustHave: ["bag detail"],
+        imageMustAvoid: ["fake certification"],
+        platformStyle: "Xiaohongshu practical review",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["live-insight-bag"]
+      },
+      copyDraft: {
+        id: "draft-stale",
+        updatedAt: "2026-06-05T00:00:00.000Z",
+        visibility: "仅自己可见",
+        images: [],
+        draft: {
+          title: "Old title",
+          content: "Old content",
+          tags: ["commute"],
+          structure: [],
+          imagePrompt: "Old image prompt",
+          basedOnEvidenceIds: ["live-insight-bag"]
+        }
+      } as never,
+      visualDirection: {
+        mood: "old",
+        composition: "old",
+        colorPalette: "old",
+        mustHave: [],
+        mustAvoid: [],
+        basedOnEvidenceIds: ["live-insight-bag"]
+      },
+      imagePrompts: [{
+        id: "prompt-stale",
+        label: "Old prompt",
+        createdAt: "2026-06-05T00:00:00.000Z",
+        value: { prompt: "Old prompt" },
+        basedOnEvidenceIds: ["live-insight-bag"]
+      }],
+      finalPost: {
+        title: "Old title",
+        content: "Old content",
+        tags: ["commute"],
+        imageIds: [],
+        imagePromptVersionIds: [],
+        basedOnEvidenceIds: ["live-insight-bag"]
+      },
+      publishPlan: { id: "publish-stale", status: "awaiting_confirmation" } as never,
+      qualityCheck: {
+        titleScore: 80,
+        copyScore: 80,
+        visualConsistencyScore: 80,
+        platformFitScore: 80,
+        complianceScore: 80,
+        canPublish: true,
+        issues: [],
+        suggestions: [],
+        checkedAt: "2026-06-05T00:00:00.000Z"
+      }
+    });
+
+    const response = await POST(new Request("http://localhost/api/viral-rag?limit=5", {
+      method: "POST",
+      body: JSON.stringify({ action: "refresh_project_evidence" })
+    }));
+    const payload = await response.json() as {
+      project: Awaited<ReturnType<typeof resetPostProject>>;
+      viralKnowledge: ViralKnowledgePack;
+      addedInsightIds: string[];
+      invalidatedDownstream: boolean;
+      retrievalSignature: string;
+    };
+
+    expect(payload.viralKnowledge.results[0].case.id).toBe(viralCase.id);
+    expect(payload.project.evidencePack.sampleIds).toContain(viralCase.id);
+    expect(payload.project.evidencePack.insights.some((insight) => insight.sourceType === "viral_library")).toBe(true);
+    expect(payload.addedInsightIds.length).toBeGreaterThan(0);
+    expect(payload.invalidatedDownstream).toBe(true);
+    expect(payload.project.copyDraft).toBeNull();
+    expect(payload.project.visualDirection).toBeUndefined();
+    expect(payload.project.imagePrompts).toEqual([]);
+    expect(payload.project.finalPost).toBeUndefined();
+    expect(payload.project.publishPlan).toBeNull();
+    expect(payload.project.qualityCheck).toBeUndefined();
+    expect(payload.retrievalSignature).toContain("commuter bag");
   });
 });

@@ -360,7 +360,15 @@ export default function Home() {
   async function refreshViralRagPreview() {
     setBusy("viral");
     try {
-      const data = await clientApi<{ viralKnowledge: ViralRagPack }>("/api/viral-rag");
+      const data = await clientApi<{
+        viralKnowledge: ViralRagPack;
+        project: PostProject;
+        addedInsightIds: string[];
+        invalidatedDownstream: boolean;
+      }>("/api/viral-rag", {
+        method: "POST",
+        body: JSON.stringify({ action: "refresh_project_evidence" })
+      });
       const next = mergeViralRagPreview({
         workflowResult,
         researchResult,
@@ -368,6 +376,7 @@ export default function Home() {
       });
       setWorkflowResult(next.workflowResult);
       setResearchResult(next.researchResult);
+      setPostProject(data.project);
       const libraryCases = await loadViralKnowledge();
       setViralCases(uniqueById([
         ...data.viralKnowledge.results.map((result) => result.case),
@@ -375,7 +384,7 @@ export default function Home() {
       ]).slice(0, 12));
       focusPostStudioTab("viral");
       setNotice(data.viralKnowledge.results.length
-        ? `已刷新爆款库 RAG：命中 ${data.viralKnowledge.results.length} 条样本，提炼 ${data.viralKnowledge.insights.length} 条可复用规律。`
+        ? `已刷新并合入爆款库 RAG：命中 ${data.viralKnowledge.results.length} 条样本，新增 ${data.addedInsightIds.length} 条 evidencePack 规律。${data.invalidatedDownstream ? "旧文案/图片/发布检查已标记为需重生成。" : ""}`
         : "已刷新爆款库 RAG：当前没有命中可用样本，可以先保存高质量研究样本到爆款库。");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "刷新爆款库 RAG 失败。");
