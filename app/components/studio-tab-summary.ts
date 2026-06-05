@@ -39,6 +39,16 @@ export function buildBriefTabSummary({
   }
 
   if (evidenceCount) {
+    if (ragCreativeBlocked) {
+      return {
+        headline: "建议先补强爆款库 RAG",
+        detail: `已有 ${evidenceCount} 条证据，但爆款库 RAG 证据还不足；先补强可用爆款规律，再压缩成统一 Brief。`,
+        state: "empty",
+        primaryActionLabel: "刷新爆款库 RAG",
+        primaryAction: "retrieve_viral_knowledge"
+      };
+    }
+
     return {
       headline: viralEvidenceCount ? "可以生成 CreativeBrief" : "建议先合入爆款库 RAG",
       detail: viralEvidenceCount

@@ -95,6 +95,33 @@ describe("studio tab summary", () => {
     expect(summary.detail).toContain("爆款库 RAG 证据还不足");
   });
 
+  it("does not treat weak viral evidence as enough to create a Brief", () => {
+    const summary = buildBriefTabSummary({
+      project: project({
+        evidencePack: {
+          sampleIds: ["viral-weak"],
+          insights: [{
+            id: "viral-weak-copy",
+            sourceType: "viral_library",
+            type: "copy",
+            insight: "弱参考：低质量样本里的泛泛正文结构",
+            sourceSampleIds: ["viral-weak"],
+            confidence: 0.42,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }]
+        }
+      }),
+      evidenceCount: 1,
+      viralEvidenceCount: 1,
+      ragCreativeBlocked: true
+    });
+
+    expect(summary.primaryAction).toBe("retrieve_viral_knowledge");
+    expect(summary.primaryActionLabel).toBe("刷新爆款库 RAG");
+    expect(summary.headline).toContain("补强爆款库 RAG");
+    expect(summary.detail).toContain("爆款库 RAG 证据还不足");
+  });
+
   it("summarizes image tabs without exposing the whole asset library", () => {
     expect(buildImageTabSummary({
       selectedCount: 0,

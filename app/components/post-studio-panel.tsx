@@ -603,7 +603,7 @@ export function PostStudioPanel({
             projectMemory: project?.agentMemory ?? [],
             realtimeCount: realtimeInsights.length,
             totalInsightCount: insights.length,
-            viralCount: viralInsights.length,
+            viralCount: viralPack?.sufficiency.viralCount ?? viralInsights.length,
             weakViralCount: viralPack?.sufficiency.weakViralCount ?? 0,
             viralEvidenceSummary
           }}
