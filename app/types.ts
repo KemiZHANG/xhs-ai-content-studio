@@ -118,6 +118,7 @@ export type WorkflowResult = {
       isEnough: boolean;
       realtimeCount: number;
       viralCount: number;
+      weakViralCount?: number;
       missing: string[];
       recommendation: string;
     };

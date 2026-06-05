@@ -50,7 +50,7 @@ describe("post studio viral panels", () => {
     const viralPack: NonNullable<WorkflowResult["viralKnowledge"]> = {
       query: "广州咖啡馆",
       rewrittenQueries: ["广州咖啡馆 标题钩子"],
-      sufficiency: { isEnough: true, realtimeCount: 4, viralCount: 1, missing: [], recommendation: "可以生成 Brief" },
+      sufficiency: { isEnough: true, realtimeCount: 4, viralCount: 1, weakViralCount: 1, missing: [], recommendation: "可以生成 Brief" },
       strategyReport: {
         summary: "综合实时研究和爆款库规律",
         titleMoves: ["适合谁前置"],
@@ -85,6 +85,9 @@ describe("post studio viral panels", () => {
 
     expect(html).toContain("爆款策略摘要");
     expect(html).toContain("综合实时研究和爆款库规律");
+    expect(html).toContain("实时证据 4");
+    expect(html).toContain("可用爆款 1");
+    expect(html).toContain("弱参考 1");
     expect(html).toContain("适合谁前置");
     expect(html).toContain("原创边界");
     expect(html).toContain("来源追踪");

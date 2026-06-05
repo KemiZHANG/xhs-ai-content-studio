@@ -18,6 +18,7 @@ export function ViralStrategyCard({ viralPack }: { viralPack: ViralKnowledgePack
     <div className="viralStrategyCard">
       <strong>爆款策略摘要</strong>
       <p>{viralPack.strategyReport.summary}</p>
+      <small className="viralSufficiencyLine">{formatViralSufficiencyLine(viralPack)}</small>
       {viralPack.results?.length ? (
         <div className="ragAngleStrip" aria-label="爆款库检索角度">
           {viralPack.results.slice(0, 4).map((result) => (
@@ -36,6 +37,16 @@ export function ViralStrategyCard({ viralPack }: { viralPack: ViralKnowledgePack
       </div>
     </div>
   );
+}
+
+function formatViralSufficiencyLine(viralPack: ViralKnowledgePack): string {
+  const weakCount = viralPack.sufficiency.weakViralCount ?? 0;
+  return [
+    `实时证据 ${viralPack.sufficiency.realtimeCount}`,
+    `可用爆款 ${viralPack.sufficiency.viralCount}`,
+    weakCount ? `弱参考 ${weakCount}` : "",
+    viralPack.sufficiency.isEnough ? "证据充足" : viralPack.sufficiency.recommendation
+  ].filter(Boolean).join(" · ");
 }
 
 function ViralSourceTraceList({ viralPack }: { viralPack: ViralKnowledgePack }) {
