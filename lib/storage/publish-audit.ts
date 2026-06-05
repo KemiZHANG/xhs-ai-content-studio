@@ -104,8 +104,33 @@ function sanitizeCitationSummary(value: unknown): PublishEvidenceCitationSummary
       content: Number(record.fieldCounts?.content ?? 0),
       tags: Number(record.fieldCounts?.tags ?? 0),
       imagePrompt: Number(record.fieldCounts?.imagePrompt ?? 0)
-    }
+    },
+    viralEvidenceTrace: Array.isArray(record.viralEvidenceTrace)
+      ? record.viralEvidenceTrace.map(sanitizeViralEvidenceTrace).filter(isViralEvidenceTrace).slice(0, 8)
+      : []
   };
+}
+
+type SanitizedViralEvidenceTrace = NonNullable<PublishEvidenceCitationSummary["viralEvidenceTrace"]>[number];
+
+function sanitizeViralEvidenceTrace(value: unknown): SanitizedViralEvidenceTrace | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Partial<NonNullable<PublishEvidenceCitationSummary["viralEvidenceTrace"]>[number]>;
+  const caseId = String(record.caseId ?? "").trim();
+  if (!caseId) return null;
+  return {
+    caseId: caseId.slice(0, 120),
+    sourceSampleId: String(record.sourceSampleId ?? "").trim().slice(0, 120),
+    sourceUrl: String(record.sourceUrl ?? "").trim().slice(0, 300),
+    score: Number.isFinite(record.score) ? Number(record.score) : 0,
+    matchedQueries: Array.isArray(record.matchedQueries) ? record.matchedQueries.map(String).slice(0, 6) : [],
+    reasons: Array.isArray(record.reasons) ? record.reasons.map(String).slice(0, 8) : [],
+    evidenceInsightIds: Array.isArray(record.evidenceInsightIds) ? record.evidenceInsightIds.map(String).slice(0, 12) : []
+  };
+}
+
+function isViralEvidenceTrace(value: SanitizedViralEvidenceTrace | null): value is SanitizedViralEvidenceTrace {
+  return Boolean(value);
 }
 
 function sanitizeNumberRecord(value: unknown): Record<string, number> {

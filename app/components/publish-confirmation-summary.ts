@@ -22,6 +22,13 @@ export type PublishConfirmationSummaryPlan = {
     warnings?: string[];
     sourceCounts?: Record<string, number>;
     fieldCounts?: Partial<Record<"title" | "content" | "tags" | "imagePrompt", number>>;
+    viralEvidenceTrace?: Array<{
+      caseId?: string;
+      sourceSampleId?: string;
+      sourceUrl?: string;
+      score?: number;
+      evidenceInsightIds?: string[];
+    }>;
   };
   versionSnapshot?: {
     qualityGateFresh?: boolean;
@@ -437,7 +444,22 @@ function formatEvidenceLine({
   const missing = evidenceCitationSummary.missingEvidenceIds?.length ?? 0;
   const warnings = evidenceCitationSummary.warnings?.filter(Boolean).length ?? 0;
   const summary = evidenceCitationSummary.summary?.trim();
-  return `${base}；${summary ? `${summary}；` : ""}${sourceLine}；${fieldLine}${missingFieldLine ? `；${missingFieldLine}` : ""}；缺失 ${missing} / 警告 ${warnings}`;
+  const viralTraceLine = formatViralEvidenceTraceLine(evidenceCitationSummary.viralEvidenceTrace);
+  return `${base}；${summary ? `${summary}；` : ""}${sourceLine}；${fieldLine}${missingFieldLine ? `；${missingFieldLine}` : ""}${viralTraceLine ? `；${viralTraceLine}` : ""}；缺失 ${missing} / 警告 ${warnings}`;
+}
+
+function formatViralEvidenceTraceLine(trace: NonNullable<PublishConfirmationSummaryPlan["evidenceCitationSummary"]>["viralEvidenceTrace"]): string {
+  if (!Array.isArray(trace) || !trace.length) return "";
+  const visible = trace
+    .map((item) => {
+      const caseId = item.caseId?.trim();
+      if (!caseId) return "";
+      const sourceSampleId = item.sourceSampleId?.trim();
+      return sourceSampleId ? `${caseId}/${sourceSampleId}` : caseId;
+    })
+    .filter(Boolean)
+    .slice(0, 3);
+  return visible.length ? `爆款追溯 ${trace.length} 条：${visible.join("、")}` : "";
 }
 
 function formatMissingEvidenceFieldLine(

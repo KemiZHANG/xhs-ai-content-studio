@@ -293,7 +293,14 @@ describe("publish confirmation summary", () => {
           missingEvidenceIds: ["missing-image"],
           warnings: ["图片 Prompt 缺少可追溯证据"],
           sourceCounts: { realtime: 2, viral_library: 1, user_input: 0 },
-          fieldCounts: { title: 2, content: 2, tags: 1, imagePrompt: 0 }
+          fieldCounts: { title: 2, content: 2, tags: 1, imagePrompt: 0 },
+          viralEvidenceTrace: [{
+            caseId: "viral-case-1",
+            sourceSampleId: "source-note-1",
+            sourceUrl: "https://example.com/source-note-1",
+            score: 0.91,
+            evidenceInsightIds: ["viral-insight-visual"]
+          }]
         },
         versionSnapshot: {
           qualityGateFresh: true,
@@ -320,6 +327,7 @@ describe("publish confirmation summary", () => {
     expect(summary.evidenceLine).toContain("实时 2 / 爆款库 1 / 用户输入 0");
     expect(summary.evidenceLine).toContain("标题 2 / 正文 2 / 标签 1 / 图片Prompt 0");
     expect(summary.evidenceLine).toContain("缺字段：图片 Prompt");
+    expect(summary.evidenceLine).toContain("爆款追溯 1 条：viral-case-1/source-note-1");
     expect(summary.evidenceLine).toContain("缺失 1 / 警告 1");
     expect(summary.confirmationItems).toEqual([
       {

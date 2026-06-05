@@ -134,6 +134,15 @@ export type PublishEvidenceCitationSummary = {
   warnings: string[];
   sourceCounts: Record<string, number>;
   fieldCounts: Record<"title" | "content" | "tags" | "imagePrompt", number>;
+  viralEvidenceTrace?: Array<{
+    caseId: string;
+    sourceSampleId: string;
+    sourceUrl: string;
+    score: number;
+    matchedQueries: string[];
+    reasons: string[];
+    evidenceInsightIds: string[];
+  }>;
 };
 
 export type PublishIntent = {

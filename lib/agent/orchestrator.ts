@@ -3951,7 +3951,8 @@ function buildAgentPublishEvidenceCitationSummary(
       content: report.sections.find((section) => section.field === "content")?.insights.length ?? 0,
       tags: report.sections.find((section) => section.field === "tags")?.insights.length ?? 0,
       imagePrompt: report.sections.find((section) => section.field === "imagePrompt")?.insights.length ?? 0
-    }
+    },
+    viralEvidenceTrace: report.viralEvidenceTrace
   };
 }
 

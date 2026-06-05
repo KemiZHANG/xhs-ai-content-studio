@@ -33,7 +33,16 @@ describe("publish audit storage", () => {
         missingEvidenceIds: [],
         warnings: [],
         sourceCounts: { realtime: 1 },
-        fieldCounts: { title: 1, content: 1, tags: 1, imagePrompt: 1 }
+        fieldCounts: { title: 1, content: 1, tags: 1, imagePrompt: 1 },
+        viralEvidenceTrace: [{
+          caseId: "viral-case-a",
+          sourceSampleId: "source-note-a",
+          sourceUrl: "https://example.com/source-note-a",
+          score: 0.88,
+          matchedQueries: ["launch note"],
+          reasons: ["semantic match"],
+          evidenceInsightIds: ["viral-insight-a"]
+        }]
       },
       reasons: []
     });
@@ -48,7 +57,12 @@ describe("publish audit storage", () => {
         title: "A launch note",
         contentHash: expect.any(String),
         evidenceCitationSummary: expect.objectContaining({
-          summary: "参考证据：实时研究 1 条。"
+          summary: "参考证据：实时研究 1 条。",
+          viralEvidenceTrace: [expect.objectContaining({
+            caseId: "viral-case-a",
+            sourceSampleId: "source-note-a",
+            evidenceInsightIds: ["viral-insight-a"]
+          })]
         })
       })
     );

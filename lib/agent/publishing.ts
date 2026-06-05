@@ -270,7 +270,14 @@ function evidenceCitationSignature(summary: PublishEvidenceCitationSummary): str
     missingEvidenceIds: [...summary.missingEvidenceIds].sort(),
     warnings: [...summary.warnings].sort(),
     sourceCounts: sortRecord(summary.sourceCounts),
-    fieldCounts: sortRecord(summary.fieldCounts)
+    fieldCounts: sortRecord(summary.fieldCounts),
+    viralEvidenceTrace: (summary.viralEvidenceTrace ?? [])
+      .map((item) => ({
+        caseId: item.caseId,
+        sourceSampleId: item.sourceSampleId,
+        evidenceInsightIds: [...item.evidenceInsightIds].sort()
+      }))
+      .sort((left, right) => left.caseId.localeCompare(right.caseId))
   });
 }
 

@@ -430,6 +430,15 @@ export type WorkspacePublishPlan = {
     warnings: string[];
     sourceCounts: Record<string, number>;
     fieldCounts: Record<"title" | "content" | "tags" | "imagePrompt", number>;
+    viralEvidenceTrace?: Array<{
+      caseId: string;
+      sourceSampleId: string;
+      sourceUrl: string;
+      score: number;
+      matchedQueries: string[];
+      reasons: string[];
+      evidenceInsightIds: string[];
+    }>;
   };
   versionSnapshot?: {
     copyVersionId?: string;
@@ -687,6 +696,15 @@ export type PublishAuditRecord = {
     warnings: string[];
     sourceCounts: Record<string, number>;
     fieldCounts: Record<"title" | "content" | "tags" | "imagePrompt", number>;
+    viralEvidenceTrace?: Array<{
+      caseId: string;
+      sourceSampleId: string;
+      sourceUrl: string;
+      score: number;
+      matchedQueries: string[];
+      reasons: string[];
+      evidenceInsightIds: string[];
+    }>;
   };
   resultSummary?: string;
 };
