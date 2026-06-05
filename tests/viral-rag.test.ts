@@ -147,13 +147,34 @@ describe("viral RAG retrieval", () => {
       viralCount: 0,
       hasVisual: false,
       hasHook: false,
-      hasStructure: false
+      hasStructure: false,
+      hasTag: false,
+      hasAudienceOrPain: false
     });
 
     expect(sufficiency.isEnough).toBe(false);
     expect(sufficiency.missing.join(" ")).toContain("实时小红书样本不足");
+    expect(sufficiency.missing.join(" ")).toContain("缺少标签组合规律");
+    expect(sufficiency.missing.join(" ")).toContain("缺少人群/痛点规律");
     expect(sufficiency.recommendation).toContain("建议继续搜索");
     expect(sufficiency.recommendation).not.toMatch(mojibakePattern);
+  });
+
+  it("requires tag and audience/pain signals before marking RAG as enough", () => {
+    const sufficiency = evaluateRagSufficiency({
+      realtimeCount: 4,
+      viralCount: 3,
+      hasVisual: true,
+      hasHook: true,
+      hasStructure: true,
+      hasTag: false,
+      hasAudienceOrPain: false
+    });
+
+    expect(sufficiency.isEnough).toBe(false);
+    expect(sufficiency.missing).toEqual(["缺少标签组合规律", "缺少人群/痛点规律"]);
+    expect(sufficiency.recommendation).toContain("缺少标签组合规律");
+    expect(sufficiency.recommendation).toContain("缺少人群/痛点规律");
   });
 
   it("exposes viral knowledge as replaceable retriever adapters", async () => {

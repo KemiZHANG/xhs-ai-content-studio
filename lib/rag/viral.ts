@@ -91,7 +91,9 @@ export async function retrieveViralKnowledge(input: ViralRetrievalInput): Promis
     viralCount: results.length,
     hasVisual: insights.some((insight) => insight.type === "visual"),
     hasHook: insights.some((insight) => insight.type === "hook" || insight.type === "title"),
-    hasStructure: insights.some((insight) => insight.type === "structure" || insight.type === "copy")
+    hasStructure: insights.some((insight) => insight.type === "structure" || insight.type === "copy"),
+    hasTag: insights.some((insight) => insight.type === "tag"),
+    hasAudienceOrPain: insights.some((insight) => insight.type === "audience" || insight.type === "pain_point" || insight.type === "comment")
   });
   return {
     query: input.query,
@@ -334,13 +336,17 @@ export function evaluateRagSufficiency({
   viralCount,
   hasVisual,
   hasHook,
-  hasStructure
+  hasStructure,
+  hasTag,
+  hasAudienceOrPain
 }: {
   realtimeCount: number;
   viralCount: number;
   hasVisual: boolean;
   hasHook: boolean;
   hasStructure: boolean;
+  hasTag: boolean;
+  hasAudienceOrPain: boolean;
 }): RagSufficiency {
   const missing: string[] = [];
   if (realtimeCount < 3) missing.push("实时小红书样本不足 3 条");
@@ -348,6 +354,8 @@ export function evaluateRagSufficiency({
   if (!hasHook) missing.push("缺少标题钩子规律");
   if (!hasStructure) missing.push("缺少正文结构规律");
   if (!hasVisual) missing.push("缺少图片风格规律");
+  if (!hasTag) missing.push("缺少标签组合规律");
+  if (!hasAudienceOrPain) missing.push("缺少人群/痛点规律");
   return {
     isEnough: missing.length <= 1,
     realtimeCount,
