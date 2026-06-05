@@ -330,6 +330,61 @@ describe("publish confirmation summary", () => {
     ]);
   });
 
+  it("puts viral coverage and originality boundary into the manual publish review checklist", () => {
+    const summary = buildPublishConfirmationSummary({
+      draft: readyDraft,
+      selectedImageCount: 1,
+      activePlan: null,
+      pendingPublish: null,
+      project: project({
+        qualityCheck: {
+          titleScore: 88,
+          copyScore: 90,
+          visualConsistencyScore: 91,
+          platformFitScore: 89,
+          complianceScore: 94,
+          canPublish: true,
+          issues: [],
+          suggestions: [],
+          viralCoverage: {
+            summary: "爆款库覆盖 3/4 项，缺少：标签",
+            missingFields: ["标签"],
+            fields: [
+              { field: "title", viralEvidenceIds: ["viral-title"], realtimeEvidenceIds: ["insight-1"], status: "covered" },
+              { field: "content", viralEvidenceIds: ["viral-copy"], realtimeEvidenceIds: ["insight-1"], status: "covered" },
+              { field: "tags", viralEvidenceIds: [], realtimeEvidenceIds: ["insight-1"], status: "missing" },
+              { field: "imagePrompt", viralEvidenceIds: ["viral-visual"], realtimeEvidenceIds: [], status: "covered" }
+            ]
+          },
+          originalityReview: {
+            rules: ["只学习结构，不复制原文原图。"],
+            sourceSampleIds: ["viral-case-1"],
+            riskSamples: [],
+            isSafe: true,
+            summary: "爆款原创边界 1 条，历史样本 1 条，未发现近似复刻风险"
+          },
+          checkedAt: "2026-05-31T00:00:00.000Z"
+        }
+      }),
+      activeAccountName: "主账号",
+      activeLoginName: "xhs-user",
+      visibility: "仅自己可见",
+      scheduleAt: "",
+      publishReady: true,
+      citationTraceReady: true,
+      canvasDirty: false,
+      accountReady: true,
+      hasVisualDirection: true,
+      qualityGateFresh: true
+    });
+
+    const viralReviewLine = summary.manualReviewChecklist.find((item) => item.startsWith("爆款库/原创边界："));
+
+    expect(viralReviewLine).toContain("爆款库覆盖 3/4 项");
+    expect(viralReviewLine).toContain("爆款原创边界 1 条");
+    expect(summary.manualReviewChecklist).toContain("Quality Gate：已通过且新鲜");
+  });
+
   it("summarizes evidence sources across realtime, viral library and user input", () => {
     const summary = buildPublishConfirmationSummary({
       draft: readyDraft,

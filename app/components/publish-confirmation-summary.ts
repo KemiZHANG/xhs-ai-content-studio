@@ -214,6 +214,7 @@ export function buildPublishConfirmationSummary({
       hasPendingConfirmation,
       qualityGateFresh: snapshot?.qualityGateFresh ?? qualityGateFresh,
       qualityCanPublish: snapshot?.qualityCanPublish ?? (quality?.canPublish === true),
+      viralBoundaryLine: formatViralBoundaryReviewLine(quality),
       finalPostMatchesCanvas: snapshot?.finalPostMatchesCanvas ?? true,
       requiredChecklistCount: requiredChecklist.length,
       confirmedChecklist
@@ -234,6 +235,7 @@ function buildManualReviewChecklist({
   hasPendingConfirmation,
   qualityGateFresh,
   qualityCanPublish,
+  viralBoundaryLine,
   finalPostMatchesCanvas,
   requiredChecklistCount,
   confirmedChecklist
@@ -247,6 +249,7 @@ function buildManualReviewChecklist({
   hasPendingConfirmation: boolean;
   qualityGateFresh: boolean;
   qualityCanPublish: boolean;
+  viralBoundaryLine?: string;
   finalPostMatchesCanvas: boolean;
   requiredChecklistCount: number;
   confirmedChecklist: number;
@@ -263,9 +266,21 @@ function buildManualReviewChecklist({
     `文案与标签：标题、正文、${tagCount} 个标签`,
     `图片版本：${selectedImageCount} 张选中图片`,
     `Quality Gate：${qualityCanPublish && qualityGateFresh ? "已通过且新鲜" : "需通过或刷新"}`,
+    ...(viralBoundaryLine ? [viralBoundaryLine] : []),
     `版本快照：${finalPostMatchesCanvas ? "最终稿与画布一致" : "需重新生成确认单"}`,
     checklistState
   ];
+}
+
+function formatViralBoundaryReviewLine(quality: PostProject["qualityCheck"] | undefined): string | undefined {
+  if (!quality) return undefined;
+  const details = [
+    quality.viralCoverage?.summary,
+    quality.originalityReview?.summary
+  ]
+    .map((item) => item?.trim())
+    .filter(Boolean);
+  return details.length ? `爆款库/原创边界：${details.join("；")}` : undefined;
 }
 
 function formatPublishDecisionLine({
