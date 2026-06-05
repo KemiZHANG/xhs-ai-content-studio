@@ -31,7 +31,7 @@ import { buildPublishVersionSnapshot } from "@/lib/post-project/versioning";
 import type { PostAction, PostProject, ProductInfo } from "@/lib/post-project/types";
 import { renderXhsCardSet } from "@/lib/cards/renderer";
 import type { ModelProvider } from "@/lib/models/provider";
-import { createAssetRecord, getAsset, saveAsset } from "@/lib/storage/assets";
+import { createAssetRecord, createGenerationBatchId, getAsset, saveAsset } from "@/lib/storage/assets";
 import { createDraftRecord, type DraftRecord } from "@/lib/storage/drafts";
 import { summarizeViralRetrievalFilters, type RagSufficiency, type ViralKnowledgePack } from "@/lib/rag/viral";
 import { reviewViralSaveCandidate } from "@/lib/viral-knowledge/store";
@@ -2423,6 +2423,7 @@ async function maybeHandleCardGenerationTurn(
     width: 1080,
     height: 1440
   });
+  const generationBatchId = createGenerationBatchId("agent-card-set");
   const generatedAssets = [];
   for (const file of rendered.files) {
     generatedAssets.push(
@@ -2438,7 +2439,8 @@ async function maybeHandleCardGenerationTurn(
             draftId: currentDraft.id,
             theme: rendered.theme,
             mode: rendered.mode
-          })
+          }),
+          generationBatchId
         })
       )
     );
@@ -2460,6 +2462,7 @@ async function maybeHandleCardGenerationTurn(
   await appendGeneratedAssetsToPostProject({
     assetIds: generatedImageIds,
     promptId: null,
+    generationBatchId,
     select: true
   });
 
@@ -3280,6 +3283,7 @@ async function maybeHandleImageGenerationTurn(
   const activePromptVersion = activeProject.imagePrompts.at(-1);
   const imageEvidenceIds = getPrioritizedImageEvidenceIds(activeProject, 12);
   const sourceAssetIds = input.attachedAssets.map((asset) => asset.id);
+  const generationBatchId = createGenerationBatchId("agent-image");
   const generatedAsset =
     generatedImage.path
       ? await saveAsset(
@@ -3291,6 +3295,7 @@ async function maybeHandleImageGenerationTurn(
             size: 0,
             prompt,
             promptVersionId: activePromptVersion?.id,
+            generationBatchId,
             basedOnEvidenceIds: imageEvidenceIds,
             sourceAssetIds
           })
@@ -3310,6 +3315,7 @@ async function maybeHandleImageGenerationTurn(
     await appendGeneratedAssetsToPostProject({
       assetIds: [generatedAsset.id],
       promptId: activePromptVersion?.id,
+      generationBatchId,
       basedOnEvidenceIds: imageEvidenceIds,
       sourceAssetIds,
       select: true
@@ -4104,6 +4110,7 @@ function upsertGeneratedImageVersion(
     imageIds,
     selectedImageIds,
     promptVersionId,
+    generationBatchId,
     basedOnEvidenceIds,
     sourceAssetIds,
     label
@@ -4111,6 +4118,7 @@ function upsertGeneratedImageVersion(
     imageIds: string[];
     selectedImageIds: string[];
     promptVersionId?: string;
+    generationBatchId?: string;
     basedOnEvidenceIds: string[];
     sourceAssetIds: string[];
     label: string;
@@ -4127,12 +4135,13 @@ function upsertGeneratedImageVersion(
   return [
     ...existingVersions,
     {
-      id: `generated-images-${Date.now()}-${images.join("-").slice(0, 32)}`,
+      id: generationBatchId ?? `generated-images-${Date.now()}-${images.join("-").slice(0, 32)}`,
       createdAt: new Date().toISOString(),
       label,
       imageIds: images,
       selectedImageIds: selected,
       promptVersionId,
+      generationBatchId,
       basedOnEvidenceIds: uniqueIds(basedOnEvidenceIds),
       sourceAssetIds: uniqueIds(sourceAssetIds)
     }
@@ -4148,12 +4157,14 @@ function sameStringSet(left: string[], right: string[]): boolean {
 async function appendGeneratedAssetsToPostProject({
   assetIds,
   promptId,
+  generationBatchId,
   basedOnEvidenceIds,
   sourceAssetIds,
   select
 }: {
   assetIds: string[];
   promptId?: string | null;
+  generationBatchId?: string;
   basedOnEvidenceIds?: string[];
   sourceAssetIds?: string[];
   select: boolean;
@@ -4173,6 +4184,7 @@ async function appendGeneratedAssetsToPostProject({
         assetId: id,
         promptId: promptId ?? undefined,
         promptVersionId: promptId ?? undefined,
+        generationBatchId,
         basedOnEvidenceIds: basedOnEvidenceIds ?? [],
         sourceAssetIds: sourceAssetIds ?? [],
         createdAt: new Date().toISOString(),
@@ -4186,6 +4198,7 @@ async function appendGeneratedAssetsToPostProject({
           ...image,
           promptId: image.promptId ?? promptId ?? undefined,
           promptVersionId: image.promptVersionId ?? image.promptId ?? promptId ?? undefined,
+          generationBatchId: image.generationBatchId ?? generationBatchId,
           basedOnEvidenceIds: image.basedOnEvidenceIds?.length ? image.basedOnEvidenceIds : (basedOnEvidenceIds ?? []),
           sourceAssetIds: image.sourceAssetIds ?? sourceAssetIds ?? []
         }
@@ -4201,6 +4214,7 @@ async function appendGeneratedAssetsToPostProject({
     imageIds: ids,
     selectedImageIds: select ? ids : project.selectedImages,
     promptVersionId: promptId ?? undefined,
+    generationBatchId,
     basedOnEvidenceIds: basedOnEvidenceIds ?? [],
     sourceAssetIds: sourceAssetIds ?? [],
     label: select ? "Agent generated selected images" : "Agent generated image batch"

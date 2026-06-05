@@ -121,6 +121,7 @@ export type GeneratedProjectImage = {
   url?: string;
   promptId?: string;
   promptVersionId?: string;
+  generationBatchId?: string;
   basedOnEvidenceIds?: string[];
   sourceAssetIds?: string[];
   createdAt: string;
@@ -134,6 +135,7 @@ export type GeneratedImageVersion = {
   imageIds: string[];
   selectedImageIds: string[];
   promptVersionId?: string;
+  generationBatchId?: string;
   basedOnEvidenceIds: string[];
   sourceAssetIds: string[];
 };

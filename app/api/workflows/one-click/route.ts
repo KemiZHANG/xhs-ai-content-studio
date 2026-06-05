@@ -4,7 +4,7 @@ import { createModelProvider } from "@/lib/models/provider";
 import { createXhsMcpClient } from "@/lib/mcp/xhs";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { appendHistory } from "@/lib/storage/history";
-import { upsertGeneratedAssetPaths } from "@/lib/storage/assets";
+import { createGenerationBatchId, upsertGeneratedAssetPaths } from "@/lib/storage/assets";
 import { createDraftRecord, writeCurrentDraft } from "@/lib/storage/drafts";
 import { isPublishVisibility, readSettings } from "@/lib/storage/settings";
 import { runOneClickWorkflow, type OneClickInput, type PublishMode } from "@/lib/workflows/one-click";
@@ -59,9 +59,11 @@ export async function POST(request: Request) {
       model: createModelProvider(settings)
     });
     const run = await appendHistory(input, result);
+    const generationBatchId = createGenerationBatchId(`workflow-${run.id}`);
 
     const registeredImages = await upsertGeneratedAssetPaths(result.images, {
       prompt: result.draft?.imagePrompt,
+      generationBatchId,
       sourceAssetIds: input.assetIds
     });
     const imageAssetIds = registeredImages.map((asset) => asset.id);

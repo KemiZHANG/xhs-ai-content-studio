@@ -5,7 +5,7 @@ import {
   type CardTheme
 } from "@/lib/cards/renderer";
 import { requireLocalActionToken } from "@/lib/security/action-token";
-import { createAssetRecord, saveAsset, toPublicAssetRecord } from "@/lib/storage/assets";
+import { createAssetRecord, createGenerationBatchId, saveAsset, toPublicAssetRecord } from "@/lib/storage/assets";
 
 export const runtime = "nodejs";
 
@@ -58,6 +58,7 @@ export async function POST(request: Request) {
       height: rendered.height
     });
 
+    const generationBatchId = createGenerationBatchId("card-set");
     const assets = [];
     for (const file of rendered.files) {
       const asset = await saveAsset(
@@ -67,7 +68,8 @@ export async function POST(request: Request) {
           absolutePath: file.absolutePath,
           mimeType: file.mimeType,
           size: file.size,
-          prompt
+          prompt,
+          generationBatchId
         })
       );
       assets.push(asset);

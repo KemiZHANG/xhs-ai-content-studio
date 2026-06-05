@@ -11,7 +11,7 @@ import { requireLocalActionToken } from "@/lib/security/action-token";
 import { createDraftRecord, readCurrentDraft, writeCurrentDraft } from "@/lib/storage/drafts";
 import { appendChatTurn, getChatConversation } from "@/lib/storage/chat";
 import { appendHistory, listHistory } from "@/lib/storage/history";
-import { getAsset, upsertGeneratedAssetPaths, type AssetRecord } from "@/lib/storage/assets";
+import { createGenerationBatchId, getAsset, upsertGeneratedAssetPaths, type AssetRecord } from "@/lib/storage/assets";
 import { readSettings } from "@/lib/storage/settings";
 import type { AgentQuickAction, AgentResponseCard, AgentToolTraceItem } from "@/lib/agent/types";
 import type { OneClickInput, OneClickResult } from "@/lib/workflows/one-click";
@@ -265,7 +265,8 @@ export async function POST(request: Request) {
         throw new Error("Failed to persist current draft");
       }
       const registeredImages = await upsertGeneratedAssetPaths(currentDraftRecord.images, {
-        prompt: currentDraftRecord.draft.imagePrompt
+        prompt: currentDraftRecord.draft.imagePrompt,
+        generationBatchId: createGenerationBatchId("chat-draft")
       });
       const workspace = await readWorkspaceState();
       await updateWorkspaceState({
@@ -349,8 +350,10 @@ async function persistWorkflowResult(
   postProject: Awaited<ReturnType<typeof syncPostProjectFromWorkspace>>;
 }> {
   const run = await appendHistory(input, workflowResult);
+  const generationBatchId = createGenerationBatchId(`workflow-${run.id}`);
   const registeredImages = await upsertGeneratedAssetPaths(workflowResult.images, {
     prompt: workflowResult.draft?.imagePrompt,
+    generationBatchId,
     sourceAssetIds: input.assetIds
   });
 

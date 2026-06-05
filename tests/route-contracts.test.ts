@@ -575,6 +575,7 @@ describe("API route contracts", () => {
       createDraftRecord: vi.fn((input) => ({ id: "draft-1", updatedAt: "2026-05-31T00:00:00.000Z", ...input }))
     }));
     vi.doMock("@/lib/storage/assets", () => ({
+      createGenerationBatchId: vi.fn(() => "chat-batch-1"),
       getAsset: vi.fn(),
       upsertGeneratedAssetPaths: vi.fn(async () => [{ id: "asset-1" }])
     }));
@@ -2436,6 +2437,7 @@ describe("API route contracts", () => {
               size: 128,
               createdAt: "2026-05-31T00:00:00.000Z",
               promptVersionId: "prompt-asset",
+              generationBatchId: "batch-asset-2",
               basedOnEvidenceIds: ["asset-visual-insight"],
               sourceAssetIds: ["product-asset"]
             }
@@ -2470,6 +2472,7 @@ describe("API route contracts", () => {
           assetId: "asset-2",
           path: "C:\\Users\\someone\\xhs\\generated-assets\\generated\\generated-cover.png",
           promptVersionId: "prompt-asset",
+          generationBatchId: "batch-asset-2",
           basedOnEvidenceIds: ["asset-visual-insight"],
           sourceAssetIds: ["product-asset"],
           selected: true
@@ -2481,6 +2484,7 @@ describe("API route contracts", () => {
           imageIds: ["asset-1", "asset-2"],
           selectedImageIds: ["asset-1", "asset-2"],
           promptVersionId: "prompt-existing",
+          generationBatchId: "batch-asset-2",
           basedOnEvidenceIds: ["insight-existing", "asset-visual-insight"],
           sourceAssetIds: ["product-1", "product-asset"]
         })

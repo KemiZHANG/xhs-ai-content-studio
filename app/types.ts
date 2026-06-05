@@ -325,6 +325,7 @@ export type AssetRecord = {
   createdAt: string;
   prompt?: string;
   promptVersionId?: string;
+  generationBatchId?: string;
   basedOnEvidenceIds?: string[];
   sourceAssetIds?: string[];
 };
@@ -575,6 +576,7 @@ export type PostProject = {
     url?: string;
     promptId?: string;
     promptVersionId?: string;
+    generationBatchId?: string;
     basedOnEvidenceIds?: string[];
     sourceAssetIds?: string[];
     selected?: boolean;
@@ -586,6 +588,7 @@ export type PostProject = {
     imageIds: string[];
     selectedImageIds: string[];
     promptVersionId?: string;
+    generationBatchId?: string;
     basedOnEvidenceIds: string[];
     sourceAssetIds: string[];
   }>;

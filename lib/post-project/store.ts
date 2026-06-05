@@ -3,6 +3,7 @@ import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { WorkspaceState } from "@/lib/agent/types";
 import { readWorkspaceState } from "@/lib/agent/state";
+import { getAsset } from "@/lib/storage/assets";
 import { insightsFromResearchSummary } from "@/lib/post-project/evidence";
 import {
   copyVersionFromDraft,
@@ -38,7 +39,7 @@ export async function readPostProject(): Promise<PostProject> {
     }
   }
 
-  const project = postProjectFromWorkspace(await readWorkspaceState());
+  const project = await hydrateGeneratedImageMetadata(postProjectFromWorkspace(await readWorkspaceState()));
   await writePostProject(project);
   return project;
 }
@@ -48,7 +49,7 @@ export async function writePostProject(project: PostProject): Promise<PostProjec
 }
 
 export async function syncPostProjectFromWorkspace(workspace: WorkspaceState): Promise<PostProject> {
-  const migrated = postProjectFromWorkspace(workspace);
+  const migrated = await hydrateGeneratedImageMetadata(postProjectFromWorkspace(workspace));
   const existing = await readExistingPostProject();
   if (!existing) {
     return writePostProject(migrated);
@@ -694,6 +695,80 @@ function uniqueIds(ids: string[]): string[] {
 function mergeImages<T extends { id: string }>(existing: T[], next: T[]): T[] {
   const ids = new Set(next.map((image) => image.id));
   return [...existing.filter((image) => !ids.has(image.id)), ...next];
+}
+
+async function hydrateGeneratedImageMetadata(project: PostProject): Promise<PostProject> {
+  if (!project.generatedImages.length && !project.selectedImages.length) {
+    return project;
+  }
+  const assetIds = uniqueIds([
+    ...project.selectedImages,
+    ...project.generatedImages.flatMap((image) => [image.assetId, image.id].filter(Boolean) as string[])
+  ]);
+  const assets = (await Promise.all(assetIds.map((id) => getAsset(id).catch(() => null)))).filter(Boolean);
+  if (!assets.length) {
+    return project;
+  }
+  const assetById = new Map(assets.map((asset) => [asset!.id, asset!]));
+  const existingById = new Map(project.generatedImages.map((image) => [image.assetId ?? image.id, image]));
+  const generatedImages = assetIds.map((id) => {
+    const existing = existingById.get(id);
+    const asset = assetById.get(id);
+    return {
+      id: existing?.id ?? id,
+      assetId: existing?.assetId ?? id,
+      path: existing?.path ?? asset?.absolutePath,
+      url: existing?.url,
+      promptId: existing?.promptId ?? asset?.promptVersionId,
+      promptVersionId: existing?.promptVersionId ?? asset?.promptVersionId ?? existing?.promptId,
+      generationBatchId: existing?.generationBatchId ?? asset?.generationBatchId,
+      basedOnEvidenceIds: existing?.basedOnEvidenceIds?.length ? existing.basedOnEvidenceIds : asset?.basedOnEvidenceIds ?? [],
+      sourceAssetIds: existing?.sourceAssetIds?.length ? existing.sourceAssetIds : asset?.sourceAssetIds ?? [],
+      createdAt: existing?.createdAt ?? asset?.createdAt ?? project.updatedAt,
+      selected: project.selectedImages.includes(id)
+    };
+  });
+  const generatedImageVersions = upsertHydratedGeneratedImageVersions(project, generatedImages);
+  return {
+    ...project,
+    generatedImages,
+    generatedImageVersions
+  };
+}
+
+function upsertHydratedGeneratedImageVersions(
+  project: PostProject,
+  generatedImages: PostProject["generatedImages"]
+): PostProject["generatedImageVersions"] {
+  const selected = uniqueIds(project.selectedImages);
+  if (!selected.length) return project.generatedImageVersions ?? [];
+  const selectedSet = new Set(selected);
+  const selectedRecords = generatedImages.filter((image) => selectedSet.has(image.assetId ?? image.id));
+  const generationBatchIds = uniqueIds(selectedRecords.flatMap((image) => image.generationBatchId ? [image.generationBatchId] : []));
+  const generationBatchId = generationBatchIds.length === 1 ? generationBatchIds[0] : undefined;
+  const existingVersions = project.generatedImageVersions ?? [];
+  const existing = existingVersions.find((version) => sameStringSet(version.selectedImageIds, selected));
+  if (existing) return existingVersions;
+  return [
+    ...existingVersions,
+    {
+      id: generationBatchId ?? `generated-images-${project.updatedAt.replace(/[^0-9]/g, "").slice(0, 14)}-${selected.join("-").slice(0, 32)}`,
+      createdAt: selectedRecords[0]?.createdAt ?? project.updatedAt,
+      label: "Workspace selected images",
+      imageIds: uniqueIds(selectedRecords.map((image) => image.assetId ?? image.id)),
+      selectedImageIds: selected,
+      promptVersionId: uniqueIds(selectedRecords.flatMap((image) => [image.promptVersionId, image.promptId].filter(Boolean) as string[]))[0],
+      generationBatchId,
+      basedOnEvidenceIds: uniqueIds(selectedRecords.flatMap((image) => image.basedOnEvidenceIds ?? [])),
+      sourceAssetIds: uniqueIds(selectedRecords.flatMap((image) => image.sourceAssetIds ?? []))
+    }
+  ];
+}
+
+function sameStringSet(left: string[], right: string[]): boolean {
+  const leftSet = new Set(left.map(String).filter(Boolean));
+  const rightSet = new Set(right.map(String).filter(Boolean));
+  return leftSet.size === rightSet.size && [...leftSet].every((item) => rightSet.has(item));
 }
 
 function createGeneratedImageVersionLedger({

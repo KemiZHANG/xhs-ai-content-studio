@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { buildImageStudioPrompt } from "@/lib/images/studio";
 import { createModelProvider } from "@/lib/models/provider";
 import { requireLocalActionToken } from "@/lib/security/action-token";
-import { createAssetRecord, getAsset, saveAsset, toPublicAssetRecord } from "@/lib/storage/assets";
+import { createAssetRecord, createGenerationBatchId, getAsset, saveAsset, toPublicAssetRecord } from "@/lib/storage/assets";
 import { readSettings } from "@/lib/storage/settings";
 
 export const runtime = "nodejs";
@@ -46,6 +46,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "图片模型没有返回可保存图片" }, { status: 500 });
     }
 
+    const generationBatchId = createGenerationBatchId("image-studio");
     const generated = await saveAsset(
       createAssetRecord({
         kind: "generated",
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
         mimeType: "image/png",
         size: 0,
         prompt,
+        generationBatchId,
         sourceAssetIds: assetIds
       })
     );

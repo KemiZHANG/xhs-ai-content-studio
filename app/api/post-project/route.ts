@@ -363,6 +363,7 @@ async function mergeSelectedImageRecords(project: PostProject, selectedImageIds:
       url: existing?.url,
       promptId: existing?.promptId ?? asset?.promptVersionId ?? activePrompt?.id,
       promptVersionId: existing?.promptVersionId ?? asset?.promptVersionId ?? existing?.promptId ?? activePrompt?.id,
+      generationBatchId: existing?.generationBatchId ?? asset?.generationBatchId,
       basedOnEvidenceIds: existing?.basedOnEvidenceIds?.length
         ? existing.basedOnEvidenceIds
         : asset?.basedOnEvidenceIds?.length
@@ -402,11 +403,13 @@ function upsertGeneratedImageVersion(
   const selectedSet = new Set(selected);
   const selectedRecords = generatedImages.filter((image) => selectedSet.has(image.assetId ?? image.id));
   const promptVersionIds = uniqueStrings(selectedRecords.flatMap((image) => [image.promptVersionId, image.promptId].filter(Boolean) as string[]));
+  const generationBatchIds = uniqueStrings(selectedRecords.flatMap((image) => image.generationBatchId ? [image.generationBatchId] : []));
   const createdAt = new Date().toISOString();
+  const generationBatchId = generationBatchIds.length === 1 ? generationBatchIds[0] : undefined;
   return [
     ...existingVersions,
     {
-      id: `generated-images-${Date.now()}-${selected.join("-").slice(0, 32)}`,
+      id: generationBatchId ?? `generated-images-${Date.now()}-${selected.join("-").slice(0, 32)}`,
       createdAt,
       label,
       imageIds: uniqueStrings(selectedRecords.map((image) => image.assetId ?? image.id)).length
@@ -414,6 +417,7 @@ function upsertGeneratedImageVersion(
         : selected,
       selectedImageIds: selected,
       promptVersionId: promptVersionIds[0],
+      generationBatchId,
       basedOnEvidenceIds: uniqueStrings(selectedRecords.flatMap((image) => image.basedOnEvidenceIds ?? [])),
       sourceAssetIds: uniqueStrings(selectedRecords.flatMap((image) => image.sourceAssetIds ?? []))
     }

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -14,6 +15,7 @@ export type AssetRecord = {
   createdAt: string;
   prompt?: string;
   promptVersionId?: string;
+  generationBatchId?: string;
   basedOnEvidenceIds?: string[];
   sourceAssetIds?: string[];
 };
@@ -32,6 +34,7 @@ export function createAssetRecord({
   size,
   prompt,
   promptVersionId,
+  generationBatchId,
   basedOnEvidenceIds,
   sourceAssetIds
 }: {
@@ -42,6 +45,7 @@ export function createAssetRecord({
   size: number;
   prompt?: string;
   promptVersionId?: string;
+  generationBatchId?: string;
   basedOnEvidenceIds?: string[];
   sourceAssetIds?: string[];
 }): AssetRecord {
@@ -57,9 +61,14 @@ export function createAssetRecord({
     createdAt: new Date().toISOString(),
     prompt,
     promptVersionId,
+    generationBatchId,
     basedOnEvidenceIds,
     sourceAssetIds
   };
+}
+
+export function createGenerationBatchId(prefix = "generation-batch"): string {
+  return `${prefix}-${Date.now()}-${randomUUID().slice(0, 8)}`;
 }
 
 export function publicAssetUrl(asset: AssetRecord): string {
@@ -76,6 +85,7 @@ export function toPublicAssetRecord(asset: AssetRecord): PublicAssetRecord {
     size: asset.size,
     createdAt: asset.createdAt,
     promptVersionId: asset.promptVersionId,
+    generationBatchId: asset.generationBatchId,
     basedOnEvidenceIds: asset.basedOnEvidenceIds,
     sourceAssetIds: asset.sourceAssetIds,
     url: publicAssetUrl(asset)
@@ -111,7 +121,7 @@ export async function saveAsset(asset: AssetRecord): Promise<AssetRecord> {
 
 export async function upsertGeneratedAssetPaths(
   images: Array<{ path?: string; url?: string }>,
-  options: { prompt?: string; promptVersionId?: string; basedOnEvidenceIds?: string[]; sourceAssetIds?: string[] } = {}
+  options: { prompt?: string; promptVersionId?: string; generationBatchId?: string; basedOnEvidenceIds?: string[]; sourceAssetIds?: string[] } = {}
 ): Promise<AssetRecord[]> {
   const paths = [...new Set(images.map((image) => image.path).filter((item): item is string => Boolean(item)))];
   if (!paths.length) {
@@ -139,6 +149,7 @@ export async function upsertGeneratedAssetPaths(
       size: fileStat?.size ?? 0,
       prompt: options.prompt,
       promptVersionId: options.promptVersionId,
+      generationBatchId: options.generationBatchId,
       basedOnEvidenceIds: options.basedOnEvidenceIds,
       sourceAssetIds: options.sourceAssetIds
     });

@@ -28,6 +28,7 @@ describe("card generation route", () => {
       }))
     }));
     vi.doMock("@/lib/storage/assets", () => ({
+      createGenerationBatchId: vi.fn(() => "card-batch-1"),
       createAssetRecord: vi.fn((input) => ({
         id: `asset-${input.originalName}`,
         name: input.originalName,
@@ -62,6 +63,8 @@ describe("card generation route", () => {
     expect(response.status).toBe(200);
     expect(payload.assets).toHaveLength(2);
     expect(saveAsset).toHaveBeenCalledTimes(2);
+    expect(saveAsset).toHaveBeenNthCalledWith(1, expect.objectContaining({ generationBatchId: "card-batch-1" }));
+    expect(saveAsset).toHaveBeenNthCalledWith(2, expect.objectContaining({ generationBatchId: "card-batch-1" }));
     expect(payload.assets[0].id).toContain("xhs-card-cover");
   });
 });

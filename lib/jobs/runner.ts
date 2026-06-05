@@ -4,7 +4,7 @@ import { isJobForWorkspace } from "@/lib/jobs/context";
 import { createModelProvider } from "@/lib/models/provider";
 import { createXhsMcpClient } from "@/lib/mcp/xhs";
 import { syncPostProjectFromWorkspace } from "@/lib/post-project/store";
-import { upsertGeneratedAssetPaths } from "@/lib/storage/assets";
+import { createGenerationBatchId, upsertGeneratedAssetPaths } from "@/lib/storage/assets";
 import { createDraftRecord, writeCurrentDraft } from "@/lib/storage/drafts";
 import { appendHistory } from "@/lib/storage/history";
 import {
@@ -140,10 +140,12 @@ async function runWorkflowJob(jobId: string, input: OneClickInput): Promise<void
     }
 
     const run = await appendHistory(input, result);
+    const generationBatchId = createGenerationBatchId(`job-${jobId}`);
     const activeWorkspace = await readWorkspaceState();
     const shouldSyncToWorkspace = isJobForWorkspace(job, activeWorkspace);
     const registeredImages = await upsertGeneratedAssetPaths(result.images, {
       prompt: result.draft?.imagePrompt,
+      generationBatchId,
       sourceAssetIds: input.assetIds
     });
     if (!shouldSyncToWorkspace) {
