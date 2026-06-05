@@ -2044,10 +2044,16 @@ function buildViralRagNextActions({
   }
   if (!postProject?.visualDirection) {
     actions.push({ id: "qa-rag-plan-visuals", label: "生成图片方向", action: "plan_visuals" });
+  } else if (!isVisualDirectionConfirmed(postProject.visualDirection)) {
+    actions.push({ id: "qa-rag-confirm-visuals", label: "确认图片方向", action: "confirm_visual_direction" });
   } else {
     actions.push({ id: "qa-rag-assemble-post", label: "组装发布稿", action: "assemble_post" });
   }
   return actions.slice(0, 3);
+}
+
+function isVisualDirectionConfirmed(visualDirection: NonNullable<PostProject["visualDirection"]>): boolean {
+  return visualDirection.confirmationStatus === "confirmed" || Boolean(visualDirection.confirmedAt);
 }
 
 function buildToolTraceItems(trace: ReturnType<typeof createTrace>, plan?: AgentPlan): AgentToolTraceItem[] {

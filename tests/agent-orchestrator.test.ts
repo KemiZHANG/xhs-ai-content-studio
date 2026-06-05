@@ -2269,6 +2269,15 @@ describe("agent orchestrator", () => {
         viralSampleTwo,
         { ...viralSample, id: "note-live-bag-3", title: "通勤包真实使用一周反馈" }
       ],
+      visualDirection: {
+        mood: "通勤场景真实测评",
+        composition: "封面突出包身容量，内页拆解电脑位和肩带细节",
+        colorPalette: "城市通勤中性色",
+        mustHave: ["包身容量", "电脑位", "肩带细节"],
+        mustAvoid: ["夸张磨皮", "不真实容量对比"],
+        basedOnEvidenceIds: ["visual-seed"],
+        confirmationStatus: "pending"
+      },
       currentStage: "brief_ready"
     });
     const runChatAgent = vi.fn(async () => ({ answer: "legacy answer" }));
@@ -2304,11 +2313,11 @@ describe("agent orchestrator", () => {
     expect((viralCard?.data as { evidenceIds?: string[] } | undefined)?.evidenceIds?.length).toBeGreaterThan(0);
     expect(result.quickActions.map((action) => action.action)).toEqual([
       "generate_copy",
-      "plan_visuals"
+      "confirm_visual_direction"
     ]);
     expect((viralCard?.data as { nextActions?: Array<{ action: string }> } | undefined)?.nextActions?.map((action) => action.action)).toEqual([
       "generate_copy",
-      "plan_visuals"
+      "confirm_visual_direction"
     ]);
     expect(result.toolTrace.some((item) => item.label === "knowledge.retrieveViralPatterns" && item.status === "completed")).toBe(true);
     expect(result.trace.events.some((event) => event.type === "tool_completed" && event.label === "knowledge.retrieveViralPatterns")).toBe(true);
