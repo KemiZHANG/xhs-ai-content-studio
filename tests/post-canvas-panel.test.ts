@@ -346,6 +346,86 @@ describe("post canvas panel", () => {
     expect(html).toContain("发布检查");
   });
 
+  it("separates weak viral references in the canvas evidence bridge", () => {
+    const weakCitationReport: EvidenceCitationReport = {
+      ...citationReport,
+      weakViralEvidenceCount: 1,
+      warnings: ["引用了 1 条弱参考爆款证据，仅可作为补充，不能单独支撑发布"]
+    };
+    const html = renderToStaticMarkup(createElement(PostCanvasPanel, {
+      canGenerateCopy: true,
+      generatedCopyPrompt: "生成探店文案",
+      creationProvenance,
+      canvasVersionDisplay,
+      canvasDirty: false,
+      selectedAssets,
+      copyVersions: project.copyVersions,
+      copyVersionGuidance: { state: "ok", label: "可回滚", detail: "最近版本可切换" },
+      publishDraft,
+      latestImagePrompt: publishDraft.imagePrompt,
+      project,
+      imagePromptVersions: project.imagePrompts,
+      promptVersionGuidance: { state: "ok", label: "可使用", detail: "Prompt 可切换" },
+      versionStatus,
+      versionDiff,
+      citationReport: weakCitationReport,
+      onGenerateCopy: () => undefined,
+      onOpenEvidence: () => undefined,
+      onDraftChange: () => undefined,
+      onSelectCopyVersion: () => undefined,
+      onSelectImagePromptVersion: () => undefined,
+      onQuickAction: () => undefined,
+      onCommitCanvas: () => undefined
+    }));
+
+    expect(html).toContain("爆款库 1（弱参考 1）");
+    expect(html).toContain("弱参考爆款证据");
+  });
+
+  it("infers weak viral references from citation sections when reports omit the count", () => {
+    const weakCitationReport: EvidenceCitationReport = {
+      ...citationReport,
+      sections: citationReport.sections.map((section) =>
+        section.field === "content"
+          ? {
+              ...section,
+              insights: section.insights.map((insight) => ({
+                ...insight,
+                insight: "弱参考：低质量样本里的泛泛结构"
+              }))
+            }
+          : section
+      )
+    };
+    const html = renderToStaticMarkup(createElement(PostCanvasPanel, {
+      canGenerateCopy: true,
+      generatedCopyPrompt: "生成探店文案",
+      creationProvenance,
+      canvasVersionDisplay,
+      canvasDirty: false,
+      selectedAssets,
+      copyVersions: project.copyVersions,
+      copyVersionGuidance: { state: "ok", label: "可回滚", detail: "最近版本可切换" },
+      publishDraft,
+      latestImagePrompt: publishDraft.imagePrompt,
+      project,
+      imagePromptVersions: project.imagePrompts,
+      promptVersionGuidance: { state: "ok", label: "可使用", detail: "Prompt 可切换" },
+      versionStatus,
+      versionDiff,
+      citationReport: weakCitationReport,
+      onGenerateCopy: () => undefined,
+      onOpenEvidence: () => undefined,
+      onDraftChange: () => undefined,
+      onSelectCopyVersion: () => undefined,
+      onSelectImagePromptVersion: () => undefined,
+      onQuickAction: () => undefined,
+      onCommitCanvas: () => undefined
+    }));
+
+    expect(html).toContain("爆款库 1（弱参考 1）");
+  });
+
   it("blocks image generation from the canvas until visual direction is confirmed", () => {
     const unconfirmedProject: PostProject = {
       ...project,

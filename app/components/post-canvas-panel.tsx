@@ -236,18 +236,21 @@ function CanvasEvidenceBridge({
   const copyCount = project?.copyDraft?.draft.basedOnEvidenceIds?.length ?? 0;
   const visualCount = project?.visualDirection?.basedOnEvidenceIds.length ?? 0;
   const total = citationReport?.allEvidenceIds.length ?? briefCount + copyCount + visualCount;
-  const sourceCounts = countReferencedEvidenceSources(project, citationReport);
+  const sourceSummary = countReferencedEvidenceSources(project, citationReport);
+  const sourceCounts = sourceSummary.counts;
 
   return (
     <section className="evidenceReferenceStrip" aria-label="Brief 与证据来源">
       <strong>创作依据</strong>
-      <span>{formatCanvasEvidenceSourceLine(sourceCounts)}</span>
+      <span>{formatCanvasEvidenceSourceLine(sourceCounts, sourceSummary.weakViralEvidenceCount)}</span>
       <div className="citationBadgeRow">
         <em className={briefCount ? "ok" : "warn"}>Brief {briefCount}</em>
         <em className={copyCount ? "ok" : "warn"}>文案 {copyCount}</em>
         <em className={visualCount ? "ok" : "warn"}>图片 {visualCount}</em>
         <em className={total ? "ok" : "warn"}>总证据 {total}</em>
-        <em className={sourceCounts.viral_library ? "ok" : "warn"}>爆款库 {sourceCounts.viral_library}</em>
+        <em className={sourceCounts.viral_library && !sourceSummary.weakViralEvidenceCount ? "ok" : "warn"}>
+          爆款库 {sourceCounts.viral_library}{sourceSummary.weakViralEvidenceCount ? `（弱参考 ${sourceSummary.weakViralEvidenceCount}）` : ""}
+        </em>
       </div>
       <small>文案和图片共享当前 CreativeBrief；没有证据支持的内容不会标记为研究结论。</small>
     </section>
@@ -598,16 +601,22 @@ function CanvasActionRow({
 function countReferencedEvidenceSources(
   project: PostProject | null,
   citationReport: EvidenceCitationReport | null
-): Record<"realtime" | "viral_library" | "user_input", number> {
+): {
+  counts: Record<"realtime" | "viral_library" | "user_input", number>;
+  weakViralEvidenceCount: number;
+} {
   const counts = { realtime: 0, viral_library: 0, user_input: 0 };
   if (citationReport) {
     counts.realtime = Number(citationReport.sourceCounts.realtime ?? 0);
     counts.viral_library = Number(citationReport.sourceCounts.viral_library ?? 0);
     counts.user_input = Number(citationReport.sourceCounts.user_input ?? 0);
-    return counts;
+    return {
+      counts,
+      weakViralEvidenceCount: citationReport.weakViralEvidenceCount ?? countWeakViralInsights(citationReport)
+    };
   }
 
-  const evidenceById = new Map((project?.evidencePack.insights ?? []).map((insight) => [insight.id, insight.sourceType ?? "realtime"]));
+  const evidenceById = new Map((project?.evidencePack.insights ?? []).map((insight) => [insight.id, insight]));
   const referencedIds = new Set([
     ...(project?.creativeBrief?.basedOnEvidenceIds ?? []),
     ...(project?.copyDraft?.draft.basedOnEvidenceIds ?? []),
@@ -617,22 +626,45 @@ function countReferencedEvidenceSources(
   ]);
 
   for (const id of referencedIds) {
-    const source = evidenceById.get(id);
+    const insight = evidenceById.get(id);
+    const source = insight?.sourceType ?? "realtime";
     if (source === "viral_library") counts.viral_library += 1;
     else if (source === "user_input") counts.user_input += 1;
     else if (source === "realtime") counts.realtime += 1;
   }
-  return counts;
+  return {
+    counts,
+    weakViralEvidenceCount: Array.from(referencedIds)
+      .map((id) => evidenceById.get(id))
+      .filter((insight) => insight?.sourceType === "viral_library" && insight.insight.trim().startsWith("弱参考："))
+      .length
+  };
 }
 
-function formatCanvasEvidenceSourceLine(counts: Record<"realtime" | "viral_library" | "user_input", number>): string {
+function countWeakViralInsights(citationReport: EvidenceCitationReport): number {
+  const seen = new Set<string>();
+  let count = 0;
+  for (const insight of citationReport.sections.flatMap((section) => section.insights)) {
+    if (seen.has(insight.id)) continue;
+    seen.add(insight.id);
+    if (insight.sourceType === "viral_library" && insight.insight.trim().startsWith("弱参考：")) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+function formatCanvasEvidenceSourceLine(
+  counts: Record<"realtime" | "viral_library" | "user_input", number>,
+  weakViralEvidenceCount = 0
+): string {
   const total = counts.realtime + counts.viral_library + counts.user_input;
   if (!total) {
     return "文案和图片还没有可追溯证据；先搜索真实笔记或刷新爆款库 RAG。";
   }
   const parts = [
     counts.realtime ? `实时研究 ${counts.realtime}` : "",
-    counts.viral_library ? `爆款库 ${counts.viral_library}` : "",
+    counts.viral_library ? `爆款库 ${counts.viral_library}${weakViralEvidenceCount ? `（弱参考 ${weakViralEvidenceCount}）` : ""}` : "",
     counts.user_input ? `用户输入 ${counts.user_input}` : ""
   ].filter(Boolean);
   return `当前稿件引用：${parts.join(" / ")}。爆款库只提供结构、钩子和视觉规律，不复制原文。`;
