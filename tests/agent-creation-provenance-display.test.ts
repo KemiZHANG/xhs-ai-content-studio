@@ -20,7 +20,8 @@ describe("agent creation provenance display", () => {
             summary: "标题、正文、标签、图片方向 4/4 个字段可追溯。",
             evidenceCount: 4,
             missingCount: 0,
-            sourceCounts: { realtime: 2, viral_library: 1, user_input: 1 }
+            sourceCounts: { realtime: 2, viral_library: 1, user_input: 1 },
+            weakViralEvidenceCount: 1
           }
         ]
       }
@@ -32,7 +33,8 @@ describe("agent creation provenance display", () => {
     expect(display?.items[0]).toMatchObject({
       label: "文案",
       status: "ready",
-      sourceLine: "实时 2 / 爆款库 1 / 用户输入 1"
+      weakViralEvidenceCount: 1,
+      sourceLine: "实时 2 / 爆款库 1（弱参考 1） / 用户输入 1"
     });
   });
 

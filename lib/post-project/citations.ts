@@ -40,6 +40,7 @@ export type EvidenceReferenceSummary = {
   insights: EvidenceInsight[];
   missingEvidenceIds: string[];
   sourceCounts: Record<EvidenceSourceType, number>;
+  weakViralEvidenceCount?: number;
   hasRealtimeEvidence: boolean;
   hasViralEvidence: boolean;
   hasUserInputEvidence: boolean;
@@ -128,11 +129,15 @@ export function buildEvidenceReferenceSummary(
   const ids = uniqueIds(evidenceIds).slice(0, Math.max(1, limit));
   const section = buildCitationSection(project.evidencePack.insights, "content", ids);
   const sourceCounts = countSources(section.insights);
+  const weakViralEvidenceCount = uniqueInsightsById(section.insights)
+    .filter((insight) => insight.sourceType === "viral_library" && isWeakReferenceInsight(insight))
+    .length;
   return {
     evidenceIds: section.evidenceIds,
     insights: section.insights,
     missingEvidenceIds: section.missingEvidenceIds,
     sourceCounts,
+    weakViralEvidenceCount,
     hasRealtimeEvidence: sourceCounts.realtime > 0,
     hasViralEvidence: sourceCounts.viral_library > 0,
     hasUserInputEvidence: sourceCounts.user_input > 0,

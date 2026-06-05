@@ -7,6 +7,7 @@ export type AgentCreationProvenanceItem = {
   summary: string;
   evidenceCount: number;
   missingCount: number;
+  weakViralEvidenceCount: number;
   sourceLine: string;
 };
 
@@ -44,6 +45,7 @@ function normalizeItem(value: unknown): AgentCreationProvenanceItem | null {
   const status = value.status === "ready" || value.status === "warn" || value.status === "empty"
     ? value.status
     : "empty";
+  const weakViralEvidenceCount = safeNumber(value.weakViralEvidenceCount);
   return {
     id: typeof value.id === "string" ? value.id : label,
     label,
@@ -51,18 +53,19 @@ function normalizeItem(value: unknown): AgentCreationProvenanceItem | null {
     summary,
     evidenceCount: safeNumber(value.evidenceCount),
     missingCount: safeNumber(value.missingCount),
-    sourceLine: formatSourceCounts(value.sourceCounts)
+    weakViralEvidenceCount,
+    sourceLine: formatSourceCounts(value.sourceCounts, weakViralEvidenceCount)
   };
 }
 
-function formatSourceCounts(value: unknown): string {
+function formatSourceCounts(value: unknown, weakViralEvidenceCount = 0): string {
   if (!isRecord(value)) return "暂无来源";
   const realtime = safeNumber(value.realtime);
   const viral = safeNumber(value.viral_library);
   const userInput = safeNumber(value.user_input);
   const parts = [
     realtime ? `实时 ${realtime}` : "",
-    viral ? `爆款库 ${viral}` : "",
+    viral ? `爆款库 ${viral}${weakViralEvidenceCount ? `（弱参考 ${weakViralEvidenceCount}）` : ""}` : "",
     userInput ? `用户输入 ${userInput}` : ""
   ].filter(Boolean);
   return parts.length ? parts.join(" / ") : "暂无来源";

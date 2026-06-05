@@ -30,6 +30,7 @@ export type ViralApplicationModel = {
   missingEvidence: string[];
   recommendation: string;
   evidenceCount: number;
+  weakViralEvidenceCount: number;
   focusedCount: number;
   citedEvidenceIds: string[];
   routes: ViralApplicationRoute[];
@@ -37,7 +38,9 @@ export type ViralApplicationModel = {
 };
 
 export function buildViralApplicationModel(project: PostProject | null | undefined): ViralApplicationModel {
-  const viralInsights = project?.evidencePack.insights.filter((insight) => insight.sourceType === "viral_library") ?? [];
+  const allViralInsights = project?.evidencePack.insights.filter((insight) => insight.sourceType === "viral_library") ?? [];
+  const viralInsights = allViralInsights.filter((insight) => !isWeakViralInsight(insight));
+  const weakViralEvidenceCount = allViralInsights.length - viralInsights.length;
   const viralInsightIds = new Set(viralInsights.map((insight) => insight.id));
   const focusedViralIds = (project?.focusedEvidenceIds ?? []).filter((id) => viralInsightIds.has(id));
   const fallbackEvidenceIds = (focusedViralIds.length ? focusedViralIds : viralInsights.map((insight) => insight.id)).slice(0, 3);
@@ -53,6 +56,7 @@ export function buildViralApplicationModel(project: PostProject | null | undefin
       missingEvidence: ragReadiness.missingEvidence,
       recommendation: ragReadiness.recommendation,
       evidenceCount: 0,
+      weakViralEvidenceCount,
       focusedCount: 0,
       citedEvidenceIds: [],
       routes: [
@@ -169,6 +173,7 @@ export function buildViralApplicationModel(project: PostProject | null | undefin
     missingEvidence: ragReadiness.missingEvidence,
     recommendation: ragReadiness.recommendation,
     evidenceCount: viralInsights.length,
+    weakViralEvidenceCount,
     focusedCount: focusedViralIds.length,
     citedEvidenceIds: uniqueStrings([...briefEvidenceIds, ...draftEvidenceIds, ...visualEvidenceIds]),
     routes,
@@ -209,7 +214,11 @@ function buildReadinessGate(
 }
 
 function viralEvidenceIds(ids: readonly string[] | undefined, viralInsightIds: Set<string>): string[] {
-  return uniqueStrings((ids ?? []).filter((id) => viralInsightIds.has(id) || id.startsWith("viral-insight-"))).slice(0, 5);
+  return uniqueStrings((ids ?? []).filter((id) => viralInsightIds.has(id))).slice(0, 5);
+}
+
+function isWeakViralInsight(insight: { insight: string }): boolean {
+  return insight.insight.trim().startsWith("弱参考：");
 }
 
 function uniqueStrings(values: readonly string[]): string[] {

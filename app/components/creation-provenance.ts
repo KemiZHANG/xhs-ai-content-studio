@@ -10,6 +10,7 @@ export type CreationProvenanceCard = {
   safetyLine?: string;
   evidenceCount: number;
   missingCount: number;
+  weakViralEvidenceCount?: number;
   sourceLine: string;
   state: "ready" | "warn" | "empty";
 };
@@ -45,7 +46,8 @@ function buildBriefCard(project: PostProject): CreationProvenanceCard {
     safetyLine: viralSafetyLine(project, summary.sourceCounts),
     evidenceCount: summary.insights.length,
     missingCount: summary.missingEvidenceIds.length,
-    sourceLine: sourceLine(summary.sourceCounts),
+    weakViralEvidenceCount: summary.weakViralEvidenceCount,
+    sourceLine: sourceLine(summary.sourceCounts, summary.weakViralEvidenceCount),
     state: stateFromCounts(summary.insights.length, summary.missingEvidenceIds.length)
   };
 }
@@ -71,7 +73,8 @@ function buildCopyCard(project: PostProject): CreationProvenanceCard {
     safetyLine: viralSafetyLine(project, report.sourceCounts),
     evidenceCount: report.allEvidenceIds.length,
     missingCount,
-    sourceLine: sourceLine(report.sourceCounts),
+    weakViralEvidenceCount: report.weakViralEvidenceCount,
+    sourceLine: sourceLine(report.sourceCounts, report.weakViralEvidenceCount),
     state: stateFromCounts(report.allEvidenceIds.length, missingCount)
   };
 }
@@ -98,7 +101,8 @@ function buildVisualCard(project: PostProject): CreationProvenanceCard {
     safetyLine: viralSafetyLine(project, summary.sourceCounts),
     evidenceCount: summary.insights.length,
     missingCount,
-    sourceLine: sourceLine(summary.sourceCounts),
+    weakViralEvidenceCount: summary.weakViralEvidenceCount,
+    sourceLine: sourceLine(summary.sourceCounts, summary.weakViralEvidenceCount),
     state: stateFromCounts(summary.insights.length, missingCount)
   };
 }
@@ -112,6 +116,7 @@ function emptyCard(id: CreationProvenanceCard["id"], label: string, headline: st
     safetyLine: undefined,
     evidenceCount: 0,
     missingCount: 0,
+    weakViralEvidenceCount: 0,
     sourceLine: "暂无来源",
     state: "empty"
   };
@@ -122,10 +127,10 @@ function stateFromCounts(evidenceCount: number, missingCount: number): CreationP
   return missingCount ? "warn" : "ready";
 }
 
-function sourceLine(sourceCounts: Record<EvidenceSourceType, number>): string {
+function sourceLine(sourceCounts: Record<EvidenceSourceType, number>, weakViralEvidenceCount = 0): string {
   const parts = [
     sourceCounts.realtime ? `实时 ${sourceCounts.realtime}` : "",
-    sourceCounts.viral_library ? `爆款库 ${sourceCounts.viral_library}` : "",
+    sourceCounts.viral_library ? `爆款库 ${sourceCounts.viral_library}${weakViralEvidenceCount ? `（弱参考 ${weakViralEvidenceCount}）` : ""}` : "",
     sourceCounts.user_input ? `用户输入 ${sourceCounts.user_input}` : ""
   ].filter(Boolean);
   return parts.length ? parts.join(" · ") : "暂无来源";

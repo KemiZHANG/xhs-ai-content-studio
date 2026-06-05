@@ -102,6 +102,7 @@ const viralApplication: ViralApplicationModel = {
   missingEvidence: [],
   recommendation: "可以生成 CreativeBrief",
   evidenceCount: 1,
+  weakViralEvidenceCount: 0,
   focusedCount: 1,
   citedEvidenceIds: [],
   routes: [{

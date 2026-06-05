@@ -94,6 +94,38 @@ describe("post project creation provenance", () => {
     expect(summary.items.every((item) => item.status === "empty")).toBe(true);
     expect(formatCreationProvenanceForReply(summary)).toContain("不能把建议伪装成研究结论");
   });
+
+  it("carries weak viral reference counts into Agent provenance replies", () => {
+    const project = createBlankPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: {
+        sampleIds: ["weak-note"],
+        insights: [
+          insight("weak-viral", "viral_library", "copy", "弱参考：低质量样本里的泛泛结构")
+        ]
+      },
+      creativeBrief: {
+        audience: "周末探店人群",
+        painPoint: "不知道去哪坐",
+        contentAngle: "安静咖啡馆合集",
+        emotionalHook: "松弛感",
+        proofPoints: ["真实体验"],
+        tone: "真实分享",
+        visualMood: "自然光",
+        imageMustHave: ["环境细节"],
+        imageMustAvoid: ["过度滤镜"],
+        platformStyle: "小红书探店",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["weak-viral"]
+      }
+    });
+
+    const summary = buildCreationProvenanceSummary(project);
+
+    expect(summary.items.find((item) => item.id === "brief")?.weakViralEvidenceCount).toBe(1);
+    expect(formatCreationProvenanceForReply(summary)).toContain("爆款库 1（弱参考 1）");
+  });
 });
 
 function insight(

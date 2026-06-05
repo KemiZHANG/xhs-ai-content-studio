@@ -14,6 +14,16 @@ const viralInsight = {
   createdAt: "2026-05-31T00:00:00.000Z"
 };
 
+const weakViralInsight = {
+  id: "viral-insight-weak",
+  sourceType: "viral_library" as const,
+  type: "copy" as const,
+  insight: "弱参考：低质量样本里的泛泛结构",
+  sourceSampleIds: ["viral-weak-1"],
+  confidence: 0.42,
+  createdAt: "2026-05-31T00:00:00.000Z"
+};
+
 function expectModelFreeFromMojibake(model: unknown): void {
   expect(JSON.stringify(model)).not.toMatch(mojibakePattern);
 }
@@ -88,6 +98,53 @@ describe("viral application model", () => {
     expect(model.recommendation).toBe("建议继续搜索或补充参考样本。");
     expect(model.actions.slice(0, 2).map((action) => action.action)).toEqual(["search_research", "retrieve_viral_knowledge"]);
     expect(model.actions[0].primary).toBe(true);
+  });
+
+  it("does not treat weak viral references as usable application evidence", () => {
+    const project = createBlankPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: {
+        sampleIds: ["viral-weak-1"],
+        insights: [weakViralInsight],
+        summary: {
+          viralKnowledge: {
+            sufficiency: {
+              isEnough: false,
+              realtimeCount: 1,
+              viralCount: 0,
+              weakViralCount: 1,
+              missing: ["1 条爆款库命中仅为弱参考，不能计入可用样本"],
+              recommendation: "刷新爆款库 RAG"
+            }
+          }
+        }
+      },
+      focusedEvidenceIds: ["viral-insight-weak"],
+      creativeBrief: {
+        audience: "周末探店人群",
+        painPoint: "不知道去哪坐",
+        contentAngle: "安静咖啡馆合集",
+        emotionalHook: "松弛感",
+        proofPoints: ["真实体验"],
+        tone: "真实分享",
+        visualMood: "自然光",
+        imageMustHave: ["环境细节"],
+        imageMustAvoid: ["过度滤镜"],
+        platformStyle: "小红书探店",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["viral-insight-weak"]
+      }
+    });
+
+    const model = buildViralApplicationModel(project);
+
+    expect(model.evidenceCount).toBe(0);
+    expect(model.weakViralEvidenceCount).toBe(1);
+    expect(model.focusedCount).toBe(0);
+    expect(model.citedEvidenceIds).toEqual([]);
+    expect(model.routes.map((route) => route.status)).toEqual(["empty", "empty", "empty"]);
+    expect(model.actions.map((action) => action.action)).toEqual(["retrieve_viral_knowledge"]);
   });
 
   it("does not offer key creative output actions while RAG evidence is insufficient", () => {

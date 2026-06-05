@@ -9,6 +9,7 @@ export type CreationProvenanceItem = {
   summary: string;
   originalityLine?: string;
   sourceCounts: Record<EvidenceSourceType, number>;
+  weakViralEvidenceCount?: number;
   evidenceCount: number;
   missingCount: number;
 };
@@ -65,7 +66,7 @@ export function formatCreationProvenanceForReply(summary: CreationProvenanceSumm
   return [
     `创作依据：${summary.detail}`,
     ...visible.map((item) =>
-      `- ${item.label}｜${labelForStatus(item.status)}｜${formatSourceLine(item.sourceCounts)}｜证据 ${item.evidenceCount}${item.missingCount ? `｜待补 ${item.missingCount}` : ""}：${item.summary}${item.originalityLine ? `；${item.originalityLine}` : ""}`
+      `- ${item.label}｜${labelForStatus(item.status)}｜${formatSourceLine(item.sourceCounts, item.weakViralEvidenceCount)}｜证据 ${item.evidenceCount}${item.missingCount ? `｜待补 ${item.missingCount}` : ""}：${item.summary}${item.originalityLine ? `；${item.originalityLine}` : ""}`
     )
   ].join("\n");
 }
@@ -81,6 +82,7 @@ function briefProvenance(project: PostProject): CreationProvenanceItem {
     evidenceCount: reference.insights.length,
     missingCount: reference.missingEvidenceIds.length,
     sourceCounts: reference.sourceCounts,
+    weakViralEvidenceCount: reference.weakViralEvidenceCount,
     originalityLine: viralOriginalityLine(project, reference.sourceCounts),
     summary: reference.insights.length
       ? "目标人群、痛点、内容角度和视觉 mood 已绑定 evidencePack。"
@@ -101,6 +103,7 @@ function copyProvenance(project: PostProject, draft?: DraftRecord | null): Creat
     evidenceCount: report.allEvidenceIds.length,
     missingCount,
     sourceCounts: report.sourceCounts,
+    weakViralEvidenceCount: report.weakViralEvidenceCount,
     originalityLine: viralOriginalityLine(project, report.sourceCounts),
     summary: `标题、正文、标签、图片方向 ${report.sections.length - fieldGaps}/${report.sections.length} 个字段可追溯。`
   });
@@ -123,6 +126,7 @@ function visualProvenance(project: PostProject): CreationProvenanceItem {
     evidenceCount: reference.insights.length,
     missingCount,
     sourceCounts: reference.sourceCounts,
+    weakViralEvidenceCount: reference.weakViralEvidenceCount,
     originalityLine: viralOriginalityLine(project, reference.sourceCounts),
     summary: confirmed
       ? "图片方向已人工确认，Prompt 可继续用于生图/卡片。"
@@ -144,15 +148,16 @@ function emptyItem(id: CreationProvenanceItem["id"], label: string, summary: str
     status: "empty",
     summary,
     sourceCounts: { realtime: 0, viral_library: 0, user_input: 0 },
+    weakViralEvidenceCount: 0,
     evidenceCount: 0,
     missingCount: 0
   };
 }
 
-function formatSourceLine(counts: Record<EvidenceSourceType, number>): string {
+function formatSourceLine(counts: Record<EvidenceSourceType, number>, weakViralEvidenceCount = 0): string {
   const parts = [
     counts.realtime ? `实时 ${counts.realtime}` : "",
-    counts.viral_library ? `爆款库 ${counts.viral_library}` : "",
+    counts.viral_library ? `爆款库 ${counts.viral_library}${weakViralEvidenceCount ? `（弱参考 ${weakViralEvidenceCount}）` : ""}` : "",
     counts.user_input ? `用户输入 ${counts.user_input}` : ""
   ].filter(Boolean);
   return parts.length ? parts.join(" / ") : "暂无来源";
