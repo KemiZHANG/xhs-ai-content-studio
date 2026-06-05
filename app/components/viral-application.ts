@@ -238,13 +238,15 @@ function extractRagReadiness(summary: unknown): Pick<ViralApplicationModel, "rag
       : "证据足够进入 CreativeBrief、文案和图片方向生成。";
   const realtimeCount = typeof sufficiency.realtimeCount === "number" ? sufficiency.realtimeCount : 0;
   const viralCount = typeof sufficiency.viralCount === "number" ? sufficiency.viralCount : 0;
+  const weakViralCount = typeof sufficiency.weakViralCount === "number" ? sufficiency.weakViralCount : 0;
+  const weakLine = weakViralCount ? `，弱参考 ${weakViralCount} 条` : "";
   const isEnough = sufficiency.isEnough === true;
 
   return {
     ragStatus: isEnough ? "enough" : "insufficient",
     ragLine: isEnough
-      ? `RAG 证据充足：实时 ${realtimeCount} 条，爆款库 ${viralCount} 条。`
-      : `RAG 证据还不够：实时 ${realtimeCount} 条，爆款库 ${viralCount} 条。`,
+      ? `RAG 证据充足：实时 ${realtimeCount} 条，可用爆款 ${viralCount} 条${weakLine}。`
+      : `RAG 证据还不够：实时 ${realtimeCount} 条，可用爆款 ${viralCount} 条${weakLine}。`,
     missingEvidence: missing,
     recommendation
   };

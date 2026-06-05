@@ -64,6 +64,7 @@ describe("viral application model", () => {
               isEnough: false,
               realtimeCount: 1,
               viralCount: 1,
+              weakViralCount: 2,
               missing: ["实时小红书样本不足 3 条", "缺少图片风格规律"],
               recommendation: "建议继续搜索或补充参考样本。"
             }
@@ -81,6 +82,8 @@ describe("viral application model", () => {
       label: "先补证据再生成关键稿件"
     });
     expect(model.ragLine).toContain("实时 1 条");
+    expect(model.ragLine).toContain("可用爆款 1 条");
+    expect(model.ragLine).toContain("弱参考 2 条");
     expect(model.missingEvidence).toEqual(["实时小红书样本不足 3 条", "缺少图片风格规律"]);
     expect(model.recommendation).toBe("建议继续搜索或补充参考样本。");
     expect(model.actions.slice(0, 2).map((action) => action.action)).toEqual(["search_research", "retrieve_viral_knowledge"]);
@@ -141,6 +144,7 @@ describe("viral application model", () => {
               isEnough: true,
               realtimeCount: 4,
               viralCount: 3,
+              weakViralCount: 1,
               missing: [],
               recommendation: "证据足够进入 CreativeBrief。"
             }
@@ -157,6 +161,8 @@ describe("viral application model", () => {
       label: "先应用到 CreativeBrief"
     });
     expect(model.ragLine).toContain("实时 4 条");
+    expect(model.ragLine).toContain("可用爆款 3 条");
+    expect(model.ragLine).toContain("弱参考 1 条");
     expect(model.missingEvidence).toEqual([]);
   });
 
