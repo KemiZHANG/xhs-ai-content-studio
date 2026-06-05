@@ -2439,6 +2439,10 @@ describe("agent orchestrator", () => {
       "save_viral_knowledge",
       "retrieve_viral_knowledge"
     ]);
+    const stageCard = result.cards.find((card) => card.id === "card-stage-guidance");
+    expect((stageCard?.data as { primaryAction?: string } | undefined)?.primaryAction).toBe("retrieve_viral_knowledge");
+    expect((stageCard?.data as { allowedActions?: string[] } | undefined)?.allowedActions ?? []).not.toContain("generate_copy");
+    expect((stageCard?.data as { allowedActions?: string[] } | undefined)?.allowedActions ?? []).not.toContain("plan_visuals");
     expect(result.postProject?.evidencePack.summary).toMatchObject({
       viralKnowledge: expect.objectContaining({
         sufficiency: expect.objectContaining({ isEnough: false })

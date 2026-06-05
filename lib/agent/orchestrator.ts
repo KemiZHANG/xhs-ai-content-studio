@@ -1451,15 +1451,22 @@ function buildCardsFromTurn(
   if (postProject) {
     const guidance = getPostStageGuidance(postProject.currentStage, postProject.allowedActions);
     const readiness = buildPostReadinessReport(postProject);
+    const weakViralRag = isWeakViralRagForCreativeOutput(postProject);
+    const visibleAllowedActions = weakViralRag
+      ? prioritizeRagRefreshActions(postProject.allowedActions)
+      : postProject.allowedActions;
+    const stagePrimaryAction = weakViralRag
+      ? "retrieve_viral_knowledge"
+      : readiness.nextAction ?? guidance.primaryAction;
     cards.push({
       id: "card-stage-guidance",
       type: "stage_guidance",
       title: guidance.title,
-      summary: `${guidance.description} 下一步：${postProject.allowedActions.slice(0, 3).map((action) => postActionLabels[action] ?? action).join(" / ") || "等待补充信息"}`,
+      summary: `${guidance.description} 下一步：${visibleAllowedActions.slice(0, 3).map((action) => postActionLabels[action] ?? action).join(" / ") || "等待补充信息"}`,
       data: {
         stage: postProject.currentStage,
-        allowedActions: postProject.allowedActions,
-        primaryAction: readiness.nextAction ?? guidance.primaryAction,
+        allowedActions: visibleAllowedActions,
+        primaryAction: stagePrimaryAction,
         readiness
       }
     });
@@ -1862,6 +1869,22 @@ function hasViralKnowledgePayload(viralKnowledge: Partial<ViralKnowledgePack> & 
     isRecord(viralKnowledge.sufficiency) ||
     isRecord(viralKnowledge.strategyReport)
   );
+}
+
+function isWeakViralRagForCreativeOutput(postProject: PostProject): boolean {
+  const viralKnowledge = extractViralKnowledgeSummary(postProject.evidencePack.summary);
+  const sufficiency = viralKnowledge && isRecord(viralKnowledge.sufficiency)
+    ? viralKnowledge.sufficiency as Partial<RagSufficiency>
+    : null;
+  return sufficiency?.isEnough === false;
+}
+
+function prioritizeRagRefreshActions(actions: PostAction[]): PostAction[] {
+  const blockedCreativeActions = new Set<PostAction>(["generate_copy", "plan_visuals"]);
+  const safeActions = actions.filter((action) => !blockedCreativeActions.has(action));
+  return safeActions.includes("retrieve_viral_knowledge")
+    ? safeActions
+    : ["retrieve_viral_knowledge", ...safeActions];
 }
 
 function formatViralKnowledgeCardSummary(viralKnowledge: Partial<ViralKnowledgePack> & Record<string, unknown>): string {
