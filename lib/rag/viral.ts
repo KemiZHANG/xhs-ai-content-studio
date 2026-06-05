@@ -43,6 +43,7 @@ export type RagSufficiency = {
   isEnough: boolean;
   realtimeCount: number;
   viralCount: number;
+  weakViralCount?: number;
   missing: string[];
   recommendation: string;
 };
@@ -86,14 +87,17 @@ export async function retrieveViralKnowledge(input: ViralRetrievalInput): Promis
   const results = await retrieveViralCasesWithFusion(input, rewrittenQueries);
   const insights = viralCasesToEvidenceInsights(results.map((result) => result.case));
   const evidenceTrace = buildViralEvidenceTrace(results, insights);
+  const usableResults = results.filter((result) => !isWeakReferenceCase(result.case));
+  const usableInsights = insights.filter((insight) => !isWeakReferenceInsight(insight));
   const sufficiency = evaluateRagSufficiency({
     realtimeCount: input.realtimeEvidenceCount ?? 0,
-    viralCount: results.length,
-    hasVisual: insights.some((insight) => insight.type === "visual"),
-    hasHook: insights.some((insight) => insight.type === "hook" || insight.type === "title"),
-    hasStructure: insights.some((insight) => insight.type === "structure" || insight.type === "copy"),
-    hasTag: insights.some((insight) => insight.type === "tag"),
-    hasAudienceOrPain: insights.some((insight) => insight.type === "audience" || insight.type === "pain_point" || insight.type === "comment")
+    viralCount: usableResults.length,
+    weakViralCount: results.length - usableResults.length,
+    hasVisual: usableInsights.some((insight) => insight.type === "visual"),
+    hasHook: usableInsights.some((insight) => insight.type === "hook" || insight.type === "title"),
+    hasStructure: usableInsights.some((insight) => insight.type === "structure" || insight.type === "copy"),
+    hasTag: usableInsights.some((insight) => insight.type === "tag"),
+    hasAudienceOrPain: usableInsights.some((insight) => insight.type === "audience" || insight.type === "pain_point" || insight.type === "comment")
   });
   return {
     query: input.query,
@@ -103,7 +107,7 @@ export async function retrieveViralKnowledge(input: ViralRetrievalInput): Promis
     insights,
     evidenceTrace,
     sufficiency,
-    strategyReport: buildViralStrategyReport({ query: input.query, results, insights, sufficiency })
+    strategyReport: buildViralStrategyReport({ query: input.query, results: usableResults, insights: usableInsights, sufficiency })
   };
 }
 
@@ -334,6 +338,7 @@ export function rewriteRetrievalQueries(input: ViralRetrievalInput): string[] {
 export function evaluateRagSufficiency({
   realtimeCount,
   viralCount,
+  weakViralCount = 0,
   hasVisual,
   hasHook,
   hasStructure,
@@ -342,6 +347,7 @@ export function evaluateRagSufficiency({
 }: {
   realtimeCount: number;
   viralCount: number;
+  weakViralCount?: number;
   hasVisual: boolean;
   hasHook: boolean;
   hasStructure: boolean;
@@ -351,6 +357,7 @@ export function evaluateRagSufficiency({
   const missing: string[] = [];
   if (realtimeCount < 3) missing.push("实时小红书样本不足 3 条");
   if (viralCount < 2) missing.push("爆款库匹配样本不足 2 条");
+  if (weakViralCount && viralCount < 2) missing.push(`${weakViralCount} 条爆款库命中仅为弱参考，不能计入可用样本`);
   if (!hasHook) missing.push("缺少标题钩子规律");
   if (!hasStructure) missing.push("缺少正文结构规律");
   if (!hasVisual) missing.push("缺少图片风格规律");
@@ -360,6 +367,7 @@ export function evaluateRagSufficiency({
     isEnough: missing.length === 0,
     realtimeCount,
     viralCount,
+    weakViralCount,
     missing,
     recommendation: missing.length
       ? `建议继续搜索或补充参考样本：${missing.join("；")}`
@@ -369,6 +377,14 @@ export function evaluateRagSufficiency({
 
 function uniqueStrings(values: string[]): string[] {
   return [...new Set(values.map((item) => item.trim()).filter(Boolean))];
+}
+
+function isWeakReferenceCase(item: ViralSearchResult["case"]): boolean {
+  return item.quality?.warnings?.some((warning) => warning.includes("低质量样本被人工强制入库")) ?? false;
+}
+
+function isWeakReferenceInsight(insight: EvidenceInsight): boolean {
+  return insight.insight.trim().startsWith("弱参考：");
 }
 
 function ragSortLabel(sortBy: NonNullable<ViralRetrievalFilters["sortBy"]>): string {

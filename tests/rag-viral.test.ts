@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { retrieveViralKnowledge, rewriteRetrievalQueries } from "@/lib/rag/viral";
-import { createViralCaseFromEvidence, upsertViralCases } from "@/lib/viral-knowledge/store";
+import { createViralCaseFromEvidence, markForcedLowQualityViralCase, reviewViralSaveCandidate, upsertViralCases } from "@/lib/viral-knowledge/store";
 import type { SampleEvidence } from "@/lib/workflows/one-click";
 
 let originalCwd: string;
@@ -108,5 +108,43 @@ describe("viral RAG retrieval", () => {
     expect(pack.strategyReport.titleMoves.length).toBeGreaterThan(0);
     expect(pack.strategyReport.originalityRules.join(" ")).toContain("不要复制");
     expect(pack.strategyReport.originalityRules.join(" ")).not.toMatch(mojibakePattern);
+  });
+
+  it("does not count forced weak references as sufficient viral RAG evidence", async () => {
+    const weakSample = makeSample({
+      id: "note-weak-rag-only",
+      title: "Quiet Guangzhou cafe guide",
+      likes: 0,
+      collects: 0,
+      comments: 0,
+      shares: 0,
+      score: 0,
+      url: "",
+      imageUrls: [],
+      detailText: "",
+      commentSnippets: []
+    });
+    const weakCase = markForcedLowQualityViralCase(await createViralCaseFromEvidence({
+      sample: weakSample,
+      topic: "Guangzhou coffee shops",
+      category: "local guide"
+    }), reviewViralSaveCandidate(weakSample));
+    await upsertViralCases([weakCase]);
+
+    const pack = await retrieveViralKnowledge({
+      query: "quiet Guangzhou cafe guide",
+      topic: "Guangzhou coffee shops",
+      category: "local guide",
+      realtimeEvidenceCount: 4,
+      limit: 5
+    });
+
+    expect(pack.results.map((result) => result.case.id)).toContain(weakCase.id);
+    expect(pack.insights.some((insight) => insight.insight.startsWith("弱参考："))).toBe(true);
+    expect(pack.sufficiency.isEnough).toBe(false);
+    expect(pack.sufficiency.viralCount).toBe(0);
+    expect(pack.sufficiency.weakViralCount).toBe(1);
+    expect(pack.sufficiency.missing.join(" ")).toContain("弱参考");
+    expect(pack.strategyReport.evidenceIds).not.toContain(weakCase.id);
   });
 });
