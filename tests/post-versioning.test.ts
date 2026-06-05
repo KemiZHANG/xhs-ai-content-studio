@@ -223,6 +223,17 @@ describe("post versioning status", () => {
     expect(status.qualityGateFresh).toBe(false);
     expect(diff.changedFields).toContain("images");
     expect(snapshot.generatedImageVersionId).toBe("image-batch-current");
+
+    const rolledBackStatus = getPostVersionStatus({
+      ...project,
+      generatedImageVersions: [...project.generatedImageVersions].reverse(),
+      finalPost: {
+        ...baseProject.finalPost,
+        generatedImageVersionId: "image-batch-old"
+      }
+    });
+    expect(rolledBackStatus.activeGeneratedImageVersionId).toBe("image-batch-old");
+    expect(rolledBackStatus.finalPostMatchesCanvas).toBe(true);
   });
 
   it("tolerates legacy finalPost snapshots without image prompt version ids", () => {

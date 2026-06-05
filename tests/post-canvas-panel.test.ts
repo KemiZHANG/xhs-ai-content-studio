@@ -250,6 +250,7 @@ describe("post canvas panel", () => {
     expect(html).toContain("先让 Agent 建立证据");
     expect(html).toContain("搜索真实笔记");
     expect(html).toContain("选择图片");
+    expect(html).not.toContain("图片批次版本");
   });
 
   it("routes canvas creative buttons to viral RAG refresh when evidence is weak", () => {
@@ -344,6 +345,68 @@ describe("post canvas panel", () => {
     expect(html).toContain("版本已确认");
     expect(html).toContain("证据引用");
     expect(html).toContain("发布检查");
+  });
+
+  it("shows generated image batch rollback when generated image versions are available", () => {
+    const generatedImageVersions = [
+      {
+        id: "image-batch-old",
+        label: "旧图批次",
+        createdAt: "2026-06-01T08:00:00.000Z",
+        imageIds: ["asset-old"],
+        selectedImageIds: ["asset-old"],
+        promptVersionId: "prompt-old",
+        basedOnEvidenceIds: ["visual-old"],
+        sourceAssetIds: ["product-old"]
+      },
+      {
+        id: "image-batch-current",
+        label: "当前图批次",
+        createdAt: "2026-06-02T09:00:00.000Z",
+        imageIds: ["asset-1", "asset-2"],
+        selectedImageIds: ["asset-1", "asset-2"],
+        promptVersionId: "prompt-v1",
+        basedOnEvidenceIds: ["visual-1"],
+        sourceAssetIds: ["product-1"]
+      }
+    ];
+    const html = renderToStaticMarkup(createElement(PostCanvasPanel, {
+      canGenerateCopy: true,
+      generatedCopyPrompt: "生成探店文案",
+      creationProvenance,
+      canvasVersionDisplay,
+      canvasDirty: false,
+      selectedAssets,
+      copyVersions: project.copyVersions,
+      generatedImageVersions,
+      copyVersionGuidance: { state: "ok", label: "可回滚", detail: "最近版本可切换" },
+      publishDraft,
+      latestImagePrompt: publishDraft.imagePrompt,
+      project: { ...project, generatedImageVersions },
+      imagePromptVersions: project.imagePrompts,
+      promptVersionGuidance: { state: "ok", label: "可使用", detail: "Prompt 可切换" },
+      versionStatus: { ...versionStatus, activeGeneratedImageVersionId: "image-batch-current" },
+      versionDiff,
+      citationReport,
+      onGenerateCopy: () => undefined,
+      onOpenEvidence: () => undefined,
+      onDraftChange: () => undefined,
+      onSelectCopyVersion: () => undefined,
+      onSelectImagePromptVersion: () => undefined,
+      onSelectGeneratedImageVersion: () => undefined,
+      onQuickAction: () => undefined,
+      onCommitCanvas: () => undefined
+    }));
+
+    expect(html).toContain("图片批次版本");
+    expect(html).toContain("旧图批次");
+    expect(html).toContain("当前图批次");
+    expect(html).toContain("图片 2");
+    expect(html).toContain("证据 1");
+    expect(html).toContain("Prompt: prompt-v1");
+    expect(html).toContain("回到此图片批次");
+    expect(html).toContain("正在使用");
+    expect(html).toContain("切换后会清空最终帖子、发布确认和 Quality Gate");
   });
 
   it("separates weak viral references in the canvas evidence bridge", () => {

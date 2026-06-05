@@ -37,6 +37,10 @@ type PostProjectActionBody =
       versionId: string;
     }
   | {
+      action: "select_generated_image_version";
+      versionId: string;
+    }
+  | {
       action: "select_images";
       selectedImageIds: string[];
     }
@@ -247,6 +251,26 @@ async function handlePostProjectAction(body: PostProjectActionBody): Promise<{
     return { project: nextProject, currentDraft };
   }
 
+  if (body.action === "select_generated_image_version") {
+    const version = (project.generatedImageVersions ?? []).find((item) => item.id === body.versionId);
+    if (!version) {
+      throw new Error("未找到要切换的图片批次版本");
+    }
+    const selectedImageIds = version.selectedImageIds.length ? version.selectedImageIds : version.imageIds;
+    const generatedImages = await mergeGeneratedImageRecordsForVersionSwitch(project, selectedImageIds);
+    await updateWorkspaceState({ selectedImageIds, publishPlan: null });
+    const nextProject = await updatePostProject({
+      selectedImages: selectedImageIds,
+      generatedImages,
+      finalPost: undefined,
+      publishPlan: null,
+      qualityCheck: undefined,
+      auditStatus: "unchecked",
+      currentStage: selectedImageIds.length ? "image_ready" : "image_generating"
+    });
+    return { project: nextProject };
+  }
+
   const version = project.imagePrompts.find((item) => item.id === body.versionId);
   if (!version) {
     throw new Error("未找到要切换的图片 Prompt 版本");
@@ -349,6 +373,19 @@ async function mergeSelectedImageRecords(project: PostProject, selectedImageIds:
       selected: true
     };
   });
+}
+
+async function mergeGeneratedImageRecordsForVersionSwitch(project: PostProject, selectedImageIds: string[]): Promise<PostProject["generatedImages"]> {
+  const selectedRecords = await mergeSelectedImageRecords(project, selectedImageIds);
+  const selectedSet = new Set(selectedImageIds);
+  const selectedIdentitySet = new Set(selectedRecords.map((image) => image.assetId ?? image.id));
+  const preserved = project.generatedImages
+    .filter((image) => !selectedIdentitySet.has(image.assetId ?? image.id))
+    .map((image) => ({
+      ...image,
+      selected: selectedSet.has(image.assetId ?? image.id)
+    }));
+  return [...selectedRecords, ...preserved];
 }
 
 function upsertGeneratedImageVersion(

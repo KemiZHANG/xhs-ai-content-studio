@@ -100,6 +100,7 @@ export function PostStudioPanel({
   onQuickAction,
   onSelectCopyVersion,
   onSelectImagePromptVersion,
+  onSelectGeneratedImageVersion,
   onSelectPostImages,
   onFocusEvidenceIds,
   onSaveToViralLibrary,
@@ -151,6 +152,7 @@ export function PostStudioPanel({
   onQuickAction: (action: string) => void;
   onSelectCopyVersion: (versionId: string) => void;
   onSelectImagePromptVersion: (versionId: string) => void;
+  onSelectGeneratedImageVersion: (versionId: string) => void;
   onSelectPostImages: (assetIds: string[]) => void;
   onFocusEvidenceIds: (ids: string[]) => void;
   onSaveToViralLibrary: (sample: SampleEvidence) => void;
@@ -307,6 +309,7 @@ export function PostStudioPanel({
   const confirmedRequiredCount = requiredConfirmations.filter((item) => item.confirmed).length;
   const copyVersions = project?.copyVersions ?? [];
   const imagePromptVersions = project?.imagePrompts ?? [];
+  const generatedImageVersions = project?.generatedImageVersions ?? [];
   const draftEvidenceIds = project?.copyDraft?.draft.basedOnEvidenceIds ?? copyVersions.at(-1)?.basedOnEvidenceIds ?? [];
   const citationEvidenceIds = uniqueStringList([
     ...draftEvidenceIds,
@@ -547,6 +550,7 @@ export function PostStudioPanel({
           canvasDirty={canvasDirty}
           selectedAssets={selectedAssets}
           copyVersions={copyVersions}
+          generatedImageVersions={generatedImageVersions}
           copyVersionGuidance={copyVersionGuidance}
           publishDraft={publishDraft}
           latestImagePrompt={latestImagePrompt}
@@ -561,6 +565,7 @@ export function PostStudioPanel({
           onDraftChange={onDraftChange}
           onSelectCopyVersion={onSelectCopyVersion}
           onSelectImagePromptVersion={onSelectImagePromptVersion}
+          onSelectGeneratedImageVersion={onSelectGeneratedImageVersion}
           onQuickAction={onQuickAction}
           onCommitCanvas={onCommitCanvas}
         />

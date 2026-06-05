@@ -2492,6 +2492,113 @@ describe("API route contracts", () => {
     }));
   });
 
+  it("switches generated image versions through PostProject and invalidates stale publish checks", async () => {
+    const updateWorkspaceState = vi.fn();
+    const updatePostProject = vi.fn(async (patch) => ({ id: "post-1", ...patch }));
+    const currentProject = {
+      selectedImages: ["asset-current"],
+      generatedImages: [
+        {
+          id: "old-1",
+          assetId: "asset-old-1",
+          promptVersionId: "prompt-old",
+          basedOnEvidenceIds: ["insight-old"],
+          sourceAssetIds: ["source-old"],
+          createdAt: "2026-05-30T00:00:00.000Z",
+          selected: false
+        },
+        {
+          id: "old-2",
+          assetId: "asset-old-2",
+          promptVersionId: "prompt-old",
+          basedOnEvidenceIds: ["insight-old"],
+          sourceAssetIds: ["source-old"],
+          createdAt: "2026-05-30T00:00:00.000Z",
+          selected: false
+        },
+        {
+          id: "current",
+          assetId: "asset-current",
+          promptVersionId: "prompt-current",
+          basedOnEvidenceIds: ["insight-current"],
+          sourceAssetIds: ["source-current"],
+          createdAt: "2026-05-31T00:00:00.000Z",
+          selected: true
+        }
+      ],
+      generatedImageVersions: [
+        {
+          id: "image-batch-old",
+          createdAt: "2026-05-30T00:00:00.000Z",
+          label: "Old batch",
+          imageIds: ["asset-old-1", "asset-old-2"],
+          selectedImageIds: ["asset-old-1", "asset-old-2"],
+          promptVersionId: "prompt-old",
+          basedOnEvidenceIds: ["insight-old"],
+          sourceAssetIds: ["source-old"]
+        },
+        {
+          id: "image-batch-current",
+          createdAt: "2026-05-31T00:00:00.000Z",
+          label: "Current batch",
+          imageIds: ["asset-current"],
+          selectedImageIds: ["asset-current"],
+          promptVersionId: "prompt-current",
+          basedOnEvidenceIds: ["insight-current"],
+          sourceAssetIds: ["source-current"]
+        }
+      ],
+      finalPost: { title: "旧帖", content: "旧正文", tags: ["旧"], imageIds: ["asset-current"], imagePromptVersionIds: ["prompt-current"] },
+      publishPlan: { id: "publish-1", status: "awaiting_approval" },
+      qualityCheck: { canPublish: true },
+      copyVersions: [],
+      imagePrompts: [],
+      evidencePack: { insights: [] },
+      selectedSamples: [],
+      agentMemory: []
+    };
+
+    vi.doMock("@/lib/agent/state", () => ({
+      updateWorkspaceState
+    }));
+    vi.doMock("@/lib/post-project/store", () => ({
+      readPostProject: async () => currentProject,
+      updatePostProject
+    }));
+    vi.doMock("@/lib/storage/settings", () => ({
+      readSettings: async () => defaultSettings
+    }));
+    vi.doMock("@/lib/storage/assets", () => ({
+      getAsset: async () => null
+    }));
+    vi.doMock("@/lib/storage/drafts", () => ({
+      createDraftRecord: vi.fn(),
+      writeCurrentDraft: vi.fn()
+    }));
+
+    const { PATCH } = await import("@/app/api/post-project/route");
+    const response = await PATCH(jsonRequest({
+      action: "select_generated_image_version",
+      versionId: "image-batch-old"
+    }));
+
+    expect(response.status).toBe(200);
+    expect(updateWorkspaceState).toHaveBeenCalledWith({ selectedImageIds: ["asset-old-1", "asset-old-2"], publishPlan: null });
+    expect(updatePostProject).toHaveBeenCalledWith(expect.objectContaining({
+      selectedImages: ["asset-old-1", "asset-old-2"],
+      generatedImages: expect.arrayContaining([
+        expect.objectContaining({ assetId: "asset-old-1", selected: true }),
+        expect.objectContaining({ assetId: "asset-old-2", selected: true }),
+        expect.objectContaining({ assetId: "asset-current", selected: false })
+      ]),
+      finalPost: undefined,
+      publishPlan: null,
+      qualityCheck: undefined,
+      auditStatus: "unchecked",
+      currentStage: "image_ready"
+    }));
+  });
+
   it("recovers a failed PostProject to the stage implied by its current canvas", async () => {
     const failedProject = {
       id: "post-failed",

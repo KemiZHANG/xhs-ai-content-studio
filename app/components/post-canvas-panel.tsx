@@ -10,6 +10,7 @@ import type { PostVersionDiffReport, PostVersionStatus } from "@/lib/post-projec
 
 type CopyVersion = PostProject["copyVersions"][number];
 type ImagePromptVersion = PostProject["imagePrompts"][number];
+type GeneratedImageVersion = NonNullable<PostProject["generatedImageVersions"]>[number];
 type VersionSwitchGuidance = {
   state: string;
   label: string;
@@ -25,6 +26,7 @@ export function PostCanvasPanel({
   canvasDirty,
   selectedAssets,
   copyVersions,
+  generatedImageVersions = [],
   copyVersionGuidance,
   publishDraft,
   latestImagePrompt,
@@ -39,6 +41,7 @@ export function PostCanvasPanel({
   onDraftChange,
   onSelectCopyVersion,
   onSelectImagePromptVersion,
+  onSelectGeneratedImageVersion,
   onQuickAction,
   onCommitCanvas
 }: {
@@ -50,6 +53,7 @@ export function PostCanvasPanel({
   canvasDirty: boolean;
   selectedAssets: AssetRecord[];
   copyVersions: CopyVersion[];
+  generatedImageVersions?: GeneratedImageVersion[];
   copyVersionGuidance: VersionSwitchGuidance;
   publishDraft: PublishDraftState;
   latestImagePrompt: string;
@@ -64,6 +68,7 @@ export function PostCanvasPanel({
   onDraftChange: (next: PublishDraftState) => void;
   onSelectCopyVersion: (versionId: string) => void;
   onSelectImagePromptVersion: (versionId: string) => void;
+  onSelectGeneratedImageVersion?: (versionId: string) => void;
   onQuickAction: (action: string) => void;
   onCommitCanvas: () => void;
 }) {
@@ -108,6 +113,12 @@ export function PostCanvasPanel({
       <div className="postPreviewShell">
         <PostPreviewMediaColumn selectedAssets={selectedAssets} />
         <div className="postEditStack">
+          <GeneratedImageVersionSwitcher
+            generatedImageVersions={generatedImageVersions}
+            selectedImageIds={project?.selectedImages ?? []}
+            versionStatus={versionStatus}
+            onSelectGeneratedImageVersion={onSelectGeneratedImageVersion}
+          />
           <CopyVersionSwitcher
             copyVersionGuidance={copyVersionGuidance}
             copyVersions={copyVersions}
@@ -311,6 +322,51 @@ function PostPreviewMediaColumn({ selectedAssets }: { selectedAssets: AssetRecor
         ) : null}
       </section>
     </div>
+  );
+}
+
+function GeneratedImageVersionSwitcher({
+  generatedImageVersions,
+  selectedImageIds,
+  versionStatus,
+  onSelectGeneratedImageVersion
+}: {
+  generatedImageVersions: GeneratedImageVersion[];
+  selectedImageIds: string[];
+  versionStatus: PostVersionStatus | null;
+  onSelectGeneratedImageVersion?: (versionId: string) => void;
+}) {
+  if (!generatedImageVersions.length || !onSelectGeneratedImageVersion) return null;
+  const activeVersionId = versionStatus?.activeGeneratedImageVersionId;
+
+  return (
+    <details className="versionSwitcher compactVersionSwitcher canvasVersionDrawer" aria-label="生成图片批次版本">
+      <summary>
+        <strong>图片批次版本</strong>
+        <span>最近 {Math.min(generatedImageVersions.length, 3)} 个可回滚批次 · 当前 {selectedImageIds.length} 张图</span>
+      </summary>
+      <div>
+        {generatedImageVersions.slice(-3).map((version, index) => {
+          const isActive = version.id === activeVersionId;
+          return (
+            <article className="versionCard promptVersionCard" key={version.id}>
+              <div>
+                <strong>{version.label || `图片批次 ${index + 1}`}</strong>
+                <span>{formatDateTime(version.createdAt)} · 图片 {version.imageIds.length} · 证据 {version.basedOnEvidenceIds.length}</span>
+              </div>
+              <p>{summarizeImageBatchDiff(selectedImageIds, version.selectedImageIds)}</p>
+              <small className={`versionSwitchHint ${isActive ? "neutral" : "warn"}`}>
+                {isActive ? "当前批次" : "切换后会清空最终帖子、发布确认和 Quality Gate"}
+              </small>
+              {version.promptVersionId ? <small>Prompt: {version.promptVersionId}</small> : null}
+              <button disabled={isActive} type="button" onClick={() => onSelectGeneratedImageVersion(version.id)}>
+                {isActive ? "正在使用" : "回到此图片批次"}
+              </button>
+            </article>
+          );
+        })}
+      </div>
+    </details>
   );
 }
 
@@ -689,6 +745,15 @@ function summarizePromptDiff(currentPrompt: string, nextPrompt: string): string 
   if (current === next) return "当前 Prompt 一致";
   const delta = next.length - current.length;
   return `Prompt ${delta > 0 ? "+" : ""}${delta} 字`;
+}
+
+function summarizeImageBatchDiff(currentImageIds: string[], nextImageIds: string[]): string {
+  const current = currentImageIds.join(" / ");
+  const next = nextImageIds.join(" / ");
+  if (!nextImageIds.length) return "该批次没有选中发布图";
+  if (!currentImageIds.length) return `将选中 ${nextImageIds.length} 张图片`;
+  if (current === next) return "当前图片批次一致";
+  return `将切换为 ${nextImageIds.length} 张图片`;
 }
 
 function parseTags(value: string): string[] {

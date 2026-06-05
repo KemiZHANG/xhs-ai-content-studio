@@ -493,6 +493,19 @@ export default function Home() {
     setNotice("已切换图片 Prompt，并同步到当前帖子项目。");
   }
 
+  async function selectGeneratedImageVersion(versionId: string) {
+    setPendingPublish(null);
+    const data = (await clientApi("/api/post-project", {
+      method: "PATCH",
+      body: JSON.stringify({ action: "select_generated_image_version", versionId })
+    })) as { project: PostProject; currentDraft?: DraftRecord | null };
+    setPostProject(data.project);
+    setPublishAssetIds(data.project.selectedImages);
+    setCanvasDirty(false);
+    await loadWorkspace();
+    setNotice("已切换生成图片批次，并同步到当前帖子项目。");
+  }
+
   async function selectPostImages(selectedImageIds: string[]) {
     setPendingPublish(null);
     const uniqueSelected = uniqueIds(selectedImageIds);
@@ -1452,6 +1465,7 @@ export default function Home() {
             onQuickAction={(action) => void handlePostStudioAction(action)}
             onSelectCopyVersion={(versionId) => void selectCopyVersion(versionId)}
             onSelectImagePromptVersion={(versionId) => void selectImagePromptVersion(versionId)}
+            onSelectGeneratedImageVersion={(versionId) => void selectGeneratedImageVersion(versionId)}
             onSelectPostImages={(ids) => void selectPostImages(ids)}
             onFocusEvidenceIds={(ids) => void focusEvidenceIds(ids)}
             onSaveToViralLibrary={(sample) => void saveSampleToViralLibrary(sample)}
