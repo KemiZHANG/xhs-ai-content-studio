@@ -119,6 +119,28 @@ describe("agent planner", () => {
     expect(plan.steps[0].toolName).toBe("project.confirmVisualDirection");
   });
 
+  it("plans project recovery from a failed stage", () => {
+    const explicit = createAgentPlan({
+      message: "恢复当前项目，继续修复",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      postStage: "failed",
+      allowedActions: ["recover"]
+    });
+    const stageContinuation = createAgentPlan({
+      message: "继续",
+      hasCurrentDraft: true,
+      attachedAssetCount: 0,
+      postStage: "failed",
+      allowedActions: ["recover"]
+    });
+
+    expect(explicit.intent).toBe("recover_project");
+    expect(explicit.steps.map((step) => step.action)).toEqual(["recoverProject"]);
+    expect(explicit.steps[0].toolName).toBe("project.recover");
+    expect(stageContinuation.intent).toBe("recover_project");
+  });
+
   it("extracts viral RAG metric and tag filters from natural language", () => {
     const plan = createAgentPlan({
       message: "检索爆款库里广州咖啡馆 #探店 #拍照 类目是探店 目标人群是上班族 痛点是不知道怎么选 收藏超过1000 点赞大于2千 分享20以上 综合分3000以上的高收藏案例",

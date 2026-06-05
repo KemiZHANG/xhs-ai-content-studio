@@ -22,6 +22,7 @@ import { buildEvidenceCitationReport, buildEvidenceReferenceSummary, formatEvide
 import { buildEvidenceReferenceNote, labelForEvidenceSource } from "@/lib/post-project/evidence-note";
 import { insightsFromUserBriefInput, mergeEvidenceInsights } from "@/lib/post-project/evidence";
 import { getPostStageGuidance } from "@/lib/post-project/guidance";
+import { inferPostStage } from "@/lib/post-project/stage-machine";
 import { buildPostReadinessReport } from "@/lib/post-project/readiness";
 import { buildCreationProvenanceSummary, formatCreationProvenanceForReply } from "@/lib/post-project/provenance";
 import { runPostQualityGate } from "@/lib/post-project/quality";
@@ -110,6 +111,40 @@ export async function runAgentTurn(input: RunAgentTurnInput): Promise<AgentTurnR
         agentRun,
         trace,
         postProject: newProjectTurn.postProject
+      });
+    }
+
+    const recoveredTurn = await maybeHandleProjectRecoveryTurn(plan, initialPostProject);
+    if (recoveredTurn) {
+      trace = addTraceEvent(trace, {
+        type: "tool_completed",
+        label: "project.recover",
+        detail: "Recovered the active PostProject from a failed or blocked state.",
+        metadata: {
+          stage: recoveredTurn.postProject.currentStage,
+          auditStatus: recoveredTurn.postProject.auditStatus
+        }
+      });
+      trace = addTraceEvent(trace, {
+        type: "workspace_updated",
+        label: "Workspace updated",
+        detail: "Cleared failed publish state and returned the PostProject to a stage inferred from current canvas content."
+      });
+      agentRun = completeRun(agentRun);
+      trace = addTraceEvent(trace, {
+        type: "run_completed",
+        label: "Agent run completed",
+        detail: "Agent turn completed after recovering the PostProject."
+      });
+      await persistAgentTrace(trace);
+      return buildAgentTurnResult({
+        answer: recoveredTurn.answer,
+        plan,
+        workspace: recoveredTurn.workspace,
+        currentDraft: input.currentDraft ?? recoveredTurn.postProject.copyDraft ?? undefined,
+        agentRun,
+        trace,
+        postProject: recoveredTurn.postProject
       });
     }
 
@@ -1058,6 +1093,45 @@ async function maybeHandleNewProjectTurn(
   };
 }
 
+async function maybeHandleProjectRecoveryTurn(
+  plan: ReturnType<typeof createAgentPlan>,
+  postProject: PostProject
+): Promise<{ answer: string; workspace: WorkspaceState; postProject: PostProject } | null> {
+  if (plan.intent !== "recover_project") {
+    return null;
+  }
+  const publishPlan = postProject.publishPlan?.status === "blocked" || postProject.publishPlan?.status === "failed"
+    ? null
+    : postProject.publishPlan;
+  const auditStatus: PostProject["auditStatus"] = postProject.qualityCheck
+    ? (postProject.qualityCheck.canPublish ? "passed" : "blocked")
+    : "unchecked";
+  const recoveredCandidate: PostProject = {
+    ...postProject,
+    publishPlan,
+    auditStatus
+  };
+  const updatedProject = await updatePostProject({
+    publishPlan,
+    auditStatus,
+    currentStage: inferPostStage(recoveredCandidate)
+  });
+  const workspace = await updateWorkspaceState({
+    publishPlan,
+    lastUserIntent: "recover_project"
+  });
+  const guidance = getPostStageGuidance(updatedProject.currentStage, updatedProject.allowedActions);
+  return {
+    answer: [
+      "已恢复当前 PostProject，可以继续创作。",
+      `当前阶段：${guidance.title}`,
+      `建议下一步：${updatedProject.allowedActions.slice(0, 3).map((action) => postActionLabels[action] ?? action).join(" / ") || "等待补充信息"}`
+    ].join("\n"),
+    workspace,
+    postProject: updatedProject
+  };
+}
+
 async function maybeHandleBriefUpdateTurn(
   input: RunAgentTurnInput,
   plan: ReturnType<typeof createAgentPlan>,
@@ -1697,6 +1771,7 @@ function labelForAgentPlanAction(action: AgentAction): string {
     selectImages: "选择图片",
     assemblePost: "组装发布稿",
     runQualityGate: "发布前质检",
+    recoverProject: "恢复项目",
     preparePublish: "准备发布确认",
     schedulePublish: "生成定时计划",
     reviewPublishConfirmation: "查看确认单",

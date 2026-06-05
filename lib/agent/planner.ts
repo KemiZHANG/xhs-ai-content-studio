@@ -27,6 +27,14 @@ export function createAgentPlan(input: CreateAgentPlanInput): AgentPlan {
     });
   }
 
+  if (isRecoverRequest(message, lower) && input.allowedActions?.includes("recover")) {
+    return buildPlan({
+      intent: "recover_project",
+      topic: inferTopic(message),
+      steps: [step("recoverProject", "Recover the active PostProject from a failed or blocked state.", "project.recover")]
+    });
+  }
+
   if (input.hasPendingPublishConfirmation && isCancelPublishConfirmationRequest(message, lower)) {
     return buildPlan({
       intent: "cancel_publish_confirmation",
@@ -286,7 +294,13 @@ function buildStageContinuationPlan(input: CreateAgentPlanInput, message: string
     return planFromPostAction("retrieve_viral_knowledge", input, message, "补充爆款库 RAG");
   }
   const primaryAction = guidance.primaryAction ?? (allowedActions[0] as PostAction | undefined);
-  if (!primaryAction || primaryAction === "recover") {
+  if (!primaryAction) {
+    return null;
+  }
+  if (primaryAction === "recover" && stage === "failed") {
+    return planFromPostAction("recover", input, message, guidance.title);
+  }
+  if (primaryAction === "recover") {
     return null;
   }
   if (isPublishRiskAction(primaryAction)) {
@@ -420,7 +434,11 @@ function planFromPostAction(
     case "publish_now":
     case "summarize_evidence":
     case "recover":
-      return null;
+      return buildPlan({
+        intent: "recover_project",
+        topic: inferTopic(message),
+        steps: [step("recoverProject", reason, "project.recover")]
+      });
   }
 }
 
@@ -438,6 +456,12 @@ function isVisualDirectionConfirmationRequest(message: string, lower: string): b
   return /(?:确认|可以|通过|就按|按这个|没问题|同意).{0,12}(?:图片方向|视觉方向|图片风格|视觉风格|配图方向|封面方向|Prompt|提示词)|(?:图片方向|视觉方向|配图方向|封面方向).{0,12}(?:确认|可以|通过|没问题|同意)/i.test(message) ||
     lower.includes("confirm visual") ||
     lower.includes("confirm image direction");
+}
+
+function isRecoverRequest(message: string, lower: string): boolean {
+  return /恢复|重试|修复|继续修复|回到可继续|解除失败|重新打开/.test(message) ||
+    lower.includes("recover") ||
+    lower.includes("retry");
 }
 
 function isCreativeBriefRequest(message: string, lower: string): boolean {

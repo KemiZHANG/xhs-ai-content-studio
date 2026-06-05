@@ -332,6 +332,71 @@ describe("agent orchestrator", () => {
     ]);
   });
 
+  it("recovers a failed PostProject when the user asks to retry", async () => {
+    await resetPostProject({
+      topic: "广州咖啡馆",
+      currentStage: "failed",
+      publishPlan: {
+        ...createPublishIntent({
+          mode: "manual",
+          title: "周末咖啡馆",
+          content: "适合周末安静坐一会儿的咖啡馆真实体验。",
+          tags: ["咖啡", "探店"],
+          images: ["asset-1"],
+          visibility: defaultSettings.defaultVisibility,
+          requestedBy: "manual"
+        }),
+        id: "publish-failed",
+        status: "failed"
+      },
+      auditStatus: "blocked",
+      copyDraft: {
+        id: "draft-recover",
+        updatedAt: "2026-06-01T00:00:00.000Z",
+        draft: {
+          title: "周末咖啡馆",
+          content: "适合周末安静坐一会儿的咖啡馆真实体验。",
+          tags: ["咖啡", "探店"],
+          structure: [],
+          imagePrompt: "自然光咖啡馆"
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      },
+      selectedImages: ["asset-1"]
+    });
+
+    const result = await runAgentTurn({
+      message: "恢复当前项目，继续重试",
+      conversationId: "chat-recover-project",
+      settings: defaultSettings,
+      history: [],
+      currentDraft: null,
+      attachedAssets: [],
+      mcp: {
+        searchFeeds: async () => [],
+        getFeedDetail: async () => null,
+        publishContent: async () => ({ ok: true })
+      },
+      model: {
+        generateStructuredText: async () => "",
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+
+    expect(result.intent).toBe("recover_project");
+    expect(result.postProject?.currentStage).toBe("image_ready");
+    expect(result.postProject?.publishPlan).toBeNull();
+    expect(result.postProject?.auditStatus).toBe("unchecked");
+    expect(result.answer).toContain("已恢复当前 PostProject");
+    expect(result.toolTrace).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: "project.recover", status: "completed" })
+    ]));
+    expect(result.quickActions.map((action) => action.action)).toContain("assemble_post");
+  });
+
   it.each(["确认发布，就这样发", "可以发了", "确认定时发布"])(
     "reviews an existing publish confirmation for %s instead of publishing from chat",
     async (message) => {
