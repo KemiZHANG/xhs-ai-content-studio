@@ -868,10 +868,12 @@ function normalizeDiversityField(value: string): string {
 }
 
 function matchesFilters(item: ViralCase, filters: ViralCaseFilters): boolean {
+  const audienceFilter = filters.audience;
+  const painPointFilter = filters.painPoint;
   if (filters.topic && !includesLoose(item.topic, filters.topic) && !includesLoose(item.title, filters.topic)) return false;
   if (filters.category && !includesLoose(item.category, filters.category)) return false;
-  if (filters.audience && !includesLoose(item.audience, filters.audience)) return false;
-  if (filters.painPoint && !includesLoose(item.painPoint, filters.painPoint)) return false;
+  if (audienceFilter && !viralAudienceFilterTargets(item).some((target) => includesLoose(target, audienceFilter))) return false;
+  if (painPointFilter && !viralPainPointFilterTargets(item).some((target) => includesLoose(target, painPointFilter))) return false;
   if (filters.tags?.length && !filters.tags.some((tag) => viralTagFilterTargets(item).some((itemTag) => includesLoose(itemTag, tag)))) return false;
   if (filters.createdAfter && Date.parse(item.createdAt) < Date.parse(filters.createdAfter)) return false;
   if (filters.createdBefore && Date.parse(item.createdAt) > Date.parse(filters.createdBefore)) return false;
@@ -887,6 +889,21 @@ function viralTagFilterTargets(item: ViralCase): string[] {
   return uniqueStrings([
     ...item.tags,
     ...item.extractedInsights.tagPatterns
+  ]);
+}
+
+function viralAudienceFilterTargets(item: ViralCase): string[] {
+  return uniqueStrings([
+    item.audience,
+    ...item.extractedInsights.audienceSignals
+  ]);
+}
+
+function viralPainPointFilterTargets(item: ViralCase): string[] {
+  return uniqueStrings([
+    item.painPoint,
+    ...item.extractedInsights.painPoints,
+    ...item.extractedInsights.commentConcerns
   ]);
 }
 

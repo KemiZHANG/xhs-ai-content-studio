@@ -487,6 +487,43 @@ describe("viral knowledge base", () => {
     expect(filtered[0].extractedInsights.tagPatterns[0]).toContain("weekend save");
   });
 
+  it("matches audience and pain point filters against extracted insight knowledge", async () => {
+    const viralCase = await createViralCaseFromEvidence({
+      sample,
+      topic: "Guangzhou coffee",
+      category: "Cafe review",
+      model: {
+        generateStructuredText: async () => JSON.stringify({
+          titleHooks: ["Lead with a save-worthy seat decision"],
+          copyStructures: ["scene -> seat detail -> budget -> weekend warning"],
+          tagPatterns: ["city tag + weekend tag"],
+          visualPatterns: ["natural light table cover"],
+          audienceSignals: ["quiet work cafe seekers", "weekend cafe planners"],
+          painPoints: ["need a reliable seat before visiting", "avoid crowded weekend trips"],
+          emotionalTriggers: ["save before going"],
+          commentConcerns: ["average spend", "whether weekends are crowded"],
+          reusableRules: ["turn audience and pain point signals into decision copy"],
+          avoidCopying: ["do not copy source wording"]
+        }),
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+    await upsertViralCases([{
+      ...viralCase,
+      id: "viral-pattern-audience-pain",
+      audience: "general cafe visitors",
+      painPoint: "needs cafe information"
+    }]);
+
+    const audienceFiltered = await listViralCases({ audience: "quiet work" });
+    const painFiltered = await listViralCases({ painPoint: "crowded weekend" });
+
+    expect(audienceFiltered.map((item) => item.id)).toEqual(["viral-pattern-audience-pain"]);
+    expect(painFiltered.map((item) => item.id)).toEqual(["viral-pattern-audience-pain"]);
+  });
+
   it("returns filter metadata from the viral knowledge API", async () => {
     const viralCase = await createViralCaseFromEvidence({
       sample,
