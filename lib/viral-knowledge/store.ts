@@ -299,18 +299,27 @@ export function viralCasesToEvidenceInsights(cases: ViralCase[]) {
   const now = new Date().toISOString();
   return cases.flatMap((item) => {
     const sourceSampleIds = [item.id];
-    const confidence = (base: number) => Number(Math.min(0.94, base + (item.quality?.score ?? 0.5) * 0.08).toFixed(2));
+    const forcedLowQuality = isForcedLowQualityViralCase(item);
+    const confidence = (base: number) => {
+      const scored = Math.min(0.94, base + (item.quality?.score ?? 0.5) * 0.08);
+      return Number((forcedLowQuality ? Math.min(0.48, scored * 0.58) : scored).toFixed(2));
+    };
+    const insightText = (value: string) => forcedLowQuality && value.trim() ? `弱参考：${value}` : value;
     return compact([
-      evidenceInsight("hook", first(item.extractedInsights.titleHooks) || item.hookType, sourceSampleIds, now, confidence(0.76)),
-      evidenceInsight("structure", item.contentStructure.slice(0, 3).join(" / "), sourceSampleIds, now, confidence(0.74)),
-      evidenceInsight("tag", item.extractedInsights.tagPatterns.slice(0, 3).join("；") || item.tags.join("、"), sourceSampleIds, now, confidence(0.68)),
-      evidenceInsight("visual", item.imageStyle, sourceSampleIds, now, confidence(0.72)),
-      evidenceInsight("audience", item.audience, sourceSampleIds, now, confidence(0.68)),
-      evidenceInsight("pain_point", item.painPoint, sourceSampleIds, now, confidence(0.7)),
-      evidenceInsight("comment", summarizeCommentConcerns(item.extractedInsights.commentConcerns), sourceSampleIds, now, confidence(0.7)),
-      evidenceInsight("copy", item.creativeSafety?.summary ?? "", sourceSampleIds, now, confidence(0.78))
+      evidenceInsight("hook", insightText(first(item.extractedInsights.titleHooks) || item.hookType), sourceSampleIds, now, confidence(0.76)),
+      evidenceInsight("structure", insightText(item.contentStructure.slice(0, 3).join(" / ")), sourceSampleIds, now, confidence(0.74)),
+      evidenceInsight("tag", insightText(item.extractedInsights.tagPatterns.slice(0, 3).join("；") || item.tags.join("、")), sourceSampleIds, now, confidence(0.68)),
+      evidenceInsight("visual", insightText(item.imageStyle), sourceSampleIds, now, confidence(0.72)),
+      evidenceInsight("audience", insightText(item.audience), sourceSampleIds, now, confidence(0.68)),
+      evidenceInsight("pain_point", insightText(item.painPoint), sourceSampleIds, now, confidence(0.7)),
+      evidenceInsight("comment", insightText(summarizeCommentConcerns(item.extractedInsights.commentConcerns)), sourceSampleIds, now, confidence(0.7)),
+      evidenceInsight("copy", insightText(item.creativeSafety?.summary ?? ""), sourceSampleIds, now, confidence(0.78))
     ]);
   });
+}
+
+function isForcedLowQualityViralCase(item: ViralCase): boolean {
+  return item.quality?.warnings?.some((warning) => warning.includes("低质量样本被人工强制入库")) ?? false;
 }
 
 function summarizeCommentConcerns(commentConcerns: string[]): string {

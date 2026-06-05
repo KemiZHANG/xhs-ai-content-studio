@@ -19,7 +19,7 @@ import {
 import { buildEvidenceCitationReport } from "@/lib/post-project/citations";
 import { runPostQualityGate } from "@/lib/post-project/quality";
 import { defaultSettings } from "@/lib/storage/settings";
-import { createViralCaseFromEvidence } from "@/lib/viral-knowledge/store";
+import { createViralCaseFromEvidence, markForcedLowQualityViralCase, reviewViralSaveCandidate } from "@/lib/viral-knowledge/store";
 
 let originalCwd: string;
 let tempDir: string;
@@ -1451,6 +1451,41 @@ describe("post project", () => {
     expect(duplicate.addedSampleIds).toEqual([]);
     expect(duplicateSummary.viralKnowledge?.insights?.length).toBe(firstSummary.viralKnowledge?.insights?.length);
     expect(duplicateSummary.viralKnowledge?.evidenceTrace?.length).toBe(firstSummary.viralKnowledge?.evidenceTrace?.length);
+  });
+
+  it("keeps forced low-quality viral cases as weak references in project evidence trace", async () => {
+    await resetPostProject({ topic: "Weak topic" });
+    const weakSample = {
+      id: "note-weak-project",
+      title: "Short note",
+      author: "author",
+      likes: 0,
+      collects: 0,
+      comments: 0,
+      shares: 0,
+      score: 0,
+      url: "",
+      imageUrls: [],
+      cachedImageUrls: [],
+      detailText: "",
+      commentSnippets: [],
+      reasonHighlights: []
+    };
+    const viralCase = markForcedLowQualityViralCase(await createViralCaseFromEvidence({
+      sample: weakSample,
+      topic: "Weak topic",
+      category: "Weak category"
+    }), reviewViralSaveCandidate(weakSample));
+
+    const result = await addViralCasesToPostProjectWithSummary([viralCase]);
+    const summary = result.project.evidencePack.summary as {
+      viralKnowledge?: { evidenceTrace?: Array<{ reasons?: string[] }> };
+    };
+
+    expect(result.addedInsights.length).toBeGreaterThan(0);
+    expect(result.addedInsights.every((insight) => insight.insight.startsWith("弱参考："))).toBe(true);
+    expect(Math.max(...result.addedInsights.map((insight) => insight.confidence))).toBeLessThanOrEqual(0.48);
+    expect(summary.viralKnowledge?.evidenceTrace?.[0].reasons?.join(" ")).toContain("弱参考");
   });
 
   it("keeps saved viral sufficiency blocked when realtime evidence is missing", async () => {

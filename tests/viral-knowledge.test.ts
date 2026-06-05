@@ -7,6 +7,7 @@ import { ACTION_TOKEN_HEADER, getLocalActionToken } from "@/lib/security/action-
 import {
   createViralCaseFromEvidence,
   listViralCases,
+  markForcedLowQualityViralCase,
   reviewViralSaveCandidate,
   searchViralCases,
   searchViralCasesFusion,
@@ -193,6 +194,37 @@ describe("viral knowledge base", () => {
     expect(insights.find((item) => item.type === "comment")?.insight).toContain("评论关注点");
     expect(insights.find((item) => item.type === "comment")?.insight).toContain("决策信息");
     expect(insights.some((item) => item.insight.includes("近似复刻"))).toBe(true);
+  });
+
+  it("marks forced low-quality viral evidence as weak reference in PostProject insights", async () => {
+    const weakSample: SampleEvidence = {
+      id: "note-weak-evidence",
+      title: "Short note",
+      author: "author",
+      likes: 0,
+      collects: 0,
+      comments: 0,
+      shares: 0,
+      score: 0,
+      url: "",
+      imageUrls: [],
+      cachedImageUrls: [],
+      detailText: "",
+      commentSnippets: [],
+      reasonHighlights: []
+    };
+    const review = reviewViralSaveCandidate(weakSample);
+    const viralCase = markForcedLowQualityViralCase(await createViralCaseFromEvidence({
+      sample: weakSample,
+      topic: "Weak topic",
+      category: "Weak category"
+    }), review);
+    const insights = viralCasesToEvidenceInsights([viralCase]);
+
+    expect(review.shouldSave).toBe(false);
+    expect(insights.length).toBeGreaterThan(0);
+    expect(insights.every((item) => item.insight.startsWith("弱参考："))).toBe(true);
+    expect(Math.max(...insights.map((item) => item.confidence))).toBeLessThanOrEqual(0.48);
   });
 
   it("backfills creative safety for legacy viral cases", async () => {

@@ -509,7 +509,9 @@ function mergeSavedViralCasesSummary(summary: unknown, cases: ViralCase[], insig
     .map((item) => ({
       case: item,
       score: 1,
-      reasons: ["手动保存到爆款库"],
+      reasons: isForcedLowQualityViralCase(item)
+        ? ["手动保存到爆款库", "低质量样本被强制入库，仅作为弱参考"]
+        : ["手动保存到爆款库"],
       matchedQueries: ["manual-save"]
     }));
   const savedCases = savedResults.map((result) => result.case);
@@ -589,6 +591,10 @@ function evaluateSavedViralSufficiency({
       ? `建议继续搜索或补充参考样本：${missing.join("；")}`
       : "证据足够进入 CreativeBrief、文案和图片方向生成。"
   };
+}
+
+function isForcedLowQualityViralCase(item: ViralCase): boolean {
+  return item.quality?.warnings?.some((warning) => warning.includes("低质量样本被人工强制入库")) ?? false;
 }
 
 function withDraftEvidenceIds(draft: WorkspaceState["currentDraft"], evidenceIds: string[]): NonNullable<WorkspaceState["currentDraft"]> | null {
