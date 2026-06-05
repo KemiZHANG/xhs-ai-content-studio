@@ -87,6 +87,48 @@ describe("viral application model", () => {
     expect(model.actions[0].primary).toBe(true);
   });
 
+  it("does not offer key creative output actions while RAG evidence is insufficient", () => {
+    const project = createBlankPostProject({
+      topic: "广州咖啡馆",
+      evidencePack: {
+        sampleIds: ["viral-case-1"],
+        insights: [viralInsight],
+        summary: {
+          viralKnowledge: {
+            sufficiency: {
+              isEnough: false,
+              realtimeCount: 1,
+              viralCount: 1,
+              missing: ["实时小红书样本不足 3 条"],
+              recommendation: "建议继续搜索。"
+            }
+          }
+        }
+      },
+      creativeBrief: {
+        audience: "周末探店人群",
+        painPoint: "怕踩雷",
+        contentAngle: "真实避坑探店",
+        emotionalHook: "先给结论",
+        proofPoints: ["排队", "人均"],
+        tone: "真实分享",
+        visualMood: "自然光",
+        imageMustHave: ["店内空间"],
+        imageMustAvoid: ["虚假 logo"],
+        platformStyle: "小红书图文",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["viral-insight-hook"]
+      }
+    });
+    const model = buildViralApplicationModel(project);
+
+    expect(model.readinessGate.status).toBe("caution");
+    expect(model.actions.map((action) => action.action)).toEqual(["search_research", "retrieve_viral_knowledge"]);
+    expect(model.actions.map((action) => action.action)).not.toContain("generate_copy");
+    expect(model.actions.map((action) => action.action)).not.toContain("plan_visuals");
+  });
+
   it("marks RAG as enough when realtime and viral evidence pass sufficiency", () => {
     const project = createBlankPostProject({
       topic: "广州咖啡馆",
