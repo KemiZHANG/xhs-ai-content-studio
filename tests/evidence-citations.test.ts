@@ -90,6 +90,7 @@ describe("evidence citation report", () => {
     expect(report.missingEvidenceIds).toEqual([]);
     expect(report.viralEvidenceTrace?.[0]).toMatchObject({
       caseId: "viral-case",
+      sourceSampleId: "viral-case",
       sourceUrl: "https://www.xiaohongshu.com/explore/viral-case",
       evidenceInsightIds: ["viral-insight-visual"]
     });
@@ -133,6 +134,7 @@ describe("evidence citation report", () => {
     expect(formatted).toContain("图片方向");
     expect(formatted).toContain("viral-insight-visual");
     expect(formatted).toContain("爆款库检索追溯");
+    expect(formatted).toContain("source: viral-case");
     expect(formatted).toContain("Guangzhou cafe visual");
   });
 

@@ -89,6 +89,7 @@ describe("post studio viral panels", () => {
     expect(html).toContain("原创边界");
     expect(html).toContain("来源追踪");
     expect(html).toContain("viral-1");
+    expect(html).toContain("source: note-1");
     expect(html).toContain("0.90");
     expect(html).toContain("广州咖啡馆 标题钩子");
     expect(html).toContain("评分拆解：语义 0.31 / 关键词 0.16 / 互动 0.12 / 质量 0.06 / 筛选 0.08");

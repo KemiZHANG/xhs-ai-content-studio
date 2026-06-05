@@ -26,6 +26,7 @@ export type EvidenceCitationReport = {
 
 export type EvidenceCitationTrace = {
   caseId: string;
+  sourceSampleId: string;
   sourceUrl: string;
   score: number;
   matchedQueries: string[];
@@ -185,7 +186,8 @@ function formatViralEvidenceTrace(trace: EvidenceCitationTrace[] | undefined): s
   const lines = trace.slice(0, 3).map((item) => {
     const matched = item.matchedQueries.length ? `｜query: ${item.matchedQueries.slice(0, 2).join(" / ")}` : "";
     const reason = item.reasons.length ? `｜reason: ${item.reasons.slice(0, 2).join(" / ")}` : "";
-    return `- ${item.caseId}｜score ${item.score}${matched}${reason}｜evidence: ${item.evidenceInsightIds.slice(0, 4).join("、")}`;
+    const source = item.sourceSampleId ? `｜source: ${item.sourceSampleId}` : "";
+    return `- ${item.caseId}｜score ${item.score}${source}${matched}${reason}｜evidence: ${item.evidenceInsightIds.slice(0, 4).join("、")}`;
   });
   return [`爆款库检索追溯：\n${lines.join("\n")}`];
 }
@@ -213,6 +215,7 @@ function normalizeViralTrace(value: unknown): EvidenceCitationTrace | null {
   if (!caseId || !evidenceInsightIds.length) return null;
   return {
     caseId,
+    sourceSampleId: typeof value.sourceSampleId === "string" ? value.sourceSampleId : "",
     sourceUrl,
     score,
     matchedQueries: stringArray(value.matchedQueries),

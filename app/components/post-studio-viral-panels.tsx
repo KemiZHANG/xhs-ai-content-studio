@@ -50,6 +50,7 @@ function ViralSourceTraceList({ viralPack }: { viralPack: ViralKnowledgePack }) 
             {trace.caseId}
             {trace.score ? ` · ${trace.score}` : ""}
           </span>
+          {trace.sourceSampleId ? <small>source: {trace.sourceSampleId}</small> : null}
           <p>{trace.matchedQueries.length ? trace.matchedQueries.slice(0, 2).join(" / ") : "来自本次 RAG 命中样本"}</p>
           {trace.reasons.length ? <small>命中原因：{trace.reasons.slice(0, 2).join(" / ")}</small> : null}
           {trace.scoreBreakdown ? <small>评分拆解：{trace.scoreBreakdown}</small> : null}
@@ -67,6 +68,7 @@ function ViralSourceTraceList({ viralPack }: { viralPack: ViralKnowledgePack }) 
 
 function buildViralSourceTraceItems(viralPack: ViralKnowledgePack): Array<{
   caseId: string;
+  sourceSampleId: string;
   score: string;
   matchedQueries: string[];
   reasons: string[];
@@ -77,6 +79,7 @@ function buildViralSourceTraceItems(viralPack: ViralKnowledgePack): Array<{
   const resultsByCaseId = new Map((viralPack.results ?? []).map((result) => [result.case.id, result]));
   const traces = viralPack.evidenceTrace?.map((trace) => ({
     caseId: trace.caseId,
+    sourceSampleId: trace.sourceSampleId,
     score: Number.isFinite(trace.score) ? trace.score.toFixed(2) : "",
     matchedQueries: trace.matchedQueries ?? [],
     reasons: trace.reasons ?? [],
@@ -86,6 +89,7 @@ function buildViralSourceTraceItems(viralPack: ViralKnowledgePack): Array<{
   })) ?? [];
   const fallback = viralPack.results?.map((result) => ({
     caseId: result.case.id,
+    sourceSampleId: result.case.sourceSampleId,
     score: Number.isFinite(result.score) ? result.score.toFixed(2) : "",
     matchedQueries: result.matchedQueries ?? [],
     reasons: result.reasons ?? [],
