@@ -126,4 +126,35 @@ describe("post studio header panel", () => {
     expect(html).toContain("查看完整决策说明");
     expect(html).toContain("新建项目");
   });
+
+  it("routes first-screen creative actions to viral RAG refresh when evidence is weak", () => {
+    const html = renderToStaticMarkup(createElement(PostStudioHeaderPanel, {
+      projectTitle: "广州咖啡馆探店",
+      projectContextSummary,
+      statusSummary: {
+        ...statusSummary,
+        blockers: ["缺少最终文案", "未确认图片方向"]
+      },
+      flowSummary,
+      nextStepCoach,
+      chatInput: "",
+      busy: false,
+      activeAccountId: "main",
+      ragCreativeBlocked: true,
+      onQuickAction: () => undefined,
+      onSwitchAccount: () => undefined,
+      onRefreshHealth: () => undefined,
+      onNavigate: () => undefined,
+      onChatInput: () => undefined,
+      onChatSubmit: () => undefined,
+      onNewProject: () => undefined
+    }));
+
+    expect(html).toContain("建议：补强爆款证据");
+    expect(html).toContain("现在只做：补强爆款证据");
+    expect(html).toContain("补强爆款证据");
+    expect(html).not.toContain("建议：规划图片方向");
+    expect(html).not.toContain("现在只做：规划图片方向");
+    expect(html).not.toContain(">补文案<");
+  });
 });

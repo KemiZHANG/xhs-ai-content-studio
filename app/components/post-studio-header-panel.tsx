@@ -17,6 +17,7 @@ export function PostStudioHeaderPanel({
   chatInput,
   busy,
   activeAccountId,
+  ragCreativeBlocked = false,
   onQuickAction,
   onSwitchAccount,
   onRefreshHealth,
@@ -33,6 +34,7 @@ export function PostStudioHeaderPanel({
   chatInput: string;
   busy: boolean;
   activeAccountId: string;
+  ragCreativeBlocked?: boolean;
   onQuickAction: (action: string) => void;
   onSwitchAccount: (accountId: string) => void;
   onRefreshHealth: () => void;
@@ -51,6 +53,7 @@ export function PostStudioHeaderPanel({
         <StudioStatusCard
           activeAccountId={activeAccountId}
           statusSummary={statusSummary}
+          ragCreativeBlocked={ragCreativeBlocked}
           onNavigate={onNavigate}
           onQuickAction={onQuickAction}
           onRefreshHealth={onRefreshHealth}
@@ -63,15 +66,17 @@ export function PostStudioHeaderPanel({
             index={index}
             key={phase.id}
             phase={phase}
+            ragCreativeBlocked={ragCreativeBlocked}
             onQuickAction={onQuickAction}
           />
         ))}
       </div>
-      <PostFlowFocusStrip flowSummary={flowSummary} onQuickAction={onQuickAction} />
+      <PostFlowFocusStrip flowSummary={flowSummary} ragCreativeBlocked={ragCreativeBlocked} onQuickAction={onQuickAction} />
       <NextActionBar
         busy={busy}
         chatInput={chatInput}
         nextStepCoach={nextStepCoach}
+        ragCreativeBlocked={ragCreativeBlocked}
         onChatInput={onChatInput}
         onChatSubmit={onChatSubmit}
         onNewProject={onNewProject}
@@ -84,9 +89,11 @@ export function PostStudioHeaderPanel({
 
 function PostFlowFocusStrip({
   flowSummary,
+  ragCreativeBlocked,
   onQuickAction
 }: {
   flowSummary: PostFlowPhase[];
+  ragCreativeBlocked: boolean;
   onQuickAction: (action: string) => void;
 }) {
   const doneCount = flowSummary.filter((phase) => phase.state === "done").length;
@@ -106,8 +113,8 @@ function PostFlowFocusStrip({
         ))}
       </div>
       {activePhase?.action ? (
-        <button type="button" onClick={() => onQuickAction(activePhase.action!)}>
-          {activePhase.actionLabel}
+        <button type="button" onClick={() => onQuickAction(routeHeaderAction(activePhase.action!, ragCreativeBlocked).action)}>
+          {routeHeaderAction(activePhase.action!, ragCreativeBlocked).label ?? activePhase.actionLabel}
         </button>
       ) : (
         <small>还剩 {remainingCount} 个阶段</small>
@@ -150,6 +157,7 @@ function ProjectContextCard({ summary }: { summary: PostProjectContextSummary })
 function StudioStatusCard({
   statusSummary,
   activeAccountId,
+  ragCreativeBlocked,
   onQuickAction,
   onSwitchAccount,
   onRefreshHealth,
@@ -157,6 +165,7 @@ function StudioStatusCard({
 }: {
   statusSummary: PostStudioStatusSummary;
   activeAccountId: string;
+  ragCreativeBlocked: boolean;
   onQuickAction: (action: string) => void;
   onSwitchAccount: (accountId: string) => void;
   onRefreshHealth: () => void;
@@ -173,8 +182,8 @@ function StudioStatusCard({
         <div>
           <span>{statusSummary.stageLine}</span>
           {statusSummary.primaryAction ? (
-            <button type="button" onClick={() => onQuickAction(statusSummary.primaryAction!)}>
-              建议：{statusSummary.primaryActionLabel}
+            <button type="button" onClick={() => onQuickAction(routeHeaderAction(statusSummary.primaryAction!, ragCreativeBlocked).action)}>
+              建议：{routeHeaderAction(statusSummary.primaryAction!, ragCreativeBlocked).label ?? statusSummary.primaryActionLabel}
             </button>
           ) : statusSummary.primaryActionLabel ? (
             <b>建议：{statusSummary.primaryActionLabel}</b>
@@ -235,7 +244,7 @@ function StudioStatusCard({
       {statusSummary.blockers.length ? (
         <ul className="studioStatusBlockers">
           {statusSummary.blockers.map((item) => {
-            const action = actionForBlocker(item);
+            const action = actionForBlocker(item, ragCreativeBlocked);
             return (
               <li key={item}>
                 <span>{item}</span>
@@ -256,12 +265,16 @@ function StudioStatusCard({
 function PostFlowPhaseItem({
   phase,
   index,
+  ragCreativeBlocked,
   onQuickAction
 }: {
   phase: PostFlowPhase;
   index: number;
+  ragCreativeBlocked: boolean;
   onQuickAction: (action: string) => void;
 }) {
+  const routedAction = phase.action ? routeHeaderAction(phase.action, ragCreativeBlocked) : null;
+
   return (
     <article className={`postFlowPhase ${phase.state}`}>
       <span className="postFlowIndex">{index + 1}</span>
@@ -270,8 +283,8 @@ function PostFlowPhaseItem({
         <p>{phase.detail}</p>
       </div>
       {phase.state === "active" && phase.action ? (
-        <button type="button" onClick={() => onQuickAction(phase.action!)}>
-          {phase.actionLabel}
+        <button type="button" onClick={() => routedAction && onQuickAction(routedAction.action)}>
+          {routedAction?.label ?? phase.actionLabel}
         </button>
       ) : null}
     </article>
@@ -283,6 +296,7 @@ function NextActionBar({
   chatInput,
   busy,
   projectContextSummary,
+  ragCreativeBlocked,
   onQuickAction,
   onChatInput,
   onChatSubmit,
@@ -292,6 +306,7 @@ function NextActionBar({
   chatInput: string;
   busy: boolean;
   projectContextSummary: PostProjectContextSummary;
+  ragCreativeBlocked: boolean;
   onQuickAction: (action: string) => void;
   onChatInput: (value: string) => void;
   onChatSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -321,8 +336,8 @@ function NextActionBar({
       </div>
       <div className="nextActionButtons">
         {nextStepCoach.primaryAction ? (
-          <button className="isPrimaryNext" type="button" onClick={() => onQuickAction(nextStepCoach.primaryAction!)}>
-            现在只做：{nextStepCoach.primaryLabel}
+          <button className="isPrimaryNext" type="button" onClick={() => onQuickAction(routeHeaderAction(nextStepCoach.primaryAction!, ragCreativeBlocked).action)}>
+            现在只做：{routeHeaderAction(nextStepCoach.primaryAction!, ragCreativeBlocked).label ?? nextStepCoach.primaryLabel}
           </button>
         ) : null}
         {nextStepCoach.secondaryActions.length ? (
@@ -330,8 +345,8 @@ function NextActionBar({
             <summary>其他可选动作</summary>
             <div>
               {nextStepCoach.secondaryActions.map((item) => (
-                <button key={item.action} type="button" onClick={() => onQuickAction(item.action)}>
-                  {item.label}
+                <button key={item.action} type="button" onClick={() => onQuickAction(routeHeaderAction(item.action, ragCreativeBlocked).action)}>
+                  {routeHeaderAction(item.action, ragCreativeBlocked).label ?? item.label}
                 </button>
               ))}
             </div>
@@ -366,7 +381,7 @@ function NextActionBar({
   );
 }
 
-function actionForBlocker(blocker: string): { action: string; label: string } | null {
+function actionForBlocker(blocker: string, ragCreativeBlocked: boolean): { action: string; label: string } | null {
   if (blocker.includes("账号") || blocker.includes("登录")) {
     return null;
   }
@@ -377,10 +392,12 @@ function actionForBlocker(blocker: string): { action: string; label: string } | 
     return { action: "select_images", label: "选择图片" };
   }
   if (blocker.includes("视觉") || blocker.includes("方向")) {
-    return { action: "plan_visuals", label: "规划图片" };
+    const routedAction = routeHeaderAction("plan_visuals", ragCreativeBlocked, "规划图片");
+    return { action: routedAction.action, label: routedAction.label ?? "规划图片" };
   }
   if (blocker.includes("文案") || blocker.includes("标题") || blocker.includes("正文")) {
-    return { action: "generate_copy", label: "补文案" };
+    const routedAction = routeHeaderAction("generate_copy", ragCreativeBlocked, "补文案");
+    return { action: routedAction.action, label: routedAction.label ?? "补文案" };
   }
   if (blocker.includes("证据") || blocker.includes("研究")) {
     return { action: "search_research", label: "做研究" };
@@ -389,4 +406,11 @@ function actionForBlocker(blocker: string): { action: string; label: string } | 
     return { action: "assemble_post", label: "保存装配" };
   }
   return null;
+}
+
+function routeHeaderAction(action: string, ragCreativeBlocked: boolean, fallbackLabel?: string): { action: string; label?: string } {
+  if (ragCreativeBlocked && ["generate_copy", "plan_visuals", "generate_images"].includes(action)) {
+    return { action: "retrieve_viral_knowledge", label: "补强爆款证据" };
+  }
+  return { action, label: fallbackLabel };
 }

@@ -476,6 +476,7 @@ export function PostStudioPanel({
           chatInput={chatInput}
           busy={busy}
           activeAccountId={settings.activeAccountId}
+          ragCreativeBlocked={viralApplication.readinessGate.status === "caution"}
           onQuickAction={onQuickAction}
           onSwitchAccount={onSwitchAccount}
           onRefreshHealth={onRefreshHealth}
@@ -498,14 +499,22 @@ export function PostStudioPanel({
             </div>
             <div className="postReadinessSteps">
               {readiness.visibleItems.map((item) => (
-                <ReadinessStep item={item} key={item.id} onQuickAction={onQuickAction} />
+                <ReadinessStep
+                  item={item}
+                  key={item.id}
+                  ragCreativeBlocked={viralApplication.readinessGate.status === "caution"}
+                  onQuickAction={onQuickAction}
+                />
               ))}
             </div>
             <div className="postReadinessNext">
               <span>{readiness.blockers[0]?.detail ?? "可以生成发布确认单，进入最终人工确认。"}</span>
               {readiness.nextAction ? (
-                <button type="button" onClick={() => onQuickAction(readiness.nextAction!)}>
-                  {labelForAction(readiness.nextAction)}
+                <button
+                  type="button"
+                  onClick={() => onQuickAction(routeWeakRagCreativeAction(readiness.nextAction!, viralApplication.readinessGate.status === "caution"))}
+                >
+                  {labelForAction(routeWeakRagCreativeAction(readiness.nextAction!, viralApplication.readinessGate.status === "caution"))}
                 </button>
               ) : null}
             </div>
@@ -718,16 +727,20 @@ function isRecordValue(value: unknown): value is Record<string, unknown> {
 
 function ReadinessStep({
   item,
+  ragCreativeBlocked,
   onQuickAction
 }: {
   item: PostReadinessItem;
+  ragCreativeBlocked: boolean;
   onQuickAction: (action: string) => void;
 }) {
+  const action = item.action ? routeWeakRagCreativeAction(item.action, ragCreativeBlocked) : undefined;
+
   return (
     <button
       className={item.ready ? "readinessStep ready" : "readinessStep"}
-      disabled={item.ready || !item.action}
-      onClick={() => item.action && onQuickAction(item.action)}
+      disabled={item.ready || !action}
+      onClick={() => action && onQuickAction(action)}
       title={item.detail}
       type="button"
     >
@@ -841,6 +854,13 @@ function uniqueText(values: string[]): string[] {
 
 function labelForAction(action: string): string {
   return labelForPostAction(action);
+}
+
+function routeWeakRagCreativeAction(action: string, ragCreativeBlocked: boolean): string {
+  if (ragCreativeBlocked && ["generate_copy", "plan_visuals", "generate_images"].includes(action)) {
+    return "retrieve_viral_knowledge";
+  }
+  return action;
 }
 
 function labelForCanvasSaveStatus(
