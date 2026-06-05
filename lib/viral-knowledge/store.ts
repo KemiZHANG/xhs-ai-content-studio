@@ -273,6 +273,28 @@ export async function createViralCaseFromEvidence({
   });
 }
 
+export function markForcedLowQualityViralCase(item: ViralCase, review: ViralSaveCandidateReview): ViralCase {
+  const reviewWarning = review.warnings.slice(0, 2).join("；") || "入库证据不足";
+  const forcedWarning = `低质量样本被人工强制入库：质量分 ${review.score}/100，${reviewWarning}`;
+  const quality = item.quality ?? evaluateViralKnowledgeQuality({
+    extractedInsights: item.extractedInsights,
+    creativeSafety: item.creativeSafety,
+    extractionMethod: item.extraction.method
+  });
+
+  return normalizeViralCase({
+    ...item,
+    quality: {
+      ...quality,
+      warnings: uniqueStrings([
+        forcedWarning,
+        ...review.warnings,
+        ...(quality.warnings ?? [])
+      ]).slice(0, 8)
+    }
+  });
+}
+
 export function viralCasesToEvidenceInsights(cases: ViralCase[]) {
   const now = new Date().toISOString();
   return cases.flatMap((item) => {

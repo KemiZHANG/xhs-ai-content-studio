@@ -537,8 +537,9 @@ export default function Home() {
           category: workflowForm.contentType,
           useModel: modelReady
         })
-      })) as { case?: ViralCase; cases?: ViralCase[]; project?: PostProject; addedInsightIds?: string[]; addedSampleIds?: string[] };
+      })) as { case?: ViralCase; cases?: ViralCase[]; project?: PostProject; addedInsightIds?: string[]; addedSampleIds?: string[]; forcedLowQualitySampleIds?: string[] };
       const savedCases = data.cases ?? (data.case ? [data.case] : []);
+      const forcedLowQualityCount = data.forcedLowQualitySampleIds?.length ?? 0;
       setViralCases((current) => {
         const savedIds = new Set(savedCases.map((item) => item.id));
         return [...savedCases, ...current.filter((item) => !savedIds.has(item.id))].slice(0, 12);
@@ -546,7 +547,9 @@ export default function Home() {
       if (data.project) {
         setPostProject(data.project);
       }
-      setNotice(data.addedInsightIds?.length
+      setNotice(forcedLowQualityCount
+        ? `已强制保存 ${forcedLowQualityCount} 条低质量样本到爆款库，并写入质量提示，后续使用时会标记为弱参考。`
+        : data.addedInsightIds?.length
         ? `已保存 ${savedCases.length} 条样本到爆款库，并为当前项目增加 ${data.addedInsightIds.length} 条可复用创作证据。`
         : "已保存到爆款库：系统会沉淀结构化创作规律，不会把原文当作仿写素材。");
       await loadPostProject();

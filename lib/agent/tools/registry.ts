@@ -3,6 +3,7 @@ import { retrieveViralKnowledge, type ViralKnowledgePack, type ViralRetrievalInp
 import { addViralCasesToPostProjectWithSummary } from "@/lib/post-project/store";
 import {
   createViralCaseFromEvidence,
+  markForcedLowQualityViralCase,
   reviewViralSaveCandidate,
   upsertViralCases
 } from "@/lib/viral-knowledge/store";
@@ -118,11 +119,14 @@ function defaultToolDefinitions(): AgentToolDefinition[] {
             }
           };
         }
-        const viralCase = await createViralCaseFromEvidence(request);
+        const forcedLowQuality = !candidateReview.shouldSave && request.force;
+        const extractedCase = await createViralCaseFromEvidence(request);
+        const viralCase = forcedLowQuality
+          ? markForcedLowQualityViralCase(extractedCase, candidateReview)
+          : extractedCase;
         const [saved] = await upsertViralCases([viralCase]);
         const saveResult = await addViralCasesToPostProjectWithSummary([saved]);
         const extractionLabel = saved.extraction.method === "model" ? "AI 结构化提炼" : "启发式提炼";
-        const forcedLowQuality = !candidateReview.shouldSave && request.force;
         const forcedLowQualityWarning = forcedLowQuality
           ? `已强制入库低质量样本：质量分 ${candidateReview.score}/100，${candidateReview.warnings.slice(0, 2).join("；") || "入库证据不足"}`
           : "";

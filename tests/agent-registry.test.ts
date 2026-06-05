@@ -151,7 +151,7 @@ describe("agent tool registry", () => {
       force: true
     }) as {
       ok: boolean;
-      data: { case: { sourceSampleId: string }; candidateReview: { shouldSave: boolean }; forcedLowQuality: boolean; skippedSampleIds: string[] };
+      data: { case: { sourceSampleId: string; quality?: { warnings: string[] } }; candidateReview: { shouldSave: boolean }; forcedLowQuality: boolean; skippedSampleIds: string[] };
       warnings: string[];
       display?: { title?: string; summary?: string; items?: string[] };
     };
@@ -161,6 +161,7 @@ describe("agent tool registry", () => {
     expect(forced.data.candidateReview.shouldSave).toBe(false);
     expect(forced.data.forcedLowQuality).toBe(true);
     expect(forced.data.skippedSampleIds).toEqual([]);
+    expect(forced.data.case.quality?.warnings.join(" ")).toContain("低质量样本被人工强制入库");
     expect(forced.warnings.join(" ")).toContain("已强制入库低质量样本");
     expect(forced.display?.title).toContain("强制");
     expect(forced.display?.summary).toContain("质量分");

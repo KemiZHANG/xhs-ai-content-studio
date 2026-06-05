@@ -710,8 +710,9 @@ describe("viral knowledge base", () => {
       })
     }));
     const forcedPayload = await forced.json() as {
-      cases: Array<{ sourceSampleId: string; topic: string; category: string }>;
+      cases: Array<{ sourceSampleId: string; topic: string; category: string; quality?: { warnings: string[] } }>;
       candidateReviews: Array<{ sampleId: string; shouldSave: boolean }>;
+      forcedLowQualitySampleIds: string[];
       skippedSampleIds: string[];
     };
 
@@ -720,7 +721,9 @@ describe("viral knowledge base", () => {
     expect(forcedPayload.cases[0].sourceSampleId).toBe("weak-note");
     expect(forcedPayload.cases[0].topic).toBe("Weak topic");
     expect(forcedPayload.cases[0].category).toBe("Cafe review");
+    expect(forcedPayload.cases[0].quality?.warnings.join(" ")).toContain("低质量样本被人工强制入库");
     expect(forcedPayload.candidateReviews[0].shouldSave).toBe(false);
+    expect(forcedPayload.forcedLowQualitySampleIds).toEqual(["weak-note"]);
     expect(forcedPayload.skippedSampleIds).toEqual([]);
   });
 

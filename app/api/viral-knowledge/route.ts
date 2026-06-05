@@ -5,7 +5,7 @@ import { addViralCasesToPostProjectWithSummary } from "@/lib/post-project/store"
 import { extractViralRetrievalFilters, summarizeViralRetrievalFilters } from "@/lib/rag/viral";
 import { requireLocalActionToken } from "@/lib/security/action-token";
 import { readSettings } from "@/lib/storage/settings";
-import { createViralCaseFromEvidence, listViralCases, reviewViralSaveCandidate, searchViralCasesFusion, upsertViralCases } from "@/lib/viral-knowledge/store";
+import { createViralCaseFromEvidence, listViralCases, markForcedLowQualityViralCase, reviewViralSaveCandidate, searchViralCasesFusion, upsertViralCases } from "@/lib/viral-knowledge/store";
 import type { ViralCaseFilters } from "@/lib/viral-knowledge/types";
 import type { SampleEvidence } from "@/lib/workflows/one-click";
 
@@ -86,6 +86,10 @@ export async function POST(request: Request) {
 
     const forceSave = Boolean(body.force || body.allowLowQuality);
     const candidateReviews = samples.map(reviewViralSaveCandidate);
+    const candidateReviewBySampleId = new Map(candidateReviews.map((review) => [review.sampleId, review]));
+    const forcedLowQualitySampleIds = forceSave
+      ? candidateReviews.filter((review) => !review.shouldSave).map((review) => review.sampleId)
+      : [];
     const approvedSampleIds = new Set(candidateReviews.filter((review) => review.shouldSave).map((review) => review.sampleId));
     const approvedSamples = forceSave ? samples : samples.filter((sample) => approvedSampleIds.has(sample.id));
     const skippedSampleIds = forceSave ? [] : samples.filter((sample) => !approvedSampleIds.has(sample.id)).map((sample) => sample.id);
@@ -103,20 +107,25 @@ export async function POST(request: Request) {
 
     const settings = await readSettings();
     const model = body.useModel === false || !settings.textApiKey.trim() ? undefined : createModelProvider(settings);
-    const viralCases = await Promise.all(approvedSamples.map((sample) =>
-      createViralCaseFromEvidence({
+    const viralCases = await Promise.all(approvedSamples.map(async (sample) => {
+      const viralCase = await createViralCaseFromEvidence({
         sample,
         topic: body.topic || "未分类主题",
         category: body.category || "小红书图文",
         model
-      })
-    ));
+      });
+      const review = candidateReviewBySampleId.get(sample.id);
+      return review && forceSave && !review.shouldSave
+        ? markForcedLowQualityViralCase(viralCase, review)
+        : viralCase;
+    }));
     if (body.dryRun) {
       return NextResponse.json({
         dryRun: true,
         case: viralCases[0],
         cases: viralCases,
         candidateReviews,
+        forcedLowQualitySampleIds,
         skippedSampleIds
       });
     }
@@ -131,6 +140,7 @@ export async function POST(request: Request) {
       addedInsights: result.addedInsights,
       addedSampleIds: result.addedSampleIds,
       candidateReviews,
+      forcedLowQualitySampleIds,
       skippedSampleIds
     });
   } catch (error) {
