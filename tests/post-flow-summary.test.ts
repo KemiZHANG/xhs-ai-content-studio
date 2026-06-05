@@ -105,4 +105,69 @@ describe("post flow summary", () => {
     expect(phases[4].action).toBe("plan_visuals");
     expect(phases[4].actionLabel).toBe("规划图片");
   });
+
+  it("routes flow rail creative actions back to viral RAG when evidence is weak", () => {
+    const project = createBlankPostProject({
+      topic: "广州咖啡馆",
+      currentStage: "copy_ready",
+      allowedActions: ["plan_visuals", "retrieve_viral_knowledge"],
+      selectedSamples: [{ id: "note-1" }],
+      evidencePack: {
+        summary: {
+          viralKnowledge: {
+            sufficiency: {
+              isEnough: false,
+              realtimeCount: 1,
+              viralCount: 1,
+              missing: ["缺少图片风格规律"],
+              recommendation: "建议继续搜索。"
+            }
+          }
+        },
+        sampleIds: ["note-1"],
+        insights: [{
+          id: "insight-1",
+          sourceType: "realtime",
+          type: "title",
+          insight: "标题突出场景",
+          sourceSampleIds: ["note-1"],
+          confidence: 0.8,
+          createdAt: "2026-06-01T00:00:00.000Z"
+        }]
+      },
+      creativeBrief: {
+        audience: "周末探店人群",
+        painPoint: "不知道去哪坐",
+        contentAngle: "安静咖啡馆合集",
+        emotionalHook: "松弛感",
+        proofPoints: ["真实体验"],
+        tone: "真实分享",
+        visualMood: "自然光",
+        imageMustHave: ["环境细节"],
+        imageMustAvoid: ["过度滤镜"],
+        platformStyle: "小红书探店",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["insight-1"]
+      },
+      copyDraft: {
+        id: "draft-1",
+        updatedAt: "2026-06-01T00:00:00.000Z",
+        draft: {
+          title: "广州周末咖啡馆",
+          content: "这几家适合安静坐一下午。",
+          tags: ["广州咖啡馆"],
+          structure: ["场景开头"],
+          imagePrompt: "自然光咖啡馆",
+          basedOnEvidenceIds: ["insight-1"]
+        },
+        images: [],
+        visibility: "仅自己可见"
+      }
+    });
+    const phases = buildPostFlowSummary(buildPostReadinessReport(project), { ragCreativeBlocked: true });
+
+    expect(phases[4].action).toBe("retrieve_viral_knowledge");
+    expect(phases[4].actionLabel).toBe("刷新爆款库 RAG");
+  });
 });

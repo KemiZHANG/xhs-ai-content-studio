@@ -408,7 +408,9 @@ export function PostStudioPanel({
     qualityViralCoverage,
     ragCreativeBlocked: viralApplication.readinessGate.status === "caution"
   });
-  const flowSummary = buildPostFlowSummary(readiness);
+  const flowSummary = buildPostFlowSummary(readiness, {
+    ragCreativeBlocked: viralApplication.readinessGate.status === "caution"
+  });
   const statusSummary = buildPostStudioStatusSummary({
     project,
     workspace,

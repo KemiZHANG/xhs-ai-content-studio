@@ -57,7 +57,10 @@ const phaseDefinitions: Array<{
   }
 ];
 
-export function buildPostFlowSummary(readiness: PostReadinessReport | null): PostFlowPhase[] {
+export function buildPostFlowSummary(
+  readiness: PostReadinessReport | null,
+  options: { ragCreativeBlocked?: boolean } = {}
+): PostFlowPhase[] {
   if (!readiness) {
     return phaseDefinitions.map((phase, index) => ({
       id: phase.id,
@@ -76,7 +79,8 @@ export function buildPostFlowSummary(readiness: PostReadinessReport | null): Pos
     const readyCount = items.filter((item) => item?.ready).length;
     const allReady = Boolean(items.length) && readyCount === items.length;
     const blocker = items.find((item) => item?.id === firstBlockerId) ?? items.find((item) => item && !item.ready);
-    const action = blocker?.action ?? items.find((item) => item?.action)?.action;
+    const rawAction = blocker?.action ?? items.find((item) => item?.action)?.action;
+    const action = routeWeakRagAction(rawAction, options.ragCreativeBlocked === true);
     const isActive = !allReady && !activeAssigned && Boolean(blocker || action);
 
     if (isActive) activeAssigned = true;
@@ -92,4 +96,9 @@ export function buildPostFlowSummary(readiness: PostReadinessReport | null): Pos
       actionLabel: action ? labelForPostAction(action) : undefined
     };
   });
+}
+
+function routeWeakRagAction(action: PostAction | undefined, ragCreativeBlocked: boolean): PostAction | undefined {
+  if (!ragCreativeBlocked) return action;
+  return action === "generate_copy" || action === "plan_visuals" ? "retrieve_viral_knowledge" : action;
 }
