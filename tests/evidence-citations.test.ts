@@ -155,6 +155,7 @@ describe("evidence citation report", () => {
 
     expect(report.warnings.join(" ")).toContain("弱参考爆款证据");
     expect(report.warnings.join(" ")).toContain("不能单独支撑发布");
+    expect(report.weakViralEvidenceCount).toBe(1);
     expect(formatted).toContain("弱参考：低质量样本里的泛泛结构");
     expect(formatted).toContain("弱参考爆款证据");
   });

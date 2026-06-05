@@ -23,6 +23,15 @@ describe("evidence citation display", () => {
     expect(summary).toContain("缺 图片方向");
   });
 
+  it("separates weak viral references in the strip summary", () => {
+    const summary = formatCitationStripSummary(makeReport({
+      sourceCounts: { realtime: 1, viral_library: 1, user_input: 0 },
+      weakViralEvidenceCount: 1
+    }));
+
+    expect(summary).toContain("爆款库 1（弱参考 1）");
+  });
+
   it("marks fields with missing or empty citations as warnings", () => {
     const badges = citationFieldBadges(makeReport({
       sections: [
@@ -67,6 +76,7 @@ function makeReport(overrides: Partial<EvidenceCitationReport> = {}): EvidenceCi
     allEvidenceIds: sections.flatMap((item) => item.evidenceIds),
     missingEvidenceIds: sections.flatMap((item) => item.missingEvidenceIds),
     sourceCounts: { realtime: 1, viral_library: 0, user_input: 0 },
+    weakViralEvidenceCount: 0,
     hasRealtimeEvidence: true,
     hasViralEvidence: false,
     hasUserInputEvidence: false,

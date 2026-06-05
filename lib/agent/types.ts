@@ -133,6 +133,7 @@ export type PublishEvidenceCitationSummary = {
   missingEvidenceIds: string[];
   warnings: string[];
   sourceCounts: Record<string, number>;
+  weakViralEvidenceCount?: number;
   fieldCounts: Record<"title" | "content" | "tags" | "imagePrompt", number>;
   viralEvidenceTrace?: Array<{
     caseId: string;

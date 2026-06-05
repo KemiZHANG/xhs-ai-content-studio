@@ -16,6 +16,7 @@ export type EvidenceCitationReport = {
   allEvidenceIds: string[];
   missingEvidenceIds: string[];
   sourceCounts: Record<EvidenceSourceType, number>;
+  weakViralEvidenceCount?: number;
   viralEvidenceTrace?: EvidenceCitationTrace[];
   hasRealtimeEvidence: boolean;
   hasViralEvidence: boolean;
@@ -76,7 +77,11 @@ export function buildEvidenceCitationReport(
   });
   const allEvidenceIds = uniqueIds(sections.flatMap((section) => section.evidenceIds));
   const missingEvidenceIds = uniqueIds(sections.flatMap((section) => section.missingEvidenceIds));
-  const sourceCounts = countSources(sections.flatMap((section) => section.insights));
+  const citedInsights = sections.flatMap((section) => section.insights);
+  const sourceCounts = countSources(citedInsights);
+  const weakViralEvidenceCount = uniqueInsightsById(citedInsights)
+    .filter((insight) => insight.sourceType === "viral_library" && isWeakReferenceInsight(insight))
+    .length;
   const warnings = buildCitationWarnings(sections, missingEvidenceIds, sourceCounts);
   const viralEvidenceTrace = extractViralEvidenceTrace(project.evidencePack.summary, allEvidenceIds);
 
@@ -85,6 +90,7 @@ export function buildEvidenceCitationReport(
     allEvidenceIds,
     missingEvidenceIds,
     sourceCounts,
+    weakViralEvidenceCount,
     viralEvidenceTrace,
     hasRealtimeEvidence: sourceCounts.realtime > 0,
     hasViralEvidence: sourceCounts.viral_library > 0,

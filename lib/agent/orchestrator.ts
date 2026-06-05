@@ -3959,6 +3959,7 @@ function buildAgentPublishEvidenceCitationSummary(
     missingEvidenceIds: report.missingEvidenceIds,
     warnings: report.warnings,
     sourceCounts: report.sourceCounts,
+    weakViralEvidenceCount: report.weakViralEvidenceCount,
     fieldCounts: {
       title: report.sections.find((section) => section.field === "title")?.insights.length ?? 0,
       content: report.sections.find((section) => section.field === "content")?.insights.length ?? 0,

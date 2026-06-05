@@ -21,6 +21,7 @@ export type PublishConfirmationSummaryPlan = {
     missingEvidenceIds?: string[];
     warnings?: string[];
     sourceCounts?: Record<string, number>;
+    weakViralEvidenceCount?: number;
     fieldCounts?: Partial<Record<"title" | "content" | "tags" | "imagePrompt", number>>;
     viralEvidenceTrace?: Array<{
       caseId?: string;
@@ -429,9 +430,10 @@ function formatEvidenceLine({
 
   const sourceCounts = evidenceCitationSummary.sourceCounts ?? {};
   const fieldCounts = evidenceCitationSummary.fieldCounts ?? {};
+  const weakViralEvidenceCount = Number(evidenceCitationSummary.weakViralEvidenceCount ?? 0);
   const sourceLine = [
     `实时 ${Number(sourceCounts.realtime ?? 0)}`,
-    `爆款库 ${Number(sourceCounts.viral_library ?? 0)}`,
+    `爆款库 ${Number(sourceCounts.viral_library ?? 0)}${weakViralEvidenceCount ? `（弱参考 ${weakViralEvidenceCount}）` : ""}`,
     `用户输入 ${Number(sourceCounts.user_input ?? 0)}`
   ].join(" / ");
   const fieldLine = [

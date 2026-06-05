@@ -1,9 +1,10 @@
 import type { EvidenceCitationReport } from "@/lib/post-project/citations";
 
 export function formatCitationStripSummary(report: EvidenceCitationReport): string {
+  const weakViralText = report.weakViralEvidenceCount ? `（弱参考 ${report.weakViralEvidenceCount}）` : "";
   const sourceParts = [
     report.sourceCounts.realtime ? `实时研究 ${report.sourceCounts.realtime}` : "",
-    report.sourceCounts.viral_library ? `爆款库 ${report.sourceCounts.viral_library}` : "",
+    report.sourceCounts.viral_library ? `爆款库 ${report.sourceCounts.viral_library}${weakViralText}` : "",
     report.sourceCounts.user_input ? `用户输入 ${report.sourceCounts.user_input}` : "",
   ].filter(Boolean);
   const fieldReady = report.sections.filter((section) => section.insights.length).length;
