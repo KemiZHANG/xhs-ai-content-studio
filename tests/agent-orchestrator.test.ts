@@ -2435,9 +2435,11 @@ describe("agent orchestrator", () => {
 
     expect(result.intent).toBe("retrieve_viral_knowledge");
     expect(result.answer).toContain("RAG 证据还不够");
+    expect(result.answer).toContain("可用爆款 0 条");
     expect(result.answer).toContain("缺口");
     const viralCard = result.cards.find((card) => card.id === "card-viral-knowledge");
     expect(viralCard?.summary).toContain("RAG 证据还不够");
+    expect(viralCard?.summary).toContain("可用爆款 0 条");
     expect(viralCard?.data).toMatchObject({
       sufficiency: expect.objectContaining({
         isEnough: false,

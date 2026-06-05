@@ -1969,14 +1969,15 @@ function prioritizeRagRefreshActions(actions: PostAction[]): PostAction[] {
 function formatViralKnowledgeCardSummary(viralKnowledge: Partial<ViralKnowledgePack> & Record<string, unknown>): string {
   const resultCount = Array.isArray(viralKnowledge.results) ? viralKnowledge.results.length : 0;
   const sufficiency = isRecord(viralKnowledge.sufficiency) ? viralKnowledge.sufficiency as Partial<RagSufficiency> : null;
+  const evidenceLine = formatRagEvidenceCounts(sufficiency, resultCount);
   if (sufficiency && sufficiency.isEnough === false) {
     const missing = Array.isArray(sufficiency.missing) && sufficiency.missing.length
       ? `缺口：${sufficiency.missing.join("、")}。`
       : "";
-    return `RAG 证据还不够，已检索 ${resultCount} 条历史规律。${sufficiency.recommendation ?? "建议补充实时研究或保存更多优秀样本。"}${missing}`;
+    return `RAG 证据还不够，${evidenceLine}。${sufficiency.recommendation ?? "建议补充实时研究或保存更多优秀样本。"}${missing}`;
   }
   if (sufficiency?.isEnough) {
-    return `RAG 证据充足：实时 ${sufficiency.realtimeCount ?? 0} 条，爆款库 ${sufficiency.viralCount ?? resultCount} 条。`;
+    return `RAG 证据充足：${evidenceLine}。`;
   }
   return `已检索 ${resultCount} 条历史爆款规律，用于补充实时证据。`;
 }
@@ -1989,10 +1990,22 @@ function formatRagSufficiencyForAnswer(viralKnowledge: (Partial<ViralKnowledgePa
   const missing = Array.isArray(sufficiency.missing) && sufficiency.missing.length
     ? `缺口：${sufficiency.missing.join("、")}。`
     : "";
+  const evidenceLine = formatRagEvidenceCounts(sufficiency);
   if (sufficiency.isEnough === false) {
-    return `RAG 证据还不够：${sufficiency.recommendation ?? "建议补充实时研究或保存更多优秀样本。"}${missing}`;
+    return `RAG 证据还不够：${evidenceLine}。${sufficiency.recommendation ?? "建议补充实时研究或保存更多优秀样本。"}${missing}`;
   }
-  return `RAG 证据充足：实时 ${sufficiency.realtimeCount ?? 0} 条，爆款库 ${sufficiency.viralCount ?? 0} 条。`;
+  return `RAG 证据充足：${evidenceLine}。`;
+}
+
+function formatRagEvidenceCounts(sufficiency: Partial<RagSufficiency> | null, fallbackViralCount = 0): string {
+  const realtimeCount = sufficiency?.realtimeCount ?? 0;
+  const viralCount = sufficiency?.viralCount ?? fallbackViralCount;
+  const weakCount = sufficiency?.weakViralCount ?? 0;
+  return [
+    `实时 ${realtimeCount} 条`,
+    `可用爆款 ${viralCount} 条`,
+    weakCount ? `弱参考 ${weakCount} 条` : ""
+  ].filter(Boolean).join("，");
 }
 
 function extractViralStrategyReport(summary: unknown): {

@@ -166,6 +166,23 @@ describe("agent tool registry", () => {
     expect(forced.display?.title).toContain("强制");
     expect(forced.display?.summary).toContain("质量分");
     expect(forced.display?.items?.length).toBeGreaterThan(0);
+
+    const weakRetrieval = await registry.call("knowledge.retrieveViralPatterns", {
+      query: "Weak topic",
+      topic: "Weak topic",
+      category: "test",
+      realtimeEvidenceCount: 4
+    }) as {
+      ok: boolean;
+      data: { sufficiency: { viralCount: number; weakViralCount?: number } };
+      display?: { summary?: string };
+    };
+
+    expect(weakRetrieval.ok).toBe(true);
+    expect(weakRetrieval.data.sufficiency.viralCount).toBe(0);
+    expect(weakRetrieval.data.sufficiency.weakViralCount).toBe(1);
+    expect(weakRetrieval.display?.summary).toContain("可用 0 条");
+    expect(weakRetrieval.display?.summary).toContain("弱参考 1 条");
   });
 
   it("executes the viral-knowledge retrieval tool as a traceable RAG pack", async () => {
