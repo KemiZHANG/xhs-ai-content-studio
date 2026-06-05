@@ -1418,8 +1418,11 @@ describe("post project", () => {
     expect(first.project.creativeBrief?.basedOnEvidenceIds).toEqual(
       expect.arrayContaining(first.addedInsightIds.slice(0, 1))
     );
+    const firstSummary = first.project.evidencePack.summary as { viralKnowledge?: { insights?: unknown[] } };
+    const duplicateSummary = duplicate.project.evidencePack.summary as { viralKnowledge?: { insights?: unknown[] } };
     expect(duplicate.addedInsightIds).toEqual([]);
     expect(duplicate.addedSampleIds).toEqual([]);
+    expect(duplicateSummary.viralKnowledge?.insights?.length).toBe(firstSummary.viralKnowledge?.insights?.length);
   });
 
   it("keeps saved viral sufficiency blocked when realtime evidence is missing", async () => {

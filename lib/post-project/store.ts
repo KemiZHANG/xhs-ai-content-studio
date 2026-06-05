@@ -511,6 +511,7 @@ function mergeSavedViralCasesSummary(summary: unknown, cases: ViralCase[], insig
       reasons: ["手动保存到爆款库"],
       matchedQueries: ["manual-save"]
     }));
+  const savedCases = savedResults.map((result) => result.case);
   return {
     ...existingSummary,
     viralKnowledge: {
@@ -518,7 +519,7 @@ function mergeSavedViralCasesSummary(summary: unknown, cases: ViralCase[], insig
       results: [...savedResults, ...existingResults].slice(0, 20),
       insights: [
         ...(Array.isArray(existingViral.insights) ? existingViral.insights : []),
-        ...viralCasesToEvidenceInsights(cases)
+        ...viralCasesToEvidenceInsights(savedCases)
       ].slice(0, 80),
       sufficiency: evaluateSavedViralSufficiency({
         insights,
