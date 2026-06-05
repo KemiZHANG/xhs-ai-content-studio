@@ -41,6 +41,7 @@ import { buildPageJobsSnapshotPlan } from "@/app/state/page-jobs";
 import { shouldAutoOpenLatestConversation } from "@/app/state/chat-history-selection";
 import { noticeForProjectReset, resetWorkflowFormForNewProject } from "@/app/state/project-reset";
 import { formatViralSaveError } from "@/app/state/viral-save";
+import { mergeViralRagPreview, type ViralRagPack } from "@/app/state/viral-rag-refresh";
 import { isJobForWorkspace } from "@/lib/jobs/context";
 import { buildPublishVersionSnapshot } from "@/lib/post-project/versioning";
 
@@ -353,6 +354,34 @@ export default function Home() {
     const params = buildViralKnowledgeSearchParams(filters, 12);
     const data = (await clientApi(`/api/viral-knowledge?${params.toString()}`)) as { cases: ViralCase[] };
     setViralCases(data.cases ?? []);
+    return data.cases ?? [];
+  }
+
+  async function refreshViralRagPreview() {
+    setBusy("viral");
+    try {
+      const data = await clientApi<{ viralKnowledge: ViralRagPack }>("/api/viral-rag");
+      const next = mergeViralRagPreview({
+        workflowResult,
+        researchResult,
+        viralKnowledge: data.viralKnowledge
+      });
+      setWorkflowResult(next.workflowResult);
+      setResearchResult(next.researchResult);
+      const libraryCases = await loadViralKnowledge();
+      setViralCases(uniqueById([
+        ...data.viralKnowledge.results.map((result) => result.case),
+        ...libraryCases
+      ]).slice(0, 12));
+      focusPostStudioTab("viral");
+      setNotice(data.viralKnowledge.results.length
+        ? `已刷新爆款库 RAG：命中 ${data.viralKnowledge.results.length} 条样本，提炼 ${data.viralKnowledge.insights.length} 条可复用规律。`
+        : "已刷新爆款库 RAG：当前没有命中可用样本，可以先保存高质量研究样本到爆款库。");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "刷新爆款库 RAG 失败。");
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function loadCreatorMemory() {
@@ -654,9 +683,7 @@ export default function Home() {
         await submitChatMessage("请基于当前研究证据和爆款库规律，生成/刷新这个 PostProject 的 CreativeBrief，并说明参考了哪些证据。", false);
         return;
       case "retrieve_viral_knowledge":
-        await submitChatMessage("请刷新当前项目的爆款库 RAG 证据，不要重新搜索小红书。请把可复用的标题钩子、正文结构、标签组合、图片风格和评论关注点合入 PostProject evidencePack。", false);
-        await loadViralKnowledge();
-        await loadPostProject();
+        await refreshViralRagPreview();
         return;
       case "generate_copy":
         await submitChatMessage("请基于当前 PostProject 的证据、爆款库规律和 CreativeBrief 生成一篇原创小红书图文笔记，不要重新搜索，并记录引用的证据 ID。", false);
