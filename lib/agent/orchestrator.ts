@@ -1556,8 +1556,11 @@ function buildCardsFromTurn(
   if (projectInsights.length || workspace.evidenceSummary || workspace.selectedSamples.length) {
     const evidenceSummary = postProject?.evidencePack.summary ?? workspace.evidenceSummary;
     const viralKnowledge = extractViralKnowledgeSummary(evidenceSummary);
+    const weakViralEvidenceLine = sourceCounts.weakViralEvidenceCount
+      ? `（弱参考 ${sourceCounts.weakViralEvidenceCount}）`
+      : "";
     const sourceSummary = projectInsights.length
-      ? `实时 ${sourceCounts.realtime} / 爆款库 ${sourceCounts.viral_library} / 用户输入 ${sourceCounts.user_input}`
+      ? `实时 ${sourceCounts.realtime} / 爆款库 ${sourceCounts.viral_library}${weakViralEvidenceLine} / 用户输入 ${sourceCounts.user_input}`
       : `旧工作区样本 ${workspace.selectedSamples.length}`;
     cards.push({
       id: "card-evidence-summary",
@@ -1569,6 +1572,7 @@ function buildCardsFromTurn(
         sampleIds: postProject?.evidencePack.sampleIds ?? [],
         insightCount: projectInsights.length,
         sourceCounts,
+        weakViralEvidenceCount: sourceCounts.weakViralEvidenceCount,
         keyInsights: projectInsights.slice(0, 5)
       }
     });
@@ -1926,14 +1930,19 @@ function buildPublishCheckCard(
   };
 }
 
-function countEvidenceSources(insights: PostProject["evidencePack"]["insights"]): Record<"realtime" | "viral_library" | "user_input", number> {
+function countEvidenceSources(
+  insights: PostProject["evidencePack"]["insights"]
+): Record<"realtime" | "viral_library" | "user_input", number> & { weakViralEvidenceCount: number } {
   return insights.reduce(
     (counts, insight) => {
       const source = insight.sourceType ?? "realtime";
       counts[source] += 1;
+      if (source === "viral_library" && insight.insight.trim().startsWith("弱参考：")) {
+        counts.weakViralEvidenceCount += 1;
+      }
       return counts;
     },
-    { realtime: 0, viral_library: 0, user_input: 0 }
+    { realtime: 0, viral_library: 0, user_input: 0, weakViralEvidenceCount: 0 }
   );
 }
 

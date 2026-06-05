@@ -1317,6 +1317,14 @@ describe("agent orchestrator", () => {
           sourceSampleIds: ["viral-case-cover"],
           confidence: 0.86,
           createdAt: "2026-05-30T00:00:00.000Z"
+        }, {
+          id: "viral-insight-weak",
+          sourceType: "viral_library",
+          type: "copy",
+          insight: "弱参考：低质量样本里的泛泛结构",
+          sourceSampleIds: ["viral-case-weak"],
+          confidence: 0.42,
+          createdAt: "2026-05-30T00:00:00.000Z"
         }]
       },
       focusedEvidenceIds: ["viral-insight-cover"],
@@ -1368,12 +1376,13 @@ describe("agent orchestrator", () => {
       })
     });
     expect(result.cards.find((card) => card.type === "evidence_summary")).toMatchObject({
-      summary: expect.stringContaining("可追溯结论"),
+      summary: expect.stringContaining("弱参考 1"),
       data: expect.objectContaining({
-        insightCount: 2,
+        insightCount: 3,
+        weakViralEvidenceCount: 1,
         sourceCounts: expect.objectContaining({
           realtime: 1,
-          viral_library: 1
+          viral_library: 2
         }),
         keyInsights: expect.arrayContaining([
           expect.objectContaining({ id: "insight-visual" }),
