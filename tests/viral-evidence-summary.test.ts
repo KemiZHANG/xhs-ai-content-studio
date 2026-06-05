@@ -233,4 +233,39 @@ describe("viral evidence summary", () => {
     expect(summary.sourceLine).toContain("可检索历史样本 1 条");
     expect(summary.missingLine).toBe("请保存更多高收藏样本");
   });
+
+  it("counts image prompt and generated image citations as visual viral coverage", () => {
+    const project = {
+      ...projectWithViralEvidence(),
+      visualDirection: undefined,
+      imagePrompts: [{
+        id: "prompt-1",
+        label: "自然光封面",
+        createdAt: "2026-05-31T00:00:00.000Z",
+        value: { prompt: "自然光桌面近景，保留真实探店氛围" },
+        basedOnEvidenceIds: ["viral-insight-visual"]
+      }],
+      generatedImages: [{
+        id: "image-1",
+        assetId: "asset-1",
+        promptVersionId: "prompt-1",
+        basedOnEvidenceIds: ["viral-insight-visual"]
+      }]
+    };
+
+    const summary = buildViralEvidenceSummary({
+      project,
+      viralCases: [baseViralCase],
+      viralKnowledge: null
+    });
+
+    expect(summary.coverage.find((item) => item.id === "visual")).toMatchObject({
+      status: "cited",
+      evidenceIds: ["viral-insight-visual"],
+      line: "已引用 1/1 条"
+    });
+    expect(summary.keyInsights.find((item) => item.id === "viral-insight-visual")).toMatchObject({
+      isCited: true
+    });
+  });
 });

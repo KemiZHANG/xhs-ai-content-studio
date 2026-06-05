@@ -56,6 +56,8 @@ export function buildViralEvidenceSummary({
     ...(project?.creativeBrief?.basedOnEvidenceIds ?? []),
     ...(project?.copyDraft?.draft.basedOnEvidenceIds ?? []),
     ...(project?.visualDirection?.basedOnEvidenceIds ?? []),
+    ...(project?.imagePrompts ?? []).flatMap((prompt) => prompt.basedOnEvidenceIds ?? []),
+    ...(project?.generatedImages ?? []).flatMap((image) => image.basedOnEvidenceIds ?? []),
     ...(project?.finalPost?.basedOnEvidenceIds ?? [])
   ]);
   const sourceCaseById = new Map(viralCases.map((item) => [item.id, item]));
