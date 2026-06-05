@@ -498,6 +498,7 @@ function mergeSavedViralCasesSummary(summary: unknown, cases: ViralCase[], insig
   const existingSummary = isRecord(summary) ? summary : {};
   const existingViral = isRecord(existingSummary.viralKnowledge) ? existingSummary.viralKnowledge : {};
   const existingResults = Array.isArray(existingViral.results) ? existingViral.results : [];
+  const existingTrace = Array.isArray(existingViral.evidenceTrace) ? existingViral.evidenceTrace : [];
   const existingIds = new Set(
     existingResults
       .map((item) => (isRecord(item) && isRecord(item.case) && typeof item.case.id === "string" ? item.case.id : undefined))
@@ -512,6 +513,12 @@ function mergeSavedViralCasesSummary(summary: unknown, cases: ViralCase[], insig
       matchedQueries: ["manual-save"]
     }));
   const savedCases = savedResults.map((result) => result.case);
+  const savedInsights = viralCasesToEvidenceInsights(savedCases);
+  const existingTraceIds = new Set(
+    existingTrace
+      .map((item) => (isRecord(item) && typeof item.caseId === "string" ? item.caseId : undefined))
+      .filter((id): id is string => Boolean(id))
+  );
   return {
     ...existingSummary,
     viralKnowledge: {
@@ -519,8 +526,12 @@ function mergeSavedViralCasesSummary(summary: unknown, cases: ViralCase[], insig
       results: [...savedResults, ...existingResults].slice(0, 20),
       insights: [
         ...(Array.isArray(existingViral.insights) ? existingViral.insights : []),
-        ...viralCasesToEvidenceInsights(savedCases)
+        ...savedInsights
       ].slice(0, 80),
+      evidenceTrace: [
+        ...buildSavedViralEvidenceTrace(savedResults, savedInsights, existingTraceIds),
+        ...existingTrace
+      ].slice(0, 20),
       sufficiency: evaluateSavedViralSufficiency({
         insights,
         viralCount: [...savedResults, ...existingResults].length,
@@ -528,6 +539,26 @@ function mergeSavedViralCasesSummary(summary: unknown, cases: ViralCase[], insig
       })
     }
   };
+}
+
+function buildSavedViralEvidenceTrace(
+  results: Array<{ case: ViralCase; score: number; reasons: string[]; matchedQueries: string[] }>,
+  insights: EvidenceInsight[],
+  existingTraceIds: Set<string>
+): unknown[] {
+  return results
+    .filter((result) => !existingTraceIds.has(result.case.id))
+    .map((result) => ({
+      caseId: result.case.id,
+      sourceSampleId: result.case.sourceSampleId,
+      sourceUrl: result.case.sourceUrl,
+      score: result.score,
+      matchedQueries: uniqueIds(result.matchedQueries),
+      reasons: uniqueIds(result.reasons).slice(0, 8),
+      evidenceInsightIds: insights
+        .filter((insight) => insight.sourceSampleIds.includes(result.case.id))
+        .map((insight) => insight.id)
+    }));
 }
 
 function evaluateSavedViralSufficiency({

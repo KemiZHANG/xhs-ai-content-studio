@@ -1418,11 +1418,39 @@ describe("post project", () => {
     expect(first.project.creativeBrief?.basedOnEvidenceIds).toEqual(
       expect.arrayContaining(first.addedInsightIds.slice(0, 1))
     );
-    const firstSummary = first.project.evidencePack.summary as { viralKnowledge?: { insights?: unknown[] } };
-    const duplicateSummary = duplicate.project.evidencePack.summary as { viralKnowledge?: { insights?: unknown[] } };
+    const firstSummary = first.project.evidencePack.summary as {
+      viralKnowledge?: {
+        insights?: unknown[];
+        evidenceTrace?: Array<{
+          caseId?: string;
+          sourceSampleId?: string;
+          sourceUrl?: string;
+          matchedQueries?: string[];
+          reasons?: string[];
+          evidenceInsightIds?: string[];
+        }>;
+      };
+    };
+    const duplicateSummary = duplicate.project.evidencePack.summary as {
+      viralKnowledge?: {
+        insights?: unknown[];
+        evidenceTrace?: unknown[];
+      };
+    };
+    expect(firstSummary.viralKnowledge?.evidenceTrace?.[0]).toMatchObject({
+      caseId: viralCase.id,
+      sourceSampleId: "note-viral-summary",
+      sourceUrl: "https://www.xiaohongshu.com/explore/note-viral-summary",
+      matchedQueries: ["manual-save"]
+    });
+    expect(firstSummary.viralKnowledge?.evidenceTrace?.[0].reasons?.length).toBeGreaterThan(0);
+    expect(firstSummary.viralKnowledge?.evidenceTrace?.[0].evidenceInsightIds).toEqual(
+      expect.arrayContaining(first.addedInsightIds.slice(0, 1))
+    );
     expect(duplicate.addedInsightIds).toEqual([]);
     expect(duplicate.addedSampleIds).toEqual([]);
     expect(duplicateSummary.viralKnowledge?.insights?.length).toBe(firstSummary.viralKnowledge?.insights?.length);
+    expect(duplicateSummary.viralKnowledge?.evidenceTrace?.length).toBe(firstSummary.viralKnowledge?.evidenceTrace?.length);
   });
 
   it("keeps saved viral sufficiency blocked when realtime evidence is missing", async () => {
