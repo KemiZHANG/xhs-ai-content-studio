@@ -430,6 +430,12 @@ function AgentCardInlineDetails({
                 {source.reasons.length ? ` · ${source.reasons.slice(0, 2).join(" / ")}` : ""}
                 {source.scoreBreakdown ? ` · 评分拆解 ${source.scoreBreakdown}` : ""}
                 {source.evidenceInsightIds.length ? ` · 证据 ${source.evidenceInsightIds.slice(0, 3).join(" / ")}` : ""}
+                {source.sourceUrl ? (
+                  <>
+                    {" · "}
+                    <a href={source.sourceUrl} target="_blank" rel="noreferrer">查看来源</a>
+                  </>
+                ) : null}
               </p>
             ))}
           </div>
@@ -497,6 +503,7 @@ function extractViralKnowledgeDisplay(card: AgentResponseCard): {
     reasons: string[];
     evidenceInsightIds: string[];
     scoreBreakdown: string;
+    sourceUrl: string;
   }>;
   originalityRules: string[];
   nextActions: Array<{ label: string; action: string; disabled?: boolean }>;
@@ -522,7 +529,8 @@ function extractViralKnowledgeDisplay(card: AgentResponseCard): {
           matchedQueries: stringListFromRecordValue(item.matchedQueries),
           reasons: stringListFromRecordValue(item.reasons),
           evidenceInsightIds: stringListFromRecordValue(item.evidenceInsightIds),
-          scoreBreakdown: resultBreakdownsByCaseId.get(caseId) ?? ""
+          scoreBreakdown: resultBreakdownsByCaseId.get(caseId) ?? "",
+          sourceUrl: typeof item.sourceUrl === "string" ? item.sourceUrl : ""
         }];
       })
     : [];
@@ -535,7 +543,8 @@ function extractViralKnowledgeDisplay(card: AgentResponseCard): {
           matchedQueries: stringListFromRecordValue(item.matchedQueries),
           reasons: stringListFromRecordValue(item.reasons),
           evidenceInsightIds: [],
-          scoreBreakdown: formatViralScoreBreakdown(item.scoreBreakdown)
+          scoreBreakdown: formatViralScoreBreakdown(item.scoreBreakdown),
+          sourceUrl: typeof item.case.sourceUrl === "string" ? item.case.sourceUrl : ""
         }];
       });
   const sources = uniqueViralSources([...traceSources, ...resultSources]).slice(0, 2);
@@ -559,6 +568,7 @@ function uniqueViralSources(sources: Array<{
   reasons: string[];
   evidenceInsightIds: string[];
   scoreBreakdown: string;
+  sourceUrl: string;
 }>): Array<{
   caseId: string;
   score: string;
@@ -566,6 +576,7 @@ function uniqueViralSources(sources: Array<{
   reasons: string[];
   evidenceInsightIds: string[];
   scoreBreakdown: string;
+  sourceUrl: string;
 }> {
   const seen = new Set<string>();
   const result: Array<{
@@ -575,6 +586,7 @@ function uniqueViralSources(sources: Array<{
     reasons: string[];
     evidenceInsightIds: string[];
     scoreBreakdown: string;
+    sourceUrl: string;
   }> = [];
   for (const source of sources) {
     if (seen.has(source.caseId)) continue;

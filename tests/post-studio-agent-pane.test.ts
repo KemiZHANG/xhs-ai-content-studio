@@ -235,6 +235,8 @@ describe("post studio agent pane", () => {
     expect(html).toContain("RAG-Fusion query: coffee title hook");
     expect(html).toContain("评分拆解 语义 0.28 / 关键词 0.14 / 互动 0.11 / 质量 0.07 / 筛选 0.04");
     expect(html).toContain("证据 viral-insight-hook / viral-insight-visual");
+    expect(html).toContain("查看来源");
+    expect(html).toContain("https://example.com/note");
     expect(html).toContain("原创边界");
     expect(html).toContain("只学习标题钩子和结构，不复制原文。");
     expect(html).toContain("建议下一步");
