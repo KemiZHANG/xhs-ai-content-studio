@@ -77,6 +77,28 @@ describe("viral library health", () => {
     expect(health.recommendations.join(" ")).toContain("配置文本模型");
   });
 
+  it("separates forced weak references from usable viral samples", () => {
+    const health = buildViralLibraryHealth([
+      makeCase("usable"),
+      makeCase("forced-weak", {
+        quality: {
+          score: 0.78,
+          structuredFieldCount: 8,
+          reusableRuleCount: 5,
+          safetyRuleCount: 4,
+          warnings: ["低质量样本被人工强制入库：质量分 0/100，正文过短"]
+        }
+      })
+    ]);
+
+    expect(health.status).toBe("warn");
+    expect(health.stats.find((item) => item.label === "样本")?.value).toBe("2");
+    expect(health.stats.find((item) => item.label === "可用样本")?.value).toBe("1");
+    expect(health.stats.find((item) => item.label === "弱参考")?.value).toBe("1");
+    expect(health.warnings.join(" ")).toContain("弱参考");
+    expect(health.recommendations.join(" ")).toContain("替换弱参考样本");
+  });
+
   it("marks a diverse model-extracted library as ready", () => {
     const cases = Array.from({ length: 8 }, (_, index) => makeCase(`case-${index}`));
     const health = buildViralLibraryHealth(cases);
