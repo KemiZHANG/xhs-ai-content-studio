@@ -435,6 +435,7 @@ function AgentCardInlineDetails({
               <p key={source.caseId}>
                 <strong>{source.caseId}</strong>
                 {source.score ? ` · ${source.score}` : ""}
+                {source.sourceSampleId ? ` · source: ${source.sourceSampleId}` : ""}
                 {source.matchedQueries.length ? ` · ${source.matchedQueries.slice(0, 2).join(" / ")}` : ""}
                 {source.reasons.length ? ` · ${source.reasons.slice(0, 2).join(" / ")}` : ""}
                 {source.scoreBreakdown ? ` · 评分拆解 ${source.scoreBreakdown}` : ""}
@@ -507,6 +508,7 @@ function AgentCardInlineDetails({
 function extractViralKnowledgeDisplay(card: AgentResponseCard): {
   sources: Array<{
     caseId: string;
+    sourceSampleId: string;
     score: string;
     matchedQueries: string[];
     reasons: string[];
@@ -534,6 +536,7 @@ function extractViralKnowledgeDisplay(card: AgentResponseCard): {
         if (!caseId) return [];
         return [{
           caseId,
+          sourceSampleId: typeof item.sourceSampleId === "string" ? item.sourceSampleId : "",
           score: typeof item.score === "number" ? item.score.toFixed(2) : "",
           matchedQueries: stringListFromRecordValue(item.matchedQueries),
           reasons: stringListFromRecordValue(item.reasons),
@@ -548,6 +551,7 @@ function extractViralKnowledgeDisplay(card: AgentResponseCard): {
         if (!isRecordValue(item) || !isRecordValue(item.case) || typeof item.case.id !== "string") return [];
         return [{
           caseId: item.case.id,
+          sourceSampleId: typeof item.case.sourceSampleId === "string" ? item.case.sourceSampleId : "",
           score: typeof item.score === "number" ? item.score.toFixed(2) : "",
           matchedQueries: stringListFromRecordValue(item.matchedQueries),
           reasons: stringListFromRecordValue(item.reasons),
@@ -572,6 +576,7 @@ function extractViralKnowledgeDisplay(card: AgentResponseCard): {
 
 function uniqueViralSources(sources: Array<{
   caseId: string;
+  sourceSampleId: string;
   score: string;
   matchedQueries: string[];
   reasons: string[];
@@ -580,6 +585,7 @@ function uniqueViralSources(sources: Array<{
   sourceUrl: string;
 }>): Array<{
   caseId: string;
+  sourceSampleId: string;
   score: string;
   matchedQueries: string[];
   reasons: string[];
@@ -589,6 +595,7 @@ function uniqueViralSources(sources: Array<{
 }> {
   const result: Array<{
     caseId: string;
+    sourceSampleId: string;
     score: string;
     matchedQueries: string[];
     reasons: string[];
@@ -602,6 +609,7 @@ function uniqueViralSources(sources: Array<{
       const existing = result[existingIndex];
       result[existingIndex] = {
         caseId: existing.caseId,
+        sourceSampleId: existing.sourceSampleId || source.sourceSampleId,
         score: existing.score || source.score,
         matchedQueries: existing.matchedQueries.length ? existing.matchedQueries : source.matchedQueries,
         reasons: existing.reasons.length ? existing.reasons : source.reasons,

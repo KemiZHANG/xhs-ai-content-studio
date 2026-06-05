@@ -280,6 +280,7 @@ describe("post studio agent pane", () => {
 
     expect(html).toContain("命中来源");
     expect(html).toContain("viral-case-1");
+    expect(html).toContain("source: sample-1");
     expect(html).toContain("0.82");
     expect(html).toContain("coffee title hook");
     expect(html).toContain("RAG-Fusion query: coffee title hook");
