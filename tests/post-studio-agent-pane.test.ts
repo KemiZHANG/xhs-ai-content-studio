@@ -172,6 +172,36 @@ describe("post studio agent pane", () => {
     expect(html).toContain("先做研究");
     expect(html).not.toMatch(/[�]|鐖|鍥剧|鏂囨|鍙戝|缁х|璇佹|鎼滅/);
   });
+
+  it("renders agent intent badges with readable labels for recovered projects", () => {
+    const recoverMessage = {
+      role: "assistant",
+      content: "已恢复当前 PostProject，可以继续从失败步骤重试。",
+      intent: "recover_project",
+      intentConfidence: 0.88,
+      needsUserInput: false,
+      stage: "failed"
+    } as unknown as ChatMessage;
+
+    const html = renderToStaticMarkup(createElement(PostStudioAgentPane, {
+      evidenceCount: 1,
+      researchForm,
+      messages: [recoverMessage],
+      runningJob: null,
+      chatInput: "",
+      busy: false,
+      onRunResearch: () => undefined,
+      onResearchFormChange: () => undefined,
+      onChatInput: () => undefined,
+      onChatSubmit: () => undefined,
+      onQuickAction: () => undefined
+    }));
+
+    expect(html).toContain("恢复项目 · 88% · 失败");
+    expect(html).not.toContain("recover_project");
+    expect(html).not.toMatch(/[�]|鐖|鍥剧|鏂囨|鍙戝|缁х|璇佹|鎼滅/);
+  });
+
   it("renders viral RAG source trace and originality boundaries inside agent cards", () => {
     const viralMessage = {
       role: "assistant",

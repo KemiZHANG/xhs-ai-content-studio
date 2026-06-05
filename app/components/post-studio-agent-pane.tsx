@@ -661,7 +661,7 @@ function AgentIntentBadge({
   const confidenceLabel = confidence === undefined ? "" : `${Math.round(confidence * 100)}%`;
   return (
     <span className={needsUserInput ? "agentIntentBadge ask" : "agentIntentBadge"}>
-      {needsUserInput ? "需补充" : intent || "Agent"}
+      {needsUserInput ? "需补充" : labelForAgentIntent(intent)}
       {confidenceLabel ? ` · ${confidenceLabel}` : ""}
       {stage ? ` · ${labelForStage(stage)}` : ""}
     </span>
@@ -716,6 +716,33 @@ function labelForStage(stage: PostProject["currentStage"]): string {
     failed: "失败"
   };
   return labels[stage];
+}
+
+function labelForAgentIntent(intent?: string): string {
+  if (!intent) return "Agent";
+  const labels: Record<string, string> = {
+    start_project: "开始项目",
+    research_to_draft: "研究到文案",
+    research_only: "仅研究",
+    create_creative_brief: "生成简报",
+    retrieve_viral_knowledge: "爆款库 RAG",
+    save_viral_knowledge: "保存爆款规律",
+    revise_draft: "修改文案",
+    confirm_visual_direction: "确认图片方向",
+    generate_images: "生成图片",
+    generate_cards: "生成卡片",
+    select_images: "选择图片",
+    assemble_post: "组装帖子",
+    quality_check: "发布检查",
+    recover_project: "恢复项目",
+    prepare_publish: "准备发布",
+    schedule_publish: "定时发布",
+    review_publish_confirmation: "确认发布",
+    cancel_publish_confirmation: "取消发布",
+    ask: "追问信息",
+    answer: "直接回答"
+  };
+  return labels[intent] ?? intent;
 }
 
 function labelForAgentCard(type: string): string {
