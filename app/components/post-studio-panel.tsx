@@ -417,7 +417,8 @@ export function PostStudioPanel({
     evidenceCount: samples.length,
     hasDraft: Boolean(publishDraft.title || project?.copyDraft || project?.finalPost),
     selectedImageCount: selectedAssets.length,
-    canvasDirty
+    canvasDirty,
+    ragCreativeBlocked: viralApplication.readinessGate.status === "caution"
   });
   const publishStatusLabel = staleCanvasPublishPlan
     ? "需重新确认"

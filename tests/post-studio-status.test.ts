@@ -127,6 +127,43 @@ describe("post studio status summary", () => {
     expect(summary.stageLine).toContain("证据已就绪");
   });
 
+  it("routes the header status recommendation back to viral RAG when creative evidence is weak", () => {
+    const summary = buildPostStudioStatusSummary({
+      project: createBlankPostProject({
+        topic: "广州咖啡馆",
+        currentStage: "brief_ready",
+        allowedActions: ["generate_copy", "plan_visuals", "retrieve_viral_knowledge"],
+        creativeBrief: {
+          audience: "周末探店人群",
+          painPoint: "怕踩雷",
+          contentAngle: "真实避坑探店",
+          emotionalHook: "先给结论",
+          proofPoints: ["排队", "人均"],
+          tone: "真实分享",
+          visualMood: "自然光",
+          imageMustHave: ["店内空间"],
+          imageMustAvoid: ["虚假 logo"],
+          platformStyle: "小红书图文",
+          tabooWords: [],
+          complianceNotes: [],
+          basedOnEvidenceIds: ["viral-insight-1"]
+        }
+      }),
+      workspace: null,
+      settings: defaultSettings,
+      health: null,
+      evidenceCount: 1,
+      hasDraft: false,
+      selectedImageCount: 0,
+      canvasDirty: false,
+      ragCreativeBlocked: true
+    });
+
+    expect(summary.primaryAction).toBe("retrieve_viral_knowledge");
+    expect(summary.primaryActionLabel).toBe("刷新爆款库 RAG");
+    expect(summary.detail).toContain("爆款库 RAG 证据还不足");
+  });
+
   it("exposes active account metadata for the Post Studio header controls", () => {
     const settings = {
       ...defaultSettings,

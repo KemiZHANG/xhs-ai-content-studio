@@ -47,7 +47,8 @@ export function buildPostStudioStatusSummary({
   evidenceCount,
   hasDraft,
   selectedImageCount,
-  canvasDirty
+  canvasDirty,
+  ragCreativeBlocked = false
 }: {
   project: PostProject | null;
   workspace: WorkspaceState | null;
@@ -57,6 +58,7 @@ export function buildPostStudioStatusSummary({
   hasDraft: boolean;
   selectedImageCount: number;
   canvasDirty: boolean;
+  ragCreativeBlocked?: boolean;
 }): PostStudioStatusSummary {
   const activeAccount = settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
   const accountReady = isHealthForActiveAccount(health, settings);
@@ -133,15 +135,19 @@ export function buildPostStudioStatusSummary({
   ].filter(Boolean).slice(0, 3);
   const canPublish = readiness.canRequestPublish && accountReady && !canvasDirty && versionStatus.qualityGateFresh;
   const riskLevel = canPublish ? "ok" : blockers.length ? "warn" : "neutral";
+  const primaryAction = ragCreativeBlocked ? "retrieve_viral_knowledge" : readiness.nextAction;
+  const primaryActionLabel = primaryAction ? labelForPostAction(primaryAction) : undefined;
 
   return {
     headline: canPublish
       ? "这篇帖子已经接近可发布"
-      : readiness.nextAction
+      : primaryAction
         ? "下一步已经明确"
         : "继续完善当前帖子项目",
     detail: canPublish
       ? "文案、图片、证据和 Quality Gate 已对齐。最后仍需要人工确认账号、可见范围和发布时间。"
+      : ragCreativeBlocked
+        ? "爆款库 RAG 证据还不足，先补强证据再进入文案或图片方向创作。"
       : blockers[0] ?? readiness.summary,
     accountLine,
     accountReady,
@@ -154,8 +160,8 @@ export function buildPostStudioStatusSummary({
     riskLevel,
     progressPercent: readiness.progress,
     stageLine: `${labelForPostStage(project.currentStage)} · 完成度 ${readiness.progress}%`,
-    primaryAction: readiness.nextAction,
-    primaryActionLabel: readiness.nextAction ? labelForPostAction(readiness.nextAction) : undefined,
+    primaryAction,
+    primaryActionLabel,
     blockers,
     chips: [
       chip("研究", evidenceCount ? `${evidenceCount} 条证据` : "待研究", evidenceCount ? "ok" : "warn"),
