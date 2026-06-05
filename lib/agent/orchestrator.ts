@@ -1451,7 +1451,9 @@ async function maybeHandleViralKnowledgeTurn(
 
   const seededProject = postProject.topic ? postProject : await updatePostProject({ topic });
   const updatedProject = await ensureViralEvidenceForProject(seededProject, { force: true, filters: plan.ragFilters });
-  const viralInsights = updatedProject.evidencePack.insights.filter((insight) => insight.sourceType === "viral_library");
+  const allViralInsights = updatedProject.evidencePack.insights.filter((insight) => insight.sourceType === "viral_library");
+  const viralInsights = allViralInsights.filter((insight) => !isWeakViralLibraryInsight(insight));
+  const weakViralInsightCount = allViralInsights.length - viralInsights.length;
   const topInsights = viralInsights.slice(0, 5);
   const viralKnowledge = extractViralKnowledgeSummary(updatedProject.evidencePack.summary);
   const sufficiencyLine = formatRagSufficiencyForAnswer(viralKnowledge);
@@ -1468,7 +1470,7 @@ async function maybeHandleViralKnowledgeTurn(
       plan.ragFilters ? `本次筛选条件：${formatRagFiltersSummary(plan.ragFilters)}` : "",
       sufficiencyLine,
       viralInsights.length
-        ? `当前共有 ${viralInsights.length} 条爆款库规律，可用于 CreativeBrief、文案和图片方向。`
+        ? `当前共有 ${viralInsights.length} 条可用爆款库规律，可用于 CreativeBrief、文案和图片方向。${weakViralInsightCount ? `另有 ${weakViralInsightCount} 条弱参考仅作补充。` : ""}`
         : "暂时没有检索到足够匹配的历史爆款规律，可以继续做实时小红书研究，或先把优秀样本保存进爆款库。",
       ...topInsights.map((insight, index) => `${index + 1}. ${insight.type}｜${insight.insight}（${insight.id}）`),
       updatedProject.creativeBrief ? `CreativeBrief 已同步参考这些证据：${updatedProject.creativeBrief.basedOnEvidenceIds.slice(0, 5).join("、")}` : ""
@@ -1573,18 +1575,19 @@ function buildCardsFromTurn(
         insightCount: projectInsights.length,
         sourceCounts,
         weakViralEvidenceCount: sourceCounts.weakViralEvidenceCount,
-        keyInsights: projectInsights.slice(0, 5)
+        keyInsights: projectInsights.filter((insight) => !isWeakViralLibraryInsight(insight)).slice(0, 5)
       }
     });
     if (viralKnowledge && hasViralKnowledgePayload(viralKnowledge)) {
       const ragNextActions = buildViralRagNextActions({ plan, workspace, postProject, viralKnowledge });
+      const cardViralKnowledge = sanitizeViralKnowledgeForAgentCard(viralKnowledge);
       cards.push({
         id: "card-viral-knowledge",
         type: "viral_knowledge",
         title: "爆款库规律",
-        summary: formatViralKnowledgeCardSummary(viralKnowledge),
+        summary: formatViralKnowledgeCardSummary(cardViralKnowledge),
         data: {
-          ...viralKnowledge,
+          ...cardViralKnowledge,
           nextActions: ragNextActions
         }
       });
@@ -1957,6 +1960,61 @@ function hasViralKnowledgePayload(viralKnowledge: Partial<ViralKnowledgePack> & 
     isRecord(viralKnowledge.sufficiency) ||
     isRecord(viralKnowledge.strategyReport)
   );
+}
+
+function sanitizeViralKnowledgeForAgentCard(
+  viralKnowledge: Partial<ViralKnowledgePack> & Record<string, unknown>
+): Partial<ViralKnowledgePack> & Record<string, unknown> {
+  const results = Array.isArray(viralKnowledge.results)
+    ? viralKnowledge.results.filter((result) => !isWeakViralSearchResult(result))
+    : viralKnowledge.results;
+  const insights = Array.isArray(viralKnowledge.insights)
+    ? viralKnowledge.insights.filter((insight) => !isWeakViralLibraryInsight(insight))
+    : viralKnowledge.insights;
+  const weakCaseIds = new Set(
+    Array.isArray(viralKnowledge.results)
+      ? viralKnowledge.results
+        .filter(isWeakViralSearchResult)
+        .map((result) => String(result.case.id))
+      : []
+  );
+  const weakInsightIds = new Set(
+    Array.isArray(viralKnowledge.insights)
+      ? viralKnowledge.insights
+        .filter(isWeakViralLibraryInsight)
+        .map((insight) => insight.id)
+      : []
+  );
+  const evidenceTrace = Array.isArray(viralKnowledge.evidenceTrace)
+    ? viralKnowledge.evidenceTrace
+      .map((trace) => ({
+        ...trace,
+        evidenceInsightIds: trace.evidenceInsightIds.filter((id) => !weakInsightIds.has(id))
+      }))
+      .filter((trace) => !weakCaseIds.has(trace.caseId) && trace.evidenceInsightIds.length)
+    : viralKnowledge.evidenceTrace;
+
+  return {
+    ...viralKnowledge,
+    ...(Array.isArray(results) ? { results } : {}),
+    ...(Array.isArray(insights) ? { insights } : {}),
+    ...(Array.isArray(evidenceTrace) ? { evidenceTrace } : {})
+  };
+}
+
+function isWeakViralSearchResult(value: unknown): value is ViralKnowledgePack["results"][number] {
+  if (!isRecord(value) || !isRecord(value.case)) return false;
+  const quality = isRecord(value.case.quality) ? value.case.quality : {};
+  const warnings = Array.isArray(quality.warnings) ? quality.warnings.map((warning) => String(warning)) : [];
+  return warnings.some((warning) =>
+    warning.includes("弱参考") ||
+    warning.includes("低质量样本被强制入库") ||
+    warning.includes("低质量样本被人工强制入库")
+  );
+}
+
+function isWeakViralLibraryInsight(insight: PostProject["evidencePack"]["insights"][number]): boolean {
+  return insight.sourceType === "viral_library" && insight.insight.trim().startsWith("弱参考：");
 }
 
 function isWeakViralRagForCreativeOutput(postProject: PostProject): boolean {

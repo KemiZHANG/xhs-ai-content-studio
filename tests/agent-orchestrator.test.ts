@@ -1325,7 +1325,85 @@ describe("agent orchestrator", () => {
           sourceSampleIds: ["viral-case-weak"],
           confidence: 0.42,
           createdAt: "2026-05-30T00:00:00.000Z"
-        }]
+        }],
+        summary: {
+          viralKnowledge: {
+            query: "广州咖啡馆",
+            rewrittenQueries: ["广州咖啡馆 探店"],
+            results: [
+              {
+                case: { id: "viral-case-cover", quality: { warnings: [] } },
+                score: 0.9,
+                reasons: ["结构化规律质量较高"],
+                matchedQueries: ["广州咖啡馆 探店"]
+              },
+              {
+                case: { id: "viral-case-weak", quality: { warnings: ["低质量样本被人工强制入库：质量分 30/100"] } },
+                score: 0.1,
+                reasons: ["弱参考：低质量样本强制入库，已降低召回权重"],
+                matchedQueries: ["广州咖啡馆 探店"]
+              }
+            ],
+            insights: [
+              {
+                id: "viral-insight-cover",
+                sourceType: "viral_library",
+                type: "visual",
+                insight: "封面使用近景主体加手写清单感，更适合收藏型探店笔记",
+                sourceSampleIds: ["viral-case-cover"],
+                confidence: 0.86,
+                createdAt: "2026-05-30T00:00:00.000Z"
+              },
+              {
+                id: "viral-insight-weak",
+                sourceType: "viral_library",
+                type: "copy",
+                insight: "弱参考：低质量样本里的泛泛结构",
+                sourceSampleIds: ["viral-case-weak"],
+                confidence: 0.42,
+                createdAt: "2026-05-30T00:00:00.000Z"
+              }
+            ],
+            evidenceTrace: [
+              {
+                caseId: "viral-case-cover",
+                sourceSampleId: "note-strong",
+                sourceUrl: "https://example.com/strong",
+                score: 0.9,
+                matchedQueries: ["广州咖啡馆 探店"],
+                reasons: ["结构化规律质量较高"],
+                evidenceInsightIds: ["viral-insight-cover"]
+              },
+              {
+                caseId: "viral-case-weak",
+                sourceSampleId: "note-weak",
+                sourceUrl: "",
+                score: 0.1,
+                matchedQueries: ["广州咖啡馆 探店"],
+                reasons: ["弱参考：低质量样本强制入库，已降低召回权重"],
+                evidenceInsightIds: ["viral-insight-weak"]
+              }
+            ],
+            sufficiency: {
+              isEnough: true,
+              realtimeCount: 1,
+              viralCount: 1,
+              weakViralCount: 1,
+              missing: [],
+              recommendation: "可以生成 Brief"
+            },
+            strategyReport: {
+              summary: "可复用策略：使用近景主体和清单感。",
+              titleMoves: [],
+              structureMoves: [],
+              visualMoves: ["近景主体"],
+              audiencePainPoints: [],
+              originalityRules: ["只学习规律，不复制原图"],
+              recommendedAngles: [],
+              evidenceIds: ["viral-case-cover"]
+            }
+          }
+        }
       },
       focusedEvidenceIds: ["viral-insight-cover"],
       creativeBrief: {
@@ -1375,7 +1453,8 @@ describe("agent orchestrator", () => {
         insights: [expect.objectContaining({ id: "insight-visual" })]
       })
     });
-    expect(result.cards.find((card) => card.type === "evidence_summary")).toMatchObject({
+    const evidenceSummaryCard = result.cards.find((card) => card.type === "evidence_summary");
+    expect(evidenceSummaryCard).toMatchObject({
       summary: expect.stringContaining("弱参考 1"),
       data: expect.objectContaining({
         insightCount: 3,
@@ -1390,6 +1469,16 @@ describe("agent orchestrator", () => {
         ])
       })
     });
+    expect((evidenceSummaryCard?.data as { keyInsights?: Array<{ id: string }> } | undefined)?.keyInsights?.map((insight) => insight.id)).not.toContain("viral-insight-weak");
+    const viralKnowledgeCard = result.cards.find((card) => card.id === "card-viral-knowledge");
+    const viralKnowledgeData = viralKnowledgeCard?.data as
+      | { results?: Array<{ case: { id: string } }>; insights?: Array<{ id: string }>; evidenceTrace?: Array<{ caseId: string; evidenceInsightIds: string[] }>; sufficiency?: { weakViralCount?: number } }
+      | undefined;
+    expect(viralKnowledgeData?.sufficiency?.weakViralCount).toBe(1);
+    expect(viralKnowledgeData?.results?.map((result) => result.case.id)).toEqual(["viral-case-cover"]);
+    expect(viralKnowledgeData?.insights?.map((insight) => insight.id)).toEqual(["viral-insight-cover"]);
+    expect(viralKnowledgeData?.evidenceTrace?.map((trace) => trace.caseId)).toEqual(["viral-case-cover"]);
+    expect(viralKnowledgeData?.evidenceTrace?.flatMap((trace) => trace.evidenceInsightIds)).not.toContain("viral-insight-weak");
     expect(result.cards.find((card) => card.type === "visual_direction")?.data).toMatchObject({
       evidenceSummary: expect.objectContaining({
         hasRealtimeEvidence: true
