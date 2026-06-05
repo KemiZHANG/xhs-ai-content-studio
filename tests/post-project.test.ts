@@ -1422,6 +1422,64 @@ describe("post project", () => {
     expect(duplicate.addedSampleIds).toEqual([]);
   });
 
+  it("keeps saved viral sufficiency blocked when realtime evidence is missing", async () => {
+    await resetPostProject({ topic: "Guangzhou coffee" });
+    const firstCase = await createViralCaseFromEvidence({
+      sample: {
+        id: "note-viral-count-1",
+        title: "Guangzhou coffee high save guide",
+        author: "author",
+        likes: 1800,
+        collects: 2400,
+        comments: 120,
+        shares: 40,
+        score: 3600,
+        url: "https://www.xiaohongshu.com/explore/note-viral-count-1",
+        imageUrls: ["https://example.com/coffee-1.jpg"],
+        cachedImageUrls: [],
+        detailText: "Lead with who should save it, then lighting, seats, budget, and weekend queue warnings.",
+        commentSnippets: ["average spend?", "which seat is best for photos?"],
+        reasonHighlights: []
+      },
+      topic: "Guangzhou coffee",
+      category: "Cafe review"
+    });
+    const secondCase = await createViralCaseFromEvidence({
+      sample: {
+        id: "note-viral-count-2",
+        title: "Guangzhou coffee weekend seat review",
+        author: "author",
+        likes: 1200,
+        collects: 1600,
+        comments: 90,
+        shares: 35,
+        score: 2800,
+        url: "https://www.xiaohongshu.com/explore/note-viral-count-2",
+        imageUrls: ["https://example.com/coffee-2.jpg"],
+        cachedImageUrls: [],
+        detailText: "Start from the weekend use case, compare seats and natural light, then close with a queue warning.",
+        commentSnippets: ["is it crowded?", "good for laptop work?"],
+        reasonHighlights: []
+      },
+      topic: "Guangzhou coffee",
+      category: "Cafe review"
+    });
+
+    const result = await addViralCasesToPostProjectWithSummary([firstCase, secondCase]);
+    const viralKnowledge = result.project.evidencePack.summary as {
+      viralKnowledge?: {
+        sufficiency?: { isEnough?: boolean; realtimeCount?: number; viralCount?: number; missing?: string[] };
+      };
+    };
+
+    expect(viralKnowledge.viralKnowledge?.sufficiency).toMatchObject({
+      isEnough: false,
+      realtimeCount: 0,
+      viralCount: 2,
+      missing: expect.arrayContaining(["实时小红书样本不足 3 条"])
+    });
+  });
+
   it("initializes from legacy workspace-state when post project file is missing", async () => {
     await writeFile(
       path.join("data", "workspace-state.json"),

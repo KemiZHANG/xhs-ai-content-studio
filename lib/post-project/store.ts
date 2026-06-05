@@ -114,7 +114,7 @@ export async function addViralCasesToPostProjectWithSummary(cases: ViralCase[]):
     ...current.evidencePack,
     sampleIds,
     insights: [...current.evidencePack.insights, ...incomingInsights],
-    summary: mergeSavedViralCasesSummary(current.evidencePack.summary, cases),
+    summary: mergeSavedViralCasesSummary(current.evidencePack.summary, cases, [...current.evidencePack.insights, ...incomingInsights]),
     updatedAt: new Date().toISOString()
   };
   const candidate = {
@@ -494,7 +494,7 @@ function viralInsightKey(insight: { type: string; sourceSampleIds: string[]; ins
   return `${insight.type}|${insight.sourceSampleIds.join(",")}|${insight.insight}`;
 }
 
-function mergeSavedViralCasesSummary(summary: unknown, cases: ViralCase[]): unknown {
+function mergeSavedViralCasesSummary(summary: unknown, cases: ViralCase[], insights: EvidenceInsight[]): unknown {
   const existingSummary = isRecord(summary) ? summary : {};
   const existingViral = isRecord(existingSummary.viralKnowledge) ? existingSummary.viralKnowledge : {};
   const existingResults = Array.isArray(existingViral.results) ? existingViral.results : [];
@@ -520,15 +520,42 @@ function mergeSavedViralCasesSummary(summary: unknown, cases: ViralCase[]): unkn
         ...(Array.isArray(existingViral.insights) ? existingViral.insights : []),
         ...viralCasesToEvidenceInsights(cases)
       ].slice(0, 80),
-      sufficiency: isRecord(existingViral.sufficiency)
-        ? existingViral.sufficiency
-        : {
-            isEnough: cases.length >= 2,
-            missing: cases.length >= 2 ? [] : ["爆款库匹配样本不足 2 条"],
-            recommendation: cases.length >= 2 ? "已保存多个历史爆款规律，可辅助创作。" : "建议继续保存更多高质量样本，提升 RAG 参考多样性。",
-            viralCount: cases.length
-          }
+      sufficiency: evaluateSavedViralSufficiency({
+        insights,
+        viralCount: [...savedResults, ...existingResults].length,
+        previousSufficiency: existingViral.sufficiency
+      })
     }
+  };
+}
+
+function evaluateSavedViralSufficiency({
+  insights,
+  viralCount,
+  previousSufficiency
+}: {
+  insights: EvidenceInsight[];
+  viralCount: number;
+  previousSufficiency: unknown;
+}) {
+  const realtimeCount = insights.filter((insight) => insight.sourceType === "realtime").length
+    || (isRecord(previousSufficiency) && typeof previousSufficiency.realtimeCount === "number" ? previousSufficiency.realtimeCount : 0);
+  const missing: string[] = [];
+  if (realtimeCount < 3) missing.push("实时小红书样本不足 3 条");
+  if (viralCount < 2) missing.push("爆款库匹配样本不足 2 条");
+  if (!insights.some((insight) => insight.type === "hook" || insight.type === "title")) missing.push("缺少标题钩子规律");
+  if (!insights.some((insight) => insight.type === "structure" || insight.type === "copy")) missing.push("缺少正文结构规律");
+  if (!insights.some((insight) => insight.type === "visual")) missing.push("缺少图片风格规律");
+  if (!insights.some((insight) => insight.type === "tag")) missing.push("缺少标签组合规律");
+  if (!insights.some((insight) => insight.type === "audience" || insight.type === "pain_point" || insight.type === "comment")) missing.push("缺少人群/痛点规律");
+  return {
+    isEnough: missing.length === 0,
+    realtimeCount,
+    viralCount,
+    missing,
+    recommendation: missing.length
+      ? `建议继续搜索或补充参考样本：${missing.join("；")}`
+      : "证据足够进入 CreativeBrief、文案和图片方向生成。"
   };
 }
 
