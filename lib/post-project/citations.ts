@@ -250,11 +250,19 @@ function buildCitationWarnings(
 ): string[] {
   const warnings: string[] = [];
   const emptyFields = sections.filter((section) => !section.insights.length).map((section) => labelForCitationField(section.field));
+  const weakViralCount = uniqueInsightsById(sections.flatMap((section) => section.insights))
+    .filter((insight) => insight.sourceType === "viral_library" && isWeakReferenceInsight(insight))
+    .length;
   if (emptyFields.length) warnings.push(`${emptyFields.join("、")}缺少可追溯证据`);
   if (missingEvidenceIds.length) warnings.push(`${missingEvidenceIds.length} 个证据 ID 不在当前 evidencePack 中`);
+  if (weakViralCount) warnings.push(`引用了 ${weakViralCount} 条弱参考爆款证据，仅可作为补充，不能单独支撑发布`);
   if (sourceCounts.viral_library > 0 && sourceCounts.realtime === 0) warnings.push("仅引用爆款库规律，建议补充实时小红书证据");
   if (sourceCounts.realtime > 0 && sourceCounts.viral_library === 0) warnings.push("仅引用实时研究，建议补充爆款库长期规律");
   return warnings;
+}
+
+function isWeakReferenceInsight(insight: EvidenceInsight): boolean {
+  return insight.insight.trim().startsWith("弱参考：");
 }
 
 function countSources(insights: EvidenceInsight[]): Record<EvidenceSourceType, number> {

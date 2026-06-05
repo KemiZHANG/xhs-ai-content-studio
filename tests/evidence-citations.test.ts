@@ -120,6 +120,45 @@ describe("evidence citation report", () => {
     expect(report.warnings.join(" ")).toContain("建议补充实时小红书证据");
   });
 
+  it("warns when cited viral evidence is only a weak reference", () => {
+    const base = project();
+    const weakProject = {
+      ...base,
+      creativeBrief: {
+        ...base.creativeBrief!,
+        basedOnEvidenceIds: ["viral-insight-weak", "insight-live"]
+      },
+      evidencePack: {
+        ...base.evidencePack,
+        insights: [
+          ...base.evidencePack.insights,
+          {
+            id: "viral-insight-weak",
+            sourceType: "viral_library" as const,
+            type: "copy" as const,
+            insight: "弱参考：低质量样本里的泛泛结构",
+            sourceSampleIds: ["viral-weak"],
+            confidence: 0.42,
+            createdAt: now
+          }
+        ]
+      }
+    };
+
+    const report = buildEvidenceCitationReport(weakProject, ["viral-insight-weak", "insight-live"], {
+      title: ["insight-live"],
+      content: ["viral-insight-weak"],
+      tags: ["insight-live"],
+      imagePrompt: ["viral-insight-visual"]
+    });
+    const formatted = formatEvidenceCitationReport(report);
+
+    expect(report.warnings.join(" ")).toContain("弱参考爆款证据");
+    expect(report.warnings.join(" ")).toContain("不能单独支撑发布");
+    expect(formatted).toContain("弱参考：低质量样本里的泛泛结构");
+    expect(formatted).toContain("弱参考爆款证据");
+  });
+
   it("formats a concise explanation suitable for Agent replies", () => {
     const report = buildEvidenceCitationReport(project(), ["insight-live"], {
       title: ["insight-live"],
