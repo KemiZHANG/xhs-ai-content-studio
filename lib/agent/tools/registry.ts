@@ -122,6 +122,10 @@ function defaultToolDefinitions(): AgentToolDefinition[] {
         const [saved] = await upsertViralCases([viralCase]);
         const saveResult = await addViralCasesToPostProjectWithSummary([saved]);
         const extractionLabel = saved.extraction.method === "model" ? "AI 结构化提炼" : "启发式提炼";
+        const forcedLowQuality = !candidateReview.shouldSave && request.force;
+        const forcedLowQualityWarning = forcedLowQuality
+          ? `已强制入库低质量样本：质量分 ${candidateReview.score}/100，${candidateReview.warnings.slice(0, 2).join("；") || "入库证据不足"}`
+          : "";
         return {
           ok: true,
           data: {
@@ -131,17 +135,23 @@ function defaultToolDefinitions(): AgentToolDefinition[] {
             addedInsights: saveResult.addedInsights,
             addedSampleIds: saveResult.addedSampleIds,
             candidateReview,
+            forcedLowQuality,
             skippedSampleIds: []
           },
           warnings: [
+            forcedLowQualityWarning,
             request.model ? "" : "未提供模型，已使用本地启发式提取爆款规律。",
             saved.extraction.fallbackReason ? `AI 提取失败后已回退：${saved.extraction.fallbackReason}` : ""
           ].filter(Boolean),
           risk: "local_write",
           display: {
-            title: "已保存爆款规律",
-            summary: `${saved.topic} · ${extractionLabel} · ${saved.hookType} · ${saved.extractedInsights.reusableRules.slice(0, 2).join("；")}`,
-            items: saved.extractedInsights.reusableRules
+            title: forcedLowQuality ? "已强制保存低质量爆款规律" : "已保存爆款规律",
+            summary: forcedLowQuality
+              ? `低质量样本强制入库 · 质量分 ${candidateReview.score}/100 · ${saved.topic} · ${extractionLabel}`
+              : `${saved.topic} · ${extractionLabel} · ${saved.hookType} · ${saved.extractedInsights.reusableRules.slice(0, 2).join("；")}`,
+            items: forcedLowQuality
+              ? [...candidateReview.warnings, ...candidateReview.reasons, ...saved.extractedInsights.reusableRules].slice(0, 5)
+              : saved.extractedInsights.reusableRules
           }
         };
       }

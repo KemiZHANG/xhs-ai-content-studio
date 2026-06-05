@@ -151,13 +151,20 @@ describe("agent tool registry", () => {
       force: true
     }) as {
       ok: boolean;
-      data: { case: { sourceSampleId: string }; candidateReview: { shouldSave: boolean }; skippedSampleIds: string[] };
+      data: { case: { sourceSampleId: string }; candidateReview: { shouldSave: boolean }; forcedLowQuality: boolean; skippedSampleIds: string[] };
+      warnings: string[];
+      display?: { title?: string; summary?: string; items?: string[] };
     };
 
     expect(forced.ok).toBe(true);
     expect(forced.data.case.sourceSampleId).toBe("weak-tool-note");
     expect(forced.data.candidateReview.shouldSave).toBe(false);
+    expect(forced.data.forcedLowQuality).toBe(true);
     expect(forced.data.skippedSampleIds).toEqual([]);
+    expect(forced.warnings.join(" ")).toContain("已强制入库低质量样本");
+    expect(forced.display?.title).toContain("强制");
+    expect(forced.display?.summary).toContain("质量分");
+    expect(forced.display?.items?.length).toBeGreaterThan(0);
   });
 
   it("executes the viral-knowledge retrieval tool as a traceable RAG pack", async () => {
