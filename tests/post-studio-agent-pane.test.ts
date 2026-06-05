@@ -189,14 +189,13 @@ describe("post studio agent pane", () => {
           evidenceTrace: [{
             caseId: "viral-case-1",
             sourceSampleId: "sample-1",
-            sourceUrl: "https://example.com/note",
             score: 0.82,
             matchedQueries: ["coffee title hook", "coffee visual style"],
             reasons: ["RAG-Fusion query: coffee title hook", "语义相似"],
             evidenceInsightIds: ["viral-insight-hook", "viral-insight-visual"]
           }],
           results: [{
-            case: { id: "viral-case-1" },
+            case: { id: "viral-case-1", sourceUrl: "https://example.com/note" },
             score: 0.82,
             matchedQueries: ["coffee title hook"],
             reasons: ["语义相似"],

@@ -578,7 +578,6 @@ function uniqueViralSources(sources: Array<{
   scoreBreakdown: string;
   sourceUrl: string;
 }> {
-  const seen = new Set<string>();
   const result: Array<{
     caseId: string;
     score: string;
@@ -589,8 +588,20 @@ function uniqueViralSources(sources: Array<{
     sourceUrl: string;
   }> = [];
   for (const source of sources) {
-    if (seen.has(source.caseId)) continue;
-    seen.add(source.caseId);
+    const existingIndex = result.findIndex((item) => item.caseId === source.caseId);
+    if (existingIndex >= 0) {
+      const existing = result[existingIndex];
+      result[existingIndex] = {
+        caseId: existing.caseId,
+        score: existing.score || source.score,
+        matchedQueries: existing.matchedQueries.length ? existing.matchedQueries : source.matchedQueries,
+        reasons: existing.reasons.length ? existing.reasons : source.reasons,
+        evidenceInsightIds: existing.evidenceInsightIds.length ? existing.evidenceInsightIds : source.evidenceInsightIds,
+        scoreBreakdown: existing.scoreBreakdown || source.scoreBreakdown,
+        sourceUrl: existing.sourceUrl || source.sourceUrl
+      };
+      continue;
+    }
     result.push(source);
   }
   return result;
