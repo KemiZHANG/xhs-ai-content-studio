@@ -120,6 +120,27 @@ describe("post studio agent pane", () => {
     expect(html).not.toMatch(/[�]|鐖|鍥剧|鏂囨|鍙戝|缁х|璇佹|鎼滅/);
   });
 
+  it("routes the quick start button back to RAG refresh when viral evidence is weak", () => {
+    const html = renderToStaticMarkup(createElement(PostStudioAgentPane, {
+      evidenceCount: 1,
+      ragCreativeBlocked: true,
+      researchForm,
+      messages: [],
+      runningJob: null,
+      chatInput: "",
+      busy: false,
+      onRunResearch: () => undefined,
+      onResearchFormChange: () => undefined,
+      onChatInput: () => undefined,
+      onChatSubmit: () => undefined,
+      onQuickAction: () => undefined
+    }));
+
+    expect(html).toContain("先补 RAG");
+    expect(html).toContain("补强爆款证据");
+    expect(html).not.toContain("生成原创文案");
+  });
+
   it("renders clarify next-step cards with questions, reply template and safe quick actions", () => {
     const clarifyMessage = {
       role: "assistant",

@@ -512,6 +512,7 @@ export function PostStudioPanel({
           busy={busy}
           chatInput={chatInput}
           evidenceCount={samples.length}
+          ragCreativeBlocked={viralApplication.readinessGate.status === "caution"}
           messages={messages}
           onChatInput={onChatInput}
           onChatSubmit={onChatSubmit}

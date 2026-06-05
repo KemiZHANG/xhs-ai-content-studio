@@ -30,6 +30,7 @@ const starterPrompts = [
 
 export function PostStudioAgentPane({
   evidenceCount,
+  ragCreativeBlocked = false,
   researchForm,
   messages,
   runningJob,
@@ -42,6 +43,7 @@ export function PostStudioAgentPane({
   onQuickAction
 }: {
   evidenceCount: number;
+  ragCreativeBlocked?: boolean;
   researchForm: PostStudioResearchFormState;
   messages: ChatMessage[];
   runningJob: JobRecord | null | undefined;
@@ -58,6 +60,13 @@ export function PostStudioAgentPane({
     composerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     composerRef.current?.focus();
   };
+  const evidenceNextAction = ragCreativeBlocked
+    ? "retrieve_viral_knowledge"
+    : evidenceCount
+      ? "generate_copy"
+      : "search_research";
+  const evidenceNextEyebrow = ragCreativeBlocked ? "先补 RAG" : evidenceCount ? "下一步" : "先补证据";
+  const evidenceNextLabel = ragCreativeBlocked ? "补强爆款证据" : evidenceCount ? "生成原创文案" : "先做研究";
 
   return (
     <section className="panel studioAgentPane">
@@ -80,9 +89,9 @@ export function PostStudioAgentPane({
           <span>第一步</span>
           <strong>搜索真实笔记</strong>
         </button>
-        <button type="button" onClick={() => onQuickAction(evidenceCount ? "generate_copy" : "search_research")}>
-          <span>{evidenceCount ? "下一步" : "先补证据"}</span>
-          <strong>{evidenceCount ? "生成原创文案" : "先做研究"}</strong>
+        <button type="button" onClick={() => onQuickAction(evidenceNextAction)}>
+          <span>{evidenceNextEyebrow}</span>
+          <strong>{evidenceNextLabel}</strong>
         </button>
       </div>
 
