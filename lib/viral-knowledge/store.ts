@@ -872,7 +872,7 @@ function matchesFilters(item: ViralCase, filters: ViralCaseFilters): boolean {
   if (filters.category && !includesLoose(item.category, filters.category)) return false;
   if (filters.audience && !includesLoose(item.audience, filters.audience)) return false;
   if (filters.painPoint && !includesLoose(item.painPoint, filters.painPoint)) return false;
-  if (filters.tags?.length && !filters.tags.some((tag) => item.tags.some((itemTag) => includesLoose(itemTag, tag)))) return false;
+  if (filters.tags?.length && !filters.tags.some((tag) => viralTagFilterTargets(item).some((itemTag) => includesLoose(itemTag, tag)))) return false;
   if (filters.createdAfter && Date.parse(item.createdAt) < Date.parse(filters.createdAfter)) return false;
   if (filters.createdBefore && Date.parse(item.createdAt) > Date.parse(filters.createdBefore)) return false;
   if (filters.minLikes !== undefined && item.metrics.likes < filters.minLikes) return false;
@@ -881,6 +881,13 @@ function matchesFilters(item: ViralCase, filters: ViralCaseFilters): boolean {
   if (filters.minShares !== undefined && item.metrics.shares < filters.minShares) return false;
   if (filters.minScore !== undefined && item.metrics.score < filters.minScore) return false;
   return true;
+}
+
+function viralTagFilterTargets(item: ViralCase): string[] {
+  return uniqueStrings([
+    ...item.tags,
+    ...item.extractedInsights.tagPatterns
+  ]);
 }
 
 function sortViralCases(cases: ViralCase[], filters: ViralCaseFilters): ViralCase[] {

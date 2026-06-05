@@ -452,6 +452,41 @@ describe("viral knowledge base", () => {
     expect(sortedByCreated.map((item) => item.id)).toEqual(["viral-coffee", "viral-bag"]);
   });
 
+  it("matches tag filters against extracted tag pattern knowledge", async () => {
+    const viralCase = await createViralCaseFromEvidence({
+      sample,
+      topic: "Guangzhou coffee",
+      category: "Cafe review",
+      model: {
+        generateStructuredText: async () => JSON.stringify({
+          titleHooks: ["Lead with a save-worthy seat decision"],
+          copyStructures: ["scene -> seat detail -> budget -> weekend warning"],
+          tagPatterns: ["decision tag + city tag + weekend save tag"],
+          visualPatterns: ["natural light table cover"],
+          audienceSignals: ["weekend cafe planners"],
+          painPoints: ["need a decision before visiting"],
+          emotionalTriggers: ["save before going"],
+          commentConcerns: ["average spend"],
+          reusableRules: ["turn tag groups into user decision paths"],
+          avoidCopying: ["do not copy source wording"]
+        }),
+        analyzeImageStyle: async () => "",
+        generateImage: async () => null,
+        generateImageFromReference: async () => null
+      }
+    });
+    await upsertViralCases([{
+      ...viralCase,
+      id: "viral-pattern-tag",
+      tags: ["coffee", "cafe"]
+    }]);
+
+    const filtered = await listViralCases({ tags: ["weekend save"] });
+
+    expect(filtered.map((item) => item.id)).toEqual(["viral-pattern-tag"]);
+    expect(filtered[0].extractedInsights.tagPatterns[0]).toContain("weekend save");
+  });
+
   it("returns filter metadata from the viral knowledge API", async () => {
     const viralCase = await createViralCaseFromEvidence({
       sample,
