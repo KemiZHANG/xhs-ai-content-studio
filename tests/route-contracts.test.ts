@@ -937,6 +937,7 @@ describe("API route contracts", () => {
       createdAt: "2026-05-21T00:00:00.000Z"
     };
     const publishContent = vi.fn(async () => ({ ok: true }));
+    const updatePostProject = vi.fn(async () => ({}));
     const currentDraft = {
       id: "draft-1",
       updatedAt: "2026-05-30T00:00:00.000Z",
@@ -1060,7 +1061,7 @@ describe("API route contracts", () => {
         selectedImages: ["asset-1"],
         imagePrompts: [{ id: "prompt-1", value: { prompt: "暖光咖啡馆桌面近景" }, basedOnEvidenceIds: ["insight-1"] }]
       }),
-      updatePostProject: vi.fn(async () => ({}))
+      updatePostProject
     }));
     vi.doMock("@/lib/storage/drafts", () => ({
       createDraftRecord: vi.fn(() => currentDraft),
@@ -1089,6 +1090,11 @@ describe("API route contracts", () => {
         images: [path.join(process.cwd(), "generated-assets", "uploads", "image.png")]
       })
     );
+    expect(updatePostProject).toHaveBeenCalledWith(expect.objectContaining({
+      publishPlan: expect.objectContaining({ status: "published" }),
+      currentStage: "published",
+      auditStatus: "passed"
+    }));
   });
 
   it("blocks real publish calls without a saved PostProject quality context", async () => {

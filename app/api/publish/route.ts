@@ -247,7 +247,8 @@ export async function POST(request: Request) {
       publishPlan: guardedPublish.publishIntent,
       copyDraft: currentDraft,
       selectedImages: body.assetIds ?? [],
-      auditStatus: guardedPublish.status === "published" || guardedPublish.status === "scheduled" ? "passed" : "unchecked"
+      auditStatus: guardedPublish.status === "published" || guardedPublish.status === "scheduled" ? "passed" : "unchecked",
+      currentStage: publishArgs.scheduleAt ? "scheduled" : "published"
     }).catch(() => undefined);
 
     return NextResponse.json({
