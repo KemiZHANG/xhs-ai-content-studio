@@ -102,6 +102,9 @@ export type WorkflowResult = {
     query: string;
     rewrittenQueries: string[];
     filters?: {
+      category?: string;
+      audience?: string;
+      painPoint?: string;
       createdAfter?: string;
       createdBefore?: string;
       minLikes?: number;
