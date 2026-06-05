@@ -1874,6 +1874,92 @@ describe("agent orchestrator", () => {
           }
         }
       },
+      creativeBrief: {
+        audience: "咖啡馆探店用户",
+        painPoint: "不知道周末去哪家咖啡馆",
+        contentAngle: "旧咖啡馆探店角度",
+        emotionalHook: "周末找个地方坐一下午",
+        proofPoints: ["排队", "人均"],
+        tone: "生活化",
+        visualMood: "咖啡馆自然光",
+        imageMustHave: ["咖啡", "桌面"],
+        imageMustAvoid: ["广告感"],
+        platformStyle: "xiaohongshu",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["old-viral-coffee"]
+      },
+      copyDraft: {
+        id: "draft-stale-rag",
+        updatedAt: "2026-05-30T00:00:00.000Z",
+        draft: {
+          title: "广州咖啡馆周末清单",
+          content: "旧主题草稿，不应在通勤包 RAG 刷新后继续作为当前稿。",
+          tags: ["广州咖啡馆"],
+          structure: ["旧主题"],
+          imagePrompt: "咖啡馆自然光桌面",
+          basedOnEvidenceIds: ["old-viral-coffee"],
+          evidenceReferences: {
+            title: ["old-viral-coffee"],
+            content: ["old-viral-coffee"],
+            tags: ["old-viral-coffee"],
+            imagePrompt: ["old-viral-coffee"]
+          }
+        },
+        images: [],
+        visibility: defaultSettings.defaultVisibility
+      },
+      copyVersions: [{
+        id: "copy-draft-stale-rag",
+        createdAt: "2026-05-30T00:00:00.000Z",
+        label: "旧咖啡馆草稿",
+        value: {
+          title: "广州咖啡馆周末清单",
+          content: "旧主题草稿。",
+          tags: ["广州咖啡馆"],
+          structure: ["旧主题"],
+          imagePrompt: "咖啡馆自然光桌面",
+          basedOnEvidenceIds: ["old-viral-coffee"]
+        },
+        basedOnEvidenceIds: ["old-viral-coffee"]
+      }],
+      visualDirection: {
+        mood: "咖啡馆自然光",
+        composition: "咖啡桌面近景",
+        colorPalette: "暖色",
+        mustHave: ["咖啡杯"],
+        mustAvoid: ["通勤包"],
+        basedOnEvidenceIds: ["old-viral-coffee"]
+      },
+      imagePrompts: [{
+        id: "image-prompt-stale-rag",
+        createdAt: "2026-05-30T00:00:00.000Z",
+        label: "旧咖啡馆图片 prompt",
+        value: { prompt: "咖啡馆自然光桌面" },
+        basedOnEvidenceIds: ["old-viral-coffee"]
+      }],
+      selectedImages: ["asset-stale-coffee"],
+      finalPost: {
+        title: "广州咖啡馆周末清单",
+        content: "旧主题最终稿。",
+        tags: ["广州咖啡馆"],
+        imageIds: ["asset-stale-coffee"],
+        imagePromptVersionIds: ["image-prompt-stale-rag"],
+        basedOnEvidenceIds: ["old-viral-coffee"]
+      },
+      publishPlan: {
+        ...createPublishIntent({
+          mode: "manual",
+          title: "广州咖啡馆周末清单",
+          content: "旧主题最终稿。",
+          tags: ["广州咖啡馆"],
+          images: ["asset-stale-coffee"],
+          visibility: defaultSettings.defaultVisibility,
+          requestedBy: "manual"
+        }),
+        id: "publish-stale-rag",
+        status: "awaiting_approval",
+      },
       currentStage: "evidence_ready"
     });
     let writerPrompt = "";
@@ -1928,6 +2014,13 @@ describe("agent orchestrator", () => {
     expect(viralSummary?.viralKnowledge?.query).toContain("通勤包");
     expect(writerPrompt).toContain("通勤包");
     expect(writerPrompt).not.toContain("旧主题咖啡馆钩子");
+    expect(result.postProject?.copyDraft?.id).not.toBe("draft-stale-rag");
+    expect(result.postProject?.copyVersions.map((version) => version.id)).toContain("copy-draft-stale-rag");
+    expect(result.postProject?.visualDirection).toBeUndefined();
+    expect(result.postProject?.imagePrompts).toEqual([]);
+    expect(result.postProject?.finalPost).toBeUndefined();
+    expect(result.postProject?.publishPlan).toBeNull();
+    expect(result.postProject?.auditStatus).toBe("unchecked");
   });
 
   it("passes selected focus evidence into the Writer prompt", async () => {
@@ -2491,11 +2584,11 @@ describe("agent orchestrator", () => {
     expect((viralCard?.data as { evidenceIds?: string[] } | undefined)?.evidenceIds?.length).toBeGreaterThan(0);
     expect(result.quickActions.map((action) => action.action)).toEqual([
       "generate_copy",
-      "confirm_visual_direction"
+      "plan_visuals"
     ]);
     expect((viralCard?.data as { nextActions?: Array<{ action: string }> } | undefined)?.nextActions?.map((action) => action.action)).toEqual([
       "generate_copy",
-      "confirm_visual_direction"
+      "plan_visuals"
     ]);
     expect(result.toolTrace.some((item) => item.label === "knowledge.retrieveViralPatterns" && item.status === "completed")).toBe(true);
     expect(result.trace.events.some((event) => event.type === "tool_completed" && event.label === "knowledge.retrieveViralPatterns")).toBe(true);

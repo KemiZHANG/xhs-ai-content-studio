@@ -213,7 +213,9 @@ export function PostStudioPanel({
   });
   const runningJob = selectRunningJobForWorkspace(jobs, workspace);
   const insights = project?.evidencePack.insights ?? [];
-  const viralInsights = insights.filter((insight) => insight.sourceType === "viral_library");
+  const allViralInsights = insights.filter((insight) => insight.sourceType === "viral_library");
+  const viralInsights = allViralInsights.filter((insight) => !isWeakViralLibraryInsight(insight));
+  const weakViralInsightCount = allViralInsights.length - viralInsights.length;
   const focusedEvidenceIds = project?.focusedEvidenceIds ?? [];
   const realtimeInsights = insights.filter((insight) => insight.sourceType !== "viral_library");
   const keyLearningInsights = pickKeyLearningInsights(insights);
@@ -609,7 +611,7 @@ export function PostStudioPanel({
             realtimeCount: realtimeInsights.length,
             totalInsightCount: insights.length,
             viralCount: viralPack?.sufficiency.viralCount ?? viralInsights.length,
-            weakViralCount: viralPack?.sufficiency.weakViralCount ?? 0,
+            weakViralCount: viralPack?.sufficiency.weakViralCount ?? weakViralInsightCount,
             viralEvidenceSummary
           }}
           onNavigate={onNavigate}
@@ -796,11 +798,12 @@ export function pickKeyViralInsights(insights: ProjectInsight[], focusedEvidence
   const preferredOrder = ["hook", "structure", "copy", "tag", "visual", "pain_point", "audience", "comment", "title"];
   const selected: ProjectInsight[] = [];
   const usedTypes = new Set<string>();
+  const usableInsights = insights.filter((insight) => !isWeakViralLibraryInsight(insight));
   const focusedIdSet = new Set(focusedEvidenceIds);
-  const focusedInsights = insights
+  const focusedInsights = usableInsights
     .filter((insight) => focusedIdSet.has(insight.id) && insight.insight.trim())
     .sort((left, right) => focusedEvidenceIds.indexOf(left.id) - focusedEvidenceIds.indexOf(right.id));
-  const sorted = [...insights]
+  const sorted = [...usableInsights]
     .filter((insight) => insight.insight.trim() && !focusedIdSet.has(insight.id))
     .sort((left, right) => {
       const leftRank = preferredOrder.indexOf(left.type);
@@ -822,7 +825,11 @@ export function pickKeyViralInsights(insights: ProjectInsight[], focusedEvidence
     usedTypes.add(insight.type);
   }
 
-  return selected.length ? selected : insights.slice(0, 5);
+  return selected.length ? selected : usableInsights.slice(0, 5);
+}
+
+export function isWeakViralLibraryInsight(insight: Pick<ProjectInsight, "sourceType" | "insight">): boolean {
+  return insight.sourceType === "viral_library" && insight.insight.trim().startsWith("弱参考：");
 }
 
 function pickViralLearningLines(item: ViralCase): string[] {

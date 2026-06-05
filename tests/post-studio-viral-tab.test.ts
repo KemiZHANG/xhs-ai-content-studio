@@ -215,4 +215,25 @@ describe("post studio viral tab", () => {
       "viral-tag"
     ]);
   });
+
+  it("keeps weak viral references out of key reusable insight slots", () => {
+    const weakInsight: EvidenceInsight = {
+      ...insight,
+      id: "viral-weak",
+      type: "hook",
+      insight: "弱参考：低质量样本里的泛泛标题套路",
+      confidence: 0.99
+    };
+    const strongInsight: EvidenceInsight = {
+      ...insight,
+      id: "viral-strong",
+      type: "structure",
+      insight: "正文按适合人群、场景证据、避坑提醒组织。",
+      confidence: 0.82
+    };
+
+    const selected = pickKeyViralInsights([weakInsight, strongInsight], ["viral-weak"]);
+
+    expect(selected.map((item) => item.id)).toEqual(["viral-strong"]);
+  });
 });

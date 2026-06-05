@@ -3820,9 +3820,17 @@ async function ensureViralEvidenceForProject(
     ? deriveCreativeBrief({ ...nextProject, creativeBrief: undefined })
     : project.creativeBrief;
 
+  const shouldInvalidateDownstream = Boolean(evidenceBuild.shouldRefreshCreativeBrief);
   return updatePostProject({
     evidencePack: nextProject.evidencePack,
     creativeBrief: refreshedBrief,
+    copyDraft: shouldInvalidateDownstream ? null : project.copyDraft,
+    visualDirection: shouldInvalidateDownstream ? undefined : project.visualDirection,
+    imagePrompts: shouldInvalidateDownstream ? [] : project.imagePrompts,
+    finalPost: shouldInvalidateDownstream ? undefined : project.finalPost,
+    qualityCheck: shouldInvalidateDownstream ? undefined : project.qualityCheck,
+    publishPlan: shouldInvalidateDownstream ? null : project.publishPlan,
+    auditStatus: shouldInvalidateDownstream ? "unchecked" : project.auditStatus,
     currentStage: refreshedBrief ? "brief_ready" : project.currentStage
   });
 }
