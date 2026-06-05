@@ -55,6 +55,22 @@ describe("post next step coach", () => {
     expect(coach.secondaryActions.map((item) => item.label)).toEqual(["修改文案", "生成卡片"]);
   });
 
+  it("routes top next-step guidance back to viral RAG when creative evidence is weak", () => {
+    const guidance = getPostStageGuidance("brief_ready", ["generate_copy", "plan_visuals", "retrieve_viral_knowledge"]);
+    const coach = buildPostNextStepCoach({
+      guidance,
+      readiness: null,
+      nextActions: ["generate_copy", "plan_visuals", "retrieve_viral_knowledge"],
+      ragCreativeBlocked: true
+    });
+
+    expect(coach.primaryAction).toBe("retrieve_viral_knowledge");
+    expect(coach.primaryLabel).toBe("刷新爆款库 RAG");
+    expect(coach.detail).toContain("爆款库 RAG 证据还不足");
+    expect(coach.secondaryActions.map((item) => item.action)).not.toContain("generate_copy");
+    expect(coach.secondaryActions.map((item) => item.action)).not.toContain("plan_visuals");
+  });
+
   it("surfaces safety reminders before publish-sensitive actions", () => {
     const qualityGuidance = getPostStageGuidance("assembling", ["run_quality_gate", "request_publish_confirmation"]);
     const qualityCoach = buildPostNextStepCoach({

@@ -24,12 +24,14 @@ export function buildPostNextStepCoach({
   guidance,
   readiness,
   nextActions,
-  qualityViralCoverage
+  qualityViralCoverage,
+  ragCreativeBlocked = false
 }: {
   guidance: PostStageGuidance;
   readiness: PostReadinessReport | null;
   nextActions: PostAction[];
   qualityViralCoverage?: QualityViralCoverageView;
+  ragCreativeBlocked?: boolean;
 }): PostNextStepCoach {
   const viralMissingFields = qualityViralCoverage?.items
     .filter((item) => item.status === "missing")
@@ -39,18 +41,23 @@ export function buildPostNextStepCoach({
       nextActions.some((action) => action === "request_publish_confirmation" || action === "schedule_publish" || action === "publish_now")
   );
   const shouldRefreshViralCoverage = Boolean(qualityViralCoverage?.hasCoverage && viralMissingFields.length && !hasPublishPath);
-  const primaryAction = shouldRefreshViralCoverage
+  const primaryAction = ragCreativeBlocked
+    ? "retrieve_viral_knowledge"
+    : shouldRefreshViralCoverage
     ? "retrieve_viral_knowledge"
     : readiness?.nextAction ?? guidance.primaryAction ?? nextActions[0];
   const blocker = readiness?.blockers[0];
   const secondaryActions = nextActions
     .filter((action) => action !== primaryAction)
+    .filter((action) => !ragCreativeBlocked || !["generate_copy", "plan_visuals"].includes(action))
     .slice(0, 2)
     .map((action) => ({ action, label: labelForPostAction(action) }));
 
   return {
     headline: guidance.title,
-    detail: shouldRefreshViralCoverage
+    detail: ragCreativeBlocked
+      ? `${guidance.description} 当前爆款库 RAG 证据还不足，先补强证据再进入文案或图片方向创作。`
+      : shouldRefreshViralCoverage
       ? `${guidance.description} Quality Gate 发现爆款库证据还没覆盖：${viralMissingFields.join("、")}。`
       : blocker
         ? `${guidance.description} 当前最需要补齐：${blocker.label}。${blocker.detail}`

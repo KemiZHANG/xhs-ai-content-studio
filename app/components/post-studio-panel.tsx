@@ -405,7 +405,8 @@ export function PostStudioPanel({
     guidance: stageGuidance,
     readiness,
     nextActions,
-    qualityViralCoverage
+    qualityViralCoverage,
+    ragCreativeBlocked: viralApplication.readinessGate.status === "caution"
   });
   const flowSummary = buildPostFlowSummary(readiness);
   const statusSummary = buildPostStudioStatusSummary({
