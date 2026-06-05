@@ -230,6 +230,12 @@ describe("agent guarded publishing", () => {
         fieldCounts: { ...citationSummary.fieldCounts, imagePrompt: 0 }
       }
     })).toBe(false);
+    expect(isPublishIntentConfirmable(result.publishIntent, args, {
+      evidenceCitationSummary: {
+        ...citationSummary,
+        weakViralEvidenceCount: 1
+      }
+    })).toBe(false);
   });
 
   it("binds publish confirmations to the active Xiaohongshu account", async () => {

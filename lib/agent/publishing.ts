@@ -270,6 +270,7 @@ function evidenceCitationSignature(summary: PublishEvidenceCitationSummary): str
     missingEvidenceIds: [...summary.missingEvidenceIds].sort(),
     warnings: [...summary.warnings].sort(),
     sourceCounts: sortRecord(summary.sourceCounts),
+    weakViralEvidenceCount: summary.weakViralEvidenceCount ?? 0,
     fieldCounts: sortRecord(summary.fieldCounts),
     viralEvidenceTrace: (summary.viralEvidenceTrace ?? [])
       .map((item) => ({
