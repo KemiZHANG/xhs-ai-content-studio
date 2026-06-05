@@ -48,6 +48,7 @@ export function runPostQualityGate(project: Pick<
         finalPost
       }, draftEvidenceIds, project.copyDraft.draft.evidenceReferences)
     : null;
+  const weakViralCitationWarning = citationReport?.warnings.find((warning) => warning.includes("弱参考爆款证据"));
   const viralCoverage = citationReport ? buildViralCoverageReview(citationReport) : undefined;
   const finalImageIds = finalPost?.imageIds ?? [];
   const selectedImageIds = project.selectedImages ?? [];
@@ -85,8 +86,12 @@ export function runPostQualityGate(project: Pick<
     issues.push(`标题/正文/标签/图片方向存在不可追溯证据：${citationReport.missingEvidenceIds.slice(0, 3).join("、")}`);
     suggestions.push("请重新生成文案或图片方向，确保每个创作字段都只引用当前 evidencePack 中的证据。");
   }
+  if (weakViralCitationWarning) {
+    issues.push(weakViralCitationWarning);
+    suggestions.push("请补充高质量爆款库样本或实时小红书研究证据后重新生成文案/图片方向，不要让弱参考单独支撑发布。");
+  }
   citationReport?.warnings
-    .filter((warning) => !warning.includes("证据 ID 不在当前 evidencePack"))
+    .filter((warning) => !warning.includes("证据 ID 不在当前 evidencePack") && warning !== weakViralCitationWarning)
     .slice(0, 2)
     .forEach((warning) => suggestions.push(warning));
 
@@ -178,6 +183,7 @@ export function runPostQualityGate(project: Pick<
       ? !draftEvidenceIds.length ||
         invalidEvidenceIds.length > 0 ||
         Boolean(citationReport?.missingEvidenceIds.length) ||
+        Boolean(weakViralCitationWarning) ||
         (evidenceReview.referencedEvidenceIds.length > 0 && !evidenceReview.realtimeEvidenceIds.length) ||
         Boolean(ragSufficiencyIssue)
       : false
@@ -219,6 +225,7 @@ export function runPostQualityGate(project: Pick<
         ? !draftEvidenceIds.length ||
           invalidEvidenceIds.length > 0 ||
           Boolean(citationReport?.missingEvidenceIds.length) ||
+          Boolean(weakViralCitationWarning) ||
           (evidenceReview.referencedEvidenceIds.length > 0 && !evidenceReview.realtimeEvidenceIds.length)
         : false)
   );

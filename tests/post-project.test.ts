@@ -1547,6 +1547,92 @@ describe("post project", () => {
     expect(brief?.basedOnEvidenceIds.slice(0, 3)).toEqual(["live-audience", "live-pain", "live-visual"]);
   });
 
+  it("blocks publishing when weak viral evidence is cited as support", () => {
+    const quality = runPostQualityGate({
+      creativeBrief: {
+        audience: "广州自习咖啡人群",
+        painPoint: "不知道哪里安静且有插座",
+        contentAngle: "真实安静咖啡馆指南",
+        emotionalHook: "先给适合人群再给避坑细节",
+        proofPoints: ["座位", "噪音", "插座"],
+        tone: "真实生活化",
+        visualMood: "自然光和安静桌面",
+        imageMustHave: ["清晰座位", "桌面空间"],
+        imageMustAvoid: ["虚假招牌"],
+        platformStyle: "小红书真实分享",
+        tabooWords: [],
+        complianceNotes: [],
+        basedOnEvidenceIds: ["live-title", "viral-weak-copy"]
+      },
+      visualDirection: {
+        mood: "自然光和安静桌面",
+        composition: "展示座位、插座和桌面空间",
+        colorPalette: "自然暖色",
+        mustHave: ["座位", "插座"],
+        mustAvoid: ["虚假招牌"],
+        basedOnEvidenceIds: ["live-title"],
+        confirmationStatus: "confirmed",
+        confirmedAt: "2026-05-31T00:00:00.000Z"
+      },
+      selectedImages: ["asset-quiet"],
+      evidencePack: {
+        sampleIds: ["note-live", "viral-weak"],
+        insights: [
+          {
+            id: "live-title",
+            sourceType: "realtime",
+            type: "title",
+            insight: "标题先说明适合自习办公人群，再给安静座位判断标准",
+            sourceSampleIds: ["note-live"],
+            confidence: 0.84,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          },
+          {
+            id: "viral-weak-copy",
+            sourceType: "viral_library",
+            type: "copy",
+            insight: "弱参考：低质量样本里的泛泛正文结构",
+            sourceSampleIds: ["viral-weak"],
+            confidence: 0.42,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }
+        ]
+      },
+      copyDraft: {
+        id: "draft-weak-citation",
+        updatedAt: "2026-05-31T00:00:00.000Z",
+        visibility: defaultSettings.defaultVisibility,
+        images: [],
+        draft: {
+          title: "广州安静咖啡馆自习指南",
+          content: "这篇从真实到店判断出发，先说明适合需要安静座位和插座的人群，再写座位、噪音、插座、价格和周末排队这些决策细节，帮助读者判断是否值得收藏。",
+          tags: ["广州咖啡", "自习咖啡馆", "安静座位"],
+          structure: ["适合人群", "座位细节", "避坑提醒"],
+          imagePrompt: "自然光咖啡馆桌面和座位",
+          basedOnEvidenceIds: ["live-title", "viral-weak-copy"],
+          evidenceReferences: {
+            title: ["live-title"],
+            content: ["viral-weak-copy"],
+            tags: ["live-title"],
+            imagePrompt: ["live-title"]
+          }
+        }
+      },
+      finalPost: {
+        title: "广州安静咖啡馆自习指南",
+        content: "这篇从真实到店判断出发，先说明适合需要安静座位和插座的人群，再写座位、噪音、插座、价格和周末排队这些决策细节，帮助读者判断是否值得收藏。",
+        tags: ["广州咖啡", "自习咖啡馆", "安静座位"],
+        imageIds: ["asset-quiet"],
+        imagePromptVersionIds: [],
+        basedOnEvidenceIds: ["live-title", "viral-weak-copy"]
+      }
+    });
+
+    expect(quality.canPublish).toBe(false);
+    expect(quality.issues.join(" ")).toContain("弱参考爆款证据");
+    expect(quality.suggestions.join(" ")).toContain("不要让弱参考单独支撑发布");
+  });
+
   it("keeps saved viral sufficiency blocked when realtime evidence is missing", async () => {
     await resetPostProject({ topic: "Guangzhou coffee" });
     const firstCase = await createViralCaseFromEvidence({
