@@ -3001,11 +3001,7 @@ async function maybeHandleImageGenerationTurn(
     images: [...currentDraft.images, generatedImage]
   };
   const activePromptVersion = activeProject.imagePrompts.at(-1);
-  const imageEvidenceIds = uniqueIds([
-    ...(activePromptVersion?.basedOnEvidenceIds ?? []),
-    ...(activeProject.visualDirection?.basedOnEvidenceIds ?? []),
-    ...(activeProject.creativeBrief?.basedOnEvidenceIds ?? [])
-  ]).slice(0, 12);
+  const imageEvidenceIds = getPrioritizedImageEvidenceIds(activeProject, 12);
   const sourceAssetIds = input.attachedAssets.map((asset) => asset.id);
   const generatedAsset =
     generatedImage.path
@@ -3419,10 +3415,11 @@ function buildAgentImagePrompt({
   postProject?: PostProject;
 }): string {
   const viralSafetyContext = postProject ? buildViralSafetyContextForPrompt(postProject) : null;
-  const keyInsights = postProject?.evidencePack.insights
-    .slice(0, 8)
+  const keyInsights = postProject
+    ? getPrioritizedImageEvidenceInsights(postProject, 8)
     .map((insight) => `${insight.id} [${insight.sourceType ?? "realtime"}/${insight.type}]: ${insight.insight}`)
-    .join("\n");
+    .join("\n")
+    : "";
   return [
     "Generate an original Xiaohongshu-ready image for the current post.",
     `User request: ${message}`,
@@ -3446,6 +3443,26 @@ function buildAgentImagePrompt({
   ]
     .filter(Boolean)
     .join("\n\n");
+}
+
+function getPrioritizedImageEvidenceInsights(project: PostProject, limit: number): PostProject["evidencePack"]["insights"] {
+  const insightById = new Map(project.evidencePack.insights.map((insight) => [insight.id, insight]));
+  const preferredIds = uniqueIds([
+    ...(project.focusedEvidenceIds ?? []),
+    ...(project.visualDirection?.basedOnEvidenceIds ?? []),
+    ...project.imagePrompts.flatMap((prompt) => prompt.basedOnEvidenceIds ?? []),
+    ...(project.creativeBrief?.basedOnEvidenceIds ?? [])
+  ]);
+  const preferred = preferredIds
+    .map((id) => insightById.get(id))
+    .filter((insight): insight is PostProject["evidencePack"]["insights"][number] => Boolean(insight));
+  const preferredSet = new Set(preferred.map((insight) => insight.id));
+  const remaining = project.evidencePack.insights.filter((insight) => !preferredSet.has(insight.id));
+  return [...preferred, ...remaining].slice(0, limit);
+}
+
+function getPrioritizedImageEvidenceIds(project: PostProject, limit: number): string[] {
+  return getPrioritizedImageEvidenceInsights(project, limit).map((insight) => insight.id);
 }
 
 async function ensureViralEvidenceForProject(

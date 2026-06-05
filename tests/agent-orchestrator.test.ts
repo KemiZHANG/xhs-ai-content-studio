@@ -588,8 +588,18 @@ describe("agent orchestrator", () => {
   it("generates images from the current draft inside the agent turn and updates workspace state", async () => {
     const imagePath = path.join(tempDir, "generated-assets", "generated", "agent-image.png");
     let prompt = "";
+    const fillerInsights = Array.from({ length: 8 }, (_, index) => ({
+      id: `filler-insight-${index + 1}`,
+      sourceType: "realtime" as const,
+      type: "copy" as const,
+      insight: `Generic copy evidence ${index + 1}`,
+      sourceSampleIds: ["sample-1"],
+      confidence: 0.6,
+      createdAt: "2026-05-31T00:00:00.000Z"
+    }));
     await resetPostProject({
       topic: "coffee shop",
+      focusedEvidenceIds: ["viral-insight-visual"],
       creativeBrief: {
         audience: "coffee fans",
         painPoint: "need a calm place",
@@ -628,6 +638,7 @@ describe("agent orchestrator", () => {
             confidence: 0.9,
             createdAt: "2026-05-31T00:00:00.000Z"
           },
+          ...fillerInsights,
           {
             id: "viral-insight-visual",
             sourceType: "viral_library",
@@ -698,6 +709,8 @@ describe("agent orchestrator", () => {
     });
 
     expect(prompt).toContain("warm coffee shop cover image");
+    expect(prompt).toContain("viral-insight-visual [viral_library/visual]: 学习自然光和信息层级，但不要复刻原图构图");
+    expect(prompt.indexOf("viral-insight-visual")).toBeLessThan(prompt.indexOf("filler-insight-1"));
     expect(prompt).toContain("Viral library originality boundaries");
     expect(prompt).toContain("不要复制竞品图片布局");
     expect(prompt).toContain("只学习光线");
@@ -709,7 +722,7 @@ describe("agent orchestrator", () => {
     expect(result.postProject?.generatedImages[0].selected).toBe(true);
     expect(result.postProject?.generatedImages[0]).toMatchObject({
       promptVersionId: "prompt-v1",
-      basedOnEvidenceIds: ["insight-visual"],
+      basedOnEvidenceIds: expect.arrayContaining(["viral-insight-visual", "insight-visual"]),
       sourceAssetIds: []
     });
     expect(result.postProject?.selectedImages).toEqual(result.workspace.selectedImageIds);
