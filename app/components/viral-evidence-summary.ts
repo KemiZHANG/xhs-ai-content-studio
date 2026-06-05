@@ -39,6 +39,7 @@ export type ViralEvidenceSummaryModel = {
   }>;
   traceLine: string;
   missingLine?: string;
+  weakViralEvidenceCount: number;
 };
 
 export function buildViralEvidenceSummary({
@@ -50,7 +51,9 @@ export function buildViralEvidenceSummary({
   viralCases: ViralCase[];
   viralKnowledge?: WorkflowResult["viralKnowledge"] | null;
 }): ViralEvidenceSummaryModel {
-  const viralInsights = project?.evidencePack.insights.filter((insight) => insight.sourceType === "viral_library") ?? [];
+  const allViralInsights = project?.evidencePack.insights.filter((insight) => insight.sourceType === "viral_library") ?? [];
+  const viralInsights = allViralInsights.filter((insight) => !isWeakViralInsight(insight));
+  const weakViralEvidenceCount = allViralInsights.length - viralInsights.length;
   const focusedIds = new Set(project?.focusedEvidenceIds ?? []);
   const citedIds = new Set([
     ...(project?.creativeBrief?.basedOnEvidenceIds ?? []),
@@ -95,19 +98,21 @@ export function buildViralEvidenceSummary({
   const focusedCount = viralInsights.filter((insight) => focusedIds.has(insight.id)).length;
   const coverage = buildViralCoverage({ viralInsights, citedIds });
   const sufficiency = viralKnowledge?.sufficiency;
-  const sourceLine = `爆款库 evidencePack ${viralInsights.length} 条 · 本次重点 ${focusedCount} 条 · 已被创作引用 ${citedCount} 条`;
+  const weakLine = weakViralEvidenceCount ? ` · 弱参考 ${weakViralEvidenceCount} 条` : "";
+  const sourceLine = `爆款库 evidencePack ${viralInsights.length} 条${weakLine} · 本次重点 ${focusedCount} 条 · 已被创作引用 ${citedCount} 条`;
 
   if (!viralInsights.length) {
     return {
       hasEvidence: false,
       headline: "爆款库还没接入当前帖子",
       detail: "刷新 RAG 或把高质量实时样本保存进爆款库后，这里只展示可复用规律，不展示原文合集。",
-      sourceLine: `可检索历史样本 ${viralCases.length} 条`,
+      sourceLine: `可检索历史样本 ${viralCases.length} 条${weakLine}`,
       keyInsights: [],
       coverage,
       sourceCases: [],
       traceLine: "当前文案和图片方向暂未引用 viral_library 证据。",
-      missingLine: sufficiency?.recommendation
+      missingLine: sufficiency?.recommendation,
+      weakViralEvidenceCount
     };
   }
 
@@ -124,8 +129,13 @@ export function buildViralEvidenceSummary({
     traceLine: buildTraceLine({ citedCount, focusedCount, viralInsightCount: viralInsights.length }),
     missingLine: sufficiency?.isEnough === false && sufficiency.missing.length
       ? `缺口：${sufficiency.missing.slice(0, 3).join("、")}`
-      : undefined
+      : undefined,
+    weakViralEvidenceCount
   };
+}
+
+function isWeakViralInsight(insight: ProjectInsight): boolean {
+  return insight.insight.trim().startsWith("弱参考：");
 }
 
 function pickKeyViralInsights(

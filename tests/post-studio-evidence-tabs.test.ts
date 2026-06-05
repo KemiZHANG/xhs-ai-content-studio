@@ -38,6 +38,7 @@ const viralSummary: ViralEvidenceSummaryModel = {
   headline: "爆款库规律已接入",
   detail: "只复用结构和决策逻辑，不复制原文原图。",
   sourceLine: "爆款库 evidencePack 2 条",
+  weakViralEvidenceCount: 0,
   keyInsights: [
     {
       id: "viral-insight-1",

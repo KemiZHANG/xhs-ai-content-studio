@@ -155,6 +155,7 @@ describe("viral evidence summary", () => {
     });
 
     expect(summary.hasEvidence).toBe(true);
+    expect(summary.weakViralEvidenceCount).toBe(0);
     expect(summary.headline).toContain("重点爆款规律");
     expect(summary.keyInsights).toHaveLength(2);
     expect(summary.keyInsights[0]).toMatchObject({
@@ -232,6 +233,71 @@ describe("viral evidence summary", () => {
     expect(summary.coverage.map((item) => item.status)).toEqual(["missing", "missing", "missing", "missing"]);
     expect(summary.sourceLine).toContain("可检索历史样本 1 条");
     expect(summary.missingLine).toBe("请保存更多高收藏样本");
+  });
+
+  it("does not count weak viral references as usable evidence", () => {
+    const project = {
+      ...projectWithViralEvidence(),
+      evidencePack: {
+        sampleIds: ["weak-case"],
+        insights: [
+          {
+            id: "viral-insight-weak-copy",
+            sourceType: "viral_library" as const,
+            type: "copy" as const,
+            insight: "弱参考：低质量样本里的泛泛结构",
+            sourceSampleIds: ["weak-case"],
+            confidence: 0.42,
+            createdAt: "2026-05-31T00:00:00.000Z"
+          }
+        ]
+      },
+      focusedEvidenceIds: ["viral-insight-weak-copy"],
+      creativeBrief: {
+        ...projectWithViralEvidence().creativeBrief!,
+        basedOnEvidenceIds: ["viral-insight-weak-copy"]
+      }
+    };
+
+    const summary = buildViralEvidenceSummary({
+      project,
+      viralCases: [baseViralCase],
+      viralKnowledge: {
+        query: "广州咖啡馆",
+        rewrittenQueries: [],
+        sufficiency: {
+          isEnough: false,
+          realtimeCount: 1,
+          viralCount: 0,
+          weakViralCount: 1,
+          missing: ["1 条爆款库命中仅为弱参考，不能计入可用样本"],
+          recommendation: "刷新爆款库 RAG"
+        },
+        strategyReport: {
+          summary: "",
+          titleMoves: [],
+          structureMoves: [],
+          visualMoves: [],
+          audiencePainPoints: [],
+          originalityRules: [],
+          recommendedAngles: [],
+          evidenceIds: []
+        },
+        insights: [],
+        evidenceTrace: [],
+        results: []
+      }
+    });
+
+    expect(summary.hasEvidence).toBe(false);
+    expect(summary.weakViralEvidenceCount).toBe(1);
+    expect(summary.keyInsights).toEqual([]);
+    expect(summary.sourceLine).toContain("弱参考 1 条");
+    expect(summary.coverage.find((item) => item.id === "copy")).toMatchObject({
+      status: "missing",
+      evidenceIds: []
+    });
+    expect(summary.traceLine).toContain("暂未引用 viral_library");
   });
 
   it("counts image prompt and generated image citations as visual viral coverage", () => {

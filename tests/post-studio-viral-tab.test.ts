@@ -61,6 +61,7 @@ const viralEvidenceSummary: ViralEvidenceSummaryModel = {
   headline: "爆款库规律已接入",
   detail: "只复用结构和决策逻辑。",
   sourceLine: "爆款库 evidencePack 1 条",
+  weakViralEvidenceCount: 0,
   keyInsights: [{
     id: insight.id,
     type: insight.type,
