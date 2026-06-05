@@ -63,12 +63,14 @@ export function buildImageTabSummary({
   selectedCount,
   previewCount,
   hiddenCount,
-  mode
+  mode,
+  ragCreativeBlocked = false
 }: {
   selectedCount: number;
   previewCount: number;
   hiddenCount: number;
   mode: "reference" | "generated";
+  ragCreativeBlocked?: boolean;
 }): StudioTabSummary {
   const isGenerated = mode === "generated";
   if (selectedCount) {
@@ -97,12 +99,18 @@ export function buildImageTabSummary({
 
   return {
     headline: isGenerated ? "还没有生成图" : "还没有参考图",
-    detail: isGenerated
+    detail: isGenerated && ragCreativeBlocked
+      ? "爆款库 RAG 证据还不足，先补强证据再生成配图或图文卡片。"
+      : isGenerated
       ? "先确认图片方向，再让 Agent 生成配图或图文卡片。"
       : "可以拖入产品图/参考图；没有图片也可以先生成视觉方向。",
     state: "empty",
-    primaryActionLabel: isGenerated ? "生成图片" : "上传参考图",
-    primaryAction: isGenerated ? "generate_images" : undefined
+    primaryActionLabel: isGenerated && ragCreativeBlocked
+      ? "刷新爆款库 RAG"
+      : isGenerated ? "生成图片" : "上传参考图",
+    primaryAction: isGenerated && ragCreativeBlocked
+      ? "retrieve_viral_knowledge"
+      : isGenerated ? "generate_images" : undefined
   };
 }
 

@@ -119,6 +119,20 @@ describe("studio tab summary", () => {
     });
   });
 
+  it("routes empty generated image tabs back to viral RAG when creative evidence is weak", () => {
+    expect(buildImageTabSummary({
+      selectedCount: 0,
+      previewCount: 0,
+      hiddenCount: 0,
+      mode: "generated",
+      ragCreativeBlocked: true
+    })).toMatchObject({
+      state: "empty",
+      primaryAction: "retrieve_viral_knowledge",
+      primaryActionLabel: "刷新爆款库 RAG"
+    });
+  });
+
   it("summarizes publish readiness and pending confirmations", () => {
     expect(buildPublishTabSummary({
       publishReady: false,

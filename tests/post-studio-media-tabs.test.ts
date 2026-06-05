@@ -143,4 +143,31 @@ describe("post studio media tabs", () => {
     expect(html).toContain("图片方向必须人工确认后才能生成配图。");
     expect(html).toContain("disabled=");
   });
+
+  it("routes generated-image actions back to viral RAG when creative evidence is weak", () => {
+    const html = renderToStaticMarkup(createElement(PostStudioGeneratedTab, {
+      summary: {
+        headline: "还没有生成图",
+        detail: "爆款库 RAG 证据还不足，先补强证据。",
+        state: "empty",
+        primaryActionLabel: "刷新爆款库 RAG",
+        primaryAction: "retrieve_viral_knowledge"
+      },
+      assetSummary: {
+        ...generatedSummary,
+        selectedCount: 0,
+        previewAssets: []
+      },
+      publishAssetIds: [],
+      project,
+      ragCreativeBlocked: true,
+      onQuickAction: () => undefined,
+      onSelectPostImages: () => undefined,
+      onOpenImageStudio: () => undefined
+    }));
+
+    expect(html).toContain("刷新爆款库 RAG");
+    expect(html).toContain("补强爆款证据");
+    expect(html).not.toContain("Agent 生成配图");
+  });
 });

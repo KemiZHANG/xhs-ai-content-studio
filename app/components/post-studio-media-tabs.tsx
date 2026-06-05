@@ -79,6 +79,7 @@ export function PostStudioGeneratedTab({
   assetSummary,
   publishAssetIds,
   project,
+  ragCreativeBlocked = false,
   onQuickAction,
   onSelectPostImages,
   onOpenImageStudio
@@ -87,13 +88,18 @@ export function PostStudioGeneratedTab({
   assetSummary: AssetPanelSummary;
   publishAssetIds: string[];
   project: PostProject | null | undefined;
+  ragCreativeBlocked?: boolean;
   onQuickAction: (action: string) => void;
   onSelectPostImages: (assetIds: string[]) => void;
   onOpenImageStudio: () => void;
 }) {
   const visualDirectionConfirmed = Boolean(project?.visualDirection?.confirmedAt || project?.visualDirection?.confirmationStatus === "confirmed");
   const hasVisualDirection = Boolean(project?.visualDirection);
-  const imageGenerationLabel = visualDirectionConfirmed
+  const imageGenerationAction = ragCreativeBlocked ? "retrieve_viral_knowledge" : "generate_images";
+  const imageGenerationBlocked = !ragCreativeBlocked && !visualDirectionConfirmed;
+  const imageGenerationLabel = ragCreativeBlocked
+    ? "补强爆款证据"
+    : visualDirectionConfirmed
     ? "Agent 生成配图"
     : hasVisualDirection
       ? "先确认图片方向"
@@ -122,9 +128,9 @@ export function PostStudioGeneratedTab({
       <div className="inlineActionGrid">
         <button
           className="secondaryButton fullWidth"
-          disabled={!visualDirectionConfirmed}
-          onClick={() => onQuickAction("generate_images")}
-          title={!visualDirectionConfirmed ? "图片方向必须人工确认后才能生成配图。" : undefined}
+          disabled={imageGenerationBlocked}
+          onClick={() => onQuickAction(imageGenerationAction)}
+          title={imageGenerationBlocked ? "图片方向必须人工确认后才能生成配图。" : undefined}
           type="button"
         >
           {imageGenerationLabel}

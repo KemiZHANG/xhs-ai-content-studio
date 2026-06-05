@@ -263,7 +263,8 @@ export function PostStudioPanel({
     selectedCount: generatedAssetSummary.selectedCount,
     previewCount: generatedAssetSummary.previewAssets.length,
     hiddenCount: generatedAssetSummary.hiddenCount,
-    mode: "generated"
+    mode: "generated",
+    ragCreativeBlocked: viralApplication.readinessGate.status === "caution"
   });
   const activeAccount = settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
   const projectPublishPlanMatchesActiveAccount = isPublishPlanForActiveAccount(project?.publishPlan, settings.activeAccountId);
@@ -582,6 +583,7 @@ export function PostStudioPanel({
             onSelectPostImages,
             project,
             publishAssetIds,
+            ragCreativeBlocked: viralApplication.readinessGate.status === "caution",
             summary: generatedTabSummary
           }}
           insights={{
