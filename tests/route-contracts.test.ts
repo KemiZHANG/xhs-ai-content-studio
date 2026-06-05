@@ -1483,7 +1483,19 @@ describe("API route contracts", () => {
         publishIntent: expect.objectContaining({ id: "publish-1" })
       })
     );
-    expect(executeGuardedPublish).toHaveBeenCalledWith(expect.objectContaining({ policy: expect.objectContaining({ confirmed: false }) }));
+    expect(executeGuardedPublish).toHaveBeenCalledWith(expect.objectContaining({
+      policy: expect.objectContaining({ confirmed: false }),
+      publishContext: expect.objectContaining({
+        versionSnapshot: expect.objectContaining({
+          copyVersionId: "copy-draft-current",
+          imagePromptVersionIds: ["prompt-1"],
+          selectedImageIds: ["asset-1"],
+          qualityGateFresh: true,
+          qualityCanPublish: true,
+          finalPostMatchesCanvas: true
+        })
+      })
+    }));
     expect(updatePostProject).toHaveBeenCalledWith(expect.objectContaining({
       publishPlan: expect.objectContaining({ id: "publish-1" })
     }));

@@ -295,14 +295,20 @@ async function getQualityGateReview(
     if (snapshotMismatchReasons.length) {
       return { reasons: snapshotMismatchReasons, evidenceCitationSummary, versionSnapshot };
     }
-    const qualityCheck = runPostQualityGate(buildProjectForPublishQualityGate(project, publishArgs, assetIds));
+    const projectForQualityGate = buildProjectForPublishQualityGate(project, publishArgs, assetIds);
+    const qualityCheck = runPostQualityGate(projectForQualityGate);
+    const freshVersionSnapshot = buildPublishVersionSnapshot({
+      ...projectForQualityGate,
+      imagePrompts: projectForQualityGate.imagePrompts ?? [],
+      qualityCheck
+    });
     if (qualityCheck.canPublish) {
-      return { qualityCheck, reasons: [], evidenceCitationSummary, versionSnapshot };
+      return { qualityCheck, reasons: [], evidenceCitationSummary, versionSnapshot: freshVersionSnapshot };
     }
     return {
       qualityCheck,
       evidenceCitationSummary,
-      versionSnapshot,
+      versionSnapshot: freshVersionSnapshot,
       reasons: [
       "当前发布内容未通过 Quality Gate",
       ...qualityCheck.issues.slice(0, 5)
