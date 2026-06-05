@@ -21,7 +21,7 @@
 | 发布确认与确认单失效机制 | 已完成 | `lib/agent/guardrails.ts`、`lib/agent/publishing.ts`、`tests/agent-guardrails.test.ts`、`tests/agent-publishing.test.ts`、`tests/publish-confirmation.test.ts` |
 | 发布审计 | 已完成 | `lib/storage/publish-audit.ts`、`tests/publish-audit.test.ts`、`tests/publish-audit-summary.test.ts` |
 | Viral Knowledge Base / 爆款库 | 已完成 | `lib/viral-knowledge/store.ts`、`tests/viral-knowledge.test.ts`、`tests/viral-save-candidates.test.ts` |
-| Viral RAG 检索和证据合并 | 已完成 | `lib/rag/viral.ts`、`lib/agent/evidence-builder.ts`、`tests/viral-rag.test.ts`、`tests/rag-viral.test.ts`、`tests/viral-application.test.ts` |
+| Viral RAG 检索和证据合并 | 已完成 | `lib/rag/viral.ts`、`lib/agent/evidence-builder.ts`、`lib/post-project/viral-rag.ts`、`app/api/viral-rag/route.ts`、`tests/viral-rag.test.ts`、`tests/viral-rag-route.test.ts`、`tests/rag-viral.test.ts`、`tests/viral-application.test.ts` |
 | 真实 MCP 健康检查 | 已完成 | `/api/health/mcp`、`scripts/local-smoke.mjs`、`npm run smoke:local` |
 | 真实研究链路 smoke | 已完成 | `scripts/research-smoke.mjs`、`npm run smoke:research` |
 | 发布 dry-run 安全 smoke | 已完成 | `scripts/publish-dry-run-smoke.mjs`、`npm run smoke:publish-dry-run` |

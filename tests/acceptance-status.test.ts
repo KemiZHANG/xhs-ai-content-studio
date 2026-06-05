@@ -43,6 +43,11 @@ describe("acceptance status", () => {
       "Verify the old publish confirmation is invalidated and a new confirmation is required."
     );
     expect(status.manualGates.find((gate) => gate.id === "multi_account_switching")?.evidenceFields.map((field) => field.key)).toContain("confirmationInvalidation");
+    expect(status.verified.find((item) => item.id === "viral_rag")?.evidence).toEqual(expect.arrayContaining([
+      "lib/post-project/viral-rag.ts",
+      "app/api/viral-rag/route.ts",
+      "tests/viral-rag-route.test.ts"
+    ]));
   });
 
   it("points manual gates to safe acceptance guides and smoke commands", () => {
@@ -123,6 +128,11 @@ describe("acceptance status", () => {
       "publish_safety"
     ]);
     expect(matrix.automatedCoverage.every((item) => item.status === "verified")).toBe(true);
+    expect(matrix.automatedCoverage.find((item) => item.id === "viral_rag")?.evidence).toEqual(expect.arrayContaining([
+      "lib/post-project/viral-rag.ts",
+      "app/api/viral-rag/route.ts",
+      "tests/viral-rag-route.test.ts"
+    ]));
     expect(matrix.manualExternalGates.map((gate) => gate.id)).toEqual([
       "real_publish",
       "scheduled_publish",

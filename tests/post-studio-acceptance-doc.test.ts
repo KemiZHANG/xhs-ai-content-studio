@@ -41,6 +41,8 @@ describe("post studio acceptance documentation", () => {
     expect(matrix).toContain("统一 PostProject");
     expect(matrix).toContain("Post Studio 三栏创作台");
     expect(matrix).toContain("Viral Knowledge Base / 爆款库");
+    expect(matrix).toContain("lib/post-project/viral-rag.ts");
+    expect(matrix).toContain("app/api/viral-rag/route.ts");
     expect(matrix).toContain("发布 dry-run 安全 smoke");
     expect(matrix).toContain("当前估计完成度：**99%**");
     expect(matrix).toContain("真实发布到小红书");

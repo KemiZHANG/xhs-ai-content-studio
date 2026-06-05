@@ -135,7 +135,16 @@ const verified: AcceptanceCoverageItem[] = [
     id: "viral_rag",
     label: "爆款库 RAG、结构化入库和证据合并",
     status: "verified",
-    evidence: ["lib/viral-knowledge/store.ts", "lib/rag/viral.ts", "tests/viral-knowledge.test.ts"]
+    evidence: [
+      "lib/viral-knowledge/store.ts",
+      "lib/rag/viral.ts",
+      "lib/post-project/viral-rag.ts",
+      "app/api/viral-rag/route.ts",
+      "tests/viral-knowledge.test.ts",
+      "tests/viral-rag.test.ts",
+      "tests/viral-rag-route.test.ts",
+      "tests/viral-application.test.ts"
+    ]
   },
   {
     id: "publish_safety",
