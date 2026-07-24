@@ -58,6 +58,7 @@ import { emptyViralSearchForm } from "@/app/components/post-studio-viral-tab";
 import { labelForPublishStatus } from "@/app/components/post-studio-publish-intent-panel";
 import { buildVersionSwitchGuidance } from "@/app/components/version-switch-guidance";
 import { resolvePostCreationTopic, resolvePostStudioTitle } from "@/app/components/post-studio-title";
+import type { StudioPage } from "@/app/components/studio-navigation";
 import type { ViralLibrarySearchFilters } from "@/app/components/viral-search";
 import type { PostReadinessItem } from "@/lib/post-project/readiness";
 import type { PostAction } from "@/lib/post-project/types";
@@ -65,6 +66,15 @@ import type { PostAction } from "@/lib/post-project/types";
 export type { StudioTab } from "@/app/components/post-studio-side-pane";
 
 type ResearchForm = PostStudioResearchFormState;
+type InternalStudioPage = StudioPage | "agent";
+
+const studioPages: Array<{ id: InternalStudioPage; label: string; detail: string }> = [
+  { id: "research", label: "研究", detail: "选题、证据、爆款库" },
+  { id: "compose", label: "文案", detail: "标题、正文、标签" },
+  { id: "visuals", label: "图片", detail: "参考图、生成图、Prompt" },
+  { id: "publish", label: "发布", detail: "质量检查、账号、确认单" },
+  { id: "agent", label: "Agent", detail: "对话、任务、追问" }
+];
 
 export function PostStudioPanel({
   project,
@@ -88,6 +98,7 @@ export function PostStudioPanel({
   viralCases,
   creatorMemory,
   focusTab,
+  page,
   onResearchFormChange,
   onRunResearch,
   onChatInput,
@@ -140,6 +151,7 @@ export function PostStudioPanel({
   viralCases: ViralCase[];
   creatorMemory: CreatorMemoryProfile | null;
   focusTab?: { tab: StudioTab; nonce: number } | null;
+  page?: StudioPage;
   onResearchFormChange: (next: ResearchForm) => void;
   onRunResearch: (event: FormEvent<HTMLFormElement>) => void;
   onChatInput: (value: string) => void;
@@ -172,6 +184,7 @@ export function PostStudioPanel({
   onCancelPublish: () => void;
 }) {
   const [tab, setTab] = useState<StudioTab>("insights");
+  const [studioPage, setStudioPage] = useState<InternalStudioPage>(page ?? "research");
   const [selectedEvidence, setSelectedEvidence] = useState<SampleEvidence | null>(null);
   const [evidenceCatalogOpen, setEvidenceCatalogOpen] = useState(false);
   const [selectedViralCase, setSelectedViralCase] = useState<ViralCase | null>(null);
@@ -183,7 +196,15 @@ export function PostStudioPanel({
     }
   }, [focusTab?.nonce, focusTab?.tab]);
   useEffect(() => {
-    if (focusTab?.tab) {
+    if (!page) return;
+    setStudioPage(page);
+    if (page === "research") setTab("insights");
+    if (page === "compose") setTab("brief");
+    if (page === "visuals") setTab("generated");
+    if (page === "publish") setTab("publish");
+  }, [page]);
+  useEffect(() => {
+    if (focusTab?.tab || page) {
       return;
     }
     const stage = project?.currentStage ?? "empty";
@@ -193,7 +214,8 @@ export function PostStudioPanel({
     }
     lastAutoTabKey.current = autoTabKey;
     setTab(getRecommendedStudioTabForStage(stage));
-  }, [focusTab?.tab, project?.currentStage, project?.id]);
+    setStudioPage(getRecommendedStudioPageForStage(stage));
+  }, [focusTab?.tab, page, project?.currentStage, project?.id]);
   const selectedAssets = assets.filter((asset) => publishAssetIds.includes(asset.id));
   const uploadAssets = assets.filter((asset) => asset.kind === "upload");
   const generatedAssets = [...assets].filter((asset) => asset.kind === "generated").sort(sortNewestAsset);
@@ -468,9 +490,43 @@ export function PostStudioPanel({
     activeTab: tab
   });
   const studioTabGroups = buildStudioTabGroups(tab);
+  const activeStudioPage = studioPages.find((page) => page.id === studioPage) ?? studioPages[0];
+  const selectStudioPage = (page: InternalStudioPage) => {
+    setStudioPage(page);
+    if (page === "research") setTab("insights");
+    if (page === "compose") setTab("brief");
+    if (page === "visuals") setTab("generated");
+    if (page === "publish") setTab("publish");
+  };
 
   return (
-    <div className="postStudio">
+    <div className={page ? "postStudio cleanPostStudio controlledStudio" : "postStudio cleanPostStudio"}>
+      <section className="studioCommandBar panel">
+        <div className="studioCommandMain">
+          <span>Post Studio</span>
+          <h2>{projectTitle}</h2>
+          <p>{statusSummary.headline}</p>
+        </div>
+        <div className="studioCommandMeta">
+          <span>{statusSummary.stageLine}</span>
+          <span>{projectContextSummary.scopeLine}</span>
+          <span>{projectContextSummary.publishLine}</span>
+        </div>
+        <div className="studioCommandActions">
+          {statusSummary.primaryAction ? (
+            <button
+              className="primaryButton"
+              type="button"
+              onClick={() => onQuickAction(routeWeakRagCreativeAction(statusSummary.primaryAction!, viralApplication.readinessGate.status === "caution"))}
+            >
+              {statusSummary.primaryActionLabel}
+            </button>
+          ) : null}
+          <button className="secondaryButton" type="button" onClick={onNewProject}>
+            新建项目
+          </button>
+        </div>
+      </section>
       <section className="postStudioTop panel">
         <PostStudioHeaderPanel
           projectTitle={projectTitle}
@@ -528,6 +584,54 @@ export function PostStudioPanel({
       </section>
 
       <div className="postStudioGrid">
+        <aside className="studioStageRail panel" aria-label="创作流程">
+          <div className="studioStageRailHeader">
+            <span>主流程</span>
+            <strong>{nextStepCoach.headline}</strong>
+            <p>{nextStepCoach.detail}</p>
+          </div>
+          <div className="studioStageList">
+            {studioPages.map((page, index) => (
+              <button
+                className={studioPage === page.id ? "studioStageItem active" : "studioStageItem"}
+                key={page.id}
+                onClick={() => selectStudioPage(page.id)}
+                type="button"
+              >
+                <span>{index + 1}</span>
+                <strong>{page.label}</strong>
+                <small>{page.detail}</small>
+              </button>
+            ))}
+          </div>
+          {readiness ? (
+            <div className="studioReadinessCompact">
+              <div>
+                <span>发布准备度</span>
+                <strong>{readiness.progress}%</strong>
+              </div>
+              <i><em style={{ width: `${readiness.progress}%` }} /></i>
+              <p>{readiness.blockers[0]?.detail ?? readiness.summary}</p>
+              {readiness.nextAction ? (
+                <button
+                  type="button"
+                  onClick={() => onQuickAction(routeWeakRagCreativeAction(readiness.nextAction!, viralApplication.readinessGate.status === "caution"))}
+                >
+                  {labelForAction(routeWeakRagCreativeAction(readiness.nextAction!, viralApplication.readinessGate.status === "caution"))}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+        </aside>
+
+        <div className={studioPage === "agent" ? "studioPagePanel active" : "studioPagePanel"}>
+        {studioPage === "agent" ? (
+          <StudioPageHeader
+            detail="和 Agent 对话、补充要求、查看任务过程。这里不是主编辑区。"
+            label={activeStudioPage.label}
+            primaryLabel="继续输入"
+          />
+        ) : null}
         <PostStudioAgentPane
           busy={busy}
           chatInput={chatInput}
@@ -542,8 +646,19 @@ export function PostStudioPanel({
           researchForm={researchForm}
           runningJob={runningJob}
         />
+        </div>
 
+        <div className={studioPage === "compose" ? "studioPagePanel active" : "studioPagePanel"}>
+        {studioPage === "compose" ? (
+          <StudioPageHeader
+            detail="集中处理标题、正文、标签和版本。图片、发布检查不要堆在这一页。"
+            label={activeStudioPage.label}
+            primaryLabel={canvasDirty ? "保存画布" : "生成文案"}
+            onPrimary={() => (canvasDirty ? onCommitCanvas() : onQuickAction(routeWeakRagCreativeAction("generate_copy", viralApplication.readinessGate.status === "caution")))}
+          />
+        ) : null}
         <PostCanvasPanel
+          focused={Boolean(page)}
           canGenerateCopy={canGenerateCopy}
           ragCreativeBlocked={viralApplication.readinessGate.status === "caution"}
           generatedCopyPrompt={generatedCopyPrompt}
@@ -571,9 +686,36 @@ export function PostStudioPanel({
           onQuickAction={onQuickAction}
           onCommitCanvas={onCommitCanvas}
         />
+        </div>
 
+        <div className={studioPage === "research" || studioPage === "visuals" || studioPage === "publish" ? "studioPagePanel active" : "studioPagePanel"}>
+        {studioPage === "research" ? (
+          <StudioPageHeader
+            detail="先把选题、真实证据、爆款规律整理清楚。这里完成后再去文案页。"
+            label={activeStudioPage.label}
+            primaryLabel={nextStepCoach.primaryLabel}
+            onPrimary={() => nextStepCoach.primaryAction && onQuickAction(routeWeakRagCreativeAction(nextStepCoach.primaryAction, viralApplication.readinessGate.status === "caution"))}
+          />
+        ) : null}
+        {studioPage === "visuals" ? (
+          <StudioPageHeader
+            detail="集中处理参考图、生成图和选图。需要改文案时回到文案页。"
+            label={activeStudioPage.label}
+            primaryLabel="规划图片方向"
+            onPrimary={() => onQuickAction(routeWeakRagCreativeAction("plan_visuals", viralApplication.readinessGate.status === "caution"))}
+          />
+        ) : null}
+        {studioPage === "publish" ? (
+          <StudioPageHeader
+            detail="只看发布前必须确认的东西：质量、账号、图片、版本和确认单。"
+            label={activeStudioPage.label}
+            primaryLabel={publishReady ? "准备发布" : "运行发布检查"}
+            onPrimary={() => onQuickAction(publishReady ? "prepare_publish" : "run_quality_gate")}
+          />
+        ) : null}
         <PostStudioSidePane
           activeTab={tab}
+          page={page}
           brief={{
             brief,
             briefEvidenceSummary,
@@ -694,6 +836,7 @@ export function PostStudioPanel({
             viralSearchForm
           }}
         />
+        </div>
       </div>
 
       {selectedEvidence ? (
@@ -719,6 +862,59 @@ export function PostStudioPanel({
 
 function uniqueStringList(values: string[]): string[] {
   return Array.from(new Set(values.filter(Boolean)));
+}
+
+function StudioPageHeader({
+  label,
+  detail,
+  primaryLabel,
+  onPrimary
+}: {
+  label: string;
+  detail: string;
+  primaryLabel?: string;
+  onPrimary?: () => void;
+}) {
+  return (
+    <section className="studioPageHeader panel">
+      <div>
+        <span>当前页面</span>
+        <h3>{label}</h3>
+        <p>{detail}</p>
+      </div>
+      {primaryLabel ? (
+        <button className="primaryButton" disabled={!onPrimary} type="button" onClick={onPrimary}>
+          {primaryLabel}
+        </button>
+      ) : null}
+    </section>
+  );
+}
+
+function getRecommendedStudioPageForStage(stage: PostProject["currentStage"] | "empty" | undefined): InternalStudioPage {
+  switch (stage) {
+    case "brief_ready":
+    case "copy_drafting":
+    case "copy_ready":
+      return "compose";
+    case "visual_planning":
+    case "image_prompt_ready":
+    case "image_generating":
+    case "image_ready":
+      return "visuals";
+    case "assembling":
+    case "reviewing":
+    case "scheduled":
+    case "published":
+    case "failed":
+      return "publish";
+    case "briefing":
+    case "researching":
+    case "evidence_ready":
+    case "empty":
+    default:
+      return "research";
+  }
 }
 
 function extractProjectViralPack(project?: PostProject | null): WorkflowResult["viralKnowledge"] {

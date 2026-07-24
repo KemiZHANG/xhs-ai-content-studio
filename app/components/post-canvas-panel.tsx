@@ -18,6 +18,7 @@ type VersionSwitchGuidance = {
 };
 
 export function PostCanvasPanel({
+  focused = false,
   canGenerateCopy,
   ragCreativeBlocked = false,
   generatedCopyPrompt,
@@ -45,6 +46,7 @@ export function PostCanvasPanel({
   onQuickAction,
   onCommitCanvas
 }: {
+  focused?: boolean;
   canGenerateCopy: boolean;
   ragCreativeBlocked?: boolean;
   generatedCopyPrompt: string;
@@ -88,8 +90,8 @@ export function PostCanvasPanel({
     <section className="panel postCanvasPane">
       <div className="panelHeader compact">
         <div>
-          <h2>Post Canvas</h2>
-          <p>最终帖子画布。标题、正文、标签、图片和发布预览在这里合并。</p>
+          <h2>{focused ? "文案编辑" : "Post Canvas"}</h2>
+          <p>{focused ? "在这里完成标题、正文和标签。" : "最终帖子画布会合并文案、图片和发布预览。"}</p>
         </div>
         <button className="secondaryButton" disabled={copyActionDisabled} onClick={handleCopyAction} type="button">
           <Bot size={16} />
@@ -97,7 +99,7 @@ export function PostCanvasPanel({
         </button>
       </div>
 
-      {showCanvasStarter ? (
+      {showCanvasStarter && !focused ? (
         <CanvasStarterGuide
           canGenerateCopy={canGenerateCopy}
           ragCreativeBlocked={ragCreativeBlocked}
@@ -106,19 +108,19 @@ export function PostCanvasPanel({
         />
       ) : null}
 
-      <CreationProvenanceStrip cards={creationProvenance} onOpenEvidence={onOpenEvidence} />
-      <CanvasEvidenceBridge project={project} citationReport={citationReport} />
-      <CanvasVersionSummary canvasDirty={canvasDirty} display={canvasVersionDisplay} />
+      {!focused ? <CreationProvenanceStrip cards={creationProvenance} onOpenEvidence={onOpenEvidence} /> : null}
+      {!focused ? <CanvasEvidenceBridge project={project} citationReport={citationReport} /> : null}
+      {!focused ? <CanvasVersionSummary canvasDirty={canvasDirty} display={canvasVersionDisplay} /> : null}
 
-      <div className="postPreviewShell">
-        <PostPreviewMediaColumn selectedAssets={selectedAssets} />
+      <div className={focused ? "postPreviewShell focusedCopyEditor" : "postPreviewShell"}>
+        {!focused ? <PostPreviewMediaColumn selectedAssets={selectedAssets} /> : null}
         <div className="postEditStack">
-          <GeneratedImageVersionSwitcher
+          {!focused ? <GeneratedImageVersionSwitcher
             generatedImageVersions={generatedImageVersions}
             selectedImageIds={project?.selectedImages ?? []}
             versionStatus={versionStatus}
             onSelectGeneratedImageVersion={onSelectGeneratedImageVersion}
-          />
+          /> : null}
           <CopyVersionSwitcher
             copyVersionGuidance={copyVersionGuidance}
             copyVersions={copyVersions}
@@ -130,24 +132,25 @@ export function PostCanvasPanel({
             latestImagePrompt={latestImagePrompt}
             project={project}
             publishDraft={publishDraft}
+            focused={focused}
             onDraftChange={onDraftChange}
             onQuickAction={onQuickAction}
           />
-          <ImagePromptVersionSwitcher
+          {!focused ? <ImagePromptVersionSwitcher
             imagePromptVersions={imagePromptVersions}
             latestImagePrompt={latestImagePrompt}
             promptVersionGuidance={promptVersionGuidance}
             publishDraft={publishDraft}
             onDraftChange={onDraftChange}
             onSelectImagePromptVersion={onSelectImagePromptVersion}
-          />
-          <FinalPostAndVersionStatus
+          /> : null}
+          {!focused ? <FinalPostAndVersionStatus
             canvasDirty={canvasDirty}
             citationReport={citationReport}
             project={project}
             versionDiff={versionDiff}
             versionStatus={versionStatus}
-          />
+          /> : null}
         </div>
       </div>
 
@@ -425,12 +428,14 @@ function PostDraftEditor({
   publishDraft,
   latestImagePrompt,
   project,
+  focused,
   onDraftChange,
   onQuickAction
 }: {
   publishDraft: PublishDraftState;
   latestImagePrompt: string;
   project: PostProject | null;
+  focused: boolean;
   onDraftChange: (next: PublishDraftState) => void;
   onQuickAction: (action: string) => void;
 }) {
@@ -458,7 +463,7 @@ function PostDraftEditor({
           placeholder="文案和图片共享 CreativeBrief，图片方向会沉淀在这里。"
         />
       </label>
-      {project?.visualDirection ? (
+      {!focused && project?.visualDirection ? (
         <section className={visualDirectionConfirmed ? "versionIntegrity ok" : "versionIntegrity warn"} aria-label="图片方向确认状态">
           <strong>{visualDirectionConfirmed ? "图片方向已确认" : "图片方向待确认"}</strong>
           <p>

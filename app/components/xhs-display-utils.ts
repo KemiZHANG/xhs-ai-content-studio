@@ -3,6 +3,12 @@ import type { ResearchSummary, SampleEvidence, Section, WorkflowResult, Workflow
 
 export function titleForSection(section: Section): string {
   const titles: Record<Section, string> = {
+    workspace: "工作台",
+    research: "研究",
+    compose: "文案",
+    visuals: "图片",
+    studioPublish: "发布",
+    library: "资料库",
     flow: "Post Studio",
     dashboard: "高级控制台",
     workflow: "高级主题研究",
@@ -20,6 +26,12 @@ export function titleForSection(section: Section): string {
 
 export function subtitleForSection(section: Section): string {
   const subtitles: Record<Section, string> = {
+    workspace: "从这里开始，并随时看清下一步。",
+    research: "先确定主题、受众和可用证据。",
+    compose: "集中完成标题、正文和标签。",
+    visuals: "准备参考图、生成图并确认最终画面。",
+    studioPublish: "核对内容、账号与发布设置。",
+    library: "管理可以重复使用的图片和内容资料。",
     flow: "围绕一个帖子项目完成研究、文案、图片、发布检查和人工确认。",
     dashboard: "高级状态页。日常创作请回到 Post Studio，这里只用于排查 MCP、模型、任务和发布安全状态。",
     workflow: "高级研究入口。日常从 Post Studio 左侧发起研究；这里只用于单独复查搜索条件和样本表。",

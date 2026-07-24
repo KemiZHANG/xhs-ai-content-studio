@@ -26,6 +26,8 @@ import {
   uniqueIds
 } from "@/app/components/xhs-display-utils";
 import { AppShell } from "@/app/components/app-shell";
+import { StudioWorkspaceHome } from "@/app/components/studio-workspace-home";
+import { getStudioDestination, type StudioPage } from "@/app/components/studio-navigation";
 import { clientApi, clientFormDataApi } from "@/app/client/api";
 import { buildStreamStatusDetail, isPostStage, requestChatTurn } from "@/app/client/chat-stream";
 import { useJobStream } from "@/app/hooks/use-job-stream";
@@ -70,7 +72,7 @@ import type {
 } from "@/app/types";
 
 export default function Home() {
-  const [section, setSection] = useState<Section>("flow");
+  const [section, setSection] = useState<Section>("workspace");
   const [runs, setRuns] = useState<WorkflowRun[]>([]);
   const [jobs, setJobs] = useState<JobRecord[]>([]);
   const [publishAudits, setPublishAudits] = useState<PublishAuditRecord[]>([]);
@@ -228,6 +230,26 @@ export default function Home() {
     workflowAssetIds: workflowForm.assetIds,
     jobs
   });
+  const studioPageForSection: StudioPage | null =
+    section === "research" || section === "flow"
+      ? "research"
+      : section === "compose"
+        ? "compose"
+        : section === "visuals"
+          ? "visuals"
+          : section === "studioPublish"
+            ? "publish"
+            : null;
+
+  function openStudioPage(page: StudioPage) {
+    const nextSection: Record<StudioPage, Section> = {
+      research: "research",
+      compose: "compose",
+      visuals: "visuals",
+      publish: "studioPublish"
+    };
+    setSection(nextSection[page]);
+  }
 
   async function loadInitial() {
     await Promise.all([
@@ -1468,7 +1490,16 @@ export default function Home() {
       }
     >
 
-        {section === "flow" ? (
+        {section === "workspace" ? (
+          <StudioWorkspaceHome
+            project={postProject}
+            health={health}
+            onStart={() => openStudioPage(getStudioDestination(postProject?.currentStage ?? "empty").page)}
+            onOpenStage={openStudioPage}
+          />
+        ) : null}
+
+        {studioPageForSection ? (
           <PostStudioPanel
             project={postProject}
             workspace={workspace}
@@ -1491,6 +1522,7 @@ export default function Home() {
             viralCases={viralCases}
             creatorMemory={creatorMemory}
             focusTab={postStudioFocus}
+            page={studioPageForSection}
             onResearchFormChange={(next) => setWorkflowForm((current) => ({ ...current, ...next }))}
             onRunResearch={(event) => void runWorkflow(event)}
             onChatInput={setChatInput}
@@ -1568,7 +1600,7 @@ export default function Home() {
           />
         ) : null}
 
-        {section === "assets" ? (
+        {section === "assets" || section === "library" ? (
           <AssetsPanel
             assets={assets}
             assetForm={assetForm}

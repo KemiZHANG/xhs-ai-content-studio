@@ -7,15 +7,18 @@ export function PostStudioSideNavigator({
   activeTab,
   sideDigest,
   studioTabGroups,
+  compact = false,
   onSelectTab
 }: {
   activeTab: StudioTabId;
   sideDigest: PostSideDigest;
   studioTabGroups: StudioTabGroup[];
+  compact?: boolean;
   onSelectTab: (tab: StudioTabId) => void;
 }) {
   return (
     <>
+      {!compact ? (
       <div className="studioSideDigest">
         <div>
           <span>右侧工作区</span>
@@ -41,6 +44,7 @@ export function PostStudioSideNavigator({
           ))}
         </div>
       </div>
+      ) : null}
       <div className="studioTabGroups" role="tablist" aria-label="右侧工作区分组">
         {studioTabGroups.map((group) => (
           <section className={group.active ? "studioTabGroup active" : "studioTabGroup"} key={group.id}>

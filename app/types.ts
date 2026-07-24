@@ -1,4 +1,10 @@
 export type Section =
+  | "workspace"
+  | "research"
+  | "compose"
+  | "visuals"
+  | "studioPublish"
+  | "library"
   | "flow"
   | "dashboard"
   | "workflow"

@@ -4487,6 +4487,331 @@ textarea {
   grid-template-columns: minmax(320px, 0.8fr) minmax(520px, 1.4fr) minmax(280px, 0.7fr);
 }
 
+.cleanPostStudio {
+  --studio-rail: minmax(240px, 280px);
+  --studio-workspace: minmax(0, 1fr);
+}
+
+.cleanPostStudio .postStudioTop {
+  display: none;
+}
+
+.studioCommandBar {
+  align-items: center;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(320px, 1fr) minmax(260px, 0.8fr) auto;
+  padding: 16px 18px;
+}
+
+.studioCommandMain {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.studioCommandMain span,
+.studioStageRailHeader span,
+.studioReadinessCompact span {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.studioCommandMain h2 {
+  color: var(--ink);
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1.12;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.studioCommandMain p,
+.studioStageRailHeader p,
+.studioReadinessCompact p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.studioCommandMeta {
+  display: grid;
+  gap: 6px;
+}
+
+.studioCommandMeta span {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.35;
+  min-height: 30px;
+  padding: 7px 9px;
+}
+
+.studioCommandActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.cleanPostStudio .postStudioGrid {
+  align-items: start;
+  grid-template-columns: var(--studio-rail) var(--studio-workspace);
+}
+
+.studioPagePanel {
+  display: none;
+  grid-column: 2;
+  min-width: 0;
+}
+
+.studioPagePanel.active {
+  display: grid;
+  gap: 18px;
+}
+
+.studioPageHeader {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  padding: 18px 20px;
+}
+
+.studioPageHeader div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.studioPageHeader span {
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.studioPageHeader h3 {
+  color: var(--ink);
+  font-size: clamp(26px, 2.6vw, 34px);
+  line-height: 1.08;
+  margin: 0;
+}
+
+.studioPageHeader p {
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.studioPageHeader .primaryButton {
+  flex: 0 0 auto;
+  min-height: 48px;
+  padding-inline: 18px;
+}
+
+.studioStageRail {
+  display: grid;
+  gap: 14px;
+  order: 1;
+  padding: 14px;
+  position: sticky;
+  top: 20px;
+}
+
+.studioStageRailHeader {
+  display: grid;
+  gap: 5px;
+}
+
+.studioStageRailHeader strong {
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.studioStageList {
+  display: grid;
+  gap: 8px;
+}
+
+.studioStageItem {
+  align-items: start;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: 26px minmax(0, 1fr);
+  min-height: 78px;
+  padding: 12px;
+  text-align: left;
+}
+
+.studioStageItem:disabled {
+  cursor: default;
+}
+
+.studioStageItem span {
+  align-items: center;
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 900;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+}
+
+.studioStageItem strong {
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.studioStageItem small {
+  color: var(--muted);
+  font-size: 13px;
+  grid-column: 2;
+  line-height: 1.35;
+}
+
+.studioStageItem.active,
+.studioStageItem:hover {
+  border-color: rgba(18, 118, 97, 0.26);
+  box-shadow: 0 10px 24px rgba(38, 32, 24, 0.07);
+}
+
+.studioStageItem.active span,
+.studioStageItem.done span {
+  background: rgba(18, 118, 97, 0.1);
+  border-color: rgba(18, 118, 97, 0.24);
+  color: var(--accent-strong);
+}
+
+.studioReadinessCompact {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.studioReadinessCompact > div {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.studioReadinessCompact strong {
+  color: var(--ink);
+}
+
+.studioReadinessCompact i {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  display: block;
+  height: 7px;
+  overflow: hidden;
+}
+
+.studioReadinessCompact em {
+  background: var(--accent);
+  display: block;
+  height: 100%;
+}
+
+.studioReadinessCompact button {
+  background: rgba(18, 118, 97, 0.09);
+  border: 1px solid rgba(18, 118, 97, 0.18);
+  border-radius: 8px;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 850;
+  min-height: 34px;
+}
+
+.cleanPostStudio .studioPagePanel .studioAgentPane {
+  height: auto;
+  max-height: none;
+  min-height: 0;
+  position: static;
+}
+
+.cleanPostStudio .studioPagePanel .postCanvasPane {
+  min-width: 0;
+}
+
+.cleanPostStudio .studioPagePanel .studioSidePane {
+  max-height: none;
+  min-height: 0;
+  position: static;
+}
+
+.cleanPostStudio .panel {
+  border-radius: 8px;
+}
+
+.cleanPostStudio .panelHeader h2,
+.cleanPostStudio .postCanvasPane h2,
+.cleanPostStudio .studioAgentPane h2 {
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.cleanPostStudio .panelHeader p,
+.cleanPostStudio label span,
+.cleanPostStudio input,
+.cleanPostStudio textarea,
+.cleanPostStudio select,
+.cleanPostStudio button {
+  font-size: 15px;
+}
+
+.cleanPostStudio textarea {
+  line-height: 1.55;
+  min-height: 112px;
+}
+
+.cleanPostStudio input,
+.cleanPostStudio select {
+  min-height: 42px;
+}
+
+.cleanPostStudio .primaryButton,
+.cleanPostStudio .secondaryButton {
+  min-height: 42px;
+  padding-inline: 14px;
+}
+
+@media (max-width: 1120px) {
+  .studioCommandBar {
+    grid-template-columns: 1fr;
+  }
+
+  .studioCommandActions {
+    justify-content: flex-start;
+  }
+
+  .cleanPostStudio .postStudioGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .studioPagePanel {
+    grid-column: 1;
+  }
+}
+
 .studioAgentPane {
   display: flex;
   flex-direction: column;
@@ -9014,6 +9339,7 @@ textarea {
   }
 
   .studioAgentPane,
+  .studioStageRail,
   .studioSidePane {
     max-height: none;
     min-height: auto;
@@ -9429,4 +9755,736 @@ textarea {
     flex-direction: column;
   }
 
+}
+
+/* Warm task studio redesign */
+:root {
+  --bg: #f0ebe3;
+  --page: #faf7f2;
+  --surface: #fffdf9;
+  --surface-strong: #fffdf9;
+  --surface-subtle: #f5f0e9;
+  --surface-tint: #f1ece4;
+  --ink: #24211d;
+  --muted: #7d756d;
+  --line: #ded8cf;
+  --line-strong: #cfc6bb;
+  --accent: #68776d;
+  --accent-strong: #536158;
+  --coral: #a8735b;
+  --amber: #9a8068;
+  --danger: #9b5145;
+  --shadow: none;
+  --shadow-soft: none;
+  --glow: none;
+}
+
+html,
+body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Segoe UI", sans-serif;
+  font-size: 15px;
+}
+
+body::before,
+.content::before,
+.sidebar::before {
+  display: none;
+}
+
+button,
+input,
+select,
+textarea {
+  letter-spacing: 0;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline-color: rgba(104, 119, 109, 0.32);
+}
+
+.warmAppShell {
+  background: var(--page);
+  grid-template-columns: 220px minmax(0, 1fr);
+  min-height: 100dvh;
+}
+
+.warmAppShell .sidebar {
+  background: var(--bg);
+  border-color: var(--line);
+  color: var(--ink);
+  gap: 0;
+  padding: 26px 16px 20px;
+}
+
+.warmAppShell .brandBlock {
+  gap: 11px;
+  padding: 0 8px 25px;
+}
+
+.warmAppShell .brandMark {
+  background: var(--accent);
+  border-radius: 8px;
+  box-shadow: none;
+  color: #faf7f2;
+  height: 36px;
+  width: 36px;
+}
+
+.warmAppShell .brandTitle {
+  color: var(--ink);
+  font-family: "Songti SC", "STSong", Georgia, serif;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.warmAppShell .brandSubtitle {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.warmAppShell .navList {
+  gap: 4px;
+}
+
+.warmAppShell .navItem {
+  border: 0;
+  border-radius: 8px;
+  color: #716a63;
+  font-size: 14px;
+  font-weight: 500;
+  min-height: 42px;
+  padding: 0 11px;
+}
+
+.warmAppShell .navItem:hover {
+  background: rgba(255, 253, 249, 0.56);
+  color: var(--ink);
+  transform: none;
+}
+
+.warmAppShell .navItem.active {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px rgba(104, 119, 109, 0.12);
+  color: var(--ink);
+  font-weight: 650;
+  transform: none;
+}
+
+.warmAppShell .navItem.active svg {
+  color: var(--accent-strong);
+}
+
+.navDivider {
+  border-top: 1px solid var(--line);
+  margin: 18px 8px 15px;
+}
+
+.navGroupLabel {
+  color: var(--muted);
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 11px 8px;
+}
+
+.warmAppShell .utilityNav .navItem {
+  min-height: 38px;
+}
+
+.sidebarAccount {
+  border-top: 1px solid var(--line);
+  margin-top: auto;
+  padding: 17px 8px 0;
+}
+
+.accountLine {
+  align-items: center;
+  display: grid;
+  gap: 9px;
+  grid-template-columns: 8px minmax(0, 1fr) 30px;
+}
+
+.accountLine > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.accountLine span,
+.connectionSummary {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.accountLine strong {
+  color: var(--ink);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountLine button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--muted);
+  display: flex;
+  height: 30px;
+  justify-content: center;
+  padding: 0;
+  width: 30px;
+}
+
+.accountLine button:hover {
+  background: rgba(255, 253, 249, 0.7);
+  color: var(--ink);
+}
+
+.accountDot {
+  background: #aaa198;
+  border-radius: 50%;
+  height: 7px;
+  width: 7px;
+}
+
+.accountDot.online {
+  background: var(--accent);
+}
+
+.connectionSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  line-height: 1.5;
+  margin-top: 12px;
+}
+
+.warmAppShell .content {
+  background: var(--page);
+  min-width: 0;
+  padding: 27px clamp(24px, 3vw, 48px) 52px;
+}
+
+.warmAppShell .topbar {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  margin: 0 0 30px;
+  min-height: 75px;
+  padding: 0 0 22px;
+}
+
+.warmAppShell .eyebrow {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 650;
+  margin: 0 0 5px;
+}
+
+.warmAppShell .titleBlock h1 {
+  color: var(--ink);
+  font-family: "Songti SC", "STSong", Georgia, serif;
+  font-size: 29px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.warmAppShell .pageSubtitle {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 6px 0 0;
+}
+
+.topbarContext {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 12px;
+  gap: 8px 16px;
+  justify-content: flex-end;
+}
+
+.noticeBar {
+  background: #f1ece4;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: #625c55;
+  font-size: 13px;
+  line-height: 1.55;
+  margin: -14px 0 24px;
+  padding: 11px 14px;
+}
+
+.mobileMenuButton,
+.mobileNavScrim {
+  display: none;
+}
+
+.workspaceHome {
+  margin: 0 auto;
+  max-width: 1180px;
+}
+
+.workspaceWelcome {
+  max-width: 720px;
+  padding: 28px 0 48px;
+}
+
+.workspaceKicker {
+  color: var(--accent-strong);
+  display: block;
+  font-size: 13px;
+  font-weight: 650;
+  margin-bottom: 13px;
+}
+
+.workspaceWelcome h1 {
+  color: var(--ink);
+  font-family: "Songti SC", "STSong", Georgia, serif;
+  font-size: clamp(38px, 4.2vw, 56px);
+  font-weight: 700;
+  line-height: 1.16;
+  margin: 0 0 16px;
+}
+
+.workspaceWelcome p {
+  color: #6d665f;
+  font-size: 16px;
+  line-height: 1.75;
+  margin: 0;
+  max-width: 620px;
+}
+
+.workspacePrimaryAction {
+  align-items: center;
+  background: var(--ink);
+  border: 0;
+  border-radius: 8px;
+  color: var(--page);
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 650;
+  gap: 10px;
+  min-height: 44px;
+  margin-top: 27px;
+  padding: 0 18px;
+}
+
+.workspacePrimaryAction:hover {
+  background: #3a3631;
+  transform: translateY(-1px);
+}
+
+.workspaceFlow {
+  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  padding: 30px 0 34px;
+}
+
+.workspaceSectionHeading {
+  align-items: end;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+}
+
+.workspaceSectionHeading span,
+.workspaceOverview article > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.workspaceSectionHeading h2 {
+  color: var(--ink);
+  font-family: "Songti SC", "STSong", Georgia, serif;
+  font-size: 22px;
+  margin: 6px 0 0;
+}
+
+.workspaceSectionHeading p {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.creationSteps {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+  margin: 25px 0 0;
+  padding: 0;
+}
+
+.creationSteps li {
+  border-top: 2px solid var(--line);
+}
+
+.creationSteps li.active {
+  border-color: var(--accent);
+}
+
+.creationSteps li.complete {
+  border-color: #aeb7b0;
+}
+
+.creationSteps button {
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  display: grid;
+  gap: 6px;
+  min-height: 116px;
+  padding: 13px 6px 8px 0;
+  position: relative;
+  text-align: left;
+  width: 100%;
+}
+
+.creationSteps button:hover {
+  transform: translateY(-2px);
+}
+
+.creationStepIndex {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 11px;
+  gap: 7px;
+}
+
+.creationSteps strong {
+  font-size: 16px;
+}
+
+.creationSteps small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.creationSteps em {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 650;
+}
+
+.workspaceOverview {
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding-top: 30px;
+}
+
+.workspaceOverview article {
+  border-right: 1px solid var(--line);
+  min-height: 112px;
+  padding: 5px 28px 5px 0;
+}
+
+.workspaceOverview article + article {
+  padding-left: 28px;
+}
+
+.workspaceOverview article:last-child {
+  border-right: 0;
+}
+
+.workspaceOverview strong {
+  align-items: center;
+  color: var(--ink);
+  display: flex;
+  font-size: 15px;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.workspaceOverview p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 7px 0 0;
+}
+
+.controlledStudio .studioCommandBar,
+.controlledStudio .studioStageRail {
+  display: none;
+}
+
+.controlledStudio .postStudioGrid {
+  display: block;
+  max-width: 1180px;
+}
+
+.controlledStudio .studioPagePanel.active {
+  display: block;
+}
+
+.controlledStudio .postCanvasPane {
+  border: 0;
+  padding: 0;
+}
+
+.controlledStudio .postCanvasPane .panelHeader > button {
+  display: none;
+}
+
+.controlledStudio .focusedCopyEditor {
+  display: block;
+  max-width: 820px;
+}
+
+.controlledStudio .focusedCopyEditor .postEditStack {
+  gap: 18px;
+}
+
+.controlledStudio .focusedCopyEditor .postEditStack > label:nth-of-type(4) {
+  display: none;
+}
+
+.controlledStudio .canvasActionRow button:not(:first-child) {
+  display: none;
+}
+
+.controlledStudio .canvasActionRow {
+  justify-content: flex-start;
+}
+
+.controlledStudio .publishManualGate,
+.controlledStudio .publishConfirmMini,
+.controlledStudio .publishSafetyBoundary,
+.controlledStudio .publishDetailsDrawer {
+  display: none;
+}
+
+.controlledStudio .studioPageHeader {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  margin-bottom: 25px;
+  padding: 5px 0 24px;
+}
+
+.controlledStudio .studioPageHeader h3 {
+  font-family: "Songti SC", "STSong", Georgia, serif;
+  font-size: 25px;
+  margin: 5px 0 8px;
+}
+
+.controlledStudio .studioPageHeader p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.controlledStudio .panel,
+.warmAppShell .panel,
+.warmAppShell .postCanvasPane,
+.warmAppShell .studioSidePane,
+.warmAppShell .studioAgentPane {
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: none;
+}
+
+.warmAppShell .primaryButton,
+.warmAppShell button.primaryButton {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  border-radius: 8px;
+  box-shadow: none;
+  color: #faf7f2;
+  min-height: 42px;
+}
+
+.warmAppShell .primaryButton:hover {
+  background: #46534b;
+  border-color: #46534b;
+  box-shadow: none;
+}
+
+.warmAppShell .secondaryButton {
+  background: transparent;
+  border-color: var(--line-strong);
+  border-radius: 8px;
+  color: var(--ink);
+  min-height: 42px;
+}
+
+.warmAppShell input,
+.warmAppShell select,
+.warmAppShell textarea {
+  background: #fffdfa;
+  border-color: var(--line-strong);
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.warmAppShell input,
+.warmAppShell select {
+  min-height: 42px;
+}
+
+.warmAppShell textarea {
+  line-height: 1.7;
+  min-height: 130px;
+}
+
+.warmAppShell input:focus,
+.warmAppShell select:focus,
+.warmAppShell textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(104, 119, 109, 0.1);
+}
+
+.warmAppShell .tabButton.active,
+.warmAppShell [role="tab"][aria-selected="true"] {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+@media (max-width: 960px) {
+  .warmAppShell {
+    display: block;
+  }
+
+  .mobileMenuButton {
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    display: flex;
+    height: 40px;
+    justify-content: center;
+    left: 18px;
+    padding: 0;
+    position: fixed;
+    top: 18px;
+    width: 40px;
+    z-index: 22;
+  }
+
+  .warmAppShell .sidebar {
+    box-shadow: 18px 0 45px rgba(56, 48, 40, 0.12);
+    left: 0;
+    max-width: 82vw;
+    position: fixed;
+    transform: translateX(-105%);
+    transition: transform 220ms ease;
+    width: 260px;
+    z-index: 21;
+  }
+
+  .warmAppShell .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .mobileNavScrim {
+    background: rgba(36, 33, 29, 0.25);
+    border: 0;
+    display: block;
+    inset: 0;
+    padding: 0;
+    position: fixed;
+    z-index: 20;
+  }
+
+  .warmAppShell .content {
+    padding: 22px 24px 44px;
+  }
+
+  .warmAppShell .topbar {
+    padding-left: 54px;
+  }
+}
+
+@media (max-width: 720px) {
+  .warmAppShell .content {
+    padding: 18px 16px 36px;
+  }
+
+  .warmAppShell .topbar {
+    align-items: flex-start;
+    min-height: 76px;
+    padding-left: 52px;
+  }
+
+  .warmAppShell .titleBlock h1 {
+    font-size: 24px;
+  }
+
+  .warmAppShell .pageSubtitle {
+    max-width: 240px;
+  }
+
+  .topbarContext {
+    display: none;
+  }
+
+  .workspaceWelcome {
+    padding: 20px 0 38px;
+  }
+
+  .workspaceWelcome h1 {
+    font-size: 38px;
+  }
+
+  .workspaceWelcome p {
+    font-size: 15px;
+  }
+
+  .workspaceSectionHeading {
+    align-items: flex-start;
+    display: grid;
+  }
+
+  .creationSteps {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .creationSteps button {
+    min-height: 104px;
+  }
+
+  .workspaceOverview {
+    grid-template-columns: 1fr;
+  }
+
+  .workspaceOverview article,
+  .workspaceOverview article + article {
+    border-bottom: 1px solid var(--line);
+    border-right: 0;
+    min-height: 0;
+    padding: 20px 0;
+  }
+
+  .workspaceOverview article:last-child {
+    border-bottom: 0;
+  }
+
+  .controlledStudio .studioPageHeader {
+    align-items: flex-start;
+    display: grid;
+  }
+
+  .controlledStudio .studioPageHeader .primaryButton {
+    justify-self: stretch;
+    width: 100%;
+  }
 }

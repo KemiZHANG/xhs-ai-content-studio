@@ -2,53 +2,58 @@
 
 import type { ReactNode } from "react";
 import {
-  Layers3,
+  BookOpen,
+  BriefcaseBusiness,
+  CheckCircle2,
+  Clock3,
+  FileText,
+  Image,
+  LayoutDashboard,
+  Menu,
   RefreshCw,
+  Search,
+  Send,
   Settings,
-  ShieldCheck,
-  Sparkles
+  X
 } from "lucide-react";
+import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import type { AssetRecord, DraftRecord, Health, JobRecord, RedactedSettings, Section } from "@/app/types";
-import { AccountStatusCard } from "@/app/components/account-status-card";
-import { StatusPill } from "@/app/components/status-badges";
-import { subtitleForSection, titleForSection } from "@/app/components/xhs-display-utils";
 
-const navItems: Array<{ id: Section; label: string; icon: LucideIcon }> = [
-  { id: "flow", label: "Post Studio", icon: Layers3 },
-  { id: "assets", label: "Assets", icon: Sparkles },
-  { id: "audit", label: "Publish History", icon: ShieldCheck },
-  { id: "settings", label: "Settings", icon: Settings }
+type NavigationItem = {
+  id: Section;
+  label: string;
+  icon: LucideIcon;
+};
+
+const primaryNavigation: NavigationItem[] = [
+  { id: "workspace", label: "工作台", icon: LayoutDashboard },
+  { id: "research", label: "研究", icon: Search },
+  { id: "compose", label: "文案", icon: FileText },
+  { id: "visuals", label: "图片", icon: Image },
+  { id: "studioPublish", label: "发布", icon: Send },
+  { id: "library", label: "资料库", icon: BookOpen }
 ];
 
-export const legacyRibbonSections = new Set<Section>(["workflow", "jobs", "imageStudio", "chat", "publish", "history"]);
+const utilityNavigation: NavigationItem[] = [
+  { id: "jobs", label: "任务", icon: Clock3 },
+  { id: "audit", label: "发布记录", icon: CheckCircle2 },
+  { id: "settings", label: "设置", icon: Settings }
+];
 
-const legacySectionHints: Partial<Record<Section, { label: string; detail: string }>> = {
-  workflow: {
-    label: "高级研究入口",
-    detail: "日常搜索、证据提炼和后续创作都建议在 Post Studio 内完成。"
-  },
-  jobs: {
-    label: "任务排查入口",
-    detail: "这里只用于查看后台任务细节；当前创作进度会同步回 Post Studio。"
-  },
-  imageStudio: {
-    label: "高级图片工具",
-    detail: "批量生图和图文卡片可在这里处理，最终选图仍回到 Post Studio 组合。"
-  },
-  chat: {
-    label: "旧版 AI 工作台",
-    detail: "新的创作导演 Agent 已集中到 Post Studio，那里会记住当前帖子项目。"
-  },
-  publish: {
-    label: "备用发布装配",
-    detail: "正式发布建议回到 Post Studio 的发布检查页，先锁定版本和确认单。"
-  },
-  history: {
-    label: "旧版历史记录",
-    detail: "用于回看旧运行；继续创作请恢复到当前 Post Studio。"
-  }
+const sectionCopy: Partial<Record<Section, { title: string; subtitle: string }>> = {
+  workspace: { title: "工作台", subtitle: "从这里开始，并随时看清下一步。" },
+  research: { title: "研究", subtitle: "先确定主题、受众和可用证据。" },
+  compose: { title: "文案", subtitle: "集中完成标题、正文和标签。" },
+  visuals: { title: "图片", subtitle: "准备参考图、生成图并确认最终画面。" },
+  studioPublish: { title: "发布", subtitle: "核对内容、账号与发布设置。" },
+  library: { title: "资料库", subtitle: "管理可以重复使用的图片和内容资料。" },
+  jobs: { title: "任务", subtitle: "查看后台任务的进度和结果。" },
+  audit: { title: "发布记录", subtitle: "回看每次发布请求和执行结果。" },
+  settings: { title: "设置", subtitle: "管理账号、模型和连接配置。" }
 };
+
+export const legacyRibbonSections = new Set<Section>(["workflow", "imageStudio", "chat", "publish", "history"]);
 
 export function AppShell({
   section,
@@ -61,11 +66,9 @@ export function AppShell({
   assets,
   currentDraft,
   notice,
-  ribbon,
   children,
   onNavigate,
-  onRefreshHealth,
-  onSwitchAccount
+  onRefreshHealth
 }: {
   section: Section;
   settings: RedactedSettings;
@@ -83,119 +86,125 @@ export function AppShell({
   onRefreshHealth: () => void;
   onSwitchAccount: (accountId: string) => void;
 }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const currentCopy = sectionCopy[section] ?? sectionCopy.workspace!;
+  const activeAccount =
+    settings.accounts.find((account) => account.id === settings.activeAccountId) ?? settings.accounts[0];
   const runningCount = jobs.filter((job) => job.status === "queued" || job.status === "running").length;
 
+  const navigate = (next: Section) => {
+    onNavigate(next);
+    setMobileOpen(false);
+  };
+
   return (
-    <main className="appShell">
-      <aside className="sidebar">
+    <main className="appShell warmAppShell">
+      <button
+        className="mobileMenuButton"
+        type="button"
+        aria-label={mobileOpen ? "关闭导航" : "打开导航"}
+        aria-expanded={mobileOpen}
+        onClick={() => setMobileOpen((current) => !current)}
+      >
+        {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
+
+      <aside className={mobileOpen ? "sidebar open" : "sidebar"}>
         <div className="brandBlock">
           <div className="brandMark">
-            <Sparkles size={20} />
+            <BriefcaseBusiness size={19} />
           </div>
           <div>
-            <div className="brandTitle">XHS AI Studio</div>
-            <div className="brandSubtitle">本地内容中台</div>
+            <div className="brandTitle">内容工作室</div>
+            <div className="brandSubtitle">你的创作任务中心</div>
           </div>
         </div>
 
-        <nav className="navList" aria-label="主导航">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                className={section === item.id ? "navItem active" : "navItem"}
-                onClick={() => onNavigate(item.id)}
-                type="button"
-              >
-                <Icon size={18} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
+        <nav className="navList" aria-label="创作导航">
+          {primaryNavigation.map((item) => (
+            <NavigationButton
+              item={item}
+              active={section === item.id || (item.id === "research" && section === "flow")}
+              key={item.id}
+              onNavigate={navigate}
+            />
+          ))}
         </nav>
 
-        <div className="sidebarMainPath" role="note">
-          <span>日常主流程</span>
-          <strong>创作始终回到 Post Studio</strong>
-          <p>Assets、Publish History、Settings 只做素材、记录和配置；研究、文案、图片、发布检查都在一个帖子项目里完成。</p>
-          <button type="button" onClick={() => onNavigate("flow")}>打开主工作台</button>
-        </div>
+        <div className="navDivider" />
+        <span className="navGroupLabel">管理</span>
+        <nav className="navList utilityNav" aria-label="管理导航">
+          {utilityNavigation.map((item) => (
+            <NavigationButton
+              item={item}
+              active={section === item.id}
+              key={item.id}
+              onNavigate={navigate}
+            />
+          ))}
+        </nav>
 
-        <AccountStatusCard
-          settings={settings}
-          health={health}
-          busy={settingsBusy === "health" || settingsBusy === "account-switch"}
-          onRefresh={onRefreshHealth}
-          onManage={() => onNavigate("settings")}
-          onSwitch={onSwitchAccount}
-        />
-
-        <div className="sidebarStatus">
-          <StatusPill ok={modelReady} label={modelReady ? "文本模型已配置" : "缺少文本模型"} />
-          <StatusPill ok={imageReady} label={imageReady ? "图片模型已配置" : "缺少图片模型"} />
+        <div className="sidebarAccount">
+          <div className="accountLine">
+            <span className={health?.loggedIn ? "accountDot online" : "accountDot"} />
+            <div>
+              <span>当前账号</span>
+              <strong>{activeAccount?.displayName || "未配置账号"}</strong>
+            </div>
+            <button type="button" title="刷新连接状态" aria-label="刷新连接状态" onClick={onRefreshHealth}>
+              <RefreshCw size={15} className={settingsBusy === "health" ? "spin" : ""} />
+            </button>
+          </div>
+          <div className="connectionSummary">
+            <span>{health?.loggedIn ? "已连接" : "未连接"}</span>
+            <span>{modelReady ? "文案模型可用" : "文案模型未配置"}</span>
+            <span>{imageReady ? "图片模型可用" : "图片模型未配置"}</span>
+          </div>
         </div>
       </aside>
+
+      {mobileOpen ? <button className="mobileNavScrim" aria-label="关闭导航" onClick={() => setMobileOpen(false)} /> : null}
 
       <section className="content">
         <header className="topbar">
           <div className="titleBlock">
-            <p className="eyebrow">Agent Content Operations</p>
-            <h1>{titleForSection(section)}</h1>
-            <p className="pageSubtitle">{subtitleForSection(section)}</p>
+            <p className="eyebrow">内容工作室</p>
+            <h1>{currentCopy.title}</h1>
+            <p className="pageSubtitle">{currentCopy.subtitle}</p>
           </div>
-          <div className="topbarActions">
-            <div className="topbarStats" aria-label="当前工作区状态">
-              <span>
-                <strong>{runningCount}</strong>
-                运行中
-              </span>
-              <span>
-                <strong>{assets.length}</strong>
-                素材
-              </span>
-              <span>
-                <strong>{currentDraft ? 1 : 0}</strong>
-                当前草稿
-              </span>
-            </div>
-            {notice ? <span className="notice">{notice}</span> : null}
-            <button className="iconButton" onClick={onRefreshHealth} type="button" title="刷新 MCP 状态" aria-label="刷新 MCP 状态">
-              <RefreshCw size={18} className={settingsBusy === "health" ? "spin" : ""} />
-            </button>
+          <div className="topbarContext" aria-label="当前工作区状态">
+            {runningCount ? <span>{runningCount} 个任务运行中</span> : null}
+            {currentDraft ? <span>草稿已载入</span> : null}
+            {assets.length ? <span>{assets.length} 个素材</span> : null}
           </div>
         </header>
 
-        {legacyRibbonSections.has(section) ? (
-          <LegacyReturnBanner section={section} onNavigate={onNavigate} />
-        ) : null}
-        {legacyRibbonSections.has(section) ? ribbon : null}
+        {notice ? <div className="noticeBar" role="status">{notice}</div> : null}
         {children}
       </section>
     </main>
   );
 }
 
-function LegacyReturnBanner({
-  section,
+function NavigationButton({
+  item,
+  active,
   onNavigate
 }: {
-  section: Section;
+  item: NavigationItem;
+  active: boolean;
   onNavigate: (section: Section) => void;
 }) {
-  const hint = legacySectionHints[section];
-  if (!hint) return null;
-
+  const Icon = item.icon;
   return (
-    <div className="legacyReturnBanner" role="note">
-      <div>
-        <span>{hint.label}</span>
-        <strong>主流程请回到 Post Studio</strong>
-        <p>{hint.detail}</p>
-      </div>
-      <button className="primaryButton" type="button" onClick={() => onNavigate("flow")}>
-        回到 Post Studio
-      </button>
-    </div>
+    <button
+      className={active ? "navItem active" : "navItem"}
+      type="button"
+      onClick={() => onNavigate(item.id)}
+      aria-current={active ? "page" : undefined}
+    >
+      <Icon size={18} />
+      <span>{item.label}</span>
+    </button>
   );
 }

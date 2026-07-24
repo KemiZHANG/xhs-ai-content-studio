@@ -5,9 +5,9 @@ import { AppShell } from "@/app/components/app-shell";
 import { defaultSettings } from "@/app/config/default-settings";
 
 describe("app shell", () => {
-  it("keeps the main navigation focused on the four daily work areas", () => {
+  it("presents the creation flow before management tools", () => {
     const html = renderToStaticMarkup(createElement(AppShell, {
-      section: "flow",
+      section: "workspace",
       settings: defaultSettings,
       health: null,
       settingsBusy: null,
@@ -23,26 +23,24 @@ describe("app shell", () => {
       children: createElement("div", null, "content")
     }));
 
-    expect(html).toContain("XHS AI Studio");
-    expect(html).toContain("本地内容中台");
-    expect(html).toContain("Post Studio");
-    expect(html).toContain("Assets");
-    expect(html).toContain("Publish History");
-    expect(html).toContain("Settings");
-    expect(html).toContain("日常主流程");
-    expect(html).toContain("创作始终回到 Post Studio");
-    expect(html).toContain("打开主工作台");
-    expect(html).toContain("文本模型已配置");
-    expect(html).toContain("缺少图片模型");
-    expect(html).toContain("当前草稿");
-    expect(html).toContain("刷新 MCP 状态");
-    expect(html).not.toContain("旧版 AI 工作台</span>");
-    expect(html).not.toContain("高级主题研究</span>");
+    expect(html).toContain("内容工作室");
+    expect(html).toContain("你的创作任务中心");
+    expect(html).toContain("工作台");
+    expect(html).toContain("研究");
+    expect(html).toContain("文案");
+    expect(html).toContain("图片");
+    expect(html).toContain("发布");
+    expect(html).toContain("资料库");
+    expect(html).toContain("任务");
+    expect(html).toContain("发布记录");
+    expect(html).toContain("设置");
+    expect(html).toContain("文案模型可用");
+    expect(html).toContain("图片模型未配置");
   });
 
-  it("shows a clear return-to-Post-Studio banner on legacy work areas", () => {
+  it("shows page-specific guidance without dashboard counters", () => {
     const html = renderToStaticMarkup(createElement(AppShell, {
-      section: "chat",
+      section: "compose",
       settings: defaultSettings,
       health: null,
       settingsBusy: null,
@@ -52,17 +50,14 @@ describe("app shell", () => {
       assets: [],
       currentDraft: null,
       notice: "",
-      ribbon: createElement("div", null, "legacy ribbon"),
       onNavigate: () => undefined,
       onRefreshHealth: () => undefined,
       onSwitchAccount: () => undefined,
       children: createElement("div", null, "content")
     }));
 
-    expect(html).toContain("旧版 AI 工作台");
-    expect(html).toContain("主流程请回到 Post Studio");
-    expect(html).toContain("新的创作导演 Agent 已集中到 Post Studio");
-    expect(html).toContain("回到 Post Studio");
-    expect(html).toContain("legacy ribbon");
+    expect(html).toContain("集中完成标题、正文和标签");
+    expect(html).not.toContain("运行中");
+    expect(html).not.toContain("当前草稿");
   });
 });
